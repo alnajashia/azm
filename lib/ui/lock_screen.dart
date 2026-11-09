@@ -856,6 +856,20 @@ class _LockScreenState extends State<LockScreen> {
           ),
         );
       }
+    } catch (e) {
+      // Never fail silently: any other error (missing plugin host, cast
+      // failure inside the biometric bridge, …) must be visible to the
+      // user. Reported by the user 2026-11-09: tapping "Access app"
+      // previously showed nothing at all when the prompt could not start.
+      if (mounted) {
+        await showErrorSnackBar(
+          context,
+          PrivilegedException(
+            'PERMISSION_DENIED',
+            'Authentication could not start: $e',
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _authBusy = false);
     }

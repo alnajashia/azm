@@ -6,7 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.github.alnajashia.dominanter.channel.PrivilegedChannelHandler
 import io.github.alnajashia.dominanter.shizuku.ShizukuGateway
@@ -14,7 +14,13 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
- * The Flutter host Activity. Its native jobs:
+ * The Flutter host Activity. It extends [FlutterFragmentActivity] — NOT the
+ * plain FlutterActivity — because the `local_auth` plugin's Android
+ * BiometricPrompt requires a FragmentActivity host; with FlutterActivity
+ * the "Access app" fingerprint prompt silently never appears (user report
+ * 2026-11-09, fixed the same day). Do not downgrade this superclass.
+ *
+ * Its native jobs:
  *
  *  - register the platform channels (`dominanter/privileged` +
  *    `dominanter/privileged/events`) via [PrivilegedChannelHandler];
@@ -31,7 +37,7 @@ import java.util.concurrent.TimeUnit
  *    path — attach/detach in [onCreate]/[onDestroy], result delivery in
  *    [onRequestPermissionsResult].
  */
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
 
     private var channelHandler: PrivilegedChannelHandler? = null
     private var registeredListenersHere = false
