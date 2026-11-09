@@ -248,7 +248,7 @@ revocable in the manager app; `IShizukuService.newProcess` is a plain
 | Unauthenticated lock-screen APK installer (F29) | **Deviation (b):** not ported — no install surface exists anywhere in the rebuild (§6.2, §7.2) |
 | Debug self-disable hatch (F34) | **Deviation (c):** not ported; audited absent in Dart and Kotlin (§7.2) |
 | Play Store scraping (F20) | Not ported in scraping form — brittle/locale-dependent, no official API (§6.2) |
-| Challenges, gate/session model, logs, timers are pure logic | Implemented in Dart and unit-tested (39 tests; `TESTING.md` §2); reading challenges use a small original sample passage set — the original's bundled corpus was **not** copied |
+| Challenges, gate/session model, logs, timers are pure logic | Implemented in Dart and unit-tested (41 tests; `TESTING.md` §2); reading challenges use a small original sample passage set — the original's bundled corpus was **not** copied |
 | Self-tracked usage (no UsageStatsManager) | Preserved: the Kotlin Accessibility Service tracks usage; no usage-stats permission abuse (§8) |
 | Reflection-based provisioning is fragile | Kept in Kotlin, isolated behind the channel, with the `dpm` fallback; flagged as device-spike #1 (§10) |
 | Storage was 20 SharedPreferences files | Mirrored conceptually in a clean Kotlin `SettingsStore` + Dart repositories; stores enumerated in §8 |

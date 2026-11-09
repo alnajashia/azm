@@ -1,0 +1,40 @@
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+Analyzing project...                                            
+
+   info • The private field _busy could be 'final' • lib/ui/apps_tab.dart:174:8 • prefer_final_fields
+   info • Don't use 'BuildContext's across async gaps • lib/ui/apps_tab.dart:370:33 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/apps_tab.dart:397:33 • use_build_context_synchronously
+   info • Statements in a for should be enclosed in a block • lib/ui/apps_tab.dart:443:28 • curly_braces_in_flow_control_structures
+   info • Don't use 'BuildContext's across async gaps • lib/ui/apps_tab.dart:646:31 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/apps_tab.dart:750:26 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/apps_tab.dart:862:33 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/config_screens.dart:167:33 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/config_screens.dart:174:26 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/config_screens.dart:327:26 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/config_screens.dart:378:26 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/config_screens.dart:423:26 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/ui/config_tab.dart:239:42 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/ui/config_tab.dart:298:42 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/config_tab.dart:351:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/config_tab.dart:363:31 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/impulse_focus_screens.dart:93:33 • use_build_context_synchronously
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/ui/impulse_focus_screens.dart:223:13 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/ui/impulse_focus_screens.dart:224:13 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/ui/impulse_focus_screens.dart:229:13 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/ui/impulse_focus_screens.dart:230:13 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/ui/impulse_focus_screens.dart:432:31 • use_build_context_synchronously
+   info • Statements in an if should be enclosed in a block • lib/ui/impulse_focus_screens.dart:620:17 • curly_braces_in_flow_control_structures
+   info • Don't use 'BuildContext's across async gaps • lib/ui/recovery_ui.dart:498:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/recovery_ui.dart:512:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/restrictions_tab.dart:96:31 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/ui/setup_screen.dart:92:31 • use_build_context_synchronously
+   info • Statements in an if should be enclosed in a block • lib/ui/setup_screen.dart:104:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/ui/setup_screen.dart:106:7 • curly_braces_in_flow_control_structures
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/ui/setup_screen.dart:210:33 • use_build_context_synchronously
+   info • Statements in an if should be enclosed in a block • lib/ui/setup_screen.dart:251:33 • curly_braces_in_flow_control_structures
+   info • Dangling library doc comment • test/redesign_test.dart:1:1 • dangling_library_doc_comments
+
+32 issues found. (ran in 5.8s)

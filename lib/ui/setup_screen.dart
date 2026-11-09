@@ -100,8 +100,10 @@ class _SetupScreenState extends State<SetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading && _shizuku == null) return const LoadingView(message: 'Checking setup state…');
-    if (_error != null && _shizuku == null) return ErrorView(error: _error!, onRetry: _refresh);
+    if (_loading && _shizuku == null)
+      return const LoadingView(message: 'Checking setup state…');
+    if (_error != null && _shizuku == null)
+      return ErrorView(error: _error!, onRetry: _refresh);
     final shizuku = _shizuku!;
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -116,32 +118,38 @@ class _SetupScreenState extends State<SetupScreen> {
             }),
           ),
           const SizedBox(height: 12),
-          Card(
+          GradientCard(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
               children: [
                 ListTile(
-                  leading: Icon(_isOwner ? Icons.verified_user : Icons.shield_outlined),
+                  leading: Icon(
+                    _isOwner ? Icons.verified_user : Icons.shield_outlined,
+                  ),
                   title: const Text('Device Owner'),
-                  subtitle: Text(_isOwner
-                      ? 'Dominanter is the Device Owner of this device.'
-                      : 'Not provisioned. Most restrictions need Device Owner. '
-                          'Admin active: $_isAdmin.'),
+                  subtitle: Text(
+                    _isOwner
+                        ? 'Dominanter is the Device Owner of this device.'
+                        : 'Not provisioned. Most restrictions need Device Owner. '
+                              'Admin active: $_isAdmin.',
+                  ),
                 ),
                 if (!_isOwner)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: FilledButton.icon(
-                      onPressed: (_busy || shizuku.state != ShizukuState.granted)
+                      onPressed:
+                          (_busy || shizuku.state != ShizukuState.granted)
                           ? null
                           : () => _run(() async {
-                                final r = await _channel.provisionDeviceOwner();
-                                if (mounted) {
-                                  setState(() {
-                                    _provisionOutput =
-                                        'Path used: ${r['pathUsed']}\n${r['commandOutput'] ?? ''}';
-                                  });
-                                }
-                              }),
+                              final r = await _channel.provisionDeviceOwner();
+                              if (mounted) {
+                                setState(() {
+                                  _provisionOutput =
+                                      'Path used: ${r['pathUsed']}\n${r['commandOutput'] ?? ''}';
+                                });
+                              }
+                            }),
                       icon: const Icon(Icons.admin_panel_settings),
                       label: const Text('Become Device Owner via Shizuku'),
                     ),
@@ -168,35 +176,42 @@ class _SetupScreenState extends State<SetupScreen> {
                 SwitchListTile(
                   secondary: const Icon(Icons.accessibility_new),
                   title: const Text('Accessibility Service'),
-                  subtitle: Text(_a11y == null
-                      ? 'Unknown'
-                      : _a11y!.isEnabled
-                          ? (_a11y!.isServiceRunning
+                  subtitle: Text(
+                    _a11y == null
+                        ? 'Unknown'
+                        : _a11y!.isEnabled
+                        ? (_a11y!.isServiceRunning
                               ? 'Enabled and running — enforcement is live.'
                               : 'Enabled but not yet running (binding).')
-                          : 'Off. Turning it off later suspends every controlled app (anti-bypass lockdown).'),
+                        : 'Off. Turning it off later suspends every controlled app (anti-bypass lockdown).',
+                  ),
                   value: _a11y?.isEnabled ?? false,
                   onChanged: _busy
                       ? null
                       : (v) => _run(() async {
-                            await _channel.setAccessibilityEnabled(v);
-                          }),
+                          await _channel.setAccessibilityEnabled(v);
+                        }),
                 ),
                 ListTile(
                   leading: const Icon(Icons.key_outlined),
                   title: const Text('Grant WRITE_SECURE_SETTINGS'),
                   subtitle: const Text(
-                      'Needed for colour modes (v1.1). Granted via Shizuku; '
-                      'the check is re-read after granting.'),
+                    'Needed for colour modes (v1.1). Granted via Shizuku; '
+                    'the check is re-read after granting.',
+                  ),
                   trailing: FilledButton.tonal(
                     onPressed: _busy
                         ? null
                         : () => _run(() async {
-                              final ok = await _channel.grantWriteSecureSettings();
-                              if (mounted && ok) {
-                                showInfoSnackBar(context, 'WRITE_SECURE_SETTINGS is granted.');
-                              }
-                            }),
+                            final ok = await _channel
+                                .grantWriteSecureSettings();
+                            if (mounted && ok) {
+                              showInfoSnackBar(
+                                context,
+                                'WRITE_SECURE_SETTINGS is granted.',
+                              );
+                            }
+                          }),
                     child: const Text('Grant'),
                   ),
                 ),
@@ -212,8 +227,9 @@ class _SetupScreenState extends State<SetupScreen> {
                   leading: Icon(Icons.medical_information_outlined),
                   title: Text('Provisioning diagnostics'),
                   subtitle: Text(
-                      'Accounts, extra users and the current Device Owner — '
-                      'these can block provisioning.'),
+                    'Accounts, extra users and the current Device Owner — '
+                    'these can block provisioning.',
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -221,18 +237,20 @@ class _SetupScreenState extends State<SetupScreen> {
                     onPressed: _busy
                         ? null
                         : () => _run(() async {
-                              try {
-                                final d = await _channel.getProvisioningDiagnostics();
-                                if (mounted) {
-                                  setState(() {
-                                    _diagnostics = d;
-                                    _diagnosticsError = null;
-                                  });
-                                }
-                              } catch (e) {
-                                if (mounted) setState(() => _diagnosticsError = e);
+                            try {
+                              final d = await _channel
+                                  .getProvisioningDiagnostics();
+                              if (mounted) {
+                                setState(() {
+                                  _diagnostics = d;
+                                  _diagnosticsError = null;
+                                });
                               }
-                            }),
+                            } catch (e) {
+                              if (mounted)
+                                setState(() => _diagnosticsError = e);
+                            }
+                          }),
                     child: const Text('Run diagnostics'),
                   ),
                 ),
@@ -241,7 +259,9 @@ class _SetupScreenState extends State<SetupScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: Text(
                       _diagnosticsError is PrivilegedException
-                          ? friendlyError(_diagnosticsError! as PrivilegedException)
+                          ? friendlyError(
+                              _diagnosticsError! as PrivilegedException,
+                            )
                           : _diagnosticsError.toString(),
                     ),
                   ),
@@ -256,7 +276,11 @@ class _SetupScreenState extends State<SetupScreen> {
 }
 
 class _ShizukuCard extends StatelessWidget {
-  const _ShizukuCard({required this.status, required this.busy, required this.onRequestPermission});
+  const _ShizukuCard({
+    required this.status,
+    required this.busy,
+    required this.onRequestPermission,
+  });
   final ShizukuStatus status;
   final bool busy;
   final VoidCallback onRequestPermission;
@@ -265,43 +289,44 @@ class _ShizukuCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, title, body) = switch (status.state) {
       ShizukuState.notInstalled => (
-          Icons.block,
-          'Shizuku: not installed',
-          'Install Shizuku (moe.shizuku.privileged.api) from the Play Store '
-              'or its official site, then return here.',
-        ),
+        Icons.block,
+        'Shizuku: not installed',
+        'Install Shizuku (moe.shizuku.privileged.api) from the Play Store '
+            'or its official site, then return here.',
+      ),
       ShizukuState.notRunning => (
-          Icons.power_off,
-          'Shizuku: not running',
-          'Shizuku is installed, but its server is not running. Dominanter '
-              'cannot start it — open the Shizuku app and start the server '
-              '(via wireless debugging or ADB), then pull to refresh.',
-        ),
+        Icons.power_off,
+        'Shizuku: not running',
+        'Shizuku is installed, but its server is not running. Dominanter '
+            'cannot start it — open the Shizuku app and start the server '
+            '(via wireless debugging or ADB), then pull to refresh.',
+      ),
       ShizukuState.preV11 => (
-          Icons.update,
-          'Shizuku: too old (pre-v11)',
-          'This Shizuku server predates v11 and cannot run commands. '
-              'Update Shizuku, restart its server, then refresh.',
-        ),
+        Icons.update,
+        'Shizuku: too old (pre-v11)',
+        'This Shizuku server predates v11 and cannot run commands. '
+            'Update Shizuku, restart its server, then refresh.',
+      ),
       ShizukuState.noPermission => (
-          Icons.lock_outline,
-          'Shizuku: permission needed',
-          'The server is running. Grant Dominanter permission in Shizuku to '
-              'continue setup.',
-        ),
+        Icons.lock_outline,
+        'Shizuku: permission needed',
+        'The server is running. Grant Dominanter permission in Shizuku to '
+            'continue setup.',
+      ),
       ShizukuState.granted => (
-          Icons.check_circle,
-          'Shizuku: connected & granted',
-          'Setup operations are available. Day-to-day enforcement does not '
-              'need Shizuku after provisioning.',
-        ),
+        Icons.check_circle,
+        'Shizuku: connected & granted',
+        'Setup operations are available. Day-to-day enforcement does not '
+            'need Shizuku after provisioning.',
+      ),
       ShizukuState.unknown => (
-          Icons.help_outline,
-          'Shizuku: unknown state',
-          'The native layer returned an unrecognised state.',
-        ),
+        Icons.help_outline,
+        'Shizuku: unknown state',
+        'The native layer returned an unrecognised state.',
+      ),
     };
-    return Card(
+    return GradientCard(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -321,8 +346,10 @@ class _ShizukuCard extends StatelessWidget {
           if (status.diagnostic != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-              child: Text('Diagnostic: ${status.diagnostic}',
-                  style: Theme.of(context).textTheme.bodySmall),
+              child: Text(
+                'Diagnostic: ${status.diagnostic}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
           if (status.state == ShizukuState.noPermission)
             Padding(
@@ -351,20 +378,30 @@ class _DiagnosticsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Accounts (${d.accounts.length})',
-              style: Theme.of(context).textTheme.titleSmall),
-          if (d.accounts.isEmpty) const Text('No accounts found — good for provisioning.'),
+          Text(
+            'Accounts (${d.accounts.length})',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          if (d.accounts.isEmpty)
+            const Text('No accounts found — good for provisioning.'),
           for (final a in d.accounts) Text('• ${a['name']} (${a['type']})'),
           const SizedBox(height: 8),
-          Text('Users (${d.extraUsers.length})',
-              style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            'Users (${d.extraUsers.length})',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           if (d.extraUsers.isEmpty) const Text('Only the primary user.'),
           for (final u in d.extraUsers) Text('• ${u['name']} (id ${u['id']})'),
           const SizedBox(height: 8),
-          Text('Current Device Owner', style: Theme.of(context).textTheme.titleSmall),
-          Text(d.currentOwner == null
-              ? 'None'
-              : '${d.currentOwner!['packageName']} / ${d.currentOwner!['receiver']}'),
+          Text(
+            'Current Device Owner',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          Text(
+            d.currentOwner == null
+                ? 'None'
+                : '${d.currentOwner!['packageName']} / ${d.currentOwner!['receiver']}',
+          ),
         ],
       ),
     );

@@ -9,10 +9,12 @@ library;
 import 'package:flutter/material.dart';
 
 import 'app_controller.dart';
+import 'theme.dart';
 import 'ui/apps_tab.dart';
 import 'ui/common.dart';
 import 'ui/config_tab.dart';
 import 'ui/lock_screen.dart';
+import 'ui/pill_nav.dart';
 import 'ui/recovery_ui.dart';
 import 'ui/restrictions_tab.dart';
 import 'ui/setup_screen.dart';
@@ -45,31 +47,29 @@ class _DominanterAppState extends State<DominanterApp> {
 
   @override
   Widget build(BuildContext context) {
-    const seed = Color(0xFF3E6B48); // calm green — a self-control tool, not an alarm
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) => MaterialApp(
         title: 'Dominanter',
         debugShowCheckedModeBanner: false,
         themeMode: _controller.themeMode,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: seed),
-        ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorScheme:
-              ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark),
-        ),
+        // Redesign 2026-11-09: deep-red / deep-blue / near-black identity
+        // (see theme.dart for the palette and the contrast rules).
+        theme: dominanterLightTheme(),
+        darkTheme: dominanterDarkTheme(),
         home: switch (_controller.startup) {
-          StartupState.loading => const Scaffold(body: LoadingView(message: 'Starting Dominanter…')),
+          StartupState.loading => const Scaffold(
+            body: LoadingView(message: 'Starting Dominanter…'),
+          ),
           StartupState.error => Scaffold(
-              body: ErrorView(
-                error: _controller.startupError ?? 'Unknown startup error',
-                onRetry: _controller.initialise,
-              ),
+            body: ErrorView(
+              error: _controller.startupError ?? 'Unknown startup error',
+              onRetry: _controller.initialise,
             ),
-          StartupState.needsRecoverySetup => SetupRecoveryScreen(controller: _controller),
+          ),
+          StartupState.needsRecoverySetup => SetupRecoveryScreen(
+            controller: _controller,
+          ),
           StartupState.locked => LockScreen(controller: _controller),
           StartupState.unlocked => AppShell(controller: _controller),
         },
@@ -102,29 +102,32 @@ class _AppShellState extends State<AppShell> {
         title: Text(strings.appTitle),
         actions: [SessionChip(controller: widget.controller)],
       ),
+      // The floating pill bar lives in the bottomNavigationBar slot, so
+      // the Scaffold reserves its full height (bar + margins) and tab
+      // bodies are never covered by it.
       body: IndexedStack(index: _index, children: tabs),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: DominanterNavBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onSelected: (i) => setState(() => _index = i),
         destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.admin_panel_settings_outlined),
-            selectedIcon: const Icon(Icons.admin_panel_settings),
+          PillNavDestination(
+            icon: Icons.admin_panel_settings_outlined,
+            selectedIcon: Icons.admin_panel_settings,
             label: strings.tabStatus,
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.shield_outlined),
-            selectedIcon: const Icon(Icons.shield),
+          PillNavDestination(
+            icon: Icons.shield_outlined,
+            selectedIcon: Icons.shield,
             label: strings.tabRestrictions,
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.apps_outlined),
-            selectedIcon: const Icon(Icons.apps),
+          PillNavDestination(
+            icon: Icons.apps_outlined,
+            selectedIcon: Icons.apps,
             label: strings.tabApps,
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings),
+          PillNavDestination(
+            icon: Icons.settings_outlined,
+            selectedIcon: Icons.settings,
             label: strings.tabConfig,
           ),
         ],

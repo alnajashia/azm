@@ -30,3 +30,12 @@ Root-cause summary (all evidence in the logs above and the relay log at
 3. The sandbox root FS is ephemeral: JDK and Gradle caches must live in
    `~/workspace` (Temurin tarball + `GRADLE_USER_HOME`), as `build_apk.sh`
    now sets up.
+
+## Post-redesign rebuild — 2026-11-09
+
+| Log | What happened |
+|---|---|
+| `redesign_analyze.log` | `flutter analyze` re-run after the UI redesign: **0 errors, 0 warnings, 32 info-level lints** |
+| `redesign_test.log` | `flutter test` re-run after the UI redesign: **41/41 passed** (39 pre-existing + 2 in `test/redesign_test.dart`) |
+| `build14_redesign_debug.log` | ✅ `assembleDebug` succeeded with the redesign; `app-debug.apk` 163,293,074 B, SHA-256 `4fdbab00ab3596740231a11a7546792cb64823d5d8022f5bd04033a1f3de49bc` |
+| `build15_redesign_release.log` | ✅ `assembleRelease` succeeded with the redesign; `app-release.apk` 50,472,363 B, SHA-256 `14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4`, still debug-signed. Badging re-verified with `aapt2` on both: `io.github.alnajashia.dominanter` v1.0.0, minSdk 30, targetSdk 36. Copies refreshed in `project/release/` |

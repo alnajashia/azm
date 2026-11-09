@@ -7,7 +7,7 @@ privileged provisioning. Dart provides the UI and pure logic; all privileged
 effects live in Kotlin behind a single MethodChannel.
 
 > **Status (2026-11-09):** Dart UI implemented, `flutter analyze` clean
-> (0 errors, 0 warnings), `flutter test` 39/39 passing, and **debug +
+> (0 errors, 0 warnings), `flutter test` 41/41 passing, and **debug +
 > release APKs are built** (see Tests below for sizes/hashes; the release
 > APK is debug-signed — a real keystore is a publishing decision). **No
 > on-device testing yet:** nothing that touches a real Shizuku server,
@@ -125,17 +125,19 @@ No root is used or required. No accounts, telemetry, or UsageStatsManager.
 
 ```sh
 flutter analyze   # 0 errors, 0 warnings (2026-11-09)
-flutter test      # 39 tests, all passing (2026-11-09):
+flutter test      # 41 tests, all passing (2026-11-09, post-redesign rebuild):
                   # recovery gate, 5-second undo window, session model,
-                  # challenges, focus timer, channel error mapping, widgets
+                  # challenges, focus timer, channel error mapping, widgets,
+                  # pill navigation + focus timer ring (redesign)
 ./build_apk.sh debug     # assembleDebug ✅ (sandbox recipe; see Setup)
 ./build_apk.sh release   # assembleRelease ✅
 ```
 
-Built APKs (2026-11-09): `app-debug.apk` 148,894,306 bytes, SHA-256
-`86bfa331e3124d5986dd61276d41904b691552fc145e3e9ac39d83d1eea23615`;
-`app-release.apk` 50,406,827 bytes, SHA-256
-`c1bd2fa2ebc767ce296e830f5e1a2d864de7ec5cf82572fb527fc4f81a67103e`,
+Built APKs (2026-11-09, post-redesign rebuild — `build_logs/build14_redesign_debug.log`
+/ `build15_redesign_release.log`): `app-debug.apk` 163,293,074 bytes, SHA-256
+`4fdbab00ab3596740231a11a7546792cb64823d5d8022f5bd04033a1f3de49bc`;
+`app-release.apk` 50,472,363 bytes, SHA-256
+`14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4`,
 **debug-signed**. Badging (`aapt2`): `io.github.alnajashia.dominanter`
 v1.0.0, minSdk 30, targetSdk 36. All Kotlin — including the channel
 methods added during the Dart UI stage — is **Gradle compile-verified**

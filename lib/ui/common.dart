@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../data/privileged_channel.dart';
+import '../theme.dart';
 
 /// Human-readable copy for a channel failure. The raw code is always kept
 /// visible in [ErrorView] so nothing is hidden behind vague wording.
@@ -60,37 +61,42 @@ class LoadingView extends StatelessWidget {
   final String message;
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(message),
-          ],
-        ),
-      );
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const CircularProgressIndicator(),
+        const SizedBox(height: 16),
+        Text(message),
+      ],
+    ),
+  );
 }
 
 class EmptyView extends StatelessWidget {
-  const EmptyView({super.key, required this.icon, required this.message, this.action});
+  const EmptyView({
+    super.key,
+    required this.icon,
+    required this.message,
+    this.action,
+  });
   final IconData icon;
   final String message;
   final Widget? action;
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 48, color: Theme.of(context).colorScheme.outline),
-              const SizedBox(height: 12),
-              Text(message, textAlign: TextAlign.center),
-              if (action != null) ...[const SizedBox(height: 16), action!],
-            ],
-          ),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 48, color: Theme.of(context).colorScheme.outline),
+          const SizedBox(height: 12),
+          Text(message, textAlign: TextAlign.center),
+          if (action != null) ...[const SizedBox(height: 16), action!],
+        ],
+      ),
+    ),
+  );
 }
 
 class ErrorView extends StatelessWidget {
@@ -101,7 +107,9 @@ class ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final priv = error is PrivilegedException ? error as PrivilegedException : null;
+    final priv = error is PrivilegedException
+        ? error as PrivilegedException
+        : null;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -136,10 +144,173 @@ class ErrorView extends StatelessWidget {
             ],
             if (onRetry != null) ...[
               const SizedBox(height: 16),
-              FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
+              FilledButton.tonal(
+                onPressed: onRetry,
+                child: const Text('Retry'),
+              ),
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Gradient / glass hero card (redesign 2026-11-09). Dark mode: a subtle
+/// deep-red → deep-blue gradient with a glossy top highlight and a light
+/// hairline border. Light mode: a white card with a soft shadow and a
+/// faint red/blue wash. Same identity, both modes. Content is unchanged —
+/// this only replaces the surface it sits on.
+class GradientCard extends StatelessWidget {
+  const GradientCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final dark = brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: heroGradient(brightness),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: dark
+              ? Colors.white.withValues(alpha: 0.14)
+              : Colors.black.withValues(alpha: 0.06),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? 0.45 : 0.10),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            Padding(padding: padding, child: child),
+            // Glossy top highlight (glass cue from the references).
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 46,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: dark ? 0.13 : 0.35),
+                        Colors.white.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// mm:ss (or h:mm:ss) clock text for timer rings.
+String formatClock(Duration d) {
+  final total = d.isNegative ? Duration.zero : d;
+  final h = total.inHours;
+  final m = (total.inMinutes % 60).toString().padLeft(2, '0');
+  final s = (total.inSeconds % 60).toString().padLeft(2, '0');
+  return h > 0 ? '$h:$m:$s' : '$m:$s';
+}
+
+/// Large circular timer in the reference style: a thick rounded ring,
+/// big centre numerals, phase label above the digits and a cycle label
+/// below. Presentation only — callers drive it from the existing models.
+class FocusTimerRing extends StatelessWidget {
+  const FocusTimerRing({
+    super.key,
+    required this.progress,
+    required this.remainingText,
+    required this.phaseLabel,
+    this.cycleLabel,
+    this.isBreak = false,
+    this.size = 232,
+  });
+
+  /// Fraction of the phase remaining, 0..1 (ring depletes with time).
+  final double progress;
+  final String remainingText;
+  final String phaseLabel;
+  final String? cycleLabel;
+  final bool isBreak;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final ringColor = isBreak
+        ? DominanterColors.blue
+        : DominanterColors.redBright;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: size,
+            height: size,
+            child: CircularProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              strokeWidth: 16,
+              strokeCap: StrokeCap.round,
+              color: ringColor,
+              backgroundColor: scheme.surfaceContainerHighest.withValues(
+                alpha: 0.55,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  phaseLabel,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    remainingText,
+                    style: Theme.of(context).textTheme.displayMedium,
+                  ),
+                ),
+                if (cycleLabel != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    cycleLabel!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -160,12 +331,12 @@ class UnavailableTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        leading: Icon(icon, color: Theme.of(context).colorScheme.outline),
-        title: Text(title),
-        subtitle: Text(note),
-        trailing: const Chip(label: Text('v1.1')),
-        enabled: false,
-      );
+    leading: Icon(icon, color: Theme.of(context).colorScheme.outline),
+    title: Text(title),
+    subtitle: Text(note),
+    trailing: const Chip(label: Text('v1.1')),
+    enabled: false,
+  );
 }
 
 Future<void> showErrorSnackBar(BuildContext context, Object error) async {
@@ -215,7 +386,8 @@ class AppStrings {
   String get tabConfig => isPt ? 'Config.' : 'Config';
   String get accessApp => isPt ? 'Aceder à app' : 'Access app';
   String get panicButton => isPt ? 'Estou com impulsos' : "I'm having impulses";
-  String get sessionRemaining => isPt ? 'Sessão de recuperação' : 'Recovery session';
+  String get sessionRemaining =>
+      isPt ? 'Sessão de recuperação' : 'Recovery session';
   String get renewSession => isPt ? 'Renovar' : 'Renew';
   String get endSession => isPt ? 'Terminar sessão' : 'End session';
 }

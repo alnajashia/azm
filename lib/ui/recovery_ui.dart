@@ -89,7 +89,9 @@ class _CodeEntryState extends State<CodeEntry> {
               onPressed: () {
                 final n = normalizeCode(widget.controller.text);
                 if (n.isNotEmpty) {
-                  widget.controller.text = groupCode(n.substring(0, n.length - 1));
+                  widget.controller.text = groupCode(
+                    n.substring(0, n.length - 1),
+                  );
                   setState(() {});
                 }
               },
@@ -178,8 +180,10 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
   Future<void> _save() async {
     final typed = normalizeCode(_confirm.text);
     if (typed != normalizeCode(_generated!)) {
-      setState(() => _saveError =
-          'That does not match the code shown. Check your paper copy and try again.');
+      setState(
+        () => _saveError =
+            'That does not match the code shown. Check your paper copy and try again.',
+      );
       return;
     }
     setState(() {
@@ -201,7 +205,9 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = e is PrivilegedException ? friendlyError(e) : e.toString();
+          _saveError = e is PrivilegedException
+              ? friendlyError(e)
+              : e.toString();
         });
       }
     }
@@ -213,7 +219,9 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
       padding: const EdgeInsets.all(24),
       children: [
         Text(
-          widget.isRegeneration ? 'Change recovery code' : 'Set up your recovery code',
+          widget.isRegeneration
+              ? 'Change recovery code'
+              : 'Set up your recovery code',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 8),
@@ -230,14 +238,12 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
           else if (_generated == null)
             const LoadingView(message: 'Generating your code…')
           else ...[
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  groupCode(_generated!),
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
+            GradientCard(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                groupCode(_generated!),
+                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 16),
@@ -251,7 +257,9 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
             ),
             const SizedBox(height: 8),
             FilledButton(
-              onPressed: _writtenOnPaper ? () => setState(() => _step = 1) : null,
+              onPressed: _writtenOnPaper
+                  ? () => setState(() => _step = 1)
+                  : null,
               child: const Text('Continue'),
             ),
           ],
@@ -263,15 +271,20 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
           CodeEntry(controller: _confirm),
           if (_saveError != null) ...[
             const SizedBox(height: 12),
-            Text(_saveError!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              _saveError!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
           const SizedBox(height: 16),
           FilledButton(
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox(
-                    width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text('Store recovery code'),
           ),
           TextButton(
@@ -375,7 +388,9 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
 
   Future<void> _verify() async {
     if (!isValidCodeFormat(_code.text)) {
-      setState(() => _verifyError = 'Enter the 16-letter code from your paper copy.');
+      setState(
+        () => _verifyError = 'Enter the 16-letter code from your paper copy.',
+      );
       return;
     }
     setState(() {
@@ -383,8 +398,9 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
       _verifyError = null;
     });
     try {
-      final matches =
-          await widget.controller.channel.verifyRecoveryCode(normalizeCode(_code.text));
+      final matches = await widget.controller.channel.verifyRecoveryCode(
+        normalizeCode(_code.text),
+      );
       if (!mounted) return;
       if (matches) {
         widget.controller.session.start();
@@ -399,7 +415,9 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
       if (mounted) {
         setState(() {
           _verifying = false;
-          _verifyError = e is PrivilegedException ? friendlyError(e) : e.toString();
+          _verifyError = e is PrivilegedException
+              ? friendlyError(e)
+              : e.toString();
         });
       }
     }
@@ -415,41 +433,45 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
           child: _loading
               ? const LoadingView(message: 'Preparing challenges…')
               : _loadError != null
-                  ? ErrorView(error: _loadError!, onRetry: _load)
-                  : !_challengesDone
-                      ? ChallengeRunnerView(
-                          types: _challenges,
-                          customPhrases: _customPhrases,
-                          onAllComplete: () => setState(() => _challengesDone = true),
-                        )
-                      : Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text(
-                              'Challenges complete. Enter your recovery code '
-                              'to open a 10-minute session.',
-                            ),
-                            const SizedBox(height: 16),
-                            CodeEntry(controller: _code, shuffled: _shuffle),
-                            if (_verifyError != null) ...[
-                              const SizedBox(height: 12),
-                              Text(_verifyError!,
-                                  style: TextStyle(
-                                      color: Theme.of(context).colorScheme.error)),
-                            ],
-                            const SizedBox(height: 16),
-                            FilledButton(
-                              onPressed: _verifying ? null : _verify,
-                              child: _verifying
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2))
-                                  : const Text('Open session'),
-                            ),
-                          ],
+              ? ErrorView(error: _loadError!, onRetry: _load)
+              : !_challengesDone
+              ? ChallengeRunnerView(
+                  types: _challenges,
+                  customPhrases: _customPhrases,
+                  onAllComplete: () => setState(() => _challengesDone = true),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Challenges complete. Enter your recovery code '
+                      'to open a 10-minute session.',
+                    ),
+                    const SizedBox(height: 16),
+                    CodeEntry(controller: _code, shuffled: _shuffle),
+                    if (_verifyError != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _verifyError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
                         ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: _verifying ? null : _verify,
+                      child: _verifying
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Open session'),
+                    ),
+                  ],
+                ),
         ),
       ),
       actions: [
@@ -500,7 +522,10 @@ Future<void> runTighteningWithUndo(
         onPressed: () async {
           final undone = await change.undo();
           if (!undone && context.mounted) {
-            showInfoSnackBar(context, 'The undo window has passed; the change stands.');
+            showInfoSnackBar(
+              context,
+              'The undo window has passed; the change stands.',
+            );
           }
         },
       ),
@@ -529,7 +554,8 @@ class SessionChip extends StatelessWidget {
               Chip(
                 avatar: const Icon(Icons.lock_open, size: 18),
                 label: Text(
-                    '${strings.sessionRemaining}: ${formatDuration(controller.session.remaining)}'),
+                  '${strings.sessionRemaining}: ${formatDuration(controller.session.remaining)}',
+                ),
               ),
               TextButton(
                 onPressed: controller.session.renew,

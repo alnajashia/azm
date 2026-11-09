@@ -1,6 +1,6 @@
 # Dominanter — Implementation Status
 
-> **Last updated:** 2026-11-09 (final v1 documentation stage — APKs built, REA run on the rebuilt APK, TESTING.md / REVERSE_ENGINEERING.md completed)
+> **Last updated:** 2026-11-09 (post-redesign rebuild + compliance audit — APKs rebuilt with the UI redesign, [`COMPLIANCE_AUDIT.md`](COMPLIANCE_AUDIT.md) completed)
 > **Honesty rule:** a feature is listed as *Implemented and tested* only with
 > build + test evidence. A successful build alone never upgrades a status.
 >
@@ -21,19 +21,62 @@
 | Architecture diagrams | ✅ Done | `project/docs/ARCHITECTURE.md` §3 — ASCII + Mermaid |
 | Architecture document | ✅ Done | `project/docs/ARCHITECTURE.md` — design principles, channel contract, F1–F34 mapping, security deviations, data model, testing strategy |
 | README.md (project) | ✅ Done | Full project README written 2026-11-09 (purpose, architecture, setup, permissions, tests, limitations, attribution). **Updated at the final v1 stage:** the stale "No APK yet / build blocked" status, build instructions (now point at `build_apk.sh` + `build_logs/README.md`, with plain `flutter build apk` noted as the normal-machine route), Tests section (Kotlin is now Gradle compile-verified) and Known limitations (APKs exist but are device-unverified; release is debug-signed) were corrected to the built state |
-| TESTING.md | ✅ Done | `project/docs/TESTING.md` — evidence table (analyze 0/0, 39/39 tests with per-file coverage, Kotlin compile-verified, aapt2 badging, build logs), the 17 master test areas each marked Verified here / Requires real device / Not yet, and an explicit statement that **no device testing has occurred** (Shizuku binder, Device Owner provisioning, accessibility lockdown all device-unverified). Plan remains `ARCHITECTURE.md` §9; detail also in §5 below |
+| TESTING.md | ✅ Done | `project/docs/TESTING.md` — evidence table (analyze 0 errors / 0 warnings / 32 info lints, 41/41 tests with per-file coverage, Kotlin compile-verified, aapt2 badging, build logs incl. the post-redesign rebuilds), the 17 master test areas each marked Verified here / Requires real device / Not yet, and an explicit statement that **no device testing has occurred** (Shizuku binder, Device Owner provisioning, accessibility lockdown all device-unverified). Plan remains `ARCHITECTURE.md` §9; detail also in §5 below |
+| COMPLIANCE_AUDIT.md | ✅ Done | `project/docs/COMPLIANCE_AUDIT.md` — post-redesign audit (2026-11-09): every F1–F34 and every Shizuku integration point (incl. all 13 shell commands individually) re-verified against the code with status + evidence; 3 unit/build-tested, 20 device-untested, 8 deferred v1.1, 3 not ported; 3 new gaps found (G1–G3, see §6) + doc drift fixed (G4). This file's statuses were reconciled with it |
 | REVERSE_ENGINEERING.md (project docs copy) | ✅ Done | `project/docs/REVERSE_ENGINEERING.md` — repo-appropriate consolidation of the three `analysis/` reports: what DeChainer is, condensed F1–F34 table, Shizuku integration (13 commands, binder-DPM provisioning path, dependency matrix), the honest REA audit, finding→rebuild-consequence mapping, credits/licences. Links to `ARCHITECTURE.md` rather than duplicating it |
 | LICENSE | ✅ Done | Apache License 2.0 (verbatim text, as in DeChainer/Shizuku sources), added 2026-11-09; attribution to DeChainer and Shizuku is in the README |
 | Complete Flutter project (scaffold) | ✅ Done | Flutter 3.35.1 scaffold in `project/`; applicationId `io.github.alnajashia.dominanter` |
-| Dart UI layer | 🧪 Implemented but not fully tested | ~6,400 lines in `lib/` (see §2). `flutter analyze`: **0 errors, 0 warnings**, 27 info-level lints (mostly `use_build_context_synchronously` behind `mounted` guards, one deprecated `RadioListTile.groupValue`). No device run yet. |
+| Dart UI layer | 🧪 Implemented but not fully tested | ~6,400 lines in `lib/` (see §2). `flutter analyze`: **0 errors, 0 warnings**, 32 info-level lints (mostly `use_build_context_synchronously` behind `mounted` guards, deprecated `RadioListTile.groupValue`/`onChanged`). No device run yet. |
 | Kotlin native implementation | 🧪 Implemented but not fully tested | 14 Kotlin files (~3,300 lines): channel handler, `ShizukuProvisioning`, `DeviceOwnerManager`, Accessibility Service, `SettingsStore`, `RecoveryStore`. **Gradle compile-verified 2026-11-09**: `compileDebugKotlin` and `compileReleaseKotlin` pass as part of the successful `assembleDebug`/`assembleRelease` builds (see APK row). Five compile errors found by the first real build were fixed (see `build_logs/build9_debug.log` → `build12_debug.log`): a `*/` sequence terminating a KDoc comment early in `DeviceOwnerManager.kt`, the non-existent `PRIVATE_DNS_SET_SUCCESS` constant (correct: `PRIVATE_DNS_SET_NO_ERROR`), a duplicate companion object in the Accessibility Service, a missing `Context` threaded through `ShizukuProvisioning.refreshUserSetupComplete`, and a vararg array type mismatch in `ShizukuRunner.exec`. Still never run on a device |
 | Functional Shizuku integration | 🧪 Implemented but not fully tested | Contract implemented both sides; never run against a real Shizuku server / device |
 | Reimplemented original features | 🧪 Partially | See §2 — Core v1 features are coded; v1.1 features are not; nothing is device-verified |
-| Modern UI/UX (Material 3, light/dark) | 🧪 Implemented but not fully tested | Material 3, seed-colour light + dark themes, system/light/dark switch in Config; every screen has loading / empty / success / failure states; v1.1 features are labelled tiles, not fake controls |
-| Automated tests | 🧪 Partially done | Dart: **39 tests, all passing** (`flutter test`, 2026-11-09) — see §5. Kotlin instrumentation tests: not written |
+| Modern UI/UX (Material 3, light/dark) | 🧪 Implemented but not fully tested | Material 3, light + dark themes, system/light/dark switch in Config; every screen has loading / empty / success / failure states; v1.1 features are labelled tiles, not fake controls. **Redesigned 2026-11-09** (see §2a): deep-red/deep-blue identity, hand-built schemes in `lib/theme.dart`, floating pill navigation, gradient/glass hero cards, circular focus timer ring — presentation only, no behaviour change |
+| Automated tests | 🧪 Partially done | Dart: **41 tests, all passing** (`flutter test`, re-run 2026-11-09 after the UI redesign) — see §5. Kotlin instrumentation tests: not written |
 | Real-device testing report | ⬜ Not implemented yet | No device testing has been performed. No feature may be called verified before this exists for it |
-| APK build | ✅ Done | **2026-11-09, in this sandbox** via `build_apk.sh` (see §5 build evidence). Debug: `build/app/outputs/flutter-apk/app-debug.apk`, 148,894,306 bytes, SHA-256 `86bfa331e3124d5986dd61276d41904b691552fc145e3e9ac39d83d1eea23615`. Release: `app-release.apk`, 50,406,827 bytes, SHA-256 `c1bd2fa2ebc767ce296e830f5e1a2d864de7ec5cf82572fb527fc4f81a67103e` — signed with the **debug** key (the scaffold's `signingConfig = debug` in `app/build.gradle.kts`; a real release keystore is a publishing decision, not yet made). Badging verified with `aapt2`: `io.github.alnajashia.dominanter`, versionCode 1 / versionName 1.0.0, minSdk 30, targetSdk/compileSdk 36. Neither APK has been installed or run on any device |
+| APK build | ✅ Done | **2026-11-09, in this sandbox** via `build_apk.sh` (see §5 build evidence). **Post-redesign rebuilds (current):** Debug: 163,293,074 bytes, SHA-256 `4fdbab00ab3596740231a11a7546792cb64823d5d8022f5bd04033a1f3de49bc` (`build_logs/build14_redesign_debug.log`). Release: 50,472,363 bytes, SHA-256 `14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4` (`build_logs/build15_redesign_release.log`) — signed with the **debug** key (the scaffold's `signingConfig = debug` in `app/build.gradle.kts`; a real release keystore is a publishing decision, not yet made). Badging re-verified with `aapt2` on both redesign APKs: `io.github.alnajashia.dominanter`, versionCode 1 / versionName 1.0.0, minSdk 30, targetSdk/compileSdk 36. (First builds, superseded: debug 148,894,306 B / `86bfa331…`, release 50,406,827 B / `c1bd2fa2…`.) Neither APK has been installed or run on any device |
 | GitHub push | ✅ Second snapshot done — third (final v1 docs) prepared | Destination confirmed by the user 2026-11-09: existing repo `alnajashia/dominanter`. **First push: commit `354897c` on `main`** (42 text files: scaffold, 14 Kotlin files, architecture docs). **Second push: commit `bfab087` on `main`** (62 text files: complete Dart UI, 3 new test files, LICENSE, professional README). Prepared for the third push (executed from the main chat): `docs/REVERSE_ENGINEERING.md`, `docs/TESTING.md`, `docs/REA_REBUILT_APK.md`, `docs/rea_rebuilt_apk/*.json` (5 raw REA outputs), this status refresh, the README corrections, the build-stage Kotlin compile fixes (4 files: `DeviceOwnerManager.kt`, `DominanterAccessibilityService.kt`, `ShizukuProvisioning.kt`, `ShizukuRunner.kt` — changed after `bfab087`, verified against the repo at that commit), and the `build_logs/` evidence set (14 text files, absent from the repo at `bfab087`). Excluded from all snapshot pushes as binaries: the APKs (deliverable copies kept locally in `project/release/` — `dominanter-v1.0.0-debug.apk` / `dominanter-v1.0.0-release.apk`, checksums verified identical to the build outputs), launcher PNGs, `gradle-wrapper.jar`, and `build_apk.sh` (sandbox-specific build helper; the documented build method lives in the README/`TESTING.md`) |
+
+---
+
+## 2a. UI redesign — 2026-11-09
+
+Visual-identity redesign from the user's reference images (deep-red glossy
+surfaces + chunky timer ring; floating pill navigation with a swept red
+indicator). **Theme/widget layer only** — no channel calls, domain logic,
+navigation order, or feature behaviour changed; no new dependencies.
+
+- **Theme** (`lib/theme.dart`): hand-built Material 3 `ColorScheme`s
+  (hand-built, not `fromSeed`, so surfaces stay neutral and red/blue are
+  accents only). Palette: red `#D90429`, bright red `#E5383B`, deep red
+  `#9E031E`/`#5C0212`; deep blue `#1D3557`, blue `#2563EB`/`#5B8DEF`;
+  dark surfaces near-black `#0A0A0C`/`#141417`; light surfaces white on
+  `#F7F7F9`. Red is accents/indicators/CTAs, never body text (contrast
+  rules documented in the file). Filled buttons red, switches/progress
+  follow the scheme, hero numerals weight 800.
+- **Floating pill navigation** (`lib/ui/pill_nav.dart`): replaces
+  `NavigationBar` in the shell — floating capsule (radius 36, shadow,
+  black in dark / white in light), same 4 destinations/order/labels/icons
+  and the same tap-to-switch state. Active item: red gradient indicator
+  clipped by a custom swept-top clipper, white icon+label, dot under the
+  label; `Semantics` selected/button preserved, targets ≥ 48dp, SafeArea
+  respected, Scaffold reserves the slot so content is never covered.
+- **Gradient/glass cards** (`GradientCard` in `lib/ui/common.dart`):
+  applied to the Setup status heroes (Shizuku + Device Owner cards),
+  Focus card, impulse-lock active cards (Impulse screen + Lock screen),
+  and the recovery-code card in the wizard. Other cards remain standard
+  M3 cards on the new scheme.
+- **Circular focus timer** (`FocusTimerRing` in `lib/ui/common.dart`):
+  232dp ring, 16dp rounded stroke, red for focus / blue for break, big
+  mm:ss centre numerals, phase label + cycle x/y. Driven entirely by the
+  existing `FocusSession` model (`remainingAt`/`phaseDuration`); Start /
+  Pause / Resume / Skip / End handlers and channel effects untouched.
+- **Tests:** `flutter analyze` — **0 errors, 0 warnings** (32 info-level
+  lints, pre-existing patterns). `flutter test` — **41/41 pass** (the 39
+  pre-existing tests unmodified + 2 new in `test/redesign_test.dart`:
+  pill nav renders 4 destinations and tapping the 3rd switches the tab;
+  focus ring shows the model's remaining time, idle `25:00` → running
+  `24:5x` after Start). No existing test needed changes — none asserted
+  on the old `NavigationBar` or the green seed theme.
 
 ---
 
@@ -171,8 +214,8 @@ Plan: `ARCHITECTURE.md` §9 (the master prompt's 17 areas).
 | Dart unit tests (domain: gate/loosening, timers, windows, focus cycles) | ✅ Done for v1 domain — `test/recovery_gate_test.dart`, `test/challenges_test.dart` |
 | Dart channel-client tests (mock MethodChannel) | ✅ Done — `test/channel_client_test.dart`: state parsing (all 5 Shizuku states), `SHELL_FAILED` exit-code mapping, `DPM_NOT_OWNER`, missing-native-side → `UNAVAILABLE`, payload round-trips |
 | Widget tests | ✅ Done for the critical gates — `test/widget_test.dart`: lock screen panic button pre-auth, wizard code display + paper gate, wizard stores re-typed code via channel |
-| **Total Dart evidence (2026-11-09)** | **`flutter test`: 39 tests, all passed** (re-run and confirmed at the APK build stage). **`flutter analyze`: 0 errors, 0 warnings, 27 info lints.** (First `flutter test` attempt failed on a full 512 MB `/tmp` tmpfs — environment, not code; re-run with `TMPDIR` on the workspace disk passed.) |
-| **Gradle/APK build evidence (2026-11-09)** | **`flutter build apk --debug` ✅ (866 s, log `build_logs/build12_debug.log`) and `flutter build apk --release` ✅ (315 s, `build_logs/build13_release.log`)** — see the APK row in §1 for sizes/hashes/badging. Getting here required fixing the sandbox network path, not project config: the egress tunnel silently drops TLS ClientHellos without ALPN `http/1.1` (which Java/Gradle never send), and intercepts Java TCP connections sourced from a non-loopback address. The working recipe is codified in `build_apk.sh`: `preferIPv4Stack` for every JVM, a local loopback TLS-terminating relay on 127.0.0.1:18080 (Gradle's configured proxy) that re-originates TLS with ALPN, a JVM truststore = JDK cacerts + the relay's local CA, and — after a sandbox restart wiped the ephemeral root FS — a Temurin JDK 21 tarball and `GRADLE_USER_HOME` placed in the persistent workspace. The user-side permission alternative (Settings → Permissions → Direct network protocols → `other_tcp`: Ask) would remove the need for the IPv4/loopback workaround but not for a proxy the JVM can reach |
+| **Total Dart evidence (2026-11-09)** | **`flutter test`: 41 tests, all passed** (39 pre-existing + 2 redesign tests in `test/redesign_test.dart`; re-run and confirmed at the post-redesign rebuild stage, log `build_logs/redesign_test.log`). **`flutter analyze`: 0 errors, 0 warnings, 32 info lints** (log `build_logs/redesign_analyze.log`). (First-ever `flutter test` attempt failed on a full 512 MB `/tmp` tmpfs — environment, not code; runs use `TMPDIR` on the workspace disk.) |
+| **Gradle/APK build evidence (2026-11-09)** | **`flutter build apk --debug` ✅ (866 s, log `build_logs/build12_debug.log`) and `flutter build apk --release` ✅ (315 s, `build_logs/build13_release.log`)** — **superseded by the post-redesign rebuilds ✅ (`build_logs/build14_redesign_debug.log` / `build15_redesign_release.log`; sizes/hashes in the §1 APK row), made during the compliance audit in `docs/COMPLIANCE_AUDIT.md`** — see the APK row in §1 for sizes/hashes/badging. Getting here required fixing the sandbox network path, not project config: the egress tunnel silently drops TLS ClientHellos without ALPN `http/1.1` (which Java/Gradle never send), and intercepts Java TCP connections sourced from a non-loopback address. The working recipe is codified in `build_apk.sh`: `preferIPv4Stack` for every JVM, a local loopback TLS-terminating relay on 127.0.0.1:18080 (Gradle's configured proxy) that re-originates TLS with ALPN, a JVM truststore = JDK cacerts + the relay's local CA, and — after a sandbox restart wiped the ephemeral root FS — a Temurin JDK 21 tarball and `GRADLE_USER_HOME` placed in the persistent workspace. The user-side permission alternative (Settings → Permissions → Direct network protocols → `other_tcp`: Ask) would remove the need for the IPv4/loopback workaround but not for a proxy the JVM can reach |
 | REA inspection of the built APK | ✅ Done — `docs/REA_REBUILT_APK.md` (+ raw JSON in `docs/rea_rebuilt_apk/`): Flutter build identified, Dart AOT string pool verified against project sources, APK signature inspected (v2, Android Debug signer). JADX/apktool routes blocked (`capability_unavailable`) — see §1 |
 | Consolidated testing document | ✅ Done — `docs/TESTING.md`: all evidence in one place, the 17 master areas status-mapped (Verified here / Requires real device / Not yet), explicit no-device-testing statement |
 | Kotlin instrumentation tests (channel contract §5) | ⬜ Not implemented yet |
@@ -203,6 +246,19 @@ Plan: `ARCHITECTURE.md` §9 (the master prompt's 17 areas).
   per-app editor UI is daily-only (groups carry weekly windows in the model).
 - **Private DNS cannot be unset from the UI** — no clear method exists in
   the contract (DPM `setGlobalPrivateDnsModeOff` is not exposed).
+- **Compliance-audit gaps (2026-11-09, `COMPLIANCE_AUDIT.md` §4):**
+  G1 — F18's native enforcement is half-wired and unreachable (the service
+  checks `blocked_activities`, but no setter/channel/UI can populate it,
+  and the seen-activities log is read by nothing; same dead-plumbing
+  pattern in `BlockActivity`'s never-launched reopening variant and the
+  unused `focus_schedules_prefs` generic-store entry). G2 — two Kotlin
+  event types (`packageChanged`, `accessibilityStatus`) have no Dart
+  handling, the KDoc claim that `packageChanged` invalidates a Dart
+  app-list cache is not true of the code (no such cache exists), and the
+  service emits accessibility state under two different event names.
+  G3 — the manifest still requests FOREGROUND_SERVICE / exact-alarm /
+  RECEIVE_BOOT_COMPLETED permissions although v1 has no foreground
+  service, alarm, or boot receiver. All minor; none changes a §2 status.
 - REA cannot analyse the Kotlin source on this install (see §1); no REA
   decompilation results exist or are claimed.
 - The most fragile design element — Shizuku binder-wrapped DPM reflection

@@ -73,21 +73,31 @@ class _LockScreenState extends State<LockScreen> {
 
   Future<void> _panic() async {
     final config = await widget.controller.config.getImpulseConfig();
-    await widget.controller.startImpulseLock(Duration(minutes: config.durationMinutes));
-    if (config.action == ImpulseAction.timerAndSuspend && config.suspendApps.isNotEmpty) {
+    await widget.controller.startImpulseLock(
+      Duration(minutes: config.durationMinutes),
+    );
+    if (config.action == ImpulseAction.timerAndSuspend &&
+        config.suspendApps.isNotEmpty) {
       try {
-        await widget.controller.channel
-            .setAppSuspended(config.suspendApps, true, reason: 'IMPULSE_LOCK');
+        await widget.controller.channel.setAppSuspended(
+          config.suspendApps,
+          true,
+          reason: 'IMPULSE_LOCK',
+        );
         if (mounted) {
-          showInfoSnackBar(context,
-              'Impulse lock started; chosen apps suspended for ${config.durationMinutes} min.');
+          showInfoSnackBar(
+            context,
+            'Impulse lock started; chosen apps suspended for ${config.durationMinutes} min.',
+          );
         }
       } catch (e) {
         if (mounted) await showErrorSnackBar(context, e);
       }
     } else if (mounted) {
       showInfoSnackBar(
-          context, 'Impulse lock started for ${config.durationMinutes} min.');
+        context,
+        'Impulse lock started for ${config.durationMinutes} min.',
+      );
     }
     if (mounted) setState(() {});
   }
@@ -141,7 +151,10 @@ class _LockScreenState extends State<LockScreen> {
       } else if (mounted) {
         await showErrorSnackBar(
           context,
-          PrivilegedException('PERMISSION_DENIED', 'Authentication failed: ${e.message}'),
+          PrivilegedException(
+            'PERMISSION_DENIED',
+            'Authentication failed: ${e.message}',
+          ),
         );
       }
     } finally {
@@ -169,11 +182,13 @@ class _LockScreenState extends State<LockScreen> {
           ),
           const SizedBox(height: 24),
           if (lock.active && !lock.isComplete)
-            Card(
-              color: Theme.of(context).colorScheme.errorContainer,
+            GradientCard(
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: ListTile(
                 leading: const Icon(Icons.lock_clock),
-                title: Text('Impulse lock active — ${formatDuration(lock.remaining)} left'),
+                title: Text(
+                  'Impulse lock active — ${formatDuration(lock.remaining)} left',
+                ),
               ),
             )
           else
@@ -189,13 +204,18 @@ class _LockScreenState extends State<LockScreen> {
             ),
           const SizedBox(height: 24),
           if (_usage != null && topUsage.isNotEmpty) ...[
-            Text('Today\'s usage', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Today\'s usage',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             for (final entry in topUsage.take(5))
               ListTile(
                 dense: true,
                 title: Text(_labels[entry.key] ?? entry.key),
-                trailing: Text(formatDuration(Duration(milliseconds: entry.value))),
+                trailing: Text(
+                  formatDuration(Duration(milliseconds: entry.value)),
+                ),
               ),
             const SizedBox(height: 16),
           ],

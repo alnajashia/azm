@@ -78,13 +78,17 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
 
   Future<void> _startLock() async {
     final config = _config!;
-    await widget.controller
-        .startImpulseLock(Duration(minutes: config.durationMinutes));
+    await widget.controller.startImpulseLock(
+      Duration(minutes: config.durationMinutes),
+    );
     if (config.action == ImpulseAction.timerAndSuspend &&
         config.suspendApps.isNotEmpty) {
       try {
-        await widget.controller.channel
-            .setAppSuspended(config.suspendApps, true, reason: 'IMPULSE_LOCK');
+        await widget.controller.channel.setAppSuspended(
+          config.suspendApps,
+          true,
+          reason: 'IMPULSE_LOCK',
+        );
       } catch (e) {
         await showErrorSnackBar(context, e);
       }
@@ -97,7 +101,10 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
       await widget.controller.stopImpulseLock();
       final config = _config;
       if (config != null && config.suspendApps.isNotEmpty) {
-        await widget.controller.channel.setAppSuspended(config.suspendApps, false);
+        await widget.controller.channel.setAppSuspended(
+          config.suspendApps,
+          false,
+        );
       }
       if (mounted) setState(() {});
     });
@@ -131,7 +138,10 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
             FilledButton(
               onPressed: () => Navigator.pop(context, selected.toList()),
               child: const Text('Save'),
@@ -167,14 +177,20 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           if (lock.active && !lock.isComplete)
-            Card(
-              color: Theme.of(context).colorScheme.errorContainer,
+            GradientCard(
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: ListTile(
                 leading: const Icon(Icons.lock_clock),
-                title: Text('Impulse lock active — ${formatDuration(lock.remaining)} left'),
+                title: Text(
+                  'Impulse lock active — ${formatDuration(lock.remaining)} left',
+                ),
                 subtitle: const Text(
-                    'Stopping early is a loosening action and needs a recovery session.'),
-                trailing: TextButton(onPressed: _stopLock, child: const Text('Stop')),
+                  'Stopping early is a loosening action and needs a recovery session.',
+                ),
+                trailing: TextButton(
+                  onPressed: _stopLock,
+                  child: const Text('Stop'),
+                ),
               ),
             )
           else
@@ -215,13 +231,17 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
           ),
           ListTile(
             title: Text('${config.suspendApps.length} app(s) to suspend'),
-            subtitle: Text(config.suspendApps.map(_labelFor).take(3).join(', ')),
+            subtitle: Text(
+              config.suspendApps.map(_labelFor).take(3).join(', '),
+            ),
             trailing: const Icon(Icons.edit_outlined),
             onTap: _pickSuspendApps,
           ),
           const Divider(),
-          Text('Access challenges (before a recovery session)',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Access challenges (before a recovery session)',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const Text(
             'Selected challenges run, in order, before the recovery code '
             'can be entered.',
@@ -231,8 +251,10 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
               title: Text(t.label),
               subtitle: t.isAvailableInV1
                   ? null
-                  : const Text('Not available in this version — v1.1. It can '
-                      'be selected in stored config but is skipped, never simulated.'),
+                  : const Text(
+                      'Not available in this version — v1.1. It can '
+                      'be selected in stored config but is skipped, never simulated.',
+                    ),
               value: _challenges.contains(t),
               onChanged: t.isAvailableInV1
                   ? (v) async {
@@ -243,7 +265,9 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                         next.remove(t);
                       }
                       if (next.isEmpty) next.add(ChallengeType.math);
-                      await widget.controller.config.setChallengeSelection(next);
+                      await widget.controller.config.setChallengeSelection(
+                        next,
+                      );
                       if (mounted) setState(() => _challenges = next);
                     }
                   : null,
@@ -251,7 +275,8 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
           SwitchListTile(
             title: const Text('Shuffled keypad for recovery code'),
             subtitle: const Text(
-                'So the code cannot be learned from finger positions (F24).'),
+              'So the code cannot be learned from finger positions (F24).',
+            ),
             value: _shuffle,
             onChanged: (v) async {
               await widget.controller.config.setShuffleKeyboard(v);
@@ -270,7 +295,9 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
   }
 
   Future<void> _editPhrases() async {
-    final textController = TextEditingController(text: _customPhrases.join('\n'));
+    final textController = TextEditingController(
+      text: _customPhrases.join('\n'),
+    );
     final saved = await showDialog<List<String>>(
       context: context,
       builder: (_) => AlertDialog(
@@ -284,7 +311,10 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(
               context,
@@ -377,15 +407,21 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     try {
       if (shouldEnforce) {
         if (config.suspendApps.isNotEmpty) {
-          await widget.controller.channel
-              .setAppSuspended(config.suspendApps, true, reason: 'FOCUS_MODE');
+          await widget.controller.channel.setAppSuspended(
+            config.suspendApps,
+            true,
+            reason: 'FOCUS_MODE',
+          );
         }
         for (final key in config.restrictions) {
           await widget.controller.channel.applyUserRestriction(key);
         }
       } else {
         if (config.suspendApps.isNotEmpty) {
-          await widget.controller.channel.setAppSuspended(config.suspendApps, false);
+          await widget.controller.channel.setAppSuspended(
+            config.suspendApps,
+            false,
+          );
         }
         for (final key in config.restrictions) {
           await widget.controller.channel.clearUserRestriction(key);
@@ -425,120 +461,163 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       );
     }
     final remaining = session.remainingAt(DateTime.now());
+    // Timer ring is presentation only: every value below is derived from
+    // the existing FocusSession model (remainingAt / phaseDuration), and
+    // the buttons below keep their exact original effects.
+    final phaseLabel = switch (session.phase) {
+      FocusPhase.idle => 'Not started',
+      FocusPhase.focus => 'Focusing',
+      FocusPhase.breakTime => 'Break',
+      FocusPhase.longBreak => 'Long break',
+      FocusPhase.paused => 'Paused',
+      FocusPhase.done => 'Done',
+    };
+    final isBreakPhase =
+        session.phase == FocusPhase.breakTime ||
+        session.phase == FocusPhase.longBreak;
+    final ringRemaining = session.phase == FocusPhase.idle
+        ? Duration(minutes: config.focusMinutes)
+        : remaining;
+    final ringProgress = switch (session.phase) {
+      FocusPhase.idle => 1.0,
+      FocusPhase.done => 0.0,
+      _ =>
+        session.phaseDuration > Duration.zero
+            ? remaining.inMilliseconds / session.phaseDuration.inMilliseconds
+            : 0.0,
+    };
+    final currentCycle = (session.completedFocusPeriods + 1).clamp(
+      1,
+      config.cyclesBeforeLongBreak,
+    );
     return Scaffold(
       appBar: AppBar(title: const Text('Focus mode')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Text(
-                    switch (session.phase) {
-                      FocusPhase.idle => 'Not started',
-                      FocusPhase.focus => 'Focusing',
-                      FocusPhase.breakTime => 'Break',
-                      FocusPhase.longBreak => 'Long break',
-                      FocusPhase.paused => 'Paused',
-                      FocusPhase.done => 'Done',
-                    },
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    session.phase == FocusPhase.idle
-                        ? '${config.focusMinutes} min focus · ${config.breakMinutes} min break'
-                        : formatDuration(remaining),
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  Text('Completed focus periods: ${session.completedFocusPeriods}'),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      if (session.phase == FocusPhase.idle)
-                        FilledButton.icon(
+          GradientCard(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                FocusTimerRing(
+                  progress: ringProgress,
+                  remainingText: formatClock(ringRemaining),
+                  phaseLabel: phaseLabel,
+                  isBreak: isBreakPhase,
+                  cycleLabel: session.phase == FocusPhase.idle
+                      ? '${config.focusMinutes} min focus · ${config.breakMinutes} min break'
+                      : session.phase == FocusPhase.done
+                      ? null
+                      : 'Cycle $currentCycle of ${config.cyclesBeforeLongBreak}',
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Completed focus periods: ${session.completedFocusPeriods}',
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    if (session.phase == FocusPhase.idle)
+                      FilledButton.icon(
+                        onPressed: () async {
+                          setState(
+                            () => _session = session.start(DateTime.now()),
+                          );
+                          await _syncEffects();
+                        },
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text('Start'),
+                      ),
+                    if (session.isRunning) ...[
+                      // Skipping a break is free; pausing is gated (F25).
+                      if (session.phase != FocusPhase.focus)
+                        FilledButton.tonal(
                           onPressed: () async {
-                            setState(() => _session = session.start(DateTime.now()));
+                            setState(
+                              () => _session = session.advance(DateTime.now()),
+                            );
                             await _syncEffects();
                           },
-                          icon: const Icon(Icons.play_arrow),
-                          label: const Text('Start'),
+                          child: const Text('Skip break'),
                         ),
-                      if (session.isRunning) ...[
-                        // Skipping a break is free; pausing is gated (F25).
-                        if (session.phase != FocusPhase.focus)
-                          FilledButton.tonal(
-                            onPressed: () async {
-                              setState(() => _session = session.advance(DateTime.now()));
-                              await _syncEffects();
-                            },
-                            child: const Text('Skip break'),
-                          ),
-                        OutlinedButton(
-                          onPressed: () => runLoosening(
-                            context,
-                            widget.controller,
-                            () async {
-                              setState(() => _session = session.pause(DateTime.now()));
-                            },
-                          ),
-                          child: const Text('Pause (recovery)'),
-                        ),
-                        OutlinedButton(
-                          onPressed: () => runLoosening(
-                            context,
-                            widget.controller,
-                            () async {
+                      OutlinedButton(
+                        onPressed: () =>
+                            runLoosening(context, widget.controller, () async {
+                              setState(
+                                () => _session = session.pause(DateTime.now()),
+                              );
+                            }),
+                        child: const Text('Pause (recovery)'),
+                      ),
+                      OutlinedButton(
+                        onPressed: () =>
+                            runLoosening(context, widget.controller, () async {
                               setState(() => _session = session.end());
                               await _syncEffects();
-                            },
-                          ),
-                          child: const Text('End (recovery)'),
-                        ),
-                      ],
-                      if (session.isPaused)
-                        FilledButton(
-                          onPressed: () async {
-                            setState(() => _session = session.resume(DateTime.now()));
-                            await _syncEffects();
-                          },
-                          child: const Text('Resume'),
-                        ),
+                            }),
+                        child: const Text('End (recovery)'),
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Note: the countdown runs while this app is alive. The '
-                    'native foreground-service timer of the original is not '
-                    'part of this version — suspensions are released if you '
-                    'end the session here.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+                    if (session.isPaused)
+                      FilledButton(
+                        onPressed: () async {
+                          setState(
+                            () => _session = session.resume(DateTime.now()),
+                          );
+                          await _syncEffects();
+                        },
+                        child: const Text('Resume'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Note: the countdown runs while this app is alive. The '
+                  'native foreground-service timer of the original is not '
+                  'part of this version — suspensions are released if you '
+                  'end the session here.',
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
           Text('Durations', style: Theme.of(context).textTheme.titleMedium),
-          _durationRow('Focus minutes', config.focusMinutes,
-              (v) => _saveConfig(config.copyWith(focusMinutes: v))),
-          _durationRow('Break minutes', config.breakMinutes,
-              (v) => _saveConfig(config.copyWith(breakMinutes: v))),
-          _durationRow('Long break minutes', config.longBreakMinutes,
-              (v) => _saveConfig(config.copyWith(longBreakMinutes: v))),
-          _durationRow('Cycles before long break', config.cyclesBeforeLongBreak,
-              (v) => _saveConfig(config.copyWith(cyclesBeforeLongBreak: v)),
-              min: 1, max: 12),
+          _durationRow(
+            'Focus minutes',
+            config.focusMinutes,
+            (v) => _saveConfig(config.copyWith(focusMinutes: v)),
+          ),
+          _durationRow(
+            'Break minutes',
+            config.breakMinutes,
+            (v) => _saveConfig(config.copyWith(breakMinutes: v)),
+          ),
+          _durationRow(
+            'Long break minutes',
+            config.longBreakMinutes,
+            (v) => _saveConfig(config.copyWith(longBreakMinutes: v)),
+          ),
+          _durationRow(
+            'Cycles before long break',
+            config.cyclesBeforeLongBreak,
+            (v) => _saveConfig(config.copyWith(cyclesBeforeLongBreak: v)),
+            min: 1,
+            max: 12,
+          ),
           ListTile(
-            title: Text('${config.suspendApps.length} app(s) suspended while focusing'),
-            subtitle: Text(config.suspendApps.map(_labelFor).take(3).join(', ')),
+            title: Text(
+              '${config.suspendApps.length} app(s) suspended while focusing',
+            ),
+            subtitle: Text(
+              config.suspendApps.map(_labelFor).take(3).join(', '),
+            ),
             trailing: const Icon(Icons.edit_outlined),
             onTap: () async {
               final result = await _pickApps(config.suspendApps);
-              if (result != null) await _saveConfig(config.copyWith(suspendApps: result));
+              if (result != null)
+                await _saveConfig(config.copyWith(suspendApps: result));
             },
           ),
           const UnavailableTile(
@@ -551,8 +630,13 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     );
   }
 
-  Widget _durationRow(String label, int value, ValueChanged<int> onChanged,
-      {int min = 1, int max = 180}) {
+  Widget _durationRow(
+    String label,
+    int value,
+    ValueChanged<int> onChanged, {
+    int min = 1,
+    int max = 180,
+  }) {
     return ListTile(
       title: Text(label),
       trailing: SizedBox(
@@ -602,7 +686,10 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
             FilledButton(
               onPressed: () => Navigator.pop(context, selected.toList()),
               child: const Text('Save'),
