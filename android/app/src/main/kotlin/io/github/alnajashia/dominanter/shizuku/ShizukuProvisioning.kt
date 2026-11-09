@@ -47,25 +47,25 @@ object ShizukuProvisioning {
             ?.takeIf { it.exitCode == 0 }?.output?.trim()
 
     /** #2: flips user_setup_complete 1 → 0 so provisioning works on a set-up device. */
-    fun bypassUserSetupComplete(userId: Int = userId()): Boolean {
+    fun bypassUserSetupComplete(context: Context, userId: Int = userId()): Boolean {
         if (getUserSetupComplete(userId) != "1") return false
         val put = ShizukuRunner.exec(
             "settings", "--user", "$userId", "put", "secure", "user_setup_complete", "0",
         )
         if (put == null || put.exitCode != 0) return false
-        refreshUserSetupComplete(userId)
+        refreshUserSetupComplete(context, userId)
         return true
     }
 
     /** #3: restores user_setup_complete to 1. Called in a finally after provisioning. */
-    fun restoreUserSetupComplete(userId: Int = userId()) {
+    fun restoreUserSetupComplete(context: Context, userId: Int = userId()) {
         ShizukuRunner.exec("settings", "--user", "$userId", "put", "secure", "user_setup_complete", "1")
-        refreshUserSetupComplete(userId)
+        refreshUserSetupComplete(context, userId)
     }
 
-    fun refreshUserSetupComplete(userId: Int = userId()) {
+    fun refreshUserSetupComplete(context: Context, userId: Int = userId()) {
         runCatching {
-            withShizukuDevicePolicyManager { manager ->
+            withShizukuDevicePolicyManager(context) { manager ->
                 manager.forceUpdateUserSetupComplete(userId)
             }
         }.onFailure {
@@ -86,7 +86,7 @@ object ShizukuProvisioning {
         val provisioned = ShizukuRunner.exec("settings", "--user", "$uid", "get", "global", "device_provisioned")
             ?.takeIf { it.exitCode == 0 }?.output?.trim()
         if (provisioned != "1") return
-        restoreUserSetupComplete(uid)
+        restoreUserSetupComplete(context, uid)
     }
 
     // ------------------------------------------------------------ binder-wrapped DPM (reflection)
@@ -229,7 +229,7 @@ object ShizukuProvisioning {
             return ProvisionResult(true, "alreadyOwner", "")
         }
         val uid = userId()
-        val bypassed = bypassUserSetupComplete(uid)
+        val bypassed = bypassUserSetupComplete(context, uid)
         var commandOutput = ""
         var pathUsed = "binderDpm"
         try {
@@ -257,7 +257,7 @@ object ShizukuProvisioning {
                 }
             }
         } finally {
-            if (bypassed) restoreUserSetupComplete(uid)
+            if (bypassed) restoreUserSetupComplete(context, uid)
         }
 
         val granted = DeviceOwnerManager.isDeviceOwner(context)

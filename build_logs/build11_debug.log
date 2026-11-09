@@ -1,0 +1,13 @@
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+Running Gradle task 'assembleDebug'...                          
+
+ERROR: JAVA_HOME is set to an invalid directory: /usr/lib/jvm/java-21-openjdk-amd64
+
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation.
+
+Running Gradle task 'assembleDebug'...                              36ms
+Gradle task assembleDebug failed with exit code 1

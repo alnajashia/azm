@@ -94,6 +94,8 @@ class DominanterAccessibilityService : AccessibilityService() {
     }
 
     companion object {
+        const val MAX_SCREEN_TEXT = 64_000
+
         data class ActivityLog(
             val packageName: String,
             val className: String,
@@ -502,9 +504,5 @@ class DominanterAccessibilityService : AccessibilityService() {
             lastCheckDate = today
             SettingsStore.resetUsageIfNewDay(today)
         }
-    }
-
-    private companion object {
-        const val MAX_SCREEN_TEXT = 64_000
     }
 }

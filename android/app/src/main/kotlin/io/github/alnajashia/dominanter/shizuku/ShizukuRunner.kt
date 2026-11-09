@@ -53,10 +53,10 @@ object ShizukuRunner {
      * space it is run through `sh -c`, exactly as the original did.
      */
     fun exec(vararg command: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS): ProcessResult? {
-        val cmdArray = if (command.size == 1 && command[0].contains(" ")) {
+        val cmdArray: Array<String> = if (command.size == 1 && command[0].contains(" ")) {
             arrayOf("sh", "-c", command[0])
         } else {
-            command
+            arrayOf(*command)
         }
         return run(cmdArray, timeoutMs)
     }

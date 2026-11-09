@@ -7,12 +7,15 @@ privileged provisioning. Dart provides the UI and pure logic; all privileged
 effects live in Kotlin behind a single MethodChannel.
 
 > **Status (2026-11-09):** Dart UI implemented, `flutter analyze` clean
-> (0 errors, 0 warnings), `flutter test` 39/39 passing. **No APK yet and no
-> on-device testing yet** — the debug build is blocked in this sandbox by a
-> Gradle plugin download failure (network gate intercepting Java TCP
-> connections), not by project code. See
+> (0 errors, 0 warnings), `flutter test` 39/39 passing, and **debug +
+> release APKs are built** (see Tests below for sizes/hashes; the release
+> APK is debug-signed — a real keystore is a publishing decision). **No
+> on-device testing yet:** nothing that touches a real Shizuku server,
+> Device Owner provisioning, or the Accessibility Service has run on
+> hardware. See
 > [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) for the
-> honest per-feature status (F1–F34).
+> honest per-feature status (F1–F34) and
+> [`docs/TESTING.md`](docs/TESTING.md) for the full test evidence.
 
 ## What it does
 
@@ -53,6 +56,10 @@ Shizuku → Binder → Android system services (DPM, PackageManager, Settings)
 Full design, channel contract (25 methods), data model and security
 deviations: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (1,022 lines).
 Per-feature status: [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md).
+How the original was reverse-engineered:
+[`docs/REVERSE_ENGINEERING.md`](docs/REVERSE_ENGINEERING.md). Test
+evidence: [`docs/TESTING.md`](docs/TESTING.md). REA inspection of the
+built APK: [`docs/REA_REBUILT_APK.md`](docs/REA_REBUILT_APK.md).
 
 Key point from the reverse engineering: Shizuku is **not** the runtime
 engine. Once Device Owner is granted, day-to-day blocking runs on ordinary
@@ -86,11 +93,15 @@ cold-start `user_setup_complete` repair.
    flutter run
    # or: flutter build apk --debug
    ```
-   **Note:** a first build downloads the Gradle distribution and plugins;
-   if your network blocks Java TCP connections to the Gradle plugin portal
-   (as this sandbox does), the build fails in Flutter's own Gradle files
-   before reaching project code. That is an environment issue, not an app
-   bug — see `build_logs/` for the recorded failures.
+   On a normal developer machine that is all there is to it. The APKs in
+   this repo's build record were produced in a sandbox whose network gate
+   intercepts Java TCP connections and drops TLS handshakes without ALPN
+   `http/1.1`, which breaks Gradle's plugin downloads; the working recipe
+   for that environment (IPv4-forcing, a loopback TLS relay, persistent
+   JDK/Gradle home) is codified in `build_apk.sh`
+   (`./build_apk.sh debug` / `./build_apk.sh release`) and root-caused in
+   `build_logs/README.md`. That ceremony is sandbox-specific — it is not
+   part of the app's build requirements.
 4. In the app, follow the setup wizard: create and write down the
    16-character recovery code on paper, grant Shizuku permission, provision
    Device Owner, enable the Accessibility Service, and grant
@@ -117,17 +128,31 @@ flutter analyze   # 0 errors, 0 warnings (2026-11-09)
 flutter test      # 39 tests, all passing (2026-11-09):
                   # recovery gate, 5-second undo window, session model,
                   # challenges, focus timer, channel error mapping, widgets
+./build_apk.sh debug     # assembleDebug ✅ (sandbox recipe; see Setup)
+./build_apk.sh release   # assembleRelease ✅
 ```
 
+Built APKs (2026-11-09): `app-debug.apk` 148,894,306 bytes, SHA-256
+`86bfa331e3124d5986dd61276d41904b691552fc145e3e9ac39d83d1eea23615`;
+`app-release.apk` 50,406,827 bytes, SHA-256
+`c1bd2fa2ebc767ce296e830f5e1a2d864de7ec5cf82572fb527fc4f81a67103e`,
+**debug-signed**. Badging (`aapt2`): `io.github.alnajashia.dominanter`
+v1.0.0, minSdk 30, targetSdk 36. All Kotlin — including the channel
+methods added during the Dart UI stage — is **Gradle compile-verified**
+by these builds. REA independently inspected the release APK (Flutter
+build identified; signature = Android Debug certificate) — see
+[`docs/REA_REBUILT_APK.md`](docs/REA_REBUILT_APK.md).
+
 Kotlin instrumentation tests and real-device verification are **not yet
-done** — nothing is marked "verified" until it has run on a device. The
-new Kotlin channel methods added during the Dart UI stage (SettingsStore
-save methods for limits/windows/groups/words) have not yet been
-compile-verified by Gradle; that is the first thing the APK build checks.
+done** — nothing is marked "verified" until it has run on a device. Full
+evidence and the 17-area status map:
+[`docs/TESTING.md`](docs/TESTING.md).
 
 ## Known limitations (v1)
 
-- No APK / no device testing yet (see Status above).
+- APKs are built but **device-unverified** — neither has been installed
+  or run on a device (see Status above). The release APK is
+  **debug-signed** and not publishable as-is.
 - Graduated usage-warning notifications are configured and stored but not
   yet fired from the native service.
 - Focus timer has no native foreground service — the countdown runs while

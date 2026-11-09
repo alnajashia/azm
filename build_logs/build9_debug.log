@@ -1,0 +1,50 @@
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+Running Gradle task 'assembleDebug'...                          
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/accessibility/DominanterAccessibilityService.kt:274:46 Unresolved reference 'MAX_SCREEN_TEXT'.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/accessibility/DominanterAccessibilityService.kt:507:13 Only one companion object is allowed per class.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:26 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:32 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:33 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:34 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:41 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:43 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:47 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:60 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:63 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:74 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:79 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:90 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:92 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:97 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:101 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:107 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:109 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:253:110 Syntax error: Expecting member declaration.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:454:47 Unresolved reference 'PRIVATE_DNS_SET_SUCCESS'.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/shizuku/ShizukuProvisioning.kt:68:13 No value passed for parameter 'context'.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/shizuku/ShizukuRunner.kt:61:20 Argument type mismatch: actual type is 'kotlin.Array<CapturedType(out kotlin.String)>', but 'kotlin.Array<kotlin.String>' was expected.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2m 12s
+Running Gradle task 'assembleDebug'...                            132.9s
+Gradle task assembleDebug failed with exit code 1

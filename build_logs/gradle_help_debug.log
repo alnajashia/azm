@@ -1,0 +1,1280 @@
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
+2026-11-09T11:46:08.306+0000 [INFO] [org.gradle.internal.nativeintegration.services.NativeServices] Initialized native services in: /root/.gradle/native
+2026-11-09T11:46:08.414+0000 [INFO] [org.gradle.internal.nativeintegration.services.NativeServices] Initialized jansi services in: /root/.gradle/native
+2026-11-09T11:46:08.446+0000 [LIFECYCLE] [org.gradle.launcher.cli.DebugLoggerWarningAction] 
+#############################################################################
+   WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+
+   Debug level logging will leak security sensitive information!
+
+   For more details, please refer to https://docs.gradle.org/8.12/userguide/logging.html#sec:debug_security in the Gradle documentation.
+#############################################################################
+
+2026-11-09T11:46:08.762+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for metadata, path /root/.gradle/caches/8.12/jvms/metadata.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@30c8681
+2026-11-09T11:46:08.912+0000 [DEBUG] [org.gradle.launcher.daemon.client.DaemonClient] Executing build 5a8f9c10-9180-4560-b32a-97903a730679 in daemon client {pid=17813}
+2026-11-09T11:46:08.915+0000 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface host0
+2026-11-09T11:46:08.915+0000 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? false
+2026-11-09T11:46:08.915+0000 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding remote address /198.19.0.2
+2026-11-09T11:46:08.915+0000 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding IP addresses for network interface lo
+2026-11-09T11:46:08.915+0000 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Is this a loopback interface? true
+2026-11-09T11:46:08.915+0000 [DEBUG] [org.gradle.internal.remote.internal.inet.InetAddresses] Adding loopback address /127.0.0.1
+2026-11-09T11:46:08.928+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:08.931+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:08.937+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:08.941+0000 [DEBUG] [org.gradle.internal.remote.internal.inet.TcpOutgoingConnector] Attempting to connect to [d2adc52c-42fe-4923-baf3-30bc389bae16 port:42941, addresses:[/127.0.0.1]].
+2026-11-09T11:46:08.941+0000 [DEBUG] [org.gradle.internal.remote.internal.inet.TcpOutgoingConnector] Trying to connect to address /127.0.0.1.
+2026-11-09T11:46:08.944+0000 [DEBUG] [org.gradle.internal.remote.internal.inet.TcpOutgoingConnector] Connected to address /127.0.0.1:42941.
+2026-11-09T11:46:08.967+0000 [DEBUG] [org.gradle.launcher.daemon.client.DaemonClient] Connected to daemon DaemonInfo{pid=17172, address=[d2adc52c-42fe-4923-baf3-30bc389bae16 port:42941, addresses:[/127.0.0.1]], state=Idle, lastBusy=1794224667103, context=DefaultDaemonContext[uid=cb394292-a6ab-417f-b0ff-a1d50d6fc69a,javaHome=/usr/lib/jvm/java-21-openjdk-amd64,javaVersion=21,javaVendor=Ubuntu,daemonRegistryDir=/root/.gradle/daemon,pid=17172,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=4G,-XX:ReservedCodeCacheSize=512m,-XX:+HeapDumpOnOutOfMemoryError,-Xmx8G,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]}. Dispatching request Build{id=5a8f9c10-9180-4560-b32a-97903a730679, currentDir=/home/hatch/workspace/dominater-rebuild/project/android}.
+2026-11-09T11:46:08.967+0000 [DEBUG] [org.gradle.launcher.daemon.client.DaemonClientConnection] thread 1: dispatching class org.gradle.launcher.daemon.protocol.Build
+2026-11-09T11:46:09.006+0000 [DEBUG] [org.gradle.launcher.daemon.client.DaemonClient] Received result org.gradle.launcher.daemon.protocol.BuildStarted@37052337 from daemon DaemonInfo{pid=17172, address=[d2adc52c-42fe-4923-baf3-30bc389bae16 port:42941, addresses:[/127.0.0.1]], state=Idle, lastBusy=1794224667103, context=DefaultDaemonContext[uid=cb394292-a6ab-417f-b0ff-a1d50d6fc69a,javaHome=/usr/lib/jvm/java-21-openjdk-amd64,javaVersion=21,javaVendor=Ubuntu,daemonRegistryDir=/root/.gradle/daemon,pid=17172,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=4G,-XX:ReservedCodeCacheSize=512m,-XX:+HeapDumpOnOutOfMemoryError,-Xmx8G,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]} (build should be starting).
+2026-11-09T11:46:09.012+0000 [INFO] [org.gradle.launcher.daemon.server.exec.LogToClient] The client will now receive all logging from the daemon (pid: 17172). The daemon log file: /root/.gradle/daemon/8.12/daemon-17172.out.log
+2026-11-09T11:46:09.018+0000 [INFO] [org.gradle.launcher.daemon.server.exec.LogAndCheckHealth] Starting 4th build in daemon [uptime: 6 mins 4.371 secs, performance: 100%, GC rate: 0.00/s, heap usage: 0% of 8 GiB, non-heap usage: 1% of 4 GiB]
+2026-11-09T11:46:09.018+0000 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] The daemon has started executing the build.
+2026-11-09T11:46:09.019+0000 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] Executing build with daemon context: DefaultDaemonContext[uid=cb394292-a6ab-417f-b0ff-a1d50d6fc69a,javaHome=/usr/lib/jvm/java-21-openjdk-amd64,javaVersion=21,javaVendor=Ubuntu,daemonRegistryDir=/root/.gradle/daemon,pid=17172,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=4G,-XX:ReservedCodeCacheSize=512m,-XX:+HeapDumpOnOutOfMemoryError,-Xmx8G,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]
+2026-11-09T11:46:09.021+0000 [INFO] [org.gradle.internal.work.DefaultWorkerLeaseService] Using 4 worker leases.
+2026-11-09T11:46:09.021+0000 [DEBUG] [org.gradle.internal.resources.AbstractTrackedResourceLock] Daemon worker: acquired lock on worker lease
+2026-11-09T11:46:09.022+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Run build' started
+2026-11-09T11:46:09.026+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for fileHashes, path /home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/fileHashes/fileHashes.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@56836657
+2026-11-09T11:46:09.027+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Acquiring file lock for file hash cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/fileHashes)
+2026-11-09T11:46:09.028+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on file hash cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/fileHashes).
+2026-11-09T11:46:09.028+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on file hash cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/fileHashes).
+2026-11-09T11:46:09.029+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for outputFiles, path /home/hatch/workspace/dominater-rebuild/project/android/.gradle/buildOutputCleanup/outputFiles.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@4d9f6501
+2026-11-09T11:46:09.031+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Acquiring file lock for Build Output Cleanup Cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/buildOutputCleanup)
+2026-11-09T11:46:09.031+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on Build Output Cleanup Cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/buildOutputCleanup).
+2026-11-09T11:46:09.032+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on Build Output Cleanup Cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/buildOutputCleanup).
+2026-11-09T11:46:09.033+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for resourceHashesCache, path /home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/fileHashes/resourceHashesCache.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@56836657
+2026-11-09T11:46:09.035+0000 [INFO] [org.gradle.internal.watch.registry.impl.WatchableHierarchies] Not watching /home/hatch/workspace/dominater-rebuild/project/android since the file system is not supported
+2026-11-09T11:46:09.036+0000 [INFO] [org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner] Watching the file system is configured to be enabled if available
+2026-11-09T11:46:09.036+0000 [DEBUG] [org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner] Watching the file system computed to be enabled if available
+2026-11-09T11:46:09.036+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Build started for file system watching' started
+2026-11-09T11:46:09.037+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected overlay: / from overlay (remote: false)
+2026-11-09T11:46:09.038+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /tmp from tmpfs (remote: false)
+2026-11-09T11:46:09.038+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /tmp from tmpfs (remote: false)
+2026-11-09T11:46:09.039+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /sys from tmpfs (remote: false)
+2026-11-09T11:46:09.049+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected sysfs: /sys/block from sysfs (remote: false)
+2026-11-09T11:46:09.049+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected sysfs: /sys/bus from sysfs (remote: false)
+2026-11-09T11:46:09.049+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected sysfs: /sys/class from sysfs (remote: false)
+2026-11-09T11:46:09.050+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected sysfs: /sys/dev from sysfs (remote: false)
+2026-11-09T11:46:09.050+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected sysfs: /sys/devices from sysfs (remote: false)
+2026-11-09T11:46:09.050+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected sysfs: /sys/kernel from sysfs (remote: false)
+2026-11-09T11:46:09.050+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /dev from tmpfs (remote: false)
+2026-11-09T11:46:09.050+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /dev/shm from tmpfs (remote: false)
+2026-11-09T11:46:09.052+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected devpts: /dev/pts from devpts (remote: false)
+2026-11-09T11:46:09.058+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected mqueue: /dev/mqueue from mqueue (remote: false)
+2026-11-09T11:46:09.060+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run from tmpfs (remote: false)
+2026-11-09T11:46:09.095+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/host from tmpfs (remote: false)
+2026-11-09T11:46:09.095+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected overlay: /run/host/os-release from overlay (remote: false)
+2026-11-09T11:46:09.096+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/host/incoming from tmpfs (remote: false)
+2026-11-09T11:46:09.096+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/auth from tmpfs (remote: false)
+2026-11-09T11:46:09.096+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/blob-proxy from tmpfs (remote: false)
+2026-11-09T11:46:09.096+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/browser-broker-liveness from tmpfs (remote: false)
+2026-11-09T11:46:09.096+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/cell-anchors from tmpfs (remote: false)
+2026-11-09T11:46:09.097+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/egress-tls from tmpfs (remote: false)
+2026-11-09T11:46:09.097+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/noded from tmpfs (remote: false)
+2026-11-09T11:46:09.097+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/privsep from tmpfs (remote: false)
+2026-11-09T11:46:09.097+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/resume from tmpfs (remote: false)
+2026-11-09T11:46:09.099+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected btrfs: /run/hatch/resume from /dev/mapper/rv (remote: false)
+2026-11-09T11:46:09.101+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/runtime-cell from tmpfs (remote: false)
+2026-11-09T11:46:09.102+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/telemetry from tmpfs (remote: false)
+2026-11-09T11:46:09.104+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/hatch/upload-store from tmpfs (remote: false)
+2026-11-09T11:46:09.106+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /run/lock from tmpfs (remote: false)
+2026-11-09T11:46:09.108+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /etc/hatch/credentials from tmpfs (remote: false)
+2026-11-09T11:46:09.110+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected squashfs: /etc/hosts from /dev/mapper/opt_hatch (remote: false)
+2026-11-09T11:46:09.111+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /etc/pki/nssdb from tmpfs (remote: false)
+2026-11-09T11:46:09.113+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected squashfs: /etc/resolv.conf from /dev/mapper/opt_hatch (remote: false)
+2026-11-09T11:46:09.113+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected overlay: /home/hatch from overlay (remote: false)
+2026-11-09T11:46:09.113+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /home/hatch/.stagged-uploads from tmpfs (remote: false)
+2026-11-09T11:46:09.114+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /home/hatch/.pki/nssdb from tmpfs (remote: false)
+2026-11-09T11:46:09.114+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected squashfs: /home/hatch/assets from /dev/mapper/opt_hatch (remote: false)
+2026-11-09T11:46:09.115+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected btrfs: /home/hatch from /dev/mapper/rv (remote: false)
+2026-11-09T11:46:09.117+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected btrfs: /home/hatch from /dev/mapper/rv (remote: false)
+2026-11-09T11:46:09.119+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected squashfs: /home/hatch/assets from /dev/mapper/opt_hatch (remote: false)
+2026-11-09T11:46:09.120+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /home/hatch/.pki/nssdb from tmpfs (remote: false)
+2026-11-09T11:46:09.120+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /home/hatch/.stagged-uploads from tmpfs (remote: false)
+2026-11-09T11:46:09.122+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected squashfs: /opt/hatch from /dev/mapper/opt_hatch (remote: false)
+2026-11-09T11:46:09.123+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected overlay: /opt/hatch/connectors from overlay (remote: false)
+2026-11-09T11:46:09.125+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected overlay: /opt/hatch/bin from overlay (remote: false)
+2026-11-09T11:46:09.126+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected squashfs: /opt/hatch/bin/expedia from /dev/mapper/opt_hatch (remote: false)
+2026-11-09T11:46:09.127+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected overlay: /opt/hatch-image/bin from overlay (remote: false)
+2026-11-09T11:46:09.129+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /opt/hatch-image/bin/igd-cli from tmpfs (remote: false)
+2026-11-09T11:46:09.131+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /opt/hatch-image/bin/messenger-cli from tmpfs (remote: false)
+2026-11-09T11:46:09.133+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /opt/hatch-image/bin/reboot-as-poweroff from tmpfs (remote: false)
+2026-11-09T11:46:09.134+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /opt/hatch-image/models from tmpfs (remote: false)
+2026-11-09T11:46:09.135+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected overlay: /opt/meta-chromium from overlay (remote: false)
+2026-11-09T11:46:09.136+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected squashfs: /opt/muse/assets from /dev/mapper/opt_hatch (remote: false)
+2026-11-09T11:46:09.136+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected squashfs: /opt/muse/skills from /dev/mapper/opt_hatch (remote: false)
+2026-11-09T11:46:09.136+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /var/cache/apt/archives from tmpfs (remote: false)
+2026-11-09T11:46:09.136+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected btrfs: /var/cache/apt/archives from /dev/mapper/rv (remote: false)
+2026-11-09T11:46:09.136+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /var/lib/hatch/catalog_search_media from tmpfs (remote: false)
+2026-11-09T11:46:09.137+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected btrfs: /var/lib/hatch/catalog_search_media from /dev/mapper/rv (remote: false)
+2026-11-09T11:46:09.137+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /var/lib/hatch/os-intent from tmpfs (remote: false)
+2026-11-09T11:46:09.137+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected btrfs: /var/lib/hatch/os-intent from /dev/mapper/rv (remote: false)
+2026-11-09T11:46:09.137+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /var/lib/hatch/postgres from tmpfs (remote: false)
+2026-11-09T11:46:09.137+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /var/lib/hatch/ticketmaster from tmpfs (remote: false)
+2026-11-09T11:46:09.138+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected btrfs: /var/lib/hatch/ticketmaster from /dev/mapper/rv (remote: false)
+2026-11-09T11:46:09.138+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /var/lib/hatch-browser/rootfs-base/usr/share/hatch/chromium/webgl-allowed-domains.txt from tmpfs (remote: false)
+2026-11-09T11:46:09.138+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /var/tmp from tmpfs (remote: false)
+2026-11-09T11:46:09.139+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected proc: /proc from proc (remote: false)
+2026-11-09T11:46:09.139+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected proc: /proc/sys from proc (remote: false)
+2026-11-09T11:46:09.139+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected proc: /proc/sys/net from proc (remote: false)
+2026-11-09T11:46:09.141+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /proc/sys/kernel/random/boot_id from tmpfs (remote: false)
+2026-11-09T11:46:09.142+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected proc: /proc/sys/net from proc (remote: false)
+2026-11-09T11:46:09.143+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected proc: /proc/acpi from proc (remote: false)
+2026-11-09T11:46:09.143+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected proc: /proc/bus from proc (remote: false)
+2026-11-09T11:46:09.143+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected proc: /proc/fs from proc (remote: false)
+2026-11-09T11:46:09.143+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected proc: /proc/irq from proc (remote: false)
+2026-11-09T11:46:09.143+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected proc: /proc/scsi from proc (remote: false)
+2026-11-09T11:46:09.144+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /proc/sys/kernel/random/boot_id from tmpfs (remote: false)
+2026-11-09T11:46:09.144+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected tmpfs: /proc/kmsg from tmpfs (remote: false)
+2026-11-09T11:46:09.144+0000 [DEBUG] [org.gradle.internal.watch.vfs.impl.DefaultWatchableFileSystemDetector] Detected cgroup2: /sys/fs/cgroup from cgroup2 (remote: false)
+2026-11-09T11:46:09.145+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Build started for file system watching'
+2026-11-09T11:46:09.146+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Build started for file system watching' completed
+2026-11-09T11:46:09.146+0000 [INFO] [org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner] File system watching is active
+2026-11-09T11:46:09.146+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Load build' started
+2026-11-09T11:46:09.147+0000 [DEBUG] [org.gradle.initialization.properties.DefaultProjectPropertiesLoader] Found env project properties: []
+2026-11-09T11:46:09.148+0000 [DEBUG] [org.gradle.initialization.properties.DefaultProjectPropertiesLoader] Found system project properties: []
+2026-11-09T11:46:09.148+0000 [DEBUG] [org.gradle.initialization.DefaultSettingsLoader] Loading build definition for build: ':'
+2026-11-09T11:46:09.148+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Evaluate settings' started
+2026-11-09T11:46:09.150+0000 [INFO] [org.gradle.internal.buildevents.BuildLogger] Starting Build
+2026-11-09T11:46:09.150+0000 [DEBUG] [org.gradle.internal.buildevents.BuildLogger] Gradle user home: /root/.gradle
+2026-11-09T11:46:09.151+0000 [DEBUG] [org.gradle.internal.buildevents.BuildLogger] Current dir: /home/hatch/workspace/dominater-rebuild/project/android
+2026-11-09T11:46:09.152+0000 [DEBUG] [org.gradle.internal.buildevents.BuildLogger] Settings file: null
+2026-11-09T11:46:09.152+0000 [DEBUG] [org.gradle.internal.buildevents.BuildLogger] Build file: null
+2026-11-09T11:46:09.155+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply settings file 'settings.gradle.kts' to settings 'android'' started
+2026-11-09T11:46:09.155+0000 [DEBUG] [org.gradle.kotlin.dsl.provider.KotlinScriptPlugin] Applying Kotlin script to settings 'android'
+2026-11-09T11:46:09.156+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for workingDirs, path /home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/vcsMetadata/workingDirs.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@45365ce
+2026-11-09T11:46:09.157+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for md5-checksums, path /home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/checksums/md5-checksums.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@63f8921f
+2026-11-09T11:46:09.160+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Acquiring file lock for checksums cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/checksums)
+2026-11-09T11:46:09.160+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on checksums cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/checksums).
+2026-11-09T11:46:09.161+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on checksums cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/checksums).
+2026-11-09T11:46:09.162+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for sha1-checksums, path /home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/checksums/sha1-checksums.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@63f8921f
+2026-11-09T11:46:09.163+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for sha256-checksums, path /home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/checksums/sha256-checksums.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@63f8921f
+2026-11-09T11:46:09.163+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for sha512-checksums, path /home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/checksums/sha512-checksums.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@63f8921f
+2026-11-09T11:46:09.165+0000 [DEBUG] [org.gradle.api.internal.artifacts.mvnsettings.DefaultLocalMavenRepositoryLocator] No local repository in Settings file defined. Using default path: /root/.m2/repository
+2026-11-09T11:46:09.200+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for md-rule, path /root/.gradle/caches/8.12/md-rule/md-rule.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@8317582
+2026-11-09T11:46:09.203+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Acquiring file lock for cache directory md-rule (/root/.gradle/caches/8.12/md-rule)
+2026-11-09T11:46:09.203+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on cache directory md-rule (/root/.gradle/caches/8.12/md-rule).
+2026-11-09T11:46:09.206+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on cache directory md-rule (/root/.gradle/caches/8.12/md-rule).
+2026-11-09T11:46:09.207+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for md-supplier, path /root/.gradle/caches/8.12/md-supplier/md-supplier.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@1825c619
+2026-11-09T11:46:09.210+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Acquiring file lock for cache directory md-supplier (/root/.gradle/caches/8.12/md-supplier)
+2026-11-09T11:46:09.212+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on cache directory md-supplier (/root/.gradle/caches/8.12/md-supplier).
+2026-11-09T11:46:09.213+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on cache directory md-supplier (/root/.gradle/caches/8.12/md-supplier).
+2026-11-09T11:46:09.215+0000 [DEBUG] [org.gradle.internal.locking.LockFileReaderWriter] Lockfiles root: /home/hatch/workspace/dominater-rebuild/project/android/gradle/dependency-locks
+2026-11-09T11:46:09.226+0000 [INFO] [org.gradle.internal.watch.registry.impl.WatchableHierarchies] Not watching /home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle since the file system is not supported
+2026-11-09T11:46:09.229+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Creating new cache for outputFiles, path /home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/.gradle/buildOutputCleanup/outputFiles.bin, access org.gradle.cache.internal.DefaultCacheCoordinator@271a95e9
+2026-11-09T11:46:09.231+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Acquiring file lock for Build Output Cleanup Cache (/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/.gradle/buildOutputCleanup)
+2026-11-09T11:46:09.233+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on Build Output Cleanup Cache (/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/.gradle/buildOutputCleanup).
+2026-11-09T11:46:09.235+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on Build Output Cleanup Cache (/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/.gradle/buildOutputCleanup).
+2026-11-09T11:46:09.238+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Load build (:gradle)' started
+2026-11-09T11:46:09.240+0000 [DEBUG] [org.gradle.initialization.properties.DefaultProjectPropertiesLoader] Found env project properties: []
+2026-11-09T11:46:09.240+0000 [DEBUG] [org.gradle.initialization.properties.DefaultProjectPropertiesLoader] Found system project properties: []
+2026-11-09T11:46:09.241+0000 [DEBUG] [org.gradle.initialization.DefaultSettingsLoader] Loading build definition for build: ':gradle'
+2026-11-09T11:46:09.241+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Evaluate settings (:gradle)' started
+2026-11-09T11:46:09.248+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply settings file '/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/settings.gradle.kts' to settings 'gradle'' started
+2026-11-09T11:46:09.248+0000 [DEBUG] [org.gradle.kotlin.dsl.provider.KotlinScriptPlugin] Applying Kotlin script to settings 'gradle'
+2026-11-09T11:46:09.254+0000 [DEBUG] [org.gradle.api.internal.artifacts.mvnsettings.DefaultLocalMavenRepositoryLocator] No local repository in Settings file defined. Using default path: /root/.m2/repository
+2026-11-09T11:46:09.261+0000 [DEBUG] [org.gradle.internal.locking.LockFileReaderWriter] Lockfiles root: /home/hatch/workspace/dominater-rebuild/project/android/gradle/dependency-locks
+2026-11-09T11:46:09.266+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Apply settings file '/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/settings.gradle.kts' to settings 'gradle''
+2026-11-09T11:46:09.296+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply settings file '/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/settings.gradle.kts' to settings 'gradle'' completed
+2026-11-09T11:46:09.296+0000 [DEBUG] [org.gradle.initialization.ScriptEvaluatingSettingsProcessor] Timing: Processing settings took: 0.054 secs
+2026-11-09T11:46:09.298+0000 [DEBUG] [org.gradle.caching.configuration.internal.DefaultBuildCacheConfiguration] Found class org.gradle.caching.local.internal.DirectoryBuildCacheServiceFactory registered for class org.gradle.caching.local.DirectoryBuildCache
+2026-11-09T11:46:09.300+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Finalize build cache configuration' started
+2026-11-09T11:46:09.301+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Finalize build cache configuration'
+2026-11-09T11:46:09.302+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Finalize build cache configuration' completed
+2026-11-09T11:46:09.303+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Evaluate settings (:gradle)'
+2026-11-09T11:46:09.304+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Evaluate settings (:gradle)' completed
+2026-11-09T11:46:09.304+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Load build (:gradle)'
+2026-11-09T11:46:09.309+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Load build (:gradle)' completed
+2026-11-09T11:46:09.310+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Configure build (:gradle)' started
+2026-11-09T11:46:09.310+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Load projects' started
+2026-11-09T11:46:09.315+0000 [DEBUG] [org.gradle.initialization.ProjectPropertySettingBuildLoader] Looking for project properties from: /home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/gradle.properties
+2026-11-09T11:46:09.320+0000 [DEBUG] [org.gradle.initialization.ProjectPropertySettingBuildLoader] project property file does not exists. We continue!
+2026-11-09T11:46:09.325+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Load projects'
+2026-11-09T11:46:09.327+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Load projects' completed
+2026-11-09T11:46:09.328+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Notify projectsLoaded listeners (:gradle)' started
+2026-11-09T11:46:09.328+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Notify projectsLoaded listeners (:gradle)'
+2026-11-09T11:46:09.328+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Notify projectsLoaded listeners (:gradle)' completed
+2026-11-09T11:46:09.328+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Configure project :gradle' started
+2026-11-09T11:46:09.329+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Notify beforeEvaluate listeners of :gradle' started
+2026-11-09T11:46:09.329+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Execute Project.beforeEvaluate listener' started
+2026-11-09T11:46:09.330+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Execute Project.beforeEvaluate listener'
+2026-11-09T11:46:09.330+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Notify beforeEvaluate listeners of :gradle'
+2026-11-09T11:46:09.331+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply plugin org.gradle.help-tasks to project ':gradle'' started
+2026-11-09T11:46:09.333+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:help' started
+2026-11-09T11:46:09.333+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:help'
+2026-11-09T11:46:09.333+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:projects' started
+2026-11-09T11:46:09.334+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:projects'
+2026-11-09T11:46:09.334+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:tasks' started
+2026-11-09T11:46:09.334+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:tasks'
+2026-11-09T11:46:09.335+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:properties' started
+2026-11-09T11:46:09.335+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:properties'
+2026-11-09T11:46:09.335+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:dependencyInsight' started
+2026-11-09T11:46:09.336+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:dependencyInsight'
+2026-11-09T11:46:09.336+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:dependencies' started
+2026-11-09T11:46:09.336+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:dependencies'
+2026-11-09T11:46:09.337+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:buildEnvironment' started
+2026-11-09T11:46:09.337+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:buildEnvironment'
+2026-11-09T11:46:09.344+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:components' started
+2026-11-09T11:46:09.345+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:components'
+2026-11-09T11:46:09.345+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:model' started
+2026-11-09T11:46:09.346+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:model'
+2026-11-09T11:46:09.346+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:dependentComponents' started
+2026-11-09T11:46:09.346+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:dependentComponents'
+2026-11-09T11:46:09.352+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:outgoingVariants' started
+2026-11-09T11:46:09.353+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:outgoingVariants'
+2026-11-09T11:46:09.353+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:resolvableConfigurations' started
+2026-11-09T11:46:09.353+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:resolvableConfigurations'
+2026-11-09T11:46:09.354+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Apply plugin org.gradle.help-tasks to project ':gradle''
+2026-11-09T11:46:09.355+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:javaToolchains' started
+2026-11-09T11:46:09.355+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:javaToolchains'
+2026-11-09T11:46:09.399+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:prepareKotlinBuildScriptModel' started
+2026-11-09T11:46:09.399+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:prepareKotlinBuildScriptModel'
+2026-11-09T11:46:09.403+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:updateDaemonJvm' started
+2026-11-09T11:46:09.405+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:updateDaemonJvm'
+2026-11-09T11:46:09.406+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply plugin org.gradle.build-init to project ':gradle'' started
+2026-11-09T11:46:09.407+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:init' started
+2026-11-09T11:46:09.407+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:init'
+2026-11-09T11:46:09.408+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Apply plugin org.gradle.build-init to project ':gradle''
+2026-11-09T11:46:09.409+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply plugin org.gradle.wrapper to project ':gradle'' started
+2026-11-09T11:46:09.411+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:wrapper' started
+2026-11-09T11:46:09.411+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Register task :gradle:wrapper'
+2026-11-09T11:46:09.411+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Apply plugin org.gradle.wrapper to project ':gradle''
+2026-11-09T11:46:09.413+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply build file '/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/build.gradle.kts' to project ':gradle'' started
+2026-11-09T11:46:09.428+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Resolve dependencies of detachedConfiguration1' started
+2026-11-09T11:46:09.437+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Download https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom' started
+2026-11-09T11:46:09.329+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] 
+2026-11-09T11:46:09.329+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] > Configure project :gradle
+2026-11-09T11:46:09.329+0000 [DEBUG] [org.gradle.internal.resources.AbstractTrackedResourceLock] Daemon worker: acquired lock on state of build :gradle
+2026-11-09T11:46:09.330+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Execute Project.beforeEvaluate listener' completed
+2026-11-09T11:46:09.330+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Notify beforeEvaluate listeners of :gradle' completed
+2026-11-09T11:46:09.332+0000 [DEBUG] [org.gradle.model.internal.registry.DefaultModelRegistry] Project : - Transitioning model element '<root>' from state Registered to Created
+2026-11-09T11:46:09.332+0000 [DEBUG] [org.gradle.model.internal.registry.DefaultModelRegistry] Project : - Transitioning model element '<root>' to state Discovered.
+2026-11-09T11:46:09.332+0000 [DEBUG] [org.gradle.model.internal.registry.DefaultModelRegistry] Project : - Transitioning model element '<root>' to state Created.
+2026-11-09T11:46:09.333+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:help' completed
+2026-11-09T11:46:09.334+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:projects' completed
+2026-11-09T11:46:09.335+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:tasks' completed
+2026-11-09T11:46:09.335+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:properties' completed
+2026-11-09T11:46:09.336+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:dependencyInsight' completed
+2026-11-09T11:46:09.337+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:dependencies' completed
+2026-11-09T11:46:09.341+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:buildEnvironment' completed
+2026-11-09T11:46:09.345+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:components' completed
+2026-11-09T11:46:09.346+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:model' completed
+2026-11-09T11:46:09.346+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:dependentComponents' completed
+2026-11-09T11:46:09.353+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:outgoingVariants' completed
+2026-11-09T11:46:09.354+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:resolvableConfigurations' completed
+2026-11-09T11:46:09.354+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply plugin org.gradle.help-tasks to project ':gradle'' completed
+2026-11-09T11:46:09.355+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:javaToolchains' completed
+2026-11-09T11:46:09.399+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:prepareKotlinBuildScriptModel' completed
+2026-11-09T11:46:09.405+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:updateDaemonJvm' completed
+2026-11-09T11:46:09.407+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:init' completed
+2026-11-09T11:46:09.408+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply plugin org.gradle.build-init to project ':gradle'' completed
+2026-11-09T11:46:09.411+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Register task :gradle:wrapper' completed
+2026-11-09T11:46:09.412+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply plugin org.gradle.wrapper to project ':gradle'' completed
+2026-11-09T11:46:09.412+0000 [INFO] [org.gradle.configuration.project.BuildScriptProcessor] Evaluating project ':gradle' using build file '/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/build.gradle.kts'.
+2026-11-09T11:46:09.414+0000 [DEBUG] [org.gradle.kotlin.dsl.provider.KotlinScriptPlugin] Applying Kotlin script to project ':gradle'
+2026-11-09T11:46:09.415+0000 [DEBUG] [org.gradle.internal.locking.LockFileReaderWriter] Lockfiles root: /home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/gradle/dependency-locks
+2026-11-09T11:46:09.426+0000 [INFO] [org.gradle.plugin.use.internal.DefaultPluginRequestApplicator] Resolved plugin [id: 'org.gradle.java-gradle-plugin']
+2026-11-09T11:46:09.427+0000 [INFO] [org.gradle.plugin.use.internal.DefaultPluginRequestApplicator] Resolved plugin [id: 'org.gradle.groovy']
+2026-11-09T11:46:09.433+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.modulecache.ResolvedArtifactCaches] Creating new in-memory cache for repo 'Gradle Central Plugin Repository' [2f8748e965ecb2135dad092e9ef808de].
+2026-11-09T11:46:09.434+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder] Visiting configuration unspecified:unspecified:unspecified(detachedConfiguration1).
+2026-11-09T11:46:09.436+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver] Attempting to resolve component for org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:5.1.2 using repositories [Gradle Central Plugin Repository]
+2026-11-09T11:46:09.436+0000 [DEBUG] [org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver] Loading https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:46:09.436+0000 [DEBUG] [org.gradle.internal.resource.transfer.DefaultCacheAwareExternalResourceAccessor] Constructing external resource: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:46:09.437+0000 [DEBUG] [org.gradle.internal.resource.transport.http.HttpResourceAccessor] Constructing external resource: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:46:09.438+0000 [DEBUG] [org.gradle.internal.resource.transport.http.HttpClientHelper] Performing HTTP GET: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:46:09.440+0000 [DEBUG] [org.apache.http.client.protocol.RequestAddCookies] CookieSpec selected: default
+2026-11-09T11:46:09.440+0000 [DEBUG] [org.apache.http.client.protocol.RequestAuthCache] Auth cache not set in the context
+2026-11-09T11:46:09.442+0000 [DEBUG] [org.apache.http.impl.conn.PoolingHttpClientConnectionManager] Connection request: [route: {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443][total available: 0; route allocated: 0 of 20; total allocated: 0 of 20]
+2026-11-09T11:46:09.442+0000 [DEBUG] [org.apache.http.impl.conn.PoolingHttpClientConnectionManager] Connection leased: [id: 9][route: {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443][total available: 0; route allocated: 1 of 20; total allocated: 1 of 20]
+2026-11-09T11:46:09.443+0000 [DEBUG] [org.apache.http.impl.execchain.MainClientExec] Opening connection {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443
+2026-11-09T11:46:09.443+0000 [DEBUG] [org.apache.http.impl.conn.DefaultHttpClientConnectionOperator] Connecting to /127.0.0.1:18080
+2026-11-09T11:46:09.445+0000 [DEBUG] [org.apache.http.impl.conn.DefaultHttpClientConnectionOperator] Connection established 127.0.0.1:33942<->127.0.0.1:18080
+2026-11-09T11:46:15.036+0000 [LIFECYCLE] [org.gradle.cache.internal.DefaultFileLockManager] 
+2026-11-09T11:46:15.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:15.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:15.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:15.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:15.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:15.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:25.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:25.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:25.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:25.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:25.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:25.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:35.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:35.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:35.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:35.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:35.041+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:35.042+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:39.474+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Download https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom'
+2026-11-09T11:46:11.343+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] 
+2026-11-09T11:46:11.343+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] > Configure project :gradle
+2026-11-09T11:46:39.472+0000 [DEBUG] [org.apache.http.impl.conn.DefaultManagedHttpClientConnection] http-outgoing-9: Close connection
+2026-11-09T11:46:39.473+0000 [DEBUG] [org.apache.http.impl.conn.DefaultManagedHttpClientConnection] http-outgoing-9: Shutdown connection
+2026-11-09T11:46:39.473+0000 [DEBUG] [org.apache.http.impl.execchain.MainClientExec] Connection discarded
+2026-11-09T11:46:39.473+0000 [DEBUG] [org.apache.http.impl.conn.PoolingHttpClientConnectionManager] Connection released: [id: 9][route: {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443][total available: 0; route allocated: 0 of 20; total allocated: 0 of 20]
+2026-11-09T11:46:39.474+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Download https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom' completed
+2026-11-09T11:46:39.475+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess] Error while accessing remote repository Gradle Central Plugin Repository. Waiting 1000ms before next retry. 2 retries left
+org.gradle.internal.resolve.ModuleVersionResolveException: Could not resolve org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:5.1.2.
+Caused by: org.gradle.api.resources.ResourceException: Could not get resource 'https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom'.
+	at org.gradle.internal.resource.ResourceExceptions.failure(ResourceExceptions.java:74)
+	at org.gradle.internal.resource.ResourceExceptions.getFailed(ResourceExceptions.java:57)
+	at org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver.downloadByCoords(DefaultExternalResourceArtifactResolver.java:154)
+	at org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver.downloadStaticResource(DefaultExternalResourceArtifactResolver.java:94)
+	at org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver.resolveArtifact(DefaultExternalResourceArtifactResolver.java:60)
+	at org.gradle.api.internal.artifacts.repositories.metadata.AbstractRepositoryMetadataSource.parseMetaDataFromArtifact(AbstractRepositoryMetadataSource.java:79)
+	at org.gradle.api.internal.artifacts.repositories.metadata.AbstractRepositoryMetadataSource.create(AbstractRepositoryMetadataSource.java:69)
+	at org.gradle.api.internal.artifacts.repositories.metadata.DefaultMavenPomMetadataSource.create(DefaultMavenPomMetadataSource.java:40)
+	at org.gradle.api.internal.artifacts.repositories.metadata.RedirectingGradleMetadataModuleMetadataSource.create(RedirectingGradleMetadataModuleMetadataSource.java:52)
+	at org.gradle.api.internal.artifacts.repositories.resolver.ExternalResourceResolver.resolveStaticDependency(ExternalResourceResolver.java:235)
+	at org.gradle.api.internal.artifacts.repositories.resolver.MavenResolver.doResolveComponentMetaData(MavenResolver.java:108)
+	at org.gradle.api.internal.artifacts.repositories.resolver.ExternalResourceResolver$RemoteRepositoryAccess.resolveComponentMetaData(ExternalResourceResolver.java:427)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.CachingModuleComponentRepository$ResolveAndCacheRepositoryAccess.resolveComponentMetaDataAndCache(CachingModuleComponentRepository.java:396)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.CachingModuleComponentRepository$ResolveAndCacheRepositoryAccess.resolveComponentMetaData(CachingModuleComponentRepository.java:390)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.lambda$resolveComponentMetaData$5(ErrorHandlingModuleComponentRepository.java:150)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.lambda$tryResolveAndMaybeDisable$15(ErrorHandlingModuleComponentRepository.java:220)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.tryResolveAndMaybeDisable(ErrorHandlingModuleComponentRepository.java:236)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.tryResolveAndMaybeDisable(ErrorHandlingModuleComponentRepository.java:219)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.performOperationWithRetries(ErrorHandlingModuleComponentRepository.java:203)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.resolveComponentMetaData(ErrorHandlingModuleComponentRepository.java:149)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ComponentMetaDataResolveState.process(ComponentMetaDataResolveState.java:70)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ComponentMetaDataResolveState.resolve(ComponentMetaDataResolveState.java:62)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.findBestMatch(RepositoryChainComponentMetaDataResolver.java:165)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.findBestMatch(RepositoryChainComponentMetaDataResolver.java:145)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.resolveModule(RepositoryChainComponentMetaDataResolver.java:115)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.lambda$createValueContainerFor$1(RepositoryChainComponentMetaDataResolver.java:85)
+	at org.gradle.internal.model.CalculatedValueContainerFactory$SupplierBackedCalculator.calculateValue(CalculatedValueContainerFactory.java:69)
+	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.lambda$attachValue$0(CalculatedValueContainer.java:229)
+	at org.gradle.internal.Try.ofFailable(Try.java:50)
+	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.attachValue(CalculatedValueContainer.java:224)
+	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:195)
+	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:186)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.resolve(RepositoryChainComponentMetaDataResolver.java:77)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.ComponentResolversChain$ComponentMetaDataResolverChain.resolve(ComponentResolversChain.java:90)
+	at org.gradle.api.internal.artifacts.ivyservice.clientmodule.ClientModuleResolver.resolve(ClientModuleResolver.java:70)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.ComponentState.resolve(ComponentState.java:224)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.ComponentState.getResolveStateOrNull(ComponentState.java:168)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.EdgeState.calculateTargetConfigurations(EdgeState.java:212)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.EdgeState.attachToTargetConfigurations(EdgeState.java:148)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.attachToTargetRevisionsSerially(DependencyGraphBuilder.java:387)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.resolveEdges(DependencyGraphBuilder.java:277)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.traverseGraph(DependencyGraphBuilder.java:202)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.resolve(DependencyGraphBuilder.java:161)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.DependencyGraphResolver.resolve(DependencyGraphResolver.java:117)
+	at org.gradle.api.internal.artifacts.ivyservice.ResolutionExecutor.doResolve(ResolutionExecutor.java:519)
+	at org.gradle.api.internal.artifacts.ivyservice.ResolutionExecutor.resolveGraph(ResolutionExecutor.java:374)
+	at org.gradle.api.internal.artifacts.ivyservice.ShortCircuitingResolutionExecutor.resolveGraph(ShortCircuitingResolutionExecutor.java:96)
+	at org.gradle.api.internal.artifacts.ivyservice.DefaultConfigurationResolver.resolveGraph(DefaultConfigurationResolver.java:105)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$1.call(DefaultConfiguration.java:777)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$1.call(DefaultConfiguration.java:769)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.resolveGraphInBuildOperation(DefaultConfiguration.java:769)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.lambda$resolveExclusivelyIfRequired$5(DefaultConfiguration.java:761)
+	at org.gradle.api.internal.initialization.StandaloneDomainObjectContext$CalculatedModelValueImpl.update(StandaloneDomainObjectContext.java:229)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.resolveExclusivelyIfRequired(DefaultConfiguration.java:756)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.resolveGraphIfRequired(DefaultConfiguration.java:749)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.access$900(DefaultConfiguration.java:159)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$ResolverResultsResolutionResultProvider.getValue(DefaultConfiguration.java:722)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$ResolverResultsResolutionResultProvider.getValue(DefaultConfiguration.java:708)
+	at org.gradle.api.internal.artifacts.configurations.ResolutionResultProvider$1.getValue(ResolutionResultProvider.java:54)
+	at org.gradle.api.internal.artifacts.configurations.ResolutionResultProviderBackedSelectedArtifactSet.visitArtifacts(ResolutionResultProviderBackedSelectedArtifactSet.java:50)
+	at org.gradle.api.internal.artifacts.configurations.DefaultArtifactCollection.lambda$new$0(DefaultArtifactCollection.java:46)
+	at org.gradle.internal.model.CalculatedValueContainerFactory$SupplierBackedCalculator.calculateValue(CalculatedValueContainerFactory.java:69)
+	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.lambda$attachValue$0(CalculatedValueContainer.java:229)
+	at org.gradle.internal.Try.ofFailable(Try.java:50)
+	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.attachValue(CalculatedValueContainer.java:224)
+	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:195)
+	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:186)
+	at org.gradle.api.internal.artifacts.configurations.DefaultArtifactCollection.ensureResolved(DefaultArtifactCollection.java:103)
+	at org.gradle.api.internal.artifacts.configurations.DefaultArtifactCollection.getFailures(DefaultArtifactCollection.java:92)
+	at org.gradle.plugin.use.resolve.internal.ArtifactRepositoriesPluginResolver.exists(ArtifactRepositoriesPluginResolver.java:182)
+	at org.gradle.plugin.use.resolve.internal.ArtifactRepositoriesPluginResolver.resolve(ArtifactRepositoriesPluginResolver.java:64)
+	at org.gradle.plugin.use.resolve.internal.CompositePluginResolver.resolve(CompositePluginResolver.java:36)
+	at org.gradle.plugin.use.resolve.internal.AlreadyOnClasspathPluginResolver.resolve(AlreadyOnClasspathPluginResolver.java:65)
+	at org.gradle.plugin.use.internal.DefaultPluginRequestApplicator.resolvePluginRequest(DefaultPluginRequestApplicator.java:189)
+	at org.gradle.plugin.use.internal.DefaultPluginRequestApplicator.applyPlugins(DefaultPluginRequestApplicator.java:101)
+	at org.gradle.kotlin.dsl.provider.PluginRequestsHandler.handle(PluginRequestsHandler.kt:42)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost.applyPluginsTo(KotlinScriptEvaluator.kt:239)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.applyPluginsTo(Interpreter.kt:387)
+	at Program.execute(Unknown Source)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.eval(Interpreter.kt:516)
+	at org.gradle.kotlin.dsl.execution.Interpreter.eval(Interpreter.kt:194)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator.evaluate(KotlinScriptEvaluator.kt:130)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:62)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:48)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPlugin.apply(KotlinScriptPlugin.kt:35)
+	at org.gradle.configuration.BuildOperationScriptPlugin$1.run(BuildOperationScriptPlugin.java:68)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationScriptPlugin.lambda$apply$0(BuildOperationScriptPlugin.java:65)
+	at org.gradle.internal.code.DefaultUserCodeApplicationContext.apply(DefaultUserCodeApplicationContext.java:44)
+	at org.gradle.configuration.BuildOperationScriptPlugin.apply(BuildOperationScriptPlugin.java:65)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$applyToMutableState$1(DefaultProjectStateRegistry.java:411)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.fromMutableState(DefaultProjectStateRegistry.java:429)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.applyToMutableState(DefaultProjectStateRegistry.java:410)
+	at org.gradle.configuration.project.BuildScriptProcessor.execute(BuildScriptProcessor.java:46)
+	at org.gradle.configuration.project.BuildScriptProcessor.execute(BuildScriptProcessor.java:27)
+	at org.gradle.configuration.project.ConfigureActionsProjectEvaluator.evaluate(ConfigureActionsProjectEvaluator.java:35)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator$EvaluateProject.lambda$run$0(LifecycleProjectEvaluator.java:109)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$applyToMutableState$1(DefaultProjectStateRegistry.java:411)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$fromMutableState$2(DefaultProjectStateRegistry.java:434)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withReplacedLocks(DefaultWorkerLeaseService.java:359)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.fromMutableState(DefaultProjectStateRegistry.java:434)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.applyToMutableState(DefaultProjectStateRegistry.java:410)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator$EvaluateProject.run(LifecycleProjectEvaluator.java:100)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator.evaluate(LifecycleProjectEvaluator.java:72)
+	at org.gradle.api.internal.project.DefaultProject.evaluateUnchecked(DefaultProject.java:828)
+	at org.gradle.api.internal.project.ProjectLifecycleController.lambda$ensureSelfConfigured$2(ProjectLifecycleController.java:85)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$maybeTransitionIfNotCurrentlyTransitioning$10(StateTransitionController.java:199)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.model.StateTransitionController.maybeTransitionIfNotCurrentlyTransitioning(StateTransitionController.java:195)
+	at org.gradle.api.internal.project.ProjectLifecycleController.ensureSelfConfigured(ProjectLifecycleController.java:85)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.ensureConfigured(DefaultProjectStateRegistry.java:385)
+	at org.gradle.execution.TaskPathProjectEvaluator.configure(TaskPathProjectEvaluator.java:42)
+	at org.gradle.execution.TaskPathProjectEvaluator.configureHierarchy(TaskPathProjectEvaluator.java:56)
+	at org.gradle.configuration.DefaultProjectsPreparer.prepareProjects(DefaultProjectsPreparer.java:50)
+	at org.gradle.configuration.BuildTreePreparingProjectsPreparer.prepareProjects(BuildTreePreparingProjectsPreparer.java:65)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer$ConfigureBuild.run(BuildOperationFiringProjectsPreparer.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer.prepareProjects(BuildOperationFiringProjectsPreparer.java:40)
+	at org.gradle.initialization.VintageBuildModelController.lambda$prepareProjects$2(VintageBuildModelController.java:84)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$transitionIfNotPreviously$11(StateTransitionController.java:213)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.model.StateTransitionController.transitionIfNotPreviously(StateTransitionController.java:209)
+	at org.gradle.initialization.VintageBuildModelController.prepareProjects(VintageBuildModelController.java:84)
+	at org.gradle.initialization.VintageBuildModelController.getConfiguredModel(VintageBuildModelController.java:64)
+	at org.gradle.internal.model.StateTransitionController.lambda$notInState$3(StateTransitionController.java:132)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:46)
+	at org.gradle.internal.model.StateTransitionController.notInState(StateTransitionController.java:128)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.configureProjects(DefaultBuildLifecycleController.java:128)
+	at org.gradle.internal.build.AbstractBuildState.ensureProjectsConfigured(AbstractBuildState.java:145)
+	at org.gradle.internal.buildtree.BuildInclusionCoordinator$BuildSynchronizer.lambda$withLock$0(BuildInclusionCoordinator.java:66)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.buildtree.BuildInclusionCoordinator$BuildSynchronizer.withLock(BuildInclusionCoordinator.java:60)
+	at org.gradle.internal.buildtree.BuildInclusionCoordinator.withLockForBuild(BuildInclusionCoordinator.java:147)
+	at org.gradle.internal.buildtree.BuildInclusionCoordinator.prepareForPluginResolution(BuildInclusionCoordinator.java:117)
+	at org.gradle.internal.composite.DefaultBuildIncluder.prepareForPluginResolution(DefaultBuildIncluder.java:93)
+	at org.gradle.composite.internal.plugins.CompositeBuildPluginResolverContributor$CompositeBuildPluginResolver.resolveFromIncludedPluginBuilds(CompositeBuildPluginResolverContributor.java:138)
+	at org.gradle.composite.internal.plugins.CompositeBuildPluginResolverContributor$CompositeBuildPluginResolver.doResolve(CompositeBuildPluginResolverContributor.java:115)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
+	at org.gradle.composite.internal.plugins.CompositeBuildPluginResolverContributor$CompositeBuildPluginResolver.resolve(CompositeBuildPluginResolverContributor.java:104)
+	at org.gradle.plugin.use.resolve.internal.CompositePluginResolver.resolve(CompositePluginResolver.java:36)
+	at org.gradle.plugin.use.resolve.internal.AlreadyOnClasspathPluginResolver.resolve(AlreadyOnClasspathPluginResolver.java:65)
+	at org.gradle.plugin.use.internal.DefaultPluginRequestApplicator.resolvePluginRequest(DefaultPluginRequestApplicator.java:189)
+	at org.gradle.plugin.use.internal.DefaultPluginRequestApplicator.applyPlugins(DefaultPluginRequestApplicator.java:101)
+	at org.gradle.kotlin.dsl.provider.PluginRequestsHandler.handle(PluginRequestsHandler.kt:42)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost.applyPluginsTo(KotlinScriptEvaluator.kt:239)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.applyPluginsTo(Interpreter.kt:387)
+	at Program.execute(Unknown Source)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.eval(Interpreter.kt:516)
+	at org.gradle.kotlin.dsl.execution.Interpreter.eval(Interpreter.kt:194)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator.evaluate(KotlinScriptEvaluator.kt:130)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:62)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:48)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPlugin.apply(KotlinScriptPlugin.kt:35)
+	at org.gradle.configuration.BuildOperationScriptPlugin$1.run(BuildOperationScriptPlugin.java:68)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationScriptPlugin.lambda$apply$0(BuildOperationScriptPlugin.java:65)
+	at org.gradle.internal.code.DefaultUserCodeApplicationContext.apply(DefaultUserCodeApplicationContext.java:44)
+	at org.gradle.configuration.BuildOperationScriptPlugin.apply(BuildOperationScriptPlugin.java:65)
+	at org.gradle.initialization.ScriptEvaluatingSettingsProcessor.applySettingsScript(ScriptEvaluatingSettingsProcessor.java:75)
+	at org.gradle.initialization.ScriptEvaluatingSettingsProcessor.process(ScriptEvaluatingSettingsProcessor.java:68)
+	at org.gradle.initialization.SettingsEvaluatedCallbackFiringSettingsProcessor.process(SettingsEvaluatedCallbackFiringSettingsProcessor.java:34)
+	at org.gradle.initialization.RootBuildCacheControllerSettingsProcessor.process(RootBuildCacheControllerSettingsProcessor.java:47)
+	at org.gradle.initialization.BuildOperationSettingsProcessor$2.call(BuildOperationSettingsProcessor.java:49)
+	at org.gradle.initialization.BuildOperationSettingsProcessor$2.call(BuildOperationSettingsProcessor.java:46)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.initialization.BuildOperationSettingsProcessor.process(BuildOperationSettingsProcessor.java:46)
+	at org.gradle.initialization.DefaultSettingsLoader.findSettingsAndLoadIfAppropriate(DefaultSettingsLoader.java:183)
+	at org.gradle.initialization.DefaultSettingsLoader.findAndLoadSettings(DefaultSettingsLoader.java:86)
+	at org.gradle.initialization.SettingsAttachingSettingsLoader.findAndLoadSettings(SettingsAttachingSettingsLoader.java:33)
+	at org.gradle.internal.composite.CommandLineIncludedBuildSettingsLoader.findAndLoadSettings(CommandLineIncludedBuildSettingsLoader.java:35)
+	at org.gradle.internal.composite.ChildBuildRegisteringSettingsLoader.findAndLoadSettings(ChildBuildRegisteringSettingsLoader.java:44)
+	at org.gradle.internal.composite.CompositeBuildSettingsLoader.findAndLoadSettings(CompositeBuildSettingsLoader.java:35)
+	at org.gradle.initialization.InitScriptHandlingSettingsLoader.findAndLoadSettings(InitScriptHandlingSettingsLoader.java:33)
+	at org.gradle.api.internal.initialization.CacheConfigurationsHandlingSettingsLoader.findAndLoadSettings(CacheConfigurationsHandlingSettingsLoader.java:36)
+	at org.gradle.initialization.GradlePropertiesHandlingSettingsLoader.findAndLoadSettings(GradlePropertiesHandlingSettingsLoader.java:38)
+	at org.gradle.initialization.DefaultSettingsPreparer.prepareSettings(DefaultSettingsPreparer.java:31)
+	at org.gradle.initialization.BuildOperationFiringSettingsPreparer$LoadBuild.doLoadBuild(BuildOperationFiringSettingsPreparer.java:71)
+	at org.gradle.initialization.BuildOperationFiringSettingsPreparer$LoadBuild.run(BuildOperationFiringSettingsPreparer.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.initialization.BuildOperationFiringSettingsPreparer.prepareSettings(BuildOperationFiringSettingsPreparer.java:54)
+	at org.gradle.initialization.VintageBuildModelController.lambda$prepareSettings$1(VintageBuildModelController.java:80)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$transitionIfNotPreviously$11(StateTransitionController.java:213)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.model.StateTransitionController.transitionIfNotPreviously(StateTransitionController.java:209)
+	at org.gradle.initialization.VintageBuildModelController.prepareSettings(VintageBuildModelController.java:80)
+	at org.gradle.initialization.VintageBuildModelController.prepareToScheduleTasks(VintageBuildModelController.java:70)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$prepareToScheduleTasks$6(DefaultBuildLifecycleController.java:175)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$maybeTransition$9(StateTransitionController.java:190)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.model.StateTransitionController.maybeTransition(StateTransitionController.java:186)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.prepareToScheduleTasks(DefaultBuildLifecycleController.java:173)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.scheduleRequestedTasks(DefaultBuildTreeWorkPreparer.java:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph.withNewWorkGraph(DefaultIncludedBuildTaskGraph.java:112)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController.scheduleAndRunRequestedTasks(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$scheduleAndRunTasks$1(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$runBuild$4(DefaultBuildTreeLifecycleController.java:120)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$6(StateTransitionController.java:169)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$7(StateTransitionController.java:169)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:46)
+	at org.gradle.internal.model.StateTransitionController.transition(StateTransitionController.java:169)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.runBuild(DefaultBuildTreeLifecycleController.java:117)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:72)
+	at org.gradle.tooling.internal.provider.ExecuteBuildActionRunner.run(ExecuteBuildActionRunner.java:31)
+	at org.gradle.launcher.exec.ChainingBuildActionRunner.run(ChainingBuildActionRunner.java:35)
+	at org.gradle.internal.buildtree.ProblemReportingBuildActionRunner.run(ProblemReportingBuildActionRunner.java:49)
+	at org.gradle.launcher.exec.BuildOutcomeReportingBuildActionRunner.run(BuildOutcomeReportingBuildActionRunner.java:71)
+	at org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner.run(FileSystemWatchingBuildActionRunner.java:135)
+	at org.gradle.launcher.exec.BuildCompletionNotifyingBuildActionRunner.run(BuildCompletionNotifyingBuildActionRunner.java:41)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.lambda$execute$0(RootBuildLifecycleBuildActionExecutor.java:54)
+	at org.gradle.composite.internal.DefaultRootBuildState.run(DefaultRootBuildState.java:130)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.execute(RootBuildLifecycleBuildActionExecutor.java:54)
+	at org.gradle.internal.buildtree.InitDeprecationLoggingActionExecutor.execute(InitDeprecationLoggingActionExecutor.java:62)
+	at org.gradle.internal.buildtree.InitProblems.execute(InitProblems.java:36)
+	at org.gradle.internal.buildtree.DefaultBuildTreeContext.execute(DefaultBuildTreeContext.java:40)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.lambda$execute$0(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.internal.buildtree.BuildTreeState.run(BuildTreeState.java:60)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.execute(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$2.call(RunAsBuildOperationBuildActionExecutor.java:67)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$2.call(RunAsBuildOperationBuildActionExecutor.java:63)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor.execute(RunAsBuildOperationBuildActionExecutor.java:63)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.lambda$execute$0(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:263)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.execute(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.tooling.internal.provider.continuous.ContinuousBuildActionExecutor.execute(ContinuousBuildActionExecutor.java:110)
+	at org.gradle.tooling.internal.provider.SubscribableBuildActionExecutor.execute(SubscribableBuildActionExecutor.java:64)
+	at org.gradle.internal.session.DefaultBuildSessionContext.execute(DefaultBuildSessionContext.java:46)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:92)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:80)
+	at org.gradle.internal.session.BuildSessionState.run(BuildSessionState.java:71)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:62)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:41)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:64)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:32)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:51)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:39)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:47)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:31)
+	at org.gradle.launcher.daemon.server.exec.ExecuteBuild.doBuild(ExecuteBuild.java:70)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.WatchForDisconnection.execute(WatchForDisconnection.java:39)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ResetDeprecationLogger.execute(ResetDeprecationLogger.java:29)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon.execute(RequestStopIfSingleUsedDaemon.java:35)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.lambda$execute$0(ForwardClientInput.java:40)
+	at org.gradle.internal.daemon.clientinput.ClientInputForwarder.forwardInput(ClientInputForwarder.java:80)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.execute(ForwardClientInput.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogAndCheckHealth.execute(LogAndCheckHealth.java:64)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogToClient.doBuild(LogToClient.java:63)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment.doBuild(EstablishBuildEnvironment.java:84)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy$1.run(StartBuildOrRespondWithBusy.java:52)
+	at org.gradle.launcher.daemon.server.DaemonStateCoordinator.lambda$runCommand$0(DaemonStateCoordinator.java:321)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.gradle.internal.resource.transport.http.HttpRequestException: Could not GET 'https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom'.
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.createHttpRequestException(HttpClientHelper.java:124)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performRequest(HttpClientHelper.java:118)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performRawGet(HttpClientHelper.java:100)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performGet(HttpClientHelper.java:105)
+	at org.gradle.internal.resource.transport.http.HttpResourceAccessor.openResource(HttpResourceAccessor.java:45)
+	at org.gradle.internal.resource.transport.http.HttpResourceAccessor.openResource(HttpResourceAccessor.java:30)
+	at org.gradle.internal.resource.transfer.AbstractExternalResourceAccessor.withContent(AbstractExternalResourceAccessor.java:32)
+	at org.gradle.internal.resource.transfer.DefaultExternalResourceConnector.withContent(DefaultExternalResourceConnector.java:59)
+	at org.gradle.internal.resource.transfer.ProgressLoggingExternalResourceAccessor$DownloadOperation.call(ProgressLoggingExternalResourceAccessor.java:134)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.resource.transfer.ProgressLoggingExternalResourceAccessor.withContent(ProgressLoggingExternalResourceAccessor.java:47)
+	at org.gradle.internal.resource.transfer.AccessorBackedExternalResource.withContentIfPresent(AccessorBackedExternalResource.java:103)
+	at org.gradle.internal.resource.transfer.DefaultCacheAwareExternalResourceAccessor.copyToCache(DefaultCacheAwareExternalResourceAccessor.java:188)
+	at org.gradle.internal.resource.transfer.DefaultCacheAwareExternalResourceAccessor.lambda$getResource$1(DefaultCacheAwareExternalResourceAccessor.java:86)
+	at org.gradle.cache.internal.ProducerGuard$AdaptiveProducerGuard.guardByKey(ProducerGuard.java:97)
+	at org.gradle.internal.resource.transfer.DefaultCacheAwareExternalResourceAccessor.getResource(DefaultCacheAwareExternalResourceAccessor.java:80)
+	at org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver.downloadByCoords(DefaultExternalResourceArtifactResolver.java:149)
+	... 330 more
+Caused by: java.net.SocketTimeoutException: Read timed out
+	at java.base/sun.nio.ch.NioSocketImpl.timedRead(NioSocketImpl.java:278)
+	at java.base/sun.nio.ch.NioSocketImpl.implRead(NioSocketImpl.java:304)
+	at java.base/sun.nio.ch.NioSocketImpl.read(NioSocketImpl.java:346)
+	at java.base/sun.nio.ch.NioSocketImpl$1.read(NioSocketImpl.java:796)
+	at java.base/java.net.Socket$SocketInputStream.read(Socket.java:1099)
+	at org.apache.http.impl.io.SessionInputBufferImpl.streamRead(SessionInputBufferImpl.java:137)
+	at org.apache.http.impl.io.SessionInputBufferImpl.fillBuffer(SessionInputBufferImpl.java:153)
+	at org.apache.http.impl.io.SessionInputBufferImpl.readLine(SessionInputBufferImpl.java:280)
+	at org.apache.http.impl.conn.DefaultHttpResponseParser.parseHead(DefaultHttpResponseParser.java:138)
+	at org.apache.http.impl.conn.DefaultHttpResponseParser.parseHead(DefaultHttpResponseParser.java:56)
+	at org.apache.http.impl.io.AbstractMessageParser.parse(AbstractMessageParser.java:259)
+	at org.apache.http.impl.DefaultBHttpClientConnection.receiveResponseHeader(DefaultBHttpClientConnection.java:163)
+	at org.apache.http.impl.conn.CPoolProxy.receiveResponseHeader(CPoolProxy.java:157)
+	at org.apache.http.protocol.HttpRequestExecutor.doReceiveResponse(HttpRequestExecutor.java:273)
+	at org.apache.http.protocol.HttpRequestExecutor.execute(HttpRequestExecutor.java:125)
+	at org.apache.http.impl.execchain.MainClientExec.createTunnelToTarget(MainClientExec.java:485)
+	at org.apache.http.impl.execchain.MainClientExec.establishRoute(MainClientExec.java:410)
+	at org.apache.http.impl.execchain.MainClientExec.execute(MainClientExec.java:236)
+	at org.apache.http.impl.execchain.ProtocolExec.execute(ProtocolExec.java:186)
+	at org.apache.http.impl.execchain.RetryExec.execute(RetryExec.java:89)
+	at org.apache.http.impl.execchain.RedirectExec.execute(RedirectExec.java:110)
+	at org.apache.http.impl.client.InternalHttpClient.doExecute(InternalHttpClient.java:185)
+	at org.apache.http.impl.client.CloseableHttpClient.execute(CloseableHttpClient.java:83)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performHttpRequest(HttpClientHelper.java:201)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performHttpRequest(HttpClientHelper.java:177)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.executeGetOrHead(HttpClientHelper.java:166)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performRequest(HttpClientHelper.java:114)
+	... 351 more
+2026-11-09T11:46:40.501+0000 [DEBUG] [org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver] Loading https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:46:40.501+0000 [DEBUG] [org.gradle.internal.resource.transfer.DefaultCacheAwareExternalResourceAccessor] Constructing external resource: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:46:40.502+0000 [LIFECYCLE] [org.gradle.internal.operations.DefaultBuildOperationRunner] 
+2026-11-09T11:46:40.502+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Download https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom' started
+2026-11-09T11:46:40.444+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] 
+2026-11-09T11:46:40.444+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] > Configure project :gradle
+2026-11-09T11:46:40.502+0000 [DEBUG] [org.gradle.internal.resource.transport.http.HttpResourceAccessor] Constructing external resource: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:46:40.503+0000 [DEBUG] [org.gradle.internal.resource.transport.http.HttpClientHelper] Performing HTTP GET: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:46:40.503+0000 [DEBUG] [org.apache.http.client.protocol.RequestAddCookies] CookieSpec selected: default
+2026-11-09T11:46:40.504+0000 [DEBUG] [org.apache.http.client.protocol.RequestAuthCache] Auth cache not set in the context
+2026-11-09T11:46:40.505+0000 [DEBUG] [org.apache.http.impl.conn.PoolingHttpClientConnectionManager] Connection request: [route: {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443][total available: 0; route allocated: 0 of 20; total allocated: 0 of 20]
+2026-11-09T11:46:40.505+0000 [DEBUG] [org.apache.http.impl.conn.PoolingHttpClientConnectionManager] Connection leased: [id: 10][route: {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443][total available: 0; route allocated: 1 of 20; total allocated: 1 of 20]
+2026-11-09T11:46:40.505+0000 [DEBUG] [org.apache.http.impl.execchain.MainClientExec] Opening connection {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443
+2026-11-09T11:46:40.506+0000 [DEBUG] [org.apache.http.impl.conn.DefaultHttpClientConnectionOperator] Connecting to /127.0.0.1:18080
+2026-11-09T11:46:40.506+0000 [DEBUG] [org.apache.http.impl.conn.DefaultHttpClientConnectionOperator] Connection established 127.0.0.1:38126<->127.0.0.1:18080
+2026-11-09T11:46:45.036+0000 [LIFECYCLE] [org.gradle.cache.internal.DefaultFileLockManager] 
+2026-11-09T11:46:45.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:45.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:45.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:45.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:45.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:45.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:55.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:55.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:55.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:46:55.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:46:55.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:46:55.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:47:05.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:47:05.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:47:05.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:47:05.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:47:05.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:47:05.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:47:10.534+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Download https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom'
+2026-11-09T11:46:42.543+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] 
+2026-11-09T11:46:42.543+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] > Configure project :gradle
+2026-11-09T11:47:10.532+0000 [DEBUG] [org.apache.http.impl.conn.DefaultManagedHttpClientConnection] http-outgoing-10: Close connection
+2026-11-09T11:47:10.532+0000 [DEBUG] [org.apache.http.impl.conn.DefaultManagedHttpClientConnection] http-outgoing-10: Shutdown connection
+2026-11-09T11:47:10.533+0000 [DEBUG] [org.apache.http.impl.execchain.MainClientExec] Connection discarded
+2026-11-09T11:47:10.533+0000 [DEBUG] [org.apache.http.impl.conn.PoolingHttpClientConnectionManager] Connection released: [id: 10][route: {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443][total available: 0; route allocated: 0 of 20; total allocated: 0 of 20]
+2026-11-09T11:47:10.534+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Download https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom' completed
+2026-11-09T11:47:10.535+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess] Error while accessing remote repository Gradle Central Plugin Repository. Waiting 2000ms before next retry. 1 retries left
+org.gradle.internal.resolve.ModuleVersionResolveException: Could not resolve org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:5.1.2.
+Caused by: org.gradle.api.resources.ResourceException: Could not get resource 'https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom'.
+	at org.gradle.internal.resource.ResourceExceptions.failure(ResourceExceptions.java:74)
+	at org.gradle.internal.resource.ResourceExceptions.getFailed(ResourceExceptions.java:57)
+	at org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver.downloadByCoords(DefaultExternalResourceArtifactResolver.java:154)
+	at org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver.downloadStaticResource(DefaultExternalResourceArtifactResolver.java:94)
+	at org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver.resolveArtifact(DefaultExternalResourceArtifactResolver.java:60)
+	at org.gradle.api.internal.artifacts.repositories.metadata.AbstractRepositoryMetadataSource.parseMetaDataFromArtifact(AbstractRepositoryMetadataSource.java:79)
+	at org.gradle.api.internal.artifacts.repositories.metadata.AbstractRepositoryMetadataSource.create(AbstractRepositoryMetadataSource.java:69)
+	at org.gradle.api.internal.artifacts.repositories.metadata.DefaultMavenPomMetadataSource.create(DefaultMavenPomMetadataSource.java:40)
+	at org.gradle.api.internal.artifacts.repositories.metadata.RedirectingGradleMetadataModuleMetadataSource.create(RedirectingGradleMetadataModuleMetadataSource.java:52)
+	at org.gradle.api.internal.artifacts.repositories.resolver.ExternalResourceResolver.resolveStaticDependency(ExternalResourceResolver.java:235)
+	at org.gradle.api.internal.artifacts.repositories.resolver.MavenResolver.doResolveComponentMetaData(MavenResolver.java:108)
+	at org.gradle.api.internal.artifacts.repositories.resolver.ExternalResourceResolver$RemoteRepositoryAccess.resolveComponentMetaData(ExternalResourceResolver.java:427)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.CachingModuleComponentRepository$ResolveAndCacheRepositoryAccess.resolveComponentMetaDataAndCache(CachingModuleComponentRepository.java:396)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.CachingModuleComponentRepository$ResolveAndCacheRepositoryAccess.resolveComponentMetaData(CachingModuleComponentRepository.java:390)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.lambda$resolveComponentMetaData$5(ErrorHandlingModuleComponentRepository.java:150)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.lambda$tryResolveAndMaybeDisable$15(ErrorHandlingModuleComponentRepository.java:220)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.tryResolveAndMaybeDisable(ErrorHandlingModuleComponentRepository.java:236)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.tryResolveAndMaybeDisable(ErrorHandlingModuleComponentRepository.java:219)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.performOperationWithRetries(ErrorHandlingModuleComponentRepository.java:203)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ErrorHandlingModuleComponentRepository$ErrorHandlingModuleComponentRepositoryAccess.resolveComponentMetaData(ErrorHandlingModuleComponentRepository.java:149)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ComponentMetaDataResolveState.process(ComponentMetaDataResolveState.java:70)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ComponentMetaDataResolveState.resolve(ComponentMetaDataResolveState.java:62)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.findBestMatch(RepositoryChainComponentMetaDataResolver.java:165)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.findBestMatch(RepositoryChainComponentMetaDataResolver.java:145)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.resolveModule(RepositoryChainComponentMetaDataResolver.java:115)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.lambda$createValueContainerFor$1(RepositoryChainComponentMetaDataResolver.java:85)
+	at org.gradle.internal.model.CalculatedValueContainerFactory$SupplierBackedCalculator.calculateValue(CalculatedValueContainerFactory.java:69)
+	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.lambda$attachValue$0(CalculatedValueContainer.java:229)
+	at org.gradle.internal.Try.ofFailable(Try.java:50)
+	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.attachValue(CalculatedValueContainer.java:224)
+	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:195)
+	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:186)
+	at org.gradle.api.internal.artifacts.ivyservice.ivyresolve.RepositoryChainComponentMetaDataResolver.resolve(RepositoryChainComponentMetaDataResolver.java:77)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.ComponentResolversChain$ComponentMetaDataResolverChain.resolve(ComponentResolversChain.java:90)
+	at org.gradle.api.internal.artifacts.ivyservice.clientmodule.ClientModuleResolver.resolve(ClientModuleResolver.java:70)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.ComponentState.resolve(ComponentState.java:224)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.ComponentState.getResolveStateOrNull(ComponentState.java:168)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.EdgeState.calculateTargetConfigurations(EdgeState.java:212)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.EdgeState.attachToTargetConfigurations(EdgeState.java:148)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.attachToTargetRevisionsSerially(DependencyGraphBuilder.java:387)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.resolveEdges(DependencyGraphBuilder.java:277)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.traverseGraph(DependencyGraphBuilder.java:202)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.resolve(DependencyGraphBuilder.java:161)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.DependencyGraphResolver.resolve(DependencyGraphResolver.java:117)
+	at org.gradle.api.internal.artifacts.ivyservice.ResolutionExecutor.doResolve(ResolutionExecutor.java:519)
+	at org.gradle.api.internal.artifacts.ivyservice.ResolutionExecutor.resolveGraph(ResolutionExecutor.java:374)
+	at org.gradle.api.internal.artifacts.ivyservice.ShortCircuitingResolutionExecutor.resolveGraph(ShortCircuitingResolutionExecutor.java:96)
+	at org.gradle.api.internal.artifacts.ivyservice.DefaultConfigurationResolver.resolveGraph(DefaultConfigurationResolver.java:105)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$1.call(DefaultConfiguration.java:777)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$1.call(DefaultConfiguration.java:769)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.resolveGraphInBuildOperation(DefaultConfiguration.java:769)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.lambda$resolveExclusivelyIfRequired$5(DefaultConfiguration.java:761)
+	at org.gradle.api.internal.initialization.StandaloneDomainObjectContext$CalculatedModelValueImpl.update(StandaloneDomainObjectContext.java:229)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.resolveExclusivelyIfRequired(DefaultConfiguration.java:756)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.resolveGraphIfRequired(DefaultConfiguration.java:749)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.access$900(DefaultConfiguration.java:159)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$ResolverResultsResolutionResultProvider.getValue(DefaultConfiguration.java:722)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$ResolverResultsResolutionResultProvider.getValue(DefaultConfiguration.java:708)
+	at org.gradle.api.internal.artifacts.configurations.ResolutionResultProvider$1.getValue(ResolutionResultProvider.java:54)
+	at org.gradle.api.internal.artifacts.configurations.ResolutionResultProviderBackedSelectedArtifactSet.visitArtifacts(ResolutionResultProviderBackedSelectedArtifactSet.java:50)
+	at org.gradle.api.internal.artifacts.configurations.DefaultArtifactCollection.lambda$new$0(DefaultArtifactCollection.java:46)
+	at org.gradle.internal.model.CalculatedValueContainerFactory$SupplierBackedCalculator.calculateValue(CalculatedValueContainerFactory.java:69)
+	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.lambda$attachValue$0(CalculatedValueContainer.java:229)
+	at org.gradle.internal.Try.ofFailable(Try.java:50)
+	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.attachValue(CalculatedValueContainer.java:224)
+	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:195)
+	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:186)
+	at org.gradle.api.internal.artifacts.configurations.DefaultArtifactCollection.ensureResolved(DefaultArtifactCollection.java:103)
+	at org.gradle.api.internal.artifacts.configurations.DefaultArtifactCollection.getFailures(DefaultArtifactCollection.java:92)
+	at org.gradle.plugin.use.resolve.internal.ArtifactRepositoriesPluginResolver.exists(ArtifactRepositoriesPluginResolver.java:182)
+	at org.gradle.plugin.use.resolve.internal.ArtifactRepositoriesPluginResolver.resolve(ArtifactRepositoriesPluginResolver.java:64)
+	at org.gradle.plugin.use.resolve.internal.CompositePluginResolver.resolve(CompositePluginResolver.java:36)
+	at org.gradle.plugin.use.resolve.internal.AlreadyOnClasspathPluginResolver.resolve(AlreadyOnClasspathPluginResolver.java:65)
+	at org.gradle.plugin.use.internal.DefaultPluginRequestApplicator.resolvePluginRequest(DefaultPluginRequestApplicator.java:189)
+	at org.gradle.plugin.use.internal.DefaultPluginRequestApplicator.applyPlugins(DefaultPluginRequestApplicator.java:101)
+	at org.gradle.kotlin.dsl.provider.PluginRequestsHandler.handle(PluginRequestsHandler.kt:42)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost.applyPluginsTo(KotlinScriptEvaluator.kt:239)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.applyPluginsTo(Interpreter.kt:387)
+	at Program.execute(Unknown Source)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.eval(Interpreter.kt:516)
+	at org.gradle.kotlin.dsl.execution.Interpreter.eval(Interpreter.kt:194)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator.evaluate(KotlinScriptEvaluator.kt:130)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:62)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:48)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPlugin.apply(KotlinScriptPlugin.kt:35)
+	at org.gradle.configuration.BuildOperationScriptPlugin$1.run(BuildOperationScriptPlugin.java:68)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationScriptPlugin.lambda$apply$0(BuildOperationScriptPlugin.java:65)
+	at org.gradle.internal.code.DefaultUserCodeApplicationContext.apply(DefaultUserCodeApplicationContext.java:44)
+	at org.gradle.configuration.BuildOperationScriptPlugin.apply(BuildOperationScriptPlugin.java:65)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$applyToMutableState$1(DefaultProjectStateRegistry.java:411)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.fromMutableState(DefaultProjectStateRegistry.java:429)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.applyToMutableState(DefaultProjectStateRegistry.java:410)
+	at org.gradle.configuration.project.BuildScriptProcessor.execute(BuildScriptProcessor.java:46)
+	at org.gradle.configuration.project.BuildScriptProcessor.execute(BuildScriptProcessor.java:27)
+	at org.gradle.configuration.project.ConfigureActionsProjectEvaluator.evaluate(ConfigureActionsProjectEvaluator.java:35)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator$EvaluateProject.lambda$run$0(LifecycleProjectEvaluator.java:109)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$applyToMutableState$1(DefaultProjectStateRegistry.java:411)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$fromMutableState$2(DefaultProjectStateRegistry.java:434)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withReplacedLocks(DefaultWorkerLeaseService.java:359)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.fromMutableState(DefaultProjectStateRegistry.java:434)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.applyToMutableState(DefaultProjectStateRegistry.java:410)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator$EvaluateProject.run(LifecycleProjectEvaluator.java:100)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator.evaluate(LifecycleProjectEvaluator.java:72)
+	at org.gradle.api.internal.project.DefaultProject.evaluateUnchecked(DefaultProject.java:828)
+	at org.gradle.api.internal.project.ProjectLifecycleController.lambda$ensureSelfConfigured$2(ProjectLifecycleController.java:85)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$maybeTransitionIfNotCurrentlyTransitioning$10(StateTransitionController.java:199)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.model.StateTransitionController.maybeTransitionIfNotCurrentlyTransitioning(StateTransitionController.java:195)
+	at org.gradle.api.internal.project.ProjectLifecycleController.ensureSelfConfigured(ProjectLifecycleController.java:85)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.ensureConfigured(DefaultProjectStateRegistry.java:385)
+	at org.gradle.execution.TaskPathProjectEvaluator.configure(TaskPathProjectEvaluator.java:42)
+	at org.gradle.execution.TaskPathProjectEvaluator.configureHierarchy(TaskPathProjectEvaluator.java:56)
+	at org.gradle.configuration.DefaultProjectsPreparer.prepareProjects(DefaultProjectsPreparer.java:50)
+	at org.gradle.configuration.BuildTreePreparingProjectsPreparer.prepareProjects(BuildTreePreparingProjectsPreparer.java:65)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer$ConfigureBuild.run(BuildOperationFiringProjectsPreparer.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer.prepareProjects(BuildOperationFiringProjectsPreparer.java:40)
+	at org.gradle.initialization.VintageBuildModelController.lambda$prepareProjects$2(VintageBuildModelController.java:84)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$transitionIfNotPreviously$11(StateTransitionController.java:213)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.model.StateTransitionController.transitionIfNotPreviously(StateTransitionController.java:209)
+	at org.gradle.initialization.VintageBuildModelController.prepareProjects(VintageBuildModelController.java:84)
+	at org.gradle.initialization.VintageBuildModelController.getConfiguredModel(VintageBuildModelController.java:64)
+	at org.gradle.internal.model.StateTransitionController.lambda$notInState$3(StateTransitionController.java:132)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:46)
+	at org.gradle.internal.model.StateTransitionController.notInState(StateTransitionController.java:128)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.configureProjects(DefaultBuildLifecycleController.java:128)
+	at org.gradle.internal.build.AbstractBuildState.ensureProjectsConfigured(AbstractBuildState.java:145)
+	at org.gradle.internal.buildtree.BuildInclusionCoordinator$BuildSynchronizer.lambda$withLock$0(BuildInclusionCoordinator.java:66)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.buildtree.BuildInclusionCoordinator$BuildSynchronizer.withLock(BuildInclusionCoordinator.java:60)
+	at org.gradle.internal.buildtree.BuildInclusionCoordinator.withLockForBuild(BuildInclusionCoordinator.java:147)
+	at org.gradle.internal.buildtree.BuildInclusionCoordinator.prepareForPluginResolution(BuildInclusionCoordinator.java:117)
+	at org.gradle.internal.composite.DefaultBuildIncluder.prepareForPluginResolution(DefaultBuildIncluder.java:93)
+	at org.gradle.composite.internal.plugins.CompositeBuildPluginResolverContributor$CompositeBuildPluginResolver.resolveFromIncludedPluginBuilds(CompositeBuildPluginResolverContributor.java:138)
+	at org.gradle.composite.internal.plugins.CompositeBuildPluginResolverContributor$CompositeBuildPluginResolver.doResolve(CompositeBuildPluginResolverContributor.java:115)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
+	at org.gradle.composite.internal.plugins.CompositeBuildPluginResolverContributor$CompositeBuildPluginResolver.resolve(CompositeBuildPluginResolverContributor.java:104)
+	at org.gradle.plugin.use.resolve.internal.CompositePluginResolver.resolve(CompositePluginResolver.java:36)
+	at org.gradle.plugin.use.resolve.internal.AlreadyOnClasspathPluginResolver.resolve(AlreadyOnClasspathPluginResolver.java:65)
+	at org.gradle.plugin.use.internal.DefaultPluginRequestApplicator.resolvePluginRequest(DefaultPluginRequestApplicator.java:189)
+	at org.gradle.plugin.use.internal.DefaultPluginRequestApplicator.applyPlugins(DefaultPluginRequestApplicator.java:101)
+	at org.gradle.kotlin.dsl.provider.PluginRequestsHandler.handle(PluginRequestsHandler.kt:42)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost.applyPluginsTo(KotlinScriptEvaluator.kt:239)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.applyPluginsTo(Interpreter.kt:387)
+	at Program.execute(Unknown Source)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.eval(Interpreter.kt:516)
+	at org.gradle.kotlin.dsl.execution.Interpreter.eval(Interpreter.kt:194)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator.evaluate(KotlinScriptEvaluator.kt:130)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:62)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:48)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPlugin.apply(KotlinScriptPlugin.kt:35)
+	at org.gradle.configuration.BuildOperationScriptPlugin$1.run(BuildOperationScriptPlugin.java:68)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationScriptPlugin.lambda$apply$0(BuildOperationScriptPlugin.java:65)
+	at org.gradle.internal.code.DefaultUserCodeApplicationContext.apply(DefaultUserCodeApplicationContext.java:44)
+	at org.gradle.configuration.BuildOperationScriptPlugin.apply(BuildOperationScriptPlugin.java:65)
+	at org.gradle.initialization.ScriptEvaluatingSettingsProcessor.applySettingsScript(ScriptEvaluatingSettingsProcessor.java:75)
+	at org.gradle.initialization.ScriptEvaluatingSettingsProcessor.process(ScriptEvaluatingSettingsProcessor.java:68)
+	at org.gradle.initialization.SettingsEvaluatedCallbackFiringSettingsProcessor.process(SettingsEvaluatedCallbackFiringSettingsProcessor.java:34)
+	at org.gradle.initialization.RootBuildCacheControllerSettingsProcessor.process(RootBuildCacheControllerSettingsProcessor.java:47)
+	at org.gradle.initialization.BuildOperationSettingsProcessor$2.call(BuildOperationSettingsProcessor.java:49)
+	at org.gradle.initialization.BuildOperationSettingsProcessor$2.call(BuildOperationSettingsProcessor.java:46)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.initialization.BuildOperationSettingsProcessor.process(BuildOperationSettingsProcessor.java:46)
+	at org.gradle.initialization.DefaultSettingsLoader.findSettingsAndLoadIfAppropriate(DefaultSettingsLoader.java:183)
+	at org.gradle.initialization.DefaultSettingsLoader.findAndLoadSettings(DefaultSettingsLoader.java:86)
+	at org.gradle.initialization.SettingsAttachingSettingsLoader.findAndLoadSettings(SettingsAttachingSettingsLoader.java:33)
+	at org.gradle.internal.composite.CommandLineIncludedBuildSettingsLoader.findAndLoadSettings(CommandLineIncludedBuildSettingsLoader.java:35)
+	at org.gradle.internal.composite.ChildBuildRegisteringSettingsLoader.findAndLoadSettings(ChildBuildRegisteringSettingsLoader.java:44)
+	at org.gradle.internal.composite.CompositeBuildSettingsLoader.findAndLoadSettings(CompositeBuildSettingsLoader.java:35)
+	at org.gradle.initialization.InitScriptHandlingSettingsLoader.findAndLoadSettings(InitScriptHandlingSettingsLoader.java:33)
+	at org.gradle.api.internal.initialization.CacheConfigurationsHandlingSettingsLoader.findAndLoadSettings(CacheConfigurationsHandlingSettingsLoader.java:36)
+	at org.gradle.initialization.GradlePropertiesHandlingSettingsLoader.findAndLoadSettings(GradlePropertiesHandlingSettingsLoader.java:38)
+	at org.gradle.initialization.DefaultSettingsPreparer.prepareSettings(DefaultSettingsPreparer.java:31)
+	at org.gradle.initialization.BuildOperationFiringSettingsPreparer$LoadBuild.doLoadBuild(BuildOperationFiringSettingsPreparer.java:71)
+	at org.gradle.initialization.BuildOperationFiringSettingsPreparer$LoadBuild.run(BuildOperationFiringSettingsPreparer.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.initialization.BuildOperationFiringSettingsPreparer.prepareSettings(BuildOperationFiringSettingsPreparer.java:54)
+	at org.gradle.initialization.VintageBuildModelController.lambda$prepareSettings$1(VintageBuildModelController.java:80)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$transitionIfNotPreviously$11(StateTransitionController.java:213)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.model.StateTransitionController.transitionIfNotPreviously(StateTransitionController.java:209)
+	at org.gradle.initialization.VintageBuildModelController.prepareSettings(VintageBuildModelController.java:80)
+	at org.gradle.initialization.VintageBuildModelController.prepareToScheduleTasks(VintageBuildModelController.java:70)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$prepareToScheduleTasks$6(DefaultBuildLifecycleController.java:175)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$maybeTransition$9(StateTransitionController.java:190)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:36)
+	at org.gradle.internal.model.StateTransitionController.maybeTransition(StateTransitionController.java:186)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.prepareToScheduleTasks(DefaultBuildLifecycleController.java:173)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.scheduleRequestedTasks(DefaultBuildTreeWorkPreparer.java:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph.withNewWorkGraph(DefaultIncludedBuildTaskGraph.java:112)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController.scheduleAndRunRequestedTasks(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$scheduleAndRunTasks$1(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$runBuild$4(DefaultBuildTreeLifecycleController.java:120)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$6(StateTransitionController.java:169)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$7(StateTransitionController.java:169)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:46)
+	at org.gradle.internal.model.StateTransitionController.transition(StateTransitionController.java:169)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.runBuild(DefaultBuildTreeLifecycleController.java:117)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:72)
+	at org.gradle.tooling.internal.provider.ExecuteBuildActionRunner.run(ExecuteBuildActionRunner.java:31)
+	at org.gradle.launcher.exec.ChainingBuildActionRunner.run(ChainingBuildActionRunner.java:35)
+	at org.gradle.internal.buildtree.ProblemReportingBuildActionRunner.run(ProblemReportingBuildActionRunner.java:49)
+	at org.gradle.launcher.exec.BuildOutcomeReportingBuildActionRunner.run(BuildOutcomeReportingBuildActionRunner.java:71)
+	at org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner.run(FileSystemWatchingBuildActionRunner.java:135)
+	at org.gradle.launcher.exec.BuildCompletionNotifyingBuildActionRunner.run(BuildCompletionNotifyingBuildActionRunner.java:41)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.lambda$execute$0(RootBuildLifecycleBuildActionExecutor.java:54)
+	at org.gradle.composite.internal.DefaultRootBuildState.run(DefaultRootBuildState.java:130)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.execute(RootBuildLifecycleBuildActionExecutor.java:54)
+	at org.gradle.internal.buildtree.InitDeprecationLoggingActionExecutor.execute(InitDeprecationLoggingActionExecutor.java:62)
+	at org.gradle.internal.buildtree.InitProblems.execute(InitProblems.java:36)
+	at org.gradle.internal.buildtree.DefaultBuildTreeContext.execute(DefaultBuildTreeContext.java:40)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.lambda$execute$0(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.internal.buildtree.BuildTreeState.run(BuildTreeState.java:60)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.execute(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$2.call(RunAsBuildOperationBuildActionExecutor.java:67)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$2.call(RunAsBuildOperationBuildActionExecutor.java:63)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor.execute(RunAsBuildOperationBuildActionExecutor.java:63)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.lambda$execute$0(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:263)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.execute(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.tooling.internal.provider.continuous.ContinuousBuildActionExecutor.execute(ContinuousBuildActionExecutor.java:110)
+	at org.gradle.tooling.internal.provider.SubscribableBuildActionExecutor.execute(SubscribableBuildActionExecutor.java:64)
+	at org.gradle.internal.session.DefaultBuildSessionContext.execute(DefaultBuildSessionContext.java:46)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:92)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:80)
+	at org.gradle.internal.session.BuildSessionState.run(BuildSessionState.java:71)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:62)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:41)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:64)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:32)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:51)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:39)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:47)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:31)
+	at org.gradle.launcher.daemon.server.exec.ExecuteBuild.doBuild(ExecuteBuild.java:70)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.WatchForDisconnection.execute(WatchForDisconnection.java:39)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ResetDeprecationLogger.execute(ResetDeprecationLogger.java:29)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon.execute(RequestStopIfSingleUsedDaemon.java:35)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.lambda$execute$0(ForwardClientInput.java:40)
+	at org.gradle.internal.daemon.clientinput.ClientInputForwarder.forwardInput(ClientInputForwarder.java:80)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.execute(ForwardClientInput.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogAndCheckHealth.execute(LogAndCheckHealth.java:64)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogToClient.doBuild(LogToClient.java:63)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment.doBuild(EstablishBuildEnvironment.java:84)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy$1.run(StartBuildOrRespondWithBusy.java:52)
+	at org.gradle.launcher.daemon.server.DaemonStateCoordinator.lambda$runCommand$0(DaemonStateCoordinator.java:321)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.gradle.internal.resource.transport.http.HttpRequestException: Could not GET 'https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom'.
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.createHttpRequestException(HttpClientHelper.java:124)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performRequest(HttpClientHelper.java:118)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performRawGet(HttpClientHelper.java:100)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performGet(HttpClientHelper.java:105)
+	at org.gradle.internal.resource.transport.http.HttpResourceAccessor.openResource(HttpResourceAccessor.java:45)
+	at org.gradle.internal.resource.transport.http.HttpResourceAccessor.openResource(HttpResourceAccessor.java:30)
+	at org.gradle.internal.resource.transfer.AbstractExternalResourceAccessor.withContent(AbstractExternalResourceAccessor.java:32)
+	at org.gradle.internal.resource.transfer.DefaultExternalResourceConnector.withContent(DefaultExternalResourceConnector.java:59)
+	at org.gradle.internal.resource.transfer.ProgressLoggingExternalResourceAccessor$DownloadOperation.call(ProgressLoggingExternalResourceAccessor.java:134)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.resource.transfer.ProgressLoggingExternalResourceAccessor.withContent(ProgressLoggingExternalResourceAccessor.java:47)
+	at org.gradle.internal.resource.transfer.AccessorBackedExternalResource.withContentIfPresent(AccessorBackedExternalResource.java:103)
+	at org.gradle.internal.resource.transfer.DefaultCacheAwareExternalResourceAccessor.copyToCache(DefaultCacheAwareExternalResourceAccessor.java:188)
+	at org.gradle.internal.resource.transfer.DefaultCacheAwareExternalResourceAccessor.lambda$getResource$1(DefaultCacheAwareExternalResourceAccessor.java:86)
+	at org.gradle.cache.internal.ProducerGuard$AdaptiveProducerGuard.guardByKey(ProducerGuard.java:97)
+	at org.gradle.internal.resource.transfer.DefaultCacheAwareExternalResourceAccessor.getResource(DefaultCacheAwareExternalResourceAccessor.java:80)
+	at org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver.downloadByCoords(DefaultExternalResourceArtifactResolver.java:149)
+	... 330 more
+Caused by: java.net.SocketTimeoutException: Read timed out
+	at java.base/sun.nio.ch.NioSocketImpl.timedRead(NioSocketImpl.java:278)
+	at java.base/sun.nio.ch.NioSocketImpl.implRead(NioSocketImpl.java:304)
+	at java.base/sun.nio.ch.NioSocketImpl.read(NioSocketImpl.java:346)
+	at java.base/sun.nio.ch.NioSocketImpl$1.read(NioSocketImpl.java:796)
+	at java.base/java.net.Socket$SocketInputStream.read(Socket.java:1099)
+	at org.apache.http.impl.io.SessionInputBufferImpl.streamRead(SessionInputBufferImpl.java:137)
+	at org.apache.http.impl.io.SessionInputBufferImpl.fillBuffer(SessionInputBufferImpl.java:153)
+	at org.apache.http.impl.io.SessionInputBufferImpl.readLine(SessionInputBufferImpl.java:280)
+	at org.apache.http.impl.conn.DefaultHttpResponseParser.parseHead(DefaultHttpResponseParser.java:138)
+	at org.apache.http.impl.conn.DefaultHttpResponseParser.parseHead(DefaultHttpResponseParser.java:56)
+	at org.apache.http.impl.io.AbstractMessageParser.parse(AbstractMessageParser.java:259)
+	at org.apache.http.impl.DefaultBHttpClientConnection.receiveResponseHeader(DefaultBHttpClientConnection.java:163)
+	at org.apache.http.impl.conn.CPoolProxy.receiveResponseHeader(CPoolProxy.java:157)
+	at org.apache.http.protocol.HttpRequestExecutor.doReceiveResponse(HttpRequestExecutor.java:273)
+	at org.apache.http.protocol.HttpRequestExecutor.execute(HttpRequestExecutor.java:125)
+	at org.apache.http.impl.execchain.MainClientExec.createTunnelToTarget(MainClientExec.java:485)
+	at org.apache.http.impl.execchain.MainClientExec.establishRoute(MainClientExec.java:410)
+	at org.apache.http.impl.execchain.MainClientExec.execute(MainClientExec.java:236)
+	at org.apache.http.impl.execchain.ProtocolExec.execute(ProtocolExec.java:186)
+	at org.apache.http.impl.execchain.RetryExec.execute(RetryExec.java:89)
+	at org.apache.http.impl.execchain.RedirectExec.execute(RedirectExec.java:110)
+	at org.apache.http.impl.client.InternalHttpClient.doExecute(InternalHttpClient.java:185)
+	at org.apache.http.impl.client.CloseableHttpClient.execute(CloseableHttpClient.java:83)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performHttpRequest(HttpClientHelper.java:201)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performHttpRequest(HttpClientHelper.java:177)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.executeGetOrHead(HttpClientHelper.java:166)
+	at org.gradle.internal.resource.transport.http.HttpClientHelper.performRequest(HttpClientHelper.java:114)
+	... 351 more
+2026-11-09T11:47:12.556+0000 [DEBUG] [org.gradle.api.internal.artifacts.repositories.resolver.DefaultExternalResourceArtifactResolver] Loading https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:47:12.557+0000 [DEBUG] [org.gradle.internal.resource.transfer.DefaultCacheAwareExternalResourceAccessor] Constructing external resource: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:47:12.557+0000 [LIFECYCLE] [org.gradle.internal.operations.DefaultBuildOperationRunner] 
+2026-11-09T11:47:12.557+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Download https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom' started
+2026-11-09T11:47:12.543+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] 
+2026-11-09T11:47:12.543+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] > Configure project :gradle
+2026-11-09T11:47:12.558+0000 [DEBUG] [org.gradle.internal.resource.transport.http.HttpResourceAccessor] Constructing external resource: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:47:12.558+0000 [DEBUG] [org.gradle.internal.resource.transport.http.HttpClientHelper] Performing HTTP GET: https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom
+2026-11-09T11:47:12.559+0000 [DEBUG] [org.apache.http.client.protocol.RequestAddCookies] CookieSpec selected: default
+2026-11-09T11:47:12.559+0000 [DEBUG] [org.apache.http.client.protocol.RequestAuthCache] Auth cache not set in the context
+2026-11-09T11:47:12.559+0000 [DEBUG] [org.apache.http.impl.conn.PoolingHttpClientConnectionManager] Connection request: [route: {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443][total available: 0; route allocated: 0 of 20; total allocated: 0 of 20]
+2026-11-09T11:47:12.560+0000 [DEBUG] [org.apache.http.impl.conn.PoolingHttpClientConnectionManager] Connection leased: [id: 11][route: {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443][total available: 0; route allocated: 1 of 20; total allocated: 1 of 20]
+2026-11-09T11:47:12.560+0000 [DEBUG] [org.apache.http.impl.execchain.MainClientExec] Opening connection {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443
+2026-11-09T11:47:12.560+0000 [DEBUG] [org.apache.http.impl.conn.DefaultHttpClientConnectionOperator] Connecting to /127.0.0.1:18080
+2026-11-09T11:47:12.561+0000 [DEBUG] [org.apache.http.impl.conn.DefaultHttpClientConnectionOperator] Connection established 127.0.0.1:51526<->127.0.0.1:18080
+2026-11-09T11:47:15.036+0000 [LIFECYCLE] [org.gradle.cache.internal.DefaultFileLockManager] 
+2026-11-09T11:47:15.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:47:15.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:47:15.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:47:15.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:47:15.039+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:47:15.039+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:47:25.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:47:25.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:47:25.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:47:25.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:47:25.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:47:25.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:47:35.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:47:35.036+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:47:35.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:47:35.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire shared lock on daemon addresses registry.
+2026-11-09T11:47:35.037+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
+2026-11-09T11:47:35.038+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
+2026-11-09T11:47:42.594+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Download https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom'
+2026-11-09T11:47:42.596+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Resolve dependencies of detachedConfiguration1'
+2026-11-09T11:47:42.597+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Resolve files of configuration 'detachedConfiguration1'' started
+2026-11-09T11:47:42.598+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Resolve files of configuration 'detachedConfiguration1''
+2026-11-09T11:47:42.599+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Apply build file '/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/build.gradle.kts' to project ':gradle''
+2026-11-09T11:47:42.599+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Notify afterEvaluate listeners of :gradle' started
+2026-11-09T11:47:42.600+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Notify afterEvaluate listeners of :gradle'
+2026-11-09T11:47:14.644+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] 
+2026-11-09T11:47:14.644+0000 [LIFECYCLE] [org.gradle.internal.logging.progress.ProgressLoggerFactory] > Configure project :gradle
+2026-11-09T11:47:42.592+0000 [DEBUG] [org.apache.http.impl.conn.DefaultManagedHttpClientConnection] http-outgoing-11: Close connection
+2026-11-09T11:47:42.593+0000 [DEBUG] [org.apache.http.impl.conn.DefaultManagedHttpClientConnection] http-outgoing-11: Shutdown connection
+2026-11-09T11:47:42.593+0000 [DEBUG] [org.apache.http.impl.execchain.MainClientExec] Connection discarded
+2026-11-09T11:47:42.593+0000 [DEBUG] [org.apache.http.impl.conn.PoolingHttpClientConnectionManager] Connection released: [id: 11][route: {tls}->http://127.0.0.1:18080->https://plugins.gradle.org:443][total available: 0; route allocated: 0 of 20; total allocated: 0 of 20]
+2026-11-09T11:47:42.594+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Download https://plugins.gradle.org/m2/org/gradle/kotlin/kotlin-dsl/org.gradle.kotlin.kotlin-dsl.gradle.plugin/5.1.2/org.gradle.kotlin.kotlin-dsl.gradle.plugin-5.1.2.pom' completed
+2026-11-09T11:47:42.594+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ConnectionFailureRepositoryDisabler] Repository 2f8748e965ecb2135dad092e9ef808de has been disabled for this build due to connectivity issues
+2026-11-09T11:47:42.595+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.resolveengine.oldresult.TransientConfigurationResultsBuilder] Flushing resolved configuration data in Binary store in /root/.gradle/.tmp/gradle11030947843516057322.bin. Wrote root 3.
+2026-11-09T11:47:42.596+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Resolve dependencies of detachedConfiguration1' completed
+2026-11-09T11:47:42.598+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Resolve files of configuration 'detachedConfiguration1'' completed
+2026-11-09T11:47:42.598+0000 [INFO] [org.gradle.plugin.use.internal.DefaultPluginRequestApplicator] Resolved plugin [id: 'org.gradle.kotlin.kotlin-dsl', version: '5.1.2']
+2026-11-09T11:47:42.599+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply build file '/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/build.gradle.kts' to project ':gradle'' completed
+2026-11-09T11:47:42.599+0000 [DEBUG] [org.gradle.configuration.project.BuildScriptProcessor] Timing: Running the build script took 1 mins 33.187 secs
+2026-11-09T11:47:42.600+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Notify afterEvaluate listeners of :gradle' completed
+2026-11-09T11:47:42.600+0000 [DEBUG] [org.gradle.internal.resources.AbstractTrackedResourceLock] Daemon worker: released lock on state of build :gradle
+2026-11-09T11:47:42.600+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Configure project :gradle'
+2026-11-09T11:47:42.600+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Configure project :gradle' completed
+2026-11-09T11:47:42.601+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Configure build (:gradle)'
+2026-11-09T11:47:42.601+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Configure build (:gradle)' completed
+2026-11-09T11:47:42.601+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Apply settings file 'settings.gradle.kts' to settings 'android''
+2026-11-09T11:47:42.601+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Apply settings file 'settings.gradle.kts' to settings 'android'' completed
+2026-11-09T11:47:42.601+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Evaluate settings'
+2026-11-09T11:47:42.602+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Evaluate settings' completed
+2026-11-09T11:47:42.602+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Load build'
+2026-11-09T11:47:42.602+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Load build' completed
+2026-11-09T11:47:42.602+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Finish root build tree' started
+2026-11-09T11:47:42.604+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Finish root build tree'
+2026-11-09T11:47:42.604+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Finish root build tree' completed
+2026-11-09T11:47:42.605+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] 
+2026-11-09T11:47:42.605+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] FAILURE: Build failed with an exception.
+2026-11-09T11:47:42.606+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] 
+2026-11-09T11:47:42.606+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] * Where:
+2026-11-09T11:47:42.606+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] Build file '/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/build.gradle.kts' line: 7
+2026-11-09T11:47:42.606+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] 
+2026-11-09T11:47:42.606+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] * What went wrong:
+2026-11-09T11:47:42.607+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] Plugin [id: 'org.gradle.kotlin.kotlin-dsl', version: '5.1.2'] was not found in any of the following sources:
+2026-11-09T11:47:42.607+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] 
+2026-11-09T11:47:42.607+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] - Gradle Core Plugins (plugin is not in 'org.gradle' namespace)
+2026-11-09T11:47:42.607+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] - Included Builds (No included builds contain this plugin)
+2026-11-09T11:47:42.607+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] - Plugin Repositories (could not resolve plugin artifact 'org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:5.1.2')
+2026-11-09T11:47:42.608+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter]   Searched in the following repositories:
+2026-11-09T11:47:42.608+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter]     Gradle Central Plugin Repository
+2026-11-09T11:47:42.608+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] 
+2026-11-09T11:47:42.609+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] * Try:
+2026-11-09T11:47:42.609+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] > Run with --stacktrace option to get the stack trace.
+2026-11-09T11:47:42.609+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] > Run with --scan to get full insights.
+2026-11-09T11:47:42.609+0000 [ERROR] [org.gradle.internal.buildevents.BuildExceptionReporter] > Get more help at https://help.gradle.org.
+2026-11-09T11:47:42.610+0000 [ERROR] [org.gradle.internal.buildevents.BuildResultLogger] 
+2026-11-09T11:47:42.610+0000 [ERROR] [org.gradle.internal.buildevents.BuildResultLogger] BUILD FAILED in 1m 35s
+2026-11-09T11:47:42.610+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Build finished for file system watching' started
+2026-11-09T11:47:42.610+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Build finished for file system watching'
+2026-11-09T11:47:42.611+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Build finished for file system watching' completed
+2026-11-09T11:47:42.615+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for Build Output Cleanup Cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/buildOutputCleanup)
+2026-11-09T11:47:42.615+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on Build Output Cleanup Cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/buildOutputCleanup).
+2026-11-09T11:47:42.616+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for cache directory md-supplier (/root/.gradle/caches/8.12/md-supplier)
+2026-11-09T11:47:42.617+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on cache directory md-supplier (/root/.gradle/caches/8.12/md-supplier).
+2026-11-09T11:47:42.618+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for Build Output Cleanup Cache (/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/.gradle/buildOutputCleanup)
+2026-11-09T11:47:42.618+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on Build Output Cleanup Cache (/home/hatch/workspace/toolchain/flutter/packages/flutter_tools/gradle/.gradle/buildOutputCleanup).
+2026-11-09T11:47:42.619+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for cache directory md-rule (/root/.gradle/caches/8.12/md-rule)
+2026-11-09T11:47:42.619+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on cache directory md-rule (/root/.gradle/caches/8.12/md-rule).
+2026-11-09T11:47:42.620+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.resolveengine.store.CachedStoreFactory] Resolution result cache closed. Cache reads: 0, disk reads: 0 (avg: 0.0 secs, total: 0.0 secs)
+2026-11-09T11:47:42.620+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.resolveengine.store.CachedStoreFactory] Resolution result cache closed. Cache reads: 0, disk reads: 0 (avg: 0.0 secs, total: 0.0 secs)
+2026-11-09T11:47:42.621+0000 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.resolveengine.store.ResolutionResultsStoreFactory] Deleted 2 resolution results binary files in 0.0 secs
+2026-11-09T11:47:42.621+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Run build'
+2026-11-09T11:47:42.621+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Run build' completed
+2026-11-09T11:47:42.621+0000 [DEBUG] [org.gradle.internal.resources.AbstractTrackedResourceLock] Daemon worker: released lock on worker lease
+2026-11-09T11:47:42.624+0000 [DEBUG] [org.gradle.deployment.internal.DefaultDeploymentRegistry] Stopping 0 deployment handles
+2026-11-09T11:47:42.624+0000 [DEBUG] [org.gradle.deployment.internal.DefaultDeploymentRegistry] Stopped deployment handles
+2026-11-09T11:47:42.625+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for file hash cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/fileHashes)
+2026-11-09T11:47:42.625+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on file hash cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/fileHashes).
+2026-11-09T11:47:42.625+0000 [DEBUG] [org.gradle.cache.internal.LockOnDemandCrossProcessCacheAccess] Releasing file lock for checksums cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/checksums)
+2026-11-09T11:47:42.626+0000 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on checksums cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/checksums).
+2026-11-09T11:47:42.626+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCleanupExecutor] VCS Checkout Cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/vcs-1) has last been fully cleaned up 0 hours ago
+2026-11-09T11:47:42.626+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCleanupExecutor] Skipping cleanup for VCS Checkout Cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/vcs-1) as it is not yet due
+2026-11-09T11:47:42.627+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Cache VCS Checkout Cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/vcs-1) was closed 0 times.
+2026-11-09T11:47:42.627+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Cache VCS metadata (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/vcsMetadata) was closed 0 times.
+2026-11-09T11:47:42.627+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Cache Compressed Files Expansion Cache (/home/hatch/workspace/dominater-rebuild/project/android/.gradle/8.12/expanded) was closed 0 times.
+2026-11-09T11:47:42.627+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Deleting unused version-specific caches in /home/hatch/workspace/dominater-rebuild/project/android/.gradle' started
+2026-11-09T11:47:42.627+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Completing Build operation 'Deleting unused version-specific caches in /home/hatch/workspace/dominater-rebuild/project/android/.gradle'
+2026-11-09T11:47:42.628+0000 [DEBUG] [org.gradle.internal.operations.DefaultBuildOperationRunner] Build operation 'Deleting unused version-specific caches in /home/hatch/workspace/dominater-rebuild/project/android/.gradle' completed
+2026-11-09T11:47:42.628+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCleanupExecutor] dependencies-accessors (/root/.gradle/caches/8.12/dependencies-accessors) has last been fully cleaned up 0 hours ago
+2026-11-09T11:47:42.628+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCleanupExecutor] Skipping cleanup for dependencies-accessors (/root/.gradle/caches/8.12/dependencies-accessors) as it is not yet due
+2026-11-09T11:47:42.628+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Cache dependencies-accessors (/root/.gradle/caches/8.12/dependencies-accessors) was closed 0 times.
+2026-11-09T11:47:42.636+0000 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] The daemon has finished executing the build.
+2026-11-09T11:47:42.715+0000 [DEBUG] [org.gradle.launcher.daemon.client.DaemonClientConnection] thread 1: dispatching class org.gradle.launcher.daemon.protocol.CloseInput
+2026-11-09T11:47:42.715+0000 [DEBUG] [org.gradle.launcher.daemon.client.DaemonClient] Received result Success[value=org.gradle.launcher.exec.BuildActionResult@5d2a4eed] from daemon DaemonInfo{pid=17172, address=[d2adc52c-42fe-4923-baf3-30bc389bae16 port:42941, addresses:[/127.0.0.1]], state=Idle, lastBusy=1794224667103, context=DefaultDaemonContext[uid=cb394292-a6ab-417f-b0ff-a1d50d6fc69a,javaHome=/usr/lib/jvm/java-21-openjdk-amd64,javaVersion=21,javaVendor=Ubuntu,daemonRegistryDir=/root/.gradle/daemon,pid=17172,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=4G,-XX:ReservedCodeCacheSize=512m,-XX:+HeapDumpOnOutOfMemoryError,-Xmx8G,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]} (build should be done).
+2026-11-09T11:47:42.715+0000 [DEBUG] [org.gradle.launcher.daemon.client.DaemonClientConnection] thread 1: dispatching class org.gradle.launcher.daemon.protocol.Finished
+2026-11-09T11:47:42.716+0000 [DEBUG] [org.gradle.launcher.daemon.client.DaemonClientConnection] thread 1: connection stop
+2026-11-09T11:47:42.719+0000 [DEBUG] [org.gradle.cache.internal.DefaultCacheCoordinator] Cache cache directory jvms (/root/.gradle/caches/8.12/jvms) was closed 0 times.
+2026-11-09T11:47:42.719+0000 [LIFECYCLE] [org.gradle.launcher.cli.DebugLoggerWarningAction] 
+#############################################################################
+   WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+
+   Debug level logging will leak security sensitive information!
+
+   For more details, please refer to https://docs.gradle.org/8.12/userguide/logging.html#sec:debug_security in the Gradle documentation.
+#############################################################################
+

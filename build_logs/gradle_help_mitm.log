@@ -1,0 +1,6 @@
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+Starting a Gradle Daemon, 4 stopped Daemons could not be reused, use --status for details
+> Task :gradle:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle:compileKotlin
+> Task :gradle:pluginDescriptors
+> Task :gradle:processResources

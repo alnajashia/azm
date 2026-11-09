@@ -1,0 +1,70 @@
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+Running Gradle task 'assembleDebug'...                          
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+Checking the license for package NDK (Side by side) 27.0.12077973 in /home/hatch/workspace/toolchain/android-sdk/licenses
+License for package NDK (Side by side) 27.0.12077973 accepted.
+Preparing "Install NDK (Side by side) 27.0.12077973 v.27.0.12077973".
+"Install NDK (Side by side) 27.0.12077973 v.27.0.12077973" ready.
+Installing NDK (Side by side) 27.0.12077973 in /home/hatch/workspace/toolchain/android-sdk/ndk/27.0.12077973
+"Install NDK (Side by side) 27.0.12077973 v.27.0.12077973" complete.
+"Install NDK (Side by side) 27.0.12077973 v.27.0.12077973" finished.
+Checking the license for package Android SDK Build-Tools 35 in /home/hatch/workspace/toolchain/android-sdk/licenses
+License for package Android SDK Build-Tools 35 accepted.
+Preparing "Install Android SDK Build-Tools 35 v.35.0.0".
+"Install Android SDK Build-Tools 35 v.35.0.0" ready.
+Installing Android SDK Build-Tools 35 in /home/hatch/workspace/toolchain/android-sdk/build-tools/35.0.0
+"Install Android SDK Build-Tools 35 v.35.0.0" complete.
+"Install Android SDK Build-Tools 35 v.35.0.0" finished.
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+
+The message received from the daemon indicates that the daemon has disappeared.
+Build request sent: Build{id=d2800d4a-2cf7-4003-9477-3a879c97d7a3, currentDir=/home/hatch/workspace/dominater-rebuild/project/android}
+Attempting to read last messages from the daemon log...
+Daemon pid: 19545
+  log file: /root/.gradle/daemon/8.12/daemon-19545.out.log
+----- Last 20 lines from daemon log file - daemon-19545.out.log -----
+Installing NDK (Side by side) 27.0.12077973 in /home/hatch/workspace/toolchain/android-sdk/ndk/27.0.12077973
+"Install NDK (Side by side) 27.0.12077973 v.27.0.12077973" complete.
+"Install NDK (Side by side) 27.0.12077973 v.27.0.12077973" finished.
+Checking the license for package Android SDK Build-Tools 35 in /home/hatch/workspace/toolchain/android-sdk/licenses
+License for package Android SDK Build-Tools 35 accepted.
+Preparing "Install Android SDK Build-Tools 35 v.35.0.0".
+"Install Android SDK Build-Tools 35 v.35.0.0" ready.
+Installing Android SDK Build-Tools 35 in /home/hatch/workspace/toolchain/android-sdk/build-tools/35.0.0
+"Install Android SDK Build-Tools 35 v.35.0.0" complete.
+"Install Android SDK Build-Tools 35 v.35.0.0" finished.
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+----- End of the daemon log -----
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Gradle build daemon disappeared unexpectedly (it may have been killed or may have crashed)
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+Running Gradle task 'assembleDebug'...                           1160.7s
+Gradle task assembleDebug failed with exit code 1

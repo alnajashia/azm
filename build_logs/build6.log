@@ -1,0 +1,18 @@
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+Running Gradle task 'assembleDebug'...                          
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not receive a message from the daemon.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+Running Gradle task 'assembleDebug'...                              4.9s
+Gradle task assembleDebug failed with exit code 1

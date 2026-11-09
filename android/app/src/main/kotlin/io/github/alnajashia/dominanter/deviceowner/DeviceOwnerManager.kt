@@ -250,7 +250,7 @@ object DeviceOwnerManager {
         "no_non_market_app_by_knox",
     )
 
-    /** Every DISALLOW_*/ALLOW_*/ENSURE_* key discoverable by reflection over UserManager, plus OEM extras. */
+    /** Every DISALLOW_/ALLOW_/ENSURE_ key discoverable by reflection over UserManager, plus OEM extras. */
     fun allRestrictionKeys(): List<String> {
         val keys = mutableSetOf<String>()
         val fields = UserManager::class.java.declaredFields + UserManager::class.java.fields
@@ -451,7 +451,7 @@ object DeviceOwnerManager {
         } catch (e: Exception) {
             throw PrivException.dpmFailed("setGlobalPrivateDnsModeSpecifiedHost failed", e)
         }
-        if (resultCode != DevicePolicyManager.PRIVATE_DNS_SET_SUCCESS) {
+        if (resultCode != DevicePolicyManager.PRIVATE_DNS_SET_NO_ERROR) {
             throw PrivException.dpmFailed(
                 "Private DNS was not applied (DPM result code $resultCode)",
                 verifiedState = resultCode,
