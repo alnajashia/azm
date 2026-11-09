@@ -46,6 +46,11 @@ object SettingsStore {
     const val PREFS_HIDDEN = "hidden_apps_prefs"
     const val PREFS_SUSPENSION_LOGS = "suspension_logs_prefs"
     const val PREFS_SECURITY = "security_prefs"
+    const val PREFS_BROWSER = "browser_prefs"
+    const val PREFS_FOCUS = "focus_prefs"
+    const val PREFS_FOCUS_SCHEDULES = "focus_schedules_prefs"
+    const val PREFS_USAGE_WARNING = "usage_warning_prefs"
+    const val PREFS_RECOVERY_STATE = "recovery_prefs"
 
     private const val KEY_GROUPS = "groups"
     private const val KEY_HIDDEN_PACKAGES = "hidden_packages"
@@ -180,6 +185,35 @@ object SettingsStore {
 
     fun groups(): List<AppGroup> = decodeGroups(prefs(PREFS_GROUPS).getString(KEY_GROUPS, null))
 
+    /** Persists groups in exactly the JSON schema [decodeGroups] reads. */
+    fun saveGroups(groups: List<AppGroup>) {
+        val array = JSONArray()
+        groups.forEach { g ->
+            val obj = JSONObject()
+            obj.put("id", g.id)
+            obj.put("name", g.name)
+            val packages = JSONArray()
+            g.packageNames.forEach { packages.put(it) }
+            obj.put("packages", packages)
+            val weeklyLimit = g.timeLimit.weeklyMinutes
+            if (weeklyLimit != null) {
+                val arr = JSONArray()
+                weeklyLimit.forEach { arr.put(it) }
+                obj.put("weeklyLimit", arr)
+            } else {
+                obj.put("limit", g.timeLimit.dailyMinutes)
+            }
+            val weeklyWindows = g.timeWindows.weeklyWindows
+            if (weeklyWindows != null) {
+                obj.put("weeklyWindows", encodeWeeklyWindows(weeklyWindows))
+            } else {
+                obj.put("windows", encodeWindowArray(g.timeWindows.dailyWindows))
+            }
+            array.put(obj)
+        }
+        prefs(PREFS_GROUPS).edit().putString(KEY_GROUPS, array.toString()).apply()
+    }
+
     fun groupForPackage(packageName: String): AppGroup? =
         groups().firstOrNull { packageName in it.packageNames }
 
@@ -257,6 +291,12 @@ object SettingsStore {
 
     fun reopenSeconds(packageName: String): Int = prefs(PREFS_REOPEN).getInt(packageName, 0)
 
+    fun setReopenSeconds(packageName: String, seconds: Int) {
+        val edit = prefs(PREFS_REOPEN).edit()
+        if (seconds > 0) edit.putInt(packageName, seconds) else edit.remove(packageName)
+        edit.apply()
+    }
+
     fun reopenPackages(): Set<String> = prefs(PREFS_REOPEN).all.keys
 
     // ------------------------------------------------------------------ words / activities
@@ -278,6 +318,20 @@ object SettingsStore {
 
     fun blockedActivities(): Set<String> =
         prefs(PREFS_ACTIVITY_BLOCKER).getStringSet("blocked_activities", emptySet()) ?: emptySet()
+
+    fun setBlockedWords(words: Set<String>, targetPackages: Set<String>) {
+        prefs(PREFS_BLOCKED_WORDS).edit()
+            .putStringSet("blocked_words", words)
+            .putStringSet("target_packages", targetPackages)
+            .apply()
+    }
+
+    fun setPassiveWords(packageName: String, words: Set<String>) {
+        val edit = prefs(PREFS_BLOCKED_WORDS).edit()
+        val key = "passive_words_$packageName"
+        if (words.isEmpty()) edit.remove(key) else edit.putStringSet(key, words)
+        edit.apply()
+    }
 
     // ------------------------------------------------------------------ hidden set (DPM-written)
 
@@ -320,6 +374,45 @@ object SettingsStore {
             current.forEach { array.put(it) }
             prefs(PREFS_SUSPENSION_LOGS).edit().putString(KEY_LOGS, array.toString()).apply()
         }
+    }
+
+    fun clearLogs() {
+        prefs(PREFS_SUSPENSION_LOGS).edit().remove(KEY_LOGS).apply()
+    }
+
+    // ------------------------------------------------- generic config access
+
+    /**
+     * Stores that the channel's generic get/setSetting may touch. These hold
+     * Dart-domain configuration (ARCH §8.2: browser blocklists, focus and
+     * impulse config, challenge config, usage-warning stages, forced-removal
+     * state) as JSON strings / scalars — never enforcement state, which uses
+     * the typed accessors above, and never the recovery code (§7.1).
+     */
+    val GENERIC_SETTING_STORES: Set<String> = setOf(
+        PREFS_SECURITY, PREFS_BROWSER, PREFS_FOCUS, PREFS_FOCUS_SCHEDULES,
+        PREFS_USAGE_WARNING, PREFS_RECOVERY_STATE,
+    )
+
+    fun genericGet(store: String, key: String): Any? {
+        val value = prefs(store).all[key] ?: return null
+        return if (value is Set<*>) value.filterIsInstance<String>() else value
+    }
+
+    fun genericSet(store: String, key: String, value: Any?) {
+        val edit = prefs(store).edit()
+        when (value) {
+            null -> edit.remove(key)
+            is String -> edit.putString(key, value)
+            is Boolean -> edit.putBoolean(key, value)
+            is Int -> edit.putInt(key, value)
+            is Long -> edit.putLong(key, value)
+            is Float -> edit.putFloat(key, value)
+            is Double -> edit.putFloat(key, value.toFloat())
+            is List<*> -> edit.putStringSet(key, value.filterIsInstance<String>().toSet())
+            else -> throw IllegalArgumentException("Unsupported setting value type: ${value.javaClass}")
+        }
+        edit.apply()
     }
 
     fun readLogs(): List<JSONObject> {
