@@ -1,0 +1,99 @@
+package io.github.alnajashia.dominanter.security
+
+import android.content.Context
+import android.util.Base64
+import java.security.MessageDigest
+import java.security.SecureRandom
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
+
+/**
+ * Recovery-code storage — the documented security deviation of
+ * `docs/ARCHITECTURE.md` §7.1.
+ *
+ * The original stored the 16-character code as **plaintext** in
+ * `recovery_prefs`. This rebuild stores only a PBKDF2WithHmacSHA256 hash with a
+ * per-install random salt, in a dedicated `recovery_secure` store:
+ *
+ *     recovery_code_salt       (Base64, 16 random bytes)
+ *     recovery_code_hash       (Base64, 32-byte derived key)
+ *     recovery_code_kdf_iterations
+ *
+ * The plaintext code exists only transiently: [generateCode] returns a fresh
+ * code ONCE (to the Dart wizard, which shows it for the paper copy), and
+ * [setCode] receives the confirmed code once for hashing. There is
+ * deliberately **no** getter for the code or the hash — verification
+ * ([verifyCode]) recomputes and compares in constant time.
+ */
+object RecoveryStore {
+    private const val PREFS_NAME = "recovery_secure"
+    private const val KEY_SALT = "recovery_code_salt"
+    private const val KEY_HASH = "recovery_code_hash"
+    private const val KEY_ITERATIONS = "recovery_code_kdf_iterations"
+    private const val ITERATIONS = 210_000
+    private const val SALT_BYTES = 16
+    private const val KEY_BITS = 256
+    private const val CODE_LENGTH = 16
+
+    // Same alphabet as the original generator (A–Z), so the user-facing format
+    // (16 upper-case letters, written on paper) is unchanged.
+    private const val CHAR_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    private fun prefs(context: Context) =
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    /** Generates a fresh 16-character code. Returns it once; stores nothing. */
+    fun generateCode(): String {
+        val random = SecureRandom()
+        return (1..CODE_LENGTH)
+            .map { CHAR_POOL[random.nextInt(CHAR_POOL.length)] }
+            .joinToString("")
+    }
+
+    fun isSet(context: Context): Boolean =
+        prefs(context).contains(KEY_HASH) && prefs(context).contains(KEY_SALT)
+
+    /** Hashes and stores [code], replacing any previous code. Never stores plaintext. */
+    fun setCode(context: Context, code: String) {
+        val normalized = normalize(code)
+        require(normalized.length == CODE_LENGTH && normalized.all { it in CHAR_POOL }) {
+            "Recovery code must be $CODE_LENGTH letters A-Z"
+        }
+        val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
+        val hash = derive(normalized, salt, ITERATIONS)
+        prefs(context).edit()
+            .putString(KEY_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
+            .putString(KEY_HASH, Base64.encodeToString(hash, Base64.NO_WRAP))
+            .putInt(KEY_ITERATIONS, ITERATIONS)
+            .apply()
+    }
+
+    /** Constant-time verification against the stored salted hash. */
+    fun verifyCode(context: Context, code: String): Boolean {
+        val p = prefs(context)
+        val saltB64 = p.getString(KEY_SALT, null) ?: return false
+        val hashB64 = p.getString(KEY_HASH, null) ?: return false
+        val iterations = p.getInt(KEY_ITERATIONS, ITERATIONS)
+        val salt = try { Base64.decode(saltB64, Base64.NO_WRAP) } catch (_: Exception) { return false }
+        val expected = try { Base64.decode(hashB64, Base64.NO_WRAP) } catch (_: Exception) { return false }
+        val actual = derive(normalize(code), salt, iterations)
+        return MessageDigest.isEqual(expected, actual)
+    }
+
+    /** Codes are compared without spaces and case-insensitively, as typed from paper. */
+    fun normalize(code: String): String = code.replace(" ", "").uppercase()
+
+    fun isValidFormat(code: String): Boolean {
+        val n = normalize(code)
+        return n.length == CODE_LENGTH && n.all { it in CHAR_POOL }
+    }
+
+    private fun derive(code: String, salt: ByteArray, iterations: Int): ByteArray {
+        val spec = PBEKeySpec(code.toCharArray(), salt, iterations, KEY_BITS)
+        return try {
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+        } finally {
+            spec.clearPassword()
+        }
+    }
+}

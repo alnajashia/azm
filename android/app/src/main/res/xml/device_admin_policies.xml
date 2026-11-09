@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ported from the original DeChainer res/xml/device_admin_policies.xml.
+     Note (from the analysis): these legacy policies are declared but the app's
+     power comes from Device Owner status, not from these policies. -->
+<device-admin>
+    <uses-policies>
+        <limit-password />
+        <watch-login />
+        <reset-password />
+        <force-lock />
+        <wipe-data />
+        <expire-password />
+        <disable-keyguard-features />
+    </uses-policies>
+</device-admin>

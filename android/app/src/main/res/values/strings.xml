@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dominanter</string>
+    <string name="accessibility_description">Dominanter monitors app usage to enforce the time limits, time windows and blocked words you configured, and locks down if it is turned off.</string>
+
+    <!-- Native block screens (accessibility/BlockActivity) -->
+    <string name="block_time_up_title">Time\'s up</string>
+    <string name="block_time_up_body">%1$s has reached its limit of %2$d minutes for today.</string>
+    <string name="block_outside_window_title">Outside allowed hours</string>
+    <string name="block_outside_window_body">%1$s can only be used during:\n%2$s</string>
+    <string name="block_word_title">Blocked word</string>
+    <string name="block_word_body">The word “%1$s” is blocked in this app.</string>
+    <string name="block_reopening_title">Take a short break</string>
+    <string name="block_reopening_body">%1$s can be reopened in %2$d seconds.</string>
+    <string name="block_generic_title">Blocked</string>
+    <string name="block_generic_body">%1$s is blocked by Dominanter.</string>
+    <string name="block_go_home">Go to home screen</string>
+
+    <string name="a11y_request_title">Dominanter protection is off</string>
+    <string name="a11y_request_body">The Dominanter accessibility service was turned off, so controlled apps have been suspended and app installs blocked. Re-enable the service in Android Settings to restore them.</string>
+    <string name="a11y_request_open_settings">Open accessibility settings</string>
+</resources>

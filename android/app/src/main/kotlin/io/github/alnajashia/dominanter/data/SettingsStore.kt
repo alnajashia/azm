@@ -1,0 +1,384 @@
+package io.github.alnajashia.dominanter.data
+
+import android.content.Context
+import android.content.SharedPreferences
+import android.util.Log
+import org.json.JSONArray
+import org.json.JSONObject
+import java.time.DayOfWeek
+
+/**
+ * The single Kotlin reader/writer of the SharedPreferences schema
+ * (`docs/ARCHITECTURE.md` §8). File and key names mirror the original DeChainer
+ * schema so the Accessibility Service, the channel handler and any future
+ * tooling all see the same layout:
+ *
+ *  - `app_limits` (Int minutes/pkg) / `app_weekly_limits` (CSV of 7 Ints/pkg)
+ *  - `app_time_windows` (JSON `[{s,e}]`/pkg) / `app_weekly_time_windows` (JSON 7 day-arrays)
+ *  - `app_groups` (`groups` JSON array)
+ *  - `internal_usage_stats` / `group_usage_stats` (Long ms per key, written by the service)
+ *  - `reopen_times` (Int seconds/pkg)
+ *  - `blocked_words_prefs` (`blocked_words`, `target_packages`, `passive_words_<pkg>`)
+ *  - `activity_blocker_prefs` (`blocked_activities`)
+ *  - `hidden_apps_prefs` (`hidden_packages`)
+ *  - `suspension_logs_prefs` (`logs` JSON array, capped)
+ *  - `security_prefs` (misc flags, incl. the intentional-accessibility-disable flag)
+ *
+ * Decoders fail safe for UI reads, but log corruption — a decode failure must
+ * never be silently interpreted as "no restrictions configured" (ARCH §7.4.5);
+ * enforcement readers in the service use the same decoders and therefore the
+ * same logged, empty-on-corruption behaviour the original had, minus the silence.
+ */
+object SettingsStore {
+    private const val TAG = "SettingsStore"
+
+    const val PREFS_APP_LIMITS = "app_limits"
+    const val PREFS_APP_WEEKLY_LIMITS = "app_weekly_limits"
+    const val PREFS_APP_WINDOWS = "app_time_windows"
+    const val PREFS_APP_WEEKLY_WINDOWS = "app_weekly_time_windows"
+    const val PREFS_GROUPS = "app_groups"
+    const val PREFS_USAGE = "internal_usage_stats"
+    const val PREFS_GROUP_USAGE = "group_usage_stats"
+    const val PREFS_USAGE_META = "usage_meta"
+    const val PREFS_REOPEN = "reopen_times"
+    const val PREFS_BLOCKED_WORDS = "blocked_words_prefs"
+    const val PREFS_ACTIVITY_BLOCKER = "activity_blocker_prefs"
+    const val PREFS_HIDDEN = "hidden_apps_prefs"
+    const val PREFS_SUSPENSION_LOGS = "suspension_logs_prefs"
+    const val PREFS_SECURITY = "security_prefs"
+
+    private const val KEY_GROUPS = "groups"
+    private const val KEY_HIDDEN_PACKAGES = "hidden_packages"
+    private const val KEY_LOGS = "logs"
+    private const val KEY_USAGE_DATE = "date"
+    private const val KEY_INTENTIONAL_A11Y_DISABLE = "intentional_a11y_disable_at"
+    private const val MAX_LOGS = 500
+    private const val INTENTIONAL_DISABLE_WINDOW_MS = 120_000L
+
+    @Volatile
+    private var appContext: Context? = null
+
+    fun init(context: Context) {
+        appContext = context.applicationContext
+    }
+
+    private fun ctx(): Context =
+        appContext ?: throw IllegalStateException("SettingsStore not initialised (Application.onCreate)")
+
+    fun prefs(name: String): SharedPreferences =
+        ctx().getSharedPreferences(name, Context.MODE_PRIVATE)
+
+    // ------------------------------------------------------------------ limits
+
+    fun timeLimitFor(packageName: String): TimeLimit {
+        decodeWeeklyLimit(prefs(PREFS_APP_WEEKLY_LIMITS).getString(packageName, null))
+            ?.let { return TimeLimit.perDay(it) }
+        return TimeLimit.daily(prefs(PREFS_APP_LIMITS).getInt(packageName, 0))
+    }
+
+    fun setTimeLimit(packageName: String, limit: TimeLimit) {
+        val daily = prefs(PREFS_APP_LIMITS)
+        val weekly = prefs(PREFS_APP_WEEKLY_LIMITS)
+        val perDay = limit.weeklyMinutes?.takeIf { limit.isSet }
+        if (perDay != null) {
+            daily.edit().remove(packageName).apply()
+            weekly.edit().putString(packageName, perDay.joinToString(",")).apply()
+        } else {
+            weekly.edit().remove(packageName).apply()
+            daily.edit().apply {
+                if (limit.dailyMinutes > 0) putInt(packageName, limit.dailyMinutes) else remove(packageName)
+            }.apply()
+        }
+    }
+
+    fun limitedPackages(): Set<String> =
+        prefs(PREFS_APP_LIMITS).all.keys + prefs(PREFS_APP_WEEKLY_LIMITS).all.keys
+
+    private fun decodeWeeklyLimit(value: String?): List<Int>? {
+        if (value.isNullOrEmpty()) return null
+        val minutes = value.split(",").map { it.trim().toIntOrNull() ?: return null }
+        return minutes.takeIf { it.size == DayOfWeek.entries.size }
+    }
+
+    // ------------------------------------------------------------------ windows
+
+    fun timeWindowsFor(packageName: String): TimeWindows {
+        decodeWeeklyWindows(prefs(PREFS_APP_WEEKLY_WINDOWS).getString(packageName, null))
+            ?.let { return TimeWindows.perDay(it) }
+        return TimeWindows.daily(decodeWindows(prefs(PREFS_APP_WINDOWS).getString(packageName, null)))
+    }
+
+    fun setTimeWindows(packageName: String, windows: TimeWindows) {
+        val daily = prefs(PREFS_APP_WINDOWS)
+        val weekly = prefs(PREFS_APP_WEEKLY_WINDOWS)
+        val perDay = windows.weeklyWindows?.takeIf { windows.isSet }
+        if (perDay != null) {
+            daily.edit().remove(packageName).apply()
+            weekly.edit().putString(packageName, encodeWeeklyWindows(perDay).toString()).apply()
+        } else {
+            weekly.edit().remove(packageName).apply()
+            daily.edit().apply {
+                if (windows.dailyWindows.isNotEmpty()) {
+                    putString(packageName, encodeWindows(windows.dailyWindows))
+                } else remove(packageName)
+            }.apply()
+        }
+    }
+
+    fun windowedPackages(): Set<String> =
+        prefs(PREFS_APP_WINDOWS).all.keys + prefs(PREFS_APP_WEEKLY_WINDOWS).all.keys
+
+    fun decodeWindows(json: String?): List<TimeWindow> {
+        if (json.isNullOrEmpty()) return emptyList()
+        return try {
+            val array = JSONArray(json)
+            (0 until array.length()).map { i ->
+                val obj = array.getJSONObject(i)
+                TimeWindow(obj.getInt("s"), obj.getInt("e"))
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Corrupt time-windows value, treating as unset: $json", e)
+            emptyList()
+        }
+    }
+
+    fun encodeWindows(windows: List<TimeWindow>): String = encodeWindowArray(windows).toString()
+
+    fun encodeWindowArray(windows: List<TimeWindow>): JSONArray {
+        val array = JSONArray()
+        windows.forEach { w ->
+            array.put(JSONObject().apply { put("s", w.startMinute); put("e", w.endMinute) })
+        }
+        return array
+    }
+
+    fun decodeWeeklyWindows(json: String?): List<List<TimeWindow>>? {
+        if (json.isNullOrEmpty()) return null
+        return try {
+            val array = JSONArray(json)
+            if (array.length() != DayOfWeek.entries.size) return null
+            (0 until array.length()).map { i ->
+                val dayArray = array.getJSONArray(i)
+                (0 until dayArray.length()).map { j ->
+                    val obj = dayArray.getJSONObject(j)
+                    TimeWindow(obj.getInt("s"), obj.getInt("e"))
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Corrupt weekly time-windows value", e)
+            null
+        }
+    }
+
+    fun encodeWeeklyWindows(weekly: List<List<TimeWindow>>): JSONArray {
+        val array = JSONArray()
+        weekly.forEach { array.put(encodeWindowArray(it)) }
+        return array
+    }
+
+    // ------------------------------------------------------------------ groups
+
+    fun groups(): List<AppGroup> = decodeGroups(prefs(PREFS_GROUPS).getString(KEY_GROUPS, null))
+
+    fun groupForPackage(packageName: String): AppGroup? =
+        groups().firstOrNull { packageName in it.packageNames }
+
+    private fun decodeGroups(json: String?): List<AppGroup> {
+        if (json.isNullOrEmpty()) return emptyList()
+        return try {
+            val array = JSONArray(json)
+            (0 until array.length()).map { i ->
+                val obj = array.getJSONObject(i)
+                val packagesArray = obj.getJSONArray("packages")
+                val packages = (0 until packagesArray.length()).map { packagesArray.getString(it) }.toSet()
+                val windows = obj.optJSONArray("windows")?.let { arr ->
+                    (0 until arr.length()).map { j ->
+                        val w = arr.getJSONObject(j)
+                        TimeWindow(w.getInt("s"), w.getInt("e"))
+                    }
+                } ?: emptyList()
+                val weeklyWindows = obj.optJSONArray("weeklyWindows")?.let { arr ->
+                    decodeWeeklyWindows(arr.toString())
+                }
+                val weekly = obj.optJSONArray("weeklyLimit")?.let { arr ->
+                    (0 until arr.length()).map { arr.getInt(it) }
+                }?.takeIf { it.size == DayOfWeek.entries.size }
+                AppGroup(
+                    id = obj.getString("id"),
+                    name = obj.getString("name"),
+                    packageNames = packages,
+                    timeLimit = weekly?.let { TimeLimit.perDay(it) }
+                        ?: TimeLimit.daily(obj.optInt("limit", 0)),
+                    timeWindows = weeklyWindows?.let { TimeWindows.perDay(it) }
+                        ?: TimeWindows.daily(windows),
+                )
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Corrupt app_groups value, treating as no groups", e)
+            emptyList()
+        }
+    }
+
+    // ------------------------------------------------------------------ usage
+
+    /** Clears both usage stores when the calendar day has rolled over. Returns true if it reset. */
+    fun resetUsageIfNewDay(today: String): Boolean {
+        val meta = prefs(PREFS_USAGE_META)
+        if (meta.getString(KEY_USAGE_DATE, null) == today) return false
+        prefs(PREFS_USAGE).edit().clear().apply()
+        prefs(PREFS_GROUP_USAGE).edit().clear().apply()
+        meta.edit().putString(KEY_USAGE_DATE, today).apply()
+        return true
+    }
+
+    fun usageDate(): String? = prefs(PREFS_USAGE_META).getString(KEY_USAGE_DATE, null)
+
+    fun usageMs(packageName: String): Long = prefs(PREFS_USAGE).getLong(packageName, 0L)
+
+    fun addUsage(packageName: String, deltaMs: Long) {
+        val p = prefs(PREFS_USAGE)
+        p.edit().putLong(packageName, p.getLong(packageName, 0L) + deltaMs).apply()
+    }
+
+    fun allUsage(): Map<String, Long> =
+        prefs(PREFS_USAGE).all.mapNotNull { (k, v) -> (v as? Long)?.let { k to it } }.toMap()
+
+    fun groupUsageMs(groupId: String): Long = prefs(PREFS_GROUP_USAGE).getLong(groupId, 0L)
+
+    fun addGroupUsage(groupId: String, deltaMs: Long) {
+        val p = prefs(PREFS_GROUP_USAGE)
+        p.edit().putLong(groupId, p.getLong(groupId, 0L) + deltaMs).apply()
+    }
+
+    fun allGroupUsage(): Map<String, Long> =
+        prefs(PREFS_GROUP_USAGE).all.mapNotNull { (k, v) -> (v as? Long)?.let { k to it } }.toMap()
+
+    // ------------------------------------------------------------------ reopen (v1.1 enforcement, stored from v1)
+
+    fun reopenSeconds(packageName: String): Int = prefs(PREFS_REOPEN).getInt(packageName, 0)
+
+    fun reopenPackages(): Set<String> = prefs(PREFS_REOPEN).all.keys
+
+    // ------------------------------------------------------------------ words / activities
+
+    fun blockedWords(): Set<String> =
+        prefs(PREFS_BLOCKED_WORDS).getStringSet("blocked_words", emptySet()) ?: emptySet()
+
+    fun wordTargetPackages(): Set<String> =
+        prefs(PREFS_BLOCKED_WORDS).getStringSet("target_packages", emptySet()) ?: emptySet()
+
+    fun passiveWordsFor(packageName: String): Set<String> =
+        prefs(PREFS_BLOCKED_WORDS).getStringSet("passive_words_$packageName", emptySet()) ?: emptySet()
+
+    fun passiveWordPackages(): Set<String> =
+        prefs(PREFS_BLOCKED_WORDS).all.keys
+            .filter { it.startsWith("passive_words_") }
+            .map { it.removePrefix("passive_words_") }
+            .toSet()
+
+    fun blockedActivities(): Set<String> =
+        prefs(PREFS_ACTIVITY_BLOCKER).getStringSet("blocked_activities", emptySet()) ?: emptySet()
+
+    // ------------------------------------------------------------------ hidden set (DPM-written)
+
+    fun hiddenPackages(): Set<String> =
+        prefs(PREFS_HIDDEN).getStringSet(KEY_HIDDEN_PACKAGES, emptySet()) ?: emptySet()
+
+    fun setHiddenPackage(packageName: String, hidden: Boolean) {
+        val current = hiddenPackages()
+        val updated = if (hidden) current + packageName else current - packageName
+        prefs(PREFS_HIDDEN).edit().putStringSet(KEY_HIDDEN_PACKAGES, updated).apply()
+    }
+
+    // ------------------------------------------------------------------ suspension log (F27)
+
+    fun logSuspension(packageName: String, reason: SuspensionReason, details: String? = null) {
+        val context = ctx()
+        synchronized(this) {
+            val current = readLogs().toMutableList()
+            val now = System.currentTimeMillis()
+            // As in the original: dedupe identical package+reason within 5 s.
+            val recent = current.firstOrNull { it.optString("packageName") == packageName && it.optString("reason") == reason.name }
+            if (recent != null && now - recent.optLong("timestamp", 0L) < 5_000L) return
+            val appName = try {
+                val pm = context.packageManager
+                pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString()
+            } catch (_: Exception) {
+                packageName
+            }
+            val entry = JSONObject().apply {
+                put("id", java.util.UUID.randomUUID().toString())
+                put("packageName", packageName)
+                put("appName", appName)
+                put("timestamp", now)
+                put("reason", reason.name)
+                details?.let { put("details", it) }
+            }
+            current.add(0, entry)
+            while (current.size > MAX_LOGS) current.removeAt(current.size - 1)
+            val array = JSONArray()
+            current.forEach { array.put(it) }
+            prefs(PREFS_SUSPENSION_LOGS).edit().putString(KEY_LOGS, array.toString()).apply()
+        }
+    }
+
+    fun readLogs(): List<JSONObject> {
+        val json = prefs(PREFS_SUSPENSION_LOGS).getString(KEY_LOGS, null) ?: return emptyList()
+        return try {
+            val array = JSONArray(json)
+            (0 until array.length()).map { array.getJSONObject(it) }
+        } catch (e: Exception) {
+            Log.w(TAG, "Corrupt suspension log", e)
+            emptyList()
+        }
+    }
+
+    // ------------------------------------------------------------------ intentional a11y disable (F28 guard)
+
+    /** Arms the guard that suppresses the accessibility-loss lockdown for an intentional disable. */
+    fun armIntentionalAccessibilityDisable() {
+        prefs(PREFS_SECURITY).edit()
+            .putLong(KEY_INTENTIONAL_A11Y_DISABLE, System.currentTimeMillis()).apply()
+        DominanterState.intentionalDisableArmed = true
+    }
+
+    /** Consumed by the service's onUnbind: true (once) if the disable was intentional and recent. */
+    fun consumeIntentionalAccessibilityDisable(): Boolean {
+        if (DominanterState.intentionalDisableArmed) {
+            DominanterState.intentionalDisableArmed = false
+            prefs(PREFS_SECURITY).edit().remove(KEY_INTENTIONAL_A11Y_DISABLE).apply()
+            return true
+        }
+        val armedAt = prefs(PREFS_SECURITY).getLong(KEY_INTENTIONAL_A11Y_DISABLE, 0L)
+        if (armedAt == 0L) return false
+        prefs(PREFS_SECURITY).edit().remove(KEY_INTENTIONAL_A11Y_DISABLE).apply()
+        return System.currentTimeMillis() - armedAt <= INTENTIONAL_DISABLE_WINDOW_MS
+    }
+
+    /** Packages the F28 lockdown controls: every package with any enforcement configured. */
+    fun controlledPackages(): Set<String> {
+        val groupPackages = groups()
+            .filter { it.timeLimit.isSet || it.timeWindows.isSet }
+            .flatMap { it.packageNames }
+        return wordTargetPackages() +
+            passiveWordPackages() +
+            limitedPackages() +
+            windowedPackages() +
+            reopenPackages() +
+            groupPackages
+    }
+}
+
+/** Process-local shared state between the channel handler, the Application and the service. */
+object DominanterState {
+    @Volatile var intentionalDisableArmed: Boolean = false
+
+    @Volatile var accessibilityServiceRunning: Boolean = false
+
+    /**
+     * Event bridge to the Flutter EventChannel, installed by the channel
+     * handler while an engine is attached. Null when no UI is alive — events
+     * are advisory (ARCH §5.5); authoritative state is always re-readable.
+     */
+    @Volatile var eventSink: ((String, Map<String, Any?>) -> Unit)? = null
+}
