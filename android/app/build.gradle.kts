@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -14,8 +16,41 @@ plugins {
 // move when the Flutter template itself moves. Recorded here so the parity
 // documentation stays honest — do not "fix" this silently.
 
+// Dedicated release signing (2026-11-09). History: v1.0.0/v1.0.1 shipped
+// signed with an ephemeral sandbox debug key (cert SHA-256 a96dec…), and
+// v1.0.2 with a second ephemeral debug key (81970e…) — the silent key change
+// made in-place updates impossible ("package conflicts with existing
+// package" on the user's device), and the first key no longer exists
+// anywhere. From v1.0.3 on, release builds use ONE dedicated keystore kept
+// in the persistent workspace OUTSIDE this repository — it must never be
+// committed: ~/workspace/dominater-rebuild/keys/ (keystore.properties holds
+// its absolute path and passwords; DOMINANTER_KEYSTORE_PROPERTIES can point
+// elsewhere). Certificate SHA-256:
+// b03543fa7d9ebcee426c61db96935fb27be38dd6d7b2188de1dcaee5c5ede38b.
+val dominanterKeystoreProps = Properties()
+val dominanterKeystorePropsFile = rootProject.file(
+    System.getenv("DOMINANTER_KEYSTORE_PROPERTIES")
+        ?: "../../keys/keystore.properties"
+)
+if (dominanterKeystorePropsFile.exists()) {
+    dominanterKeystorePropsFile.inputStream().use {
+        dominanterKeystoreProps.load(it)
+    }
+}
+
 android {
     namespace = "io.github.alnajashia.dominanter"
+
+    signingConfigs {
+        create("dominanterRelease") {
+            if (dominanterKeystorePropsFile.exists()) {
+                storeFile = file(dominanterKeystoreProps.getProperty("storeFile"))
+                storePassword = dominanterKeystoreProps.getProperty("storePassword")
+                keyAlias = dominanterKeystoreProps.getProperty("keyAlias")
+                keyPassword = dominanterKeystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
     // Envelope matches the original DeChainer (minSdk 30, target/compile 36) — see
     // docs/ARCHITECTURE.md §2. Values are pinned explicitly instead of flutter.* defaults.
     compileSdk = 36
@@ -43,8 +78,14 @@ android {
 
     buildTypes {
         release {
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Dedicated release keystore when its properties file exists
+            // (see the signing note above); debug key only as a last-resort
+            // fallback for environments without the keystore.
+            signingConfig = if (dominanterKeystorePropsFile.exists()) {
+                signingConfigs.getByName("dominanterRelease")
+            } else {
+                signingConfigs.getByName("debug")
+            }
 
             // Release hardening, mirroring the original's posture
             // (DeChainer app/build.gradle.kts, release block: minify and

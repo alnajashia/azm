@@ -280,3 +280,14 @@ APKs v1.0.1: debug sha256 6179e37e89f564d6a7d3e83c9181dbfc58deb4a7ece68c60288699
 release sha256 040d70dc24f774c703b87f8c2c7011ee75bdbcab071d14f62beefa729bf9d183
 (debug-signed, device-untested). Open user decisions U-1…U-5 and the v1.1
 deferrals are unchanged — see PARITY_AUDIT_FULL.md §D.
+
+
+## Signing (2026-11-09)
+
+Release signing moved from ephemeral sandbox debug keys to a dedicated
+keystore (cert SHA-256
+b03543fa7d9ebcee426c61db96935fb27be38dd6d7b2188de1dcaee5c5ede38b) stored
+outside the repo in the persistent workspace; v1.0.3 is the first release
+signed with it. Full chain and migration note: docs/TESTING.md,
+"Signing chain". v1.0.3 APK: release sha256
+18a9b7eca5ad18dfd4061ccbec2da2cf0e22326deb52d764af6d7d5d282dff20.
