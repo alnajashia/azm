@@ -33,7 +33,7 @@ void main() {
             'packages': [
               {'packageName': 'com.example.video', 'usedMs': 1800000},
             ],
-            'groups': [],
+            'groups': <Object?>[],
           },
       'listInstalledApps': (_) => [
             {
@@ -46,6 +46,13 @@ void main() {
               'hasExplicitContentRating': null,
             },
           ],
+      'getGroups': (_) => {'groups': <Object?>[]},
+      // The limits overview only lists apps that HAVE a limit: this app
+      // has a 60-minute daily limit (30 min used today).
+      'getTimeLimit': (_) => {'dailyMinutes': 60, 'reopenSeconds': 0},
+      'getTimeWindows': (_) => {'dailyWindows': <Object?>[], 'weeklyWindows': null},
+      'getFocusSession': (_) => null, // no native focus session
+      'getSetting': (_) => {'value': null},
     });
     final controller = AppController.test(client);
     addTearDown(controller.dispose);
@@ -56,14 +63,30 @@ void main() {
 
     expect(find.text("I'm having impulses"), findsOneWidget);
     expect(find.text('Access app'), findsOneWidget);
-    expect(find.text('Video App'), findsOneWidget); // read-only usage overview
     expect(controller.startup, StartupState.locked); // still locked
+
+    // The usage overview is limit-scoped and lives behind 'View limits':
+    // nothing about individual apps is shown inline any more.
+    expect(find.text('Video App'), findsNothing);
+    await tester.ensureVisible(find.text('View limits'));
+    await tester.tap(find.text('View limits'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text("Today's usage"), findsOneWidget);
+    expect(find.text('Video App'), findsOneWidget);
+    expect(find.text('30min of 1h'), findsOneWidget); // 30 min used of 60
 
     await tester.pumpWidget(const SizedBox()); // dispose tickers
   });
 
-  testWidgets('First-run wizard shows the generated code grouped for paper (F24)',
+  testWidgets('Wizard step 2 is reveal-gated: no code before "Show code" (F24)',
       (tester) async {
+    // Tall viewport: with the default 800x600 surface the wizard's
+    // write-step checkbox lands in the bottom button bar's tap shadow.
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final client = mockClient({
       'generateRecoveryCode': (_) => {'code': 'ABCDEFGHIJKLMNOP'},
       'setRecoveryCode': (_) => {'isSet': true},
@@ -80,17 +103,34 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
+    // Step 1 of 4: Intro — the code is not generated into view here.
+    expect(find.text('Step 1 of 4'), findsOneWidget);
+    expect(find.text('ABCD EFGH IJKL MNOP'), findsNothing);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+    await tester.pump();
+
+    // Step 2: Write — the code stays hidden until the explicit reveal,
+    // and Next is disabled until it has been revealed AND the paper
+    // checkbox is ticked.
+    expect(find.text('Step 2 of 4'), findsOneWidget);
+    expect(find.text('ABCD EFGH IJKL MNOP'), findsNothing);
+    final nextButton =
+        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Next'));
+    expect(nextButton.onPressed, isNull);
+
+    await tester.tap(find.text('Show code'));
+    await tester.pump();
     expect(find.text('ABCD EFGH IJKL MNOP'), findsOneWidget);
-    expect(find.textContaining('written this code on paper'), findsOneWidget);
-    // Continue is disabled until the paper checkbox is ticked.
-    final continueButton = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Continue'));
-    expect(continueButton.onPressed, isNull);
     expect(done, isFalse);
 
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('Wizard stores the re-typed code via the channel (F24)', (tester) async {
+  testWidgets('Wizard: full 4-step flow stores the re-typed code (F24)', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     String? storedCode;
     final client = mockClient({
       'generateRecoveryCode': (_) => {'code': 'ABCDEFGHIJKLMNOP'},
@@ -111,13 +151,39 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    await tester.tap(find.byType(Checkbox));
+    // Intro -> Write.
+    await tester.tap(find.widgetWithText(FilledButton, 'Next'));
     await tester.pump();
-    await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
+    // Reveal, confirm the paper copy, advance.
+    await tester.tap(find.text('Show code'));
+    await tester.pump();
+    await tester.ensureVisible(find.byType(Checkbox));
+    await tester.tap(find.byType(Checkbox)); // 'I wrote the code on paper'
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Next'));
     await tester.pump();
 
+    // Step 3: Confirm — the code is hidden again; type it from paper.
+    expect(find.text('Step 3 of 4'), findsOneWidget);
+    expect(find.text('ABCD EFGH IJKL MNOP'), findsNothing);
     await tester.enterText(find.byType(TextField), 'ABCDEFGHIJKLMNOP');
-    await tester.tap(find.widgetWithText(FilledButton, 'Store recovery code'));
+    await tester.pump();
+    expect(find.text('The code is correct'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+    await tester.pump();
+
+    // Step 4: Store — Finish stays disabled until the storage checkbox,
+    // and only Finish talks to the channel.
+    expect(find.text('Step 4 of 4'), findsOneWidget);
+    final finishButton =
+        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Finish'));
+    expect(finishButton.onPressed, isNull);
+    expect(storedCode, isNull);
+
+    await tester.ensureVisible(find.byType(Checkbox));
+    await tester.tap(find.byType(Checkbox)); // 'I stored the paper in a safe place'
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Finish'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 

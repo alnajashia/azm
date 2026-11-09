@@ -96,7 +96,6 @@ class WordsChallengeView extends StatefulWidget {
 class _WordsChallengeViewState extends State<WordsChallengeView> {
   late final WordsChallenge _challenge;
   final _input = TextEditingController();
-  String? _feedback;
 
   @override
   void initState() {
@@ -110,15 +109,24 @@ class _WordsChallengeViewState extends State<WordsChallengeView> {
     super.dispose();
   }
 
-  void _submit() {
-    final ok = _challenge.submit(_input.text);
-    setState(() {
-      _input.clear();
-      _feedback = ok
-          ? null
-          : 'Wrong word — the streak restarts, as designed. This friction is the point.';
-      if (_challenge.isComplete) widget.onComplete();
-    });
+  /// Per-keystroke checking, mirroring the original's `WordChallenge`
+  /// (`ChallengeScreens.kt`): every keystroke is coloured against the
+  /// target word as it is typed, and the word advances the moment the
+  /// input matches it exactly — there is no submit button and no failure
+  /// state; a wrong letter simply stays red until it is corrected. All of
+  /// that logic lives in the domain model's `typeInput`; this view only
+  /// mirrors the field to the model's input and paints `charStates`.
+  void _onChanged(String value) {
+    if (_challenge.isComplete) return;
+    _challenge.typeInput(value);
+    if (_input.text != _challenge.input) {
+      _input.value = TextEditingValue(
+        text: _challenge.input,
+        selection: TextSelection.collapsed(offset: _challenge.input.length),
+      );
+    }
+    setState(() {});
+    if (_challenge.isComplete) widget.onComplete();
   }
 
   @override
@@ -126,18 +134,43 @@ class _WordsChallengeViewState extends State<WordsChallengeView> {
     if (_challenge.isComplete) {
       return const Center(child: Icon(Icons.check_circle, size: 48));
     }
+    final scheme = Theme.of(context).colorScheme;
+    final target = _challenge.currentWord;
+    final states = _challenge.charStates;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Type ${widget.requiredWords} words correctly in a row',
+        Text('Type the words',
             style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Text(
+          '${_challenge.index + 1} / ${widget.requiredWords}',
+          style: Theme.of(context).textTheme.bodyLarge,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 8),
         LinearProgressIndicator(value: _challenge.index / widget.requiredWords),
         const SizedBox(height: 16),
-        Text(
-          _challenge.currentWord,
-          style: Theme.of(context).textTheme.headlineMedium,
+        Text.rich(
+          TextSpan(
+            children: [
+              for (var i = 0; i < target.length; i++)
+                TextSpan(
+                  text: target[i],
+                  style: TextStyle(
+                    color: switch (states[i]) {
+                      WordCharState.correct => scheme.primary,
+                      WordCharState.wrong => scheme.error,
+                      WordCharState.untyped => scheme.onSurface,
+                    },
+                  ),
+                ),
+            ],
+          ),
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
@@ -145,15 +178,12 @@ class _WordsChallengeViewState extends State<WordsChallengeView> {
           controller: _input,
           textAlign: TextAlign.center,
           autocorrect: false,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: 'Type the word',
-            errorText: _feedback,
-            border: const OutlineInputBorder(),
+            border: OutlineInputBorder(),
           ),
-          onSubmitted: (_) => _submit(),
+          onChanged: _onChanged,
         ),
-        const SizedBox(height: 12),
-        FilledButton(onPressed: _submit, child: const Text('Check')),
       ],
     );
   }
@@ -177,6 +207,7 @@ class ReadingChallengeView extends StatefulWidget {
 class _ReadingChallengeViewState extends State<ReadingChallengeView> {
   late final ReadingChallenge _challenge;
   Timer? _timer;
+  DateTime? _lastTick;
 
   @override
   void initState() {
@@ -190,15 +221,18 @@ class _ReadingChallengeViewState extends State<ReadingChallengeView> {
       passages: passages,
       requiredPassages: widget.requiredPassages,
     );
-    _timer = Timer.periodic(_challenge.wordInterval, (_) {
+    // The domain model runs on an elapsed clock (the original animates a
+    // linear tween over each passage's timeline); this timer is that
+    // clock. It only advances time — moving to the next passage is the
+    // reader's explicit action, locked until the timeline has elapsed.
+    _lastTick = DateTime.now();
+    _timer = Timer.periodic(const Duration(milliseconds: 50), (_) {
       if (!mounted) return;
-      setState(() {
-        _challenge.tick();
-        if (_challenge.isComplete) {
-          _timer?.cancel();
-          widget.onComplete();
-        }
-      });
+      final now = DateTime.now();
+      final delta = now.difference(_lastTick!);
+      _lastTick = now;
+      if (_challenge.isPassageComplete || _challenge.isComplete) return;
+      setState(() => _challenge.advance(delta));
     });
   }
 
@@ -208,12 +242,26 @@ class _ReadingChallengeViewState extends State<ReadingChallengeView> {
     super.dispose();
   }
 
+  void _next() {
+    if (!_challenge.next()) return;
+    _lastTick = DateTime.now();
+    if (_challenge.isComplete) {
+      _timer?.cancel();
+      widget.onComplete();
+    } else {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_challenge.isComplete) {
       return const Center(child: Icon(Icons.check_circle, size: 48));
     }
     final passage = _challenge.currentPassage;
+    final totalMs = _challenge.totalDuration.inMilliseconds;
+    final passageDone = _challenge.isPassageComplete;
+    final isLast = _challenge.passageIndex + 1 >= widget.requiredPassages;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -224,10 +272,21 @@ class _ReadingChallengeViewState extends State<ReadingChallengeView> {
         const SizedBox(height: 8),
         LinearProgressIndicator(
             value: _challenge.passageIndex / widget.requiredPassages),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: totalMs == 0
+              ? 0
+              : _challenge.elapsed.inMilliseconds / totalMs,
+        ),
         const SizedBox(height: 16),
         Text(
           _challenge.revealedWords.join(' '),
           style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        const SizedBox(height: 16),
+        FilledButton(
+          onPressed: passageDone ? _next : null,
+          child: Text(isLast ? 'Finish' : 'Next passage'),
         ),
       ],
     );
@@ -288,7 +347,7 @@ class _ChallengeRunnerViewState extends State<ChallengeRunnerView> {
         if (_queue.isEmpty)
           FilledButton(
             onPressed: widget.onAllComplete,
-            child: const Text('Continue to recovery code'),
+            child: const Text('Continue'),
           )
         else if (_index < _queue.length)
           switch (_queue[_index]) {

@@ -101,6 +101,8 @@ data class AppGroup(
     val packageNames: Set<String> = emptySet(),
     val timeLimit: TimeLimit = TimeLimit.NONE,
     val timeWindows: TimeWindows = TimeWindows.NONE,
+    /** Reopening cooldown in seconds, as on per-app limits (Phase B parity fix). */
+    val reopenSeconds: Int = 0,
 )
 
 enum class SuspensionReason {

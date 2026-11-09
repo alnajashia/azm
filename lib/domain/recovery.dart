@@ -4,8 +4,10 @@
 ///
 /// * A recovery session lasts 10 minutes and is **in-memory only** — process
 ///   death ends it (the original ends it in `MainActivity.onDestroy`).
-/// * **Tightening** a restriction is always free, with a 5-second undo
-///   window. **Loosening** requires an active session.
+/// * **Tightening** a restriction is free, but only takes effect after a
+///   5-second undo window; undoing inside the window means the change is
+///   never applied at all (the original's `PendingChange.schedule()`).
+///   **Loosening** requires an active session.
 /// * The 48-hour forced removal is the only code-free escape (F2); its
 ///   accounting uses elapsed-realtime-style monotonic accumulation so wall
 ///   clock changes cannot shorten it.
@@ -18,11 +20,14 @@ import 'package:flutter/foundation.dart';
 /// Whether a proposed change loosens or tightens protection.
 enum ChangeDirection { tightening, loosening, neutral }
 
-/// Pure loosening computations, ported from the original `PendingChange`
-/// `isLooserLimit()/isLooserWindows()/isLooserRestrictions()` semantics.
+/// Pure loosening computations, ported line-by-line from the original
+/// `PendingChange.kt` top-level functions
+/// (`isLooserLimit()/isLooserWindows()/isLooserRestrictions()/isLooserSet()`).
 abstract final class Loosening {
   /// A limit change loosens when the effective cap grows on any day, or a
   /// set limit is removed. (No limit = unbounded = loosest.)
+  /// Mirrors `PendingChange.kt`: `cap(minutes) = if (minutes == 0) MAX else
+  /// minutes`, compared per `DayOfWeek`.
   static bool isLooserLimit({
     required int? oldDaily,
     required List<int>? oldWeekly,
@@ -44,23 +49,64 @@ abstract final class Loosening {
 
   static const _unbounded = 1 << 30;
 
-  /// Windows loosen when the allowed time on any day grows: a window is
-  /// added/widened, or windows are removed entirely.
-  /// Window lists are (startMinute, endMinute) pairs, minutes of day,
-  /// possibly spanning midnight (end <= start).
+  /// Whether minute-of-day [minute] lies inside the window ([start], [end]),
+  /// mirroring the original `TimeWindow.contains()`: a non-wrapping window
+  /// covers `[start, end)`; a wrapping one (end <= start) covers
+  /// `[start, 1440) ∪ [0, end)`.
+  static bool _windowContains((int, int) window, int minute) {
+    final (start, end) = window;
+    if (start <= end) return minute >= start && minute < end;
+    return minute >= start || minute < end;
+  }
+
+  /// Windows are the *allowed* periods and an empty list means always
+  /// allowed: loosening is allowing a minute that wasn't.
+  /// Line-by-line port of `PendingChange.kt`'s `isLooserWindows(List,
+  /// List)`: for every minute of the day, if the new windows allow it and
+  /// the old ones did not, the change loosens — regardless of total length.
   static bool isLooserWindows({
     required List<(int, int)> oldWindows,
     required List<(int, int)> newWindows,
   }) {
-    if (oldWindows.isEmpty) return false; // was unrestricted — cannot loosen
-    if (newWindows.isEmpty) return true; // removed all windows = loosest
-    return _totalMinutes(newWindows) > _totalMinutes(oldWindows);
+    bool allowed(List<(int, int)> windows, int minute) =>
+        windows.isEmpty || windows.any((w) => _windowContains(w, minute));
+    for (var minute = 0; minute < 1440; minute++) {
+      if (allowed(newWindows, minute) && !allowed(oldWindows, minute)) {
+        return true;
+      }
+    }
+    return false;
   }
 
-  static int _totalMinutes(List<(int, int)> windows) => windows.fold(0, (sum, w) {
-        final (s, e) = w;
-        return sum + (e > s ? e - s : (1440 - s) + e);
-      });
+  /// Per-weekday overload, mirroring `PendingChange.kt`'s
+  /// `isLooserWindows(TimeWindows, TimeWindows)`: each day uses its weekly
+  /// windows when set, otherwise the daily windows (the original's
+  /// `TimeWindows.windowsFor(day)`), and the change loosens if it loosens
+  /// on any day. Day indexes follow the Kotlin `DayOfWeek` order
+  /// (Monday = 0 … Sunday = 6).
+  static bool isLooserWindowsForWeek({
+    required List<(int, int)> oldDaily,
+    required List<List<(int, int)>>? oldWeekly,
+    required List<(int, int)> newDaily,
+    required List<List<(int, int)>>? newWeekly,
+  }) {
+    List<(int, int)> forDay(
+      List<(int, int)> daily,
+      List<List<(int, int)>>? weekly,
+      int day,
+    ) =>
+        (weekly != null && day < weekly.length) ? weekly[day] : daily;
+
+    for (var day = 0; day < 7; day++) {
+      if (isLooserWindows(
+        oldWindows: forDay(oldDaily, oldWeekly, day),
+        newWindows: forDay(newDaily, newWeekly, day),
+      )) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   /// A boolean protection toggle: turning a protection OFF (or an app's
   /// suspension/hidden state OFF) loosens; turning it ON tightens.
@@ -72,62 +118,175 @@ abstract final class Loosening {
     return isOn ? ChangeDirection.tightening : ChangeDirection.loosening;
   }
 
-  /// Restrictions map diff: removing a key or weakening a value loosens.
-  /// Values compared as strings, except booleans where true->false loosens
-  /// and string lists where dropping entries loosens.
+  /// Restrictions bundle diff, ported line-by-line from `PendingChange.kt`'s
+  /// `isLooserRestrictions(Bundle, Bundle)`. Only keys present in the old
+  /// bundle are examined; per old-value type:
+  ///
+  /// * **bool** — loosens when it was `true` and the new value is not `true`
+  ///   (false or removed);
+  /// * **String** — loosens when it was non-empty and the new value is
+  ///   missing, not a string, or empty;
+  /// * **num** — loosens when it was non-zero and the new value is missing
+  ///   or numerically zero (a smaller non-zero value does **not** loosen);
+  /// * **List** — loosens when the new list (missing/non-list counts as
+  ///   empty) does not contain every old entry — containment, not length;
+  /// * **Map** (nested bundle) — loosens when the new value is not a map,
+  ///   or the recursion into the pair loosens.
   static bool isLooserRestrictions({
     required Map<String, dynamic> oldRestrictions,
     required Map<String, dynamic> newRestrictions,
-  }) {
-    for (final key in oldRestrictions.keys) {
-      if (!newRestrictions.containsKey(key)) return true;
-      final oldV = oldRestrictions[key];
-      final newV = newRestrictions[key];
-      if (oldV is bool && newV is bool && oldV && !newV) return true;
-      if (oldV is List && newV is List && newV.length < oldV.length) return true;
-      if (oldV is num && newV is num && newV < oldV) return true;
+  }) =>
+      _isLooserBundle(oldRestrictions, newRestrictions);
+
+  static bool _isLooserBundle(Map<dynamic, dynamic> current, Map<dynamic, dynamic> next) {
+    for (final key in current.keys) {
+      final oldVal = current[key];
+      final newVal = next.containsKey(key) ? next[key] : null;
+      switch (oldVal) {
+        case bool():
+          if (oldVal && newVal != true) return true;
+        case String():
+          if (oldVal.isNotEmpty && (newVal is! String || newVal.isEmpty)) {
+            return true;
+          }
+        case num():
+          if (oldVal.toInt() != 0 &&
+              (newVal == null || (newVal is num && newVal.toInt() == 0))) {
+            return true;
+          }
+        case List():
+          final newSet = newVal is List ? newVal.toSet() : const <dynamic>{};
+          if (!newSet.containsAll(oldVal.toSet())) return true;
+        case Map():
+          if (newVal is! Map || _isLooserBundle(oldVal, newVal)) return true;
+      }
     }
     return false;
   }
+
+  /// A set change loosens when any old entry is gone from the new set.
+  /// Port of `PendingChange.kt`'s `isLooserSet`: `!new.containsAll(old)`.
+  static bool isLooserSet({
+    required Set<String> oldSet,
+    required Set<String> newSet,
+  }) =>
+      !newSet.containsAll(oldSet);
 }
 
-/// A change that was applied immediately (tightening) and can be undone
-/// within [undoWindow] — the original's `PendingChange.schedule()` model.
+enum _PendingState { idle, pending, committed, undone }
+
+/// A tightening change with the original's 5-second undo window — a direct
+/// port of `PendingChange.schedule()` in `PendingChange.kt`:
+///
+/// * [run] only *schedules* the change. During the undo window the change
+///   is **not live**: nothing has been applied yet.
+/// * If the window lapses without an undo, [apply] runs exactly once.
+/// * [undo] inside the window cancels the schedule, so the change is
+///   **never applied** — undo is not a compensating revert; [onUndo] (the
+///   original's `onUndo` callback) runs instead, e.g. to roll back an
+///   optimistic UI toggle.
+/// * [commitNow] applies a pending change immediately. The original commits
+///   a showing change as soon as its snackbar is dismissed (which is how a
+///   new change supersedes the previous one), so the UI layer calls this
+///   when the snackbar goes away for any reason other than Undo.
 class PendingChange {
   PendingChange({
     required this.description,
     required this.direction,
     required this.apply,
-    required this.revert,
+    this.onUndo,
     this.undoWindow = const Duration(seconds: 5),
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now;
 
   final String description;
   final ChangeDirection direction;
+
+  /// The change itself. Runs at most once, and only after the undo window
+  /// lapses (or [commitNow] is called).
   final Future<void> Function() apply;
-  final Future<void> Function() revert;
+
+  /// Runs when the user undoes the change inside the window — the change
+  /// was never applied, so this only needs to restore any optimistic UI
+  /// state, exactly as in the original.
+  final Future<void> Function()? onUndo;
+
   final Duration undoWindow;
   final DateTime Function() _now;
 
-  DateTime? _appliedAt;
-  bool _undone = false;
+  _PendingState _state = _PendingState.idle;
+  Timer? _timer;
+  DateTime? _windowEndsAt;
+  Object? _commitError;
+  final Completer<void> _done = Completer<void>();
 
-  bool get isApplied => _appliedAt != null && !_undone;
-  bool get canUndo =>
-      isApplied && _now().difference(_appliedAt!) <= undoWindow;
+  /// The undo window is open and the change is not yet applied.
+  bool get isPending => _state == _PendingState.pending;
 
+  /// The change has been applied (the window lapsed or [commitNow] ran).
+  bool get isApplied => _state == _PendingState.committed;
+
+  /// The change was undone inside the window and will never be applied.
+  bool get isUndone => _state == _PendingState.undone;
+
+  /// Undo is possible exactly while the change is pending.
+  bool get canUndo => _state == _PendingState.pending;
+
+  /// The error thrown by [apply] when it ran, if any. Apply runs after
+  /// [run] has returned, so its failures surface here (and complete [done]
+  /// normally) instead of being thrown into the scheduler.
+  Object? get commitError => _commitError;
+
+  /// Completes once the change settles: applied, or undone.
+  Future<void> get done => _done.future;
+
+  /// Starts the undo window without applying anything. Returns as soon as
+  /// the change is scheduled, mirroring the original's fire-and-forget
+  /// `scope.launch { … }`.
   Future<void> run() async {
-    await apply();
-    _appliedAt = _now();
+    if (_state != _PendingState.idle) return;
+    _state = _PendingState.pending;
+    _windowEndsAt = _now().add(undoWindow);
+    _timer = Timer(undoWindow, () => unawaited(commitNow()));
   }
 
-  /// Returns false when the undo window has expired (change stands).
+  /// Undoes the change if the window is still open: the scheduled apply is
+  /// cancelled and never runs. Returns false when the window has already
+  /// lapsed (the change is committed and stands).
   Future<bool> undo() async {
-    if (!canUndo) return false;
-    await revert();
-    _undone = true;
+    if (_state != _PendingState.pending) return false;
+    if (_now().isAfter(_windowEndsAt!)) {
+      await commitNow();
+      return false;
+    }
+    _timer?.cancel();
+    _timer = null;
+    _state = _PendingState.undone;
+    await onUndo?.call();
+    if (!_done.isCompleted) _done.complete();
     return true;
+  }
+
+  /// Applies the pending change right away (the original commits on
+  /// snackbar dismissal). No-op unless the change is pending.
+  Future<void> commitNow() async {
+    if (_state != _PendingState.pending) return;
+    _timer?.cancel();
+    _timer = null;
+    _state = _PendingState.committed;
+    try {
+      await apply();
+    } catch (e) {
+      _commitError = e;
+    }
+    if (!_done.isCompleted) _done.complete();
+  }
+
+  /// Cancels the window timer without settling the change. A pending change
+  /// that is disposed is simply never applied.
+  void dispose() {
+    _timer?.cancel();
+    _timer = null;
   }
 }
 

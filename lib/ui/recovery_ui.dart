@@ -5,6 +5,15 @@
 /// Kotlin stores only a salted PBKDF2 hash (ARCH §7.1). Dart never persists
 /// the code. Because only the hash is stored, the code can never be
 /// displayed again after setup; the wizard says so plainly.
+///
+/// The wizard mirrors the original's four steps (Intro → Write → Confirm →
+/// Store, `RecoveryCodeWizard.kt`): the freshly generated code is held in
+/// memory only for the duration of the wizard, exactly long enough to be
+/// written on paper, typed back, and stored.
+///
+/// The gate mirrors `RecoveryGate.kt`'s order: the recovery **code is
+/// validated first**, the configured access challenges run **only after** a
+/// correct code, and the session starts only when the challenges are done.
 library;
 
 import 'dart:math';
@@ -36,6 +45,15 @@ String groupCode(String code) {
 
 /// A–Z entry with an optional shuffled keypad (F24 option), so the code
 /// cannot be learned from finger positions.
+///
+/// Note: the original's shuffle entry (`RecoveryConfirmDialog.kt`) is a
+/// 4×4 grid that puts the *correct* next letter in one random cell and
+/// reshuffles after every tap. That design reads the stored code back one
+/// letter at a time — impossible here, because Dominanter stores only a
+/// salted PBKDF2 hash of the code and can never recover its letters. The
+/// shuffled full-alphabet keypad below is the closest equivalent that
+/// works against a hash: it still defeats finger-position learning, but
+/// every letter remains tappable.
 class CodeEntry extends StatefulWidget {
   const CodeEntry({
     super.key,
@@ -125,6 +143,9 @@ class _CodeEntryState extends State<CodeEntry> {
 
 // ------------------------------------------------------------------- Wizard
 
+/// The four wizard steps, in the original's order
+/// (`RecoveryCodeWizard.kt`: STEP_INTRO, STEP_WRITE, STEP_CONFIRM,
+/// STEP_STORE).
 class RecoveryWizard extends StatefulWidget {
   const RecoveryWizard({
     super.key,
@@ -144,24 +165,43 @@ class RecoveryWizard extends StatefulWidget {
 }
 
 class _RecoveryWizardState extends State<RecoveryWizard> {
-  int _step = 0;
+  static const _stepIntro = 0;
+  static const _stepWrite = 1;
+  static const _stepConfirm = 2;
+  static const _stepStore = 3;
+  static const _stepCount = 4;
+
+  int _step = _stepIntro;
+
+  /// The freshly generated code. Held in memory only, only until the
+  /// wizard finishes — it is never persisted in Dart, and once stored
+  /// natively (as a salted PBKDF2 hash) it can never be shown again.
   String? _generated;
   Object? _generateError;
+
+  bool _revealed = false;
   bool _writtenOnPaper = false;
   final _confirm = TextEditingController();
+  bool _storedOnPaper = false;
   bool _saving = false;
   String? _saveError;
 
   @override
   void initState() {
     super.initState();
+    _confirm.addListener(_onConfirmChanged);
     _generate();
   }
 
   @override
   void dispose() {
+    _confirm.removeListener(_onConfirmChanged);
     _confirm.dispose();
     super.dispose();
+  }
+
+  void _onConfirmChanged() {
+    if (mounted && _step == _stepConfirm) setState(() {});
   }
 
   Future<void> _generate() async {
@@ -177,13 +217,27 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
     }
   }
 
+  bool get _confirmMatches =>
+      _generated != null &&
+      normalizeCode(_confirm.text) == normalizeCode(_generated!);
+
+  bool get _canAdvance => switch (_step) {
+    _stepWrite => _revealed && _writtenOnPaper,
+    _stepConfirm => _confirmMatches,
+    _stepStore => _storedOnPaper,
+    _ => true, // Intro is always advanceable, as in the original.
+  };
+
   Future<void> _save() async {
-    final typed = normalizeCode(_confirm.text);
-    if (typed != normalizeCode(_generated!)) {
-      setState(
-        () => _saveError =
-            'That does not match the code shown. Check your paper copy and try again.',
-      );
+    // The Confirm step already guaranteed typed == generated; re-check
+    // defensively so a code is never stored that the user did not prove
+    // they copied correctly.
+    if (!_confirmMatches) {
+      setState(() {
+        _step = _stepConfirm;
+        _saveError =
+            'That does not match the code shown. Check your paper copy and try again.';
+      });
       return;
     }
     setState(() {
@@ -191,7 +245,9 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
       _saveError = null;
     });
     try {
-      final ok = await widget.controller.channel.setRecoveryCode(typed);
+      final ok = await widget.controller.channel.setRecoveryCode(
+        normalizeCode(_generated!),
+      );
       if (!mounted) return;
       if (ok) {
         widget.onDone();
@@ -215,83 +271,450 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(24),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          widget.isRegeneration
-              ? 'Change recovery code'
-              : 'Set up your recovery code',
-          style: Theme.of(context).textTheme.headlineSmall,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+          child: Text(
+            widget.isRegeneration
+                ? 'Change recovery code'
+                : 'Set up your recovery code',
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: _StepIndicator(current: _step, total: _stepCount),
         ),
         const SizedBox(height: 8),
+        Text(
+          'Step ${_step + 1} of $_stepCount',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [switch (_step) {
+              _stepIntro => _introStep(context),
+              _stepWrite => _writeStep(context),
+              _stepConfirm => _confirmStep(context),
+              _ => _storeStep(context),
+            }],
+          ),
+        ),
+        if (_step == _stepIntro)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+            child: Text(
+              'Grab a pen and paper before continuing.',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_step > _stepIntro) ...[
+                OutlinedButton(
+                  onPressed: _saving
+                      ? null
+                      : () => setState(() => _step--),
+                  child: const Text('Back'),
+                ),
+                const SizedBox(width: 12),
+              ],
+              FilledButton(
+                onPressed: !_canAdvance || _saving
+                    ? null
+                    : _step == _stepStore
+                    ? _save
+                    : () => setState(() => _step++),
+                child: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(_step == _stepStore ? 'Finish' : 'Next'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _introStep(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _StepHeader(
+          icon: Icons.key_outlined,
+          title: 'Your recovery code',
+        ),
+        const SizedBox(height: 20),
+        const _InfoCard(
+          children: [
+            _InfoCardTitle('How it works'),
+            _TipRow(
+              icon: Icons.key_outlined,
+              text: 'Dominanter generates a 16-letter code',
+            ),
+            _TipRow(
+              icon: Icons.edit_note_outlined,
+              text: 'Write the code down on a piece of paper',
+            ),
+            _TipRow(
+              icon: Icons.keyboard_outlined,
+              text: "Type it back to make sure it's correct",
+            ),
+            _TipRow(
+              icon: Icons.lock_outlined,
+              text: 'Store the paper in a safe place',
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         const Text(
-          'This 16-letter code is the only ordinary way to loosen any '
-          'restriction in Dominanter. It is stored only as a salted hash on '
-          'this device — it cannot be shown again after this step, and '
-          'there is no account or cloud copy.',
+          'The code will be asked for whenever you change Dominanter\'s '
+          'settings. Without it, you could be locked out of the blocked '
+          'features. It is stored only as a salted hash on this device — '
+          'it cannot be shown again after this wizard, and there is no '
+          'account or cloud copy.',
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _writeStep(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _StepHeader(
+          icon: Icons.edit_note_outlined,
+          title: 'Write it on paper',
+          text:
+              'Copy the 16 letters exactly as shown. Don\'t take a '
+              'screenshot or save it on your phone — a copy within reach '
+              'is easy to use in a moment of impulse.',
         ),
         const SizedBox(height: 24),
-        if (_step == 0) ...[
-          if (_generateError != null)
-            ErrorView(error: _generateError!, onRetry: _generate)
-          else if (_generated == null)
-            const LoadingView(message: 'Generating your code…')
-          else ...[
-            GradientCard(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                groupCode(_generated!),
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
+        if (_generateError != null)
+          ErrorView(error: _generateError!, onRetry: _generate)
+        else if (_generated == null)
+          const LoadingView(message: 'Generating your code…')
+        else if (!_revealed)
+          FilledButton.tonalIcon(
+            onPressed: () => setState(() => _revealed = true),
+            icon: const Icon(Icons.visibility_outlined),
+            label: const Text('Show code'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
             ),
-            const SizedBox(height: 16),
-            CheckboxListTile(
-              value: _writtenOnPaper,
-              onChanged: (v) => setState(() => _writtenOnPaper = v ?? false),
-              title: const Text(
-                'I have written this code on paper and stored the paper '
-                'somewhere away from this phone.',
-              ),
+          )
+        else
+          GradientCard(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              groupCode(_generated!),
+              style: Theme.of(context).textTheme.headlineMedium,
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: _writtenOnPaper
-                  ? () => setState(() => _step = 1)
-                  : null,
-              child: const Text('Continue'),
-            ),
-          ],
-        ] else ...[
-          const Text(
-            'Now type the code back from your paper copy, exactly as written.',
           ),
-          const SizedBox(height: 16),
-          CodeEntry(controller: _confirm),
-          if (_saveError != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              _saveError!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+        const SizedBox(height: 16),
+        CheckboxListTile(
+          value: _writtenOnPaper,
+          onChanged: !_revealed
+              ? null
+              : (v) => setState(() => _writtenOnPaper = v ?? false),
+          title: const Text('I wrote the code on paper'),
+        ),
+      ],
+    );
+  }
+
+  Widget _confirmStep(BuildContext context) {
+    final typed = normalizeCode(_confirm.text);
+    final complete = _generated != null && typed.length == 16;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _StepHeader(
+          icon: Icons.password_outlined,
+          title: 'Check what you wrote',
+          text:
+              'The code is hidden now. Type it from your paper to make '
+              'sure every letter is right.',
+        ),
+        const SizedBox(height: 24),
+        CodeEntry(controller: _confirm),
+        const SizedBox(height: 12),
+        if (_confirmMatches)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.check_circle,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'The code is correct',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          )
+        else if (complete)
+          Text(
+            'It doesn\'t match. Go back and compare it with your paper.',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+            textAlign: TextAlign.center,
+          )
+        else
+          Text(
+            '${typed.length}/16',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-          ],
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Store recovery code'),
+            textAlign: TextAlign.center,
           ),
-          TextButton(
-            onPressed: _saving ? null : () => setState(() => _step = 0),
-            child: const Text('Back to the code'),
+        if (_saveError != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _saveError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+            textAlign: TextAlign.center,
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _storeStep(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _StepHeader(
+          icon: Icons.inventory_2_outlined,
+          title: 'Store it in a safe place',
+          text:
+              'The paper is now the only copy of your code. Choose '
+              'carefully where to keep it.',
+        ),
+        const SizedBox(height: 24),
+        _InfoCard(
+          children: [
+            const _TipRow(
+              icon: Icons.phonelink_erase_outlined,
+              text:
+                  'Away from your phone, somewhere you won\'t reach on impulse',
+            ),
+            const _TipRow(
+              icon: Icons.search_outlined,
+              text:
+                  'Easy to find when you really need it — a drawer, a folder or with someone you trust',
+            ),
+            const _TipRow(
+              icon: Icons.no_photography_outlined,
+              text: 'No photos or digital copies',
+            ),
+            if (widget.isRegeneration)
+              const _TipRow(
+                icon: Icons.delete_outline,
+                text: 'Throw away the paper with the old code',
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        CheckboxListTile(
+          value: _storedOnPaper,
+          onChanged: (v) => setState(() => _storedOnPaper = v ?? false),
+          title: const Text('I stored the paper in a safe place'),
+        ),
+        if (_saveError != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _saveError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Numbered step circles with connectors, as in the original wizard.
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator({required this.current, required this.total});
+  final int current;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        for (var i = 0; i < total; i++) ...[
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: i <= current
+                  ? scheme.primary
+                  : scheme.surfaceContainerHighest,
+            ),
+            alignment: Alignment.center,
+            child: i < current
+                ? Icon(Icons.check, size: 18, color: scheme.onPrimary)
+                : Text(
+                    '${i + 1}',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: i <= current
+                          ? scheme.onPrimary
+                          : scheme.onSurfaceVariant,
+                    ),
+                  ),
+          ),
+          if (i < total - 1)
+            Expanded(
+              child: Container(
+                height: 2,
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                color: i < current
+                    ? scheme.primary
+                    : scheme.outlineVariant,
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StepHeader extends StatelessWidget {
+  const _StepHeader({required this.icon, required this.title, this.text});
+  final IconData icon;
+  final String title;
+  final String? text;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: scheme.primaryContainer,
+          ),
+          child: Icon(icon, size: 40, color: scheme.onPrimaryContainer),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        if (text != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            text!,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0) const SizedBox(height: 12),
+              children[i],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoCardTitle extends StatelessWidget {
+  const _InfoCardTitle(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+}
+
+class _TipRow extends StatelessWidget {
+  const _TipRow({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 24,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
       ],
     );
   }
@@ -316,13 +739,27 @@ class SetupRecoveryScreen extends StatelessWidget {
 
 // --------------------------------------------------------------------- Gate
 
-/// Opens a recovery session: challenges first (F22), then code entry (F23).
-/// Returns true when a session is active afterwards.
+/// Opens a recovery session, in the original's order (`RecoveryGate.kt`):
+/// the recovery **code is asked for and validated first**; the configured
+/// access challenges run only after a correct code; the session starts
+/// only when the challenges are done. Returns true when a session is
+/// active afterwards.
+///
+/// Pass-throughs, mirroring `RecoveryGate.run()`: an already-active
+/// session skips the gate, and so does the state where no recovery code
+/// has been set yet (first run, before the setup wizard has run).
 Future<bool> ensureRecoverySession(
   BuildContext context,
   AppController controller,
 ) async {
   if (controller.session.isActive) return true;
+  try {
+    if (!await controller.channel.isRecoveryCodeSet()) return true;
+  } catch (_) {
+    // If the check itself fails, fall through to the gate dialog, where
+    // the failure surfaces while verifying instead of silently passing.
+  }
+  if (!context.mounted) return false;
   final result = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
@@ -338,12 +775,14 @@ class _RecoveryGateDialog extends StatefulWidget {
   State<_RecoveryGateDialog> createState() => _RecoveryGateDialogState();
 }
 
+/// Gate stages, in the original's order: code first, challenges second.
+enum _GateStage { loading, code, challenges }
+
 class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
-  bool _loading = true;
+  _GateStage _stage = _GateStage.loading;
   Object? _loadError;
   List<ChallengeType> _challenges = const [];
   List<String> _customPhrases = const [];
-  bool _challengesDone = false;
   final _code = TextEditingController();
   bool _shuffle = false;
   bool _verifying = false;
@@ -362,6 +801,10 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
   }
 
   Future<void> _load() async {
+    setState(() {
+      _loadError = null;
+      _stage = _GateStage.loading;
+    });
     try {
       final challenges = await widget.controller.config.getChallengeSelection();
       final phrases = await widget.controller.config.getCustomReadingPhrases();
@@ -371,21 +814,28 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
           _challenges = challenges;
           _customPhrases = phrases;
           _shuffle = shuffle;
-          _loading = false;
-          // No available challenge selected -> straight to the code.
-          if (!challenges.any((t) => t.isAvailableInV1)) _challengesDone = true;
+          _stage = _GateStage.code;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _loadError = e;
-          _loading = false;
+          _stage = _GateStage.loading;
         });
       }
     }
   }
 
+  /// Challenges that can actually run in this version, mirroring the
+  /// original's `getAccessChallenges(...).isEmpty()` check in
+  /// `RecoveryGate.confirm()`.
+  bool get _hasRunnableChallenges =>
+      _challenges.any((t) => t.isAvailableInV1);
+
+  /// Stage 1 — validate the code. Only a correct code may proceed to the
+  /// challenges; a wrong code means the challenges never run
+  /// (`RecoveryGate.confirm()`).
   Future<void> _verify() async {
     if (!isValidCodeFormat(_code.text)) {
       setState(
@@ -402,14 +852,21 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
         normalizeCode(_code.text),
       );
       if (!mounted) return;
-      if (matches) {
-        widget.controller.session.start();
-        Navigator.of(context).pop(true);
-      } else {
+      if (!matches) {
         setState(() {
           _verifying = false;
           _verifyError = 'That code does not match. Nothing was unlocked.';
         });
+        return;
+      }
+      if (_hasRunnableChallenges) {
+        // Code proven — now, and only now, the challenges run.
+        setState(() {
+          _verifying = false;
+          _stage = _GateStage.challenges;
+        });
+      } else {
+        _startSession();
       }
     } catch (e) {
       if (mounted) {
@@ -423,55 +880,76 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
     }
   }
 
+  /// Final step of both paths (`RecoveryGate.challengesDone()`): start
+  /// the session, then let the guarded action run.
+  void _startSession() {
+    widget.controller.session.start();
+    Navigator.of(context).pop(true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Recovery session'),
+      title: Text(
+        _stage == _GateStage.challenges
+            ? 'Access challenges'
+            : 'Enter recovery code',
+      ),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
-          child: _loading
-              ? const LoadingView(message: 'Preparing challenges…')
-              : _loadError != null
-              ? ErrorView(error: _loadError!, onRetry: _load)
-              : !_challengesDone
-              ? ChallengeRunnerView(
-                  types: _challenges,
-                  customPhrases: _customPhrases,
-                  onAllComplete: () => setState(() => _challengesDone = true),
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'Challenges complete. Enter your recovery code '
-                      'to open a 10-minute session.',
-                    ),
-                    const SizedBox(height: 16),
-                    CodeEntry(controller: _code, shuffled: _shuffle),
-                    if (_verifyError != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _verifyError!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: _verifying ? null : _verify,
-                      child: _verifying
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Open session'),
-                    ),
-                  ],
+          child: switch (_stage) {
+            _GateStage.loading =>
+              _loadError != null
+                  ? ErrorView(error: _loadError!, onRetry: _load)
+                  : const LoadingView(message: 'Preparing the gate…'),
+            _GateStage.code => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Enter your recovery code to open a 10-minute session. '
+                  'Your configured access challenges run only after the '
+                  'code is accepted.',
                 ),
+                const SizedBox(height: 16),
+                CodeEntry(controller: _code, shuffled: _shuffle),
+                if (_verifyError != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _verifyError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                AnimatedBuilder(
+                  animation: _code,
+                  builder: (context, _) => FilledButton(
+                    onPressed:
+                        _verifying || !isValidCodeFormat(_code.text)
+                        ? null
+                        : _verify,
+                    child: _verifying
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Confirm'),
+                  ),
+                ),
+              ],
+            ),
+            _GateStage.challenges => ChallengeRunnerView(
+              types: _challenges,
+              customPhrases: _customPhrases,
+              onAllComplete: _startSession,
+            ),
+          },
         ),
       ),
       actions: [

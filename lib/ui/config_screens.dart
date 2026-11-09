@@ -6,6 +6,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_controller.dart';
 import '../data/config_store.dart';
@@ -41,8 +42,12 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       List<CapableApp> browsers = const [];
       Object? browserError;
       try {
+        // The key actually pushed is URLBlocklist (the original's
+        // `applyRestrictions`); ForceGoogleSafeSearch is only added by
+        // the native side when a browser is newly installed
+        // (`installed = true`), never by this screen's apply.
         browsers = await widget.controller.channel.listRestrictionCapableApps(
-          requiredKeys: const ['URLBlocklist', 'ForceGoogleSafeSearch'],
+          requiredKeys: const ['URLBlocklist'],
         );
       } catch (e) {
         browserError = e;
@@ -60,15 +65,49 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
   }
 
   Future<void> _saveLists(List<BlockedList> lists, {required bool loosening}) async {
+    // The original's editor discards blank-title lists outright
+    // (`BrowserRestrictionsScreen.kt`: save only `if (title.isNotBlank())`),
+    // so they are never persisted.
+    final kept = lists.where((l) => l.title.trim().isNotEmpty).toList();
     Future<void> save() async {
-      await widget.controller.config.setBlockedLists(lists);
-      if (mounted) setState(() => _lists = lists);
+      await widget.controller.config.setBlockedLists(kept);
+      if (mounted) setState(() => _lists = kept);
+      // The original re-applies after every save and every delete
+      // (`BrowserRestrictionsViewModel.saveOrUpdateList`/`removeList`
+      // both end in `manager.applyRestrictions()`).
+      await _applyRestrictions(kept, silent: true);
     }
 
     if (loosening) {
       await runLoosening(context, widget.controller, save);
     } else {
       await save();
+    }
+  }
+
+  /// Pushes the union of all lists' sites to every target browser,
+  /// mirroring `BrowserRestrictionsManager.applyRestrictions`
+  /// (`BrowserRestrictionsManager.kt:124-149`): bundle is exactly
+  /// `{URLBlocklist: sites}` — SafeSearch is NOT forced here — and the
+  /// write MERGES with each browser's existing restrictions
+  /// (`merge = true`), never replacing them.
+  Future<void> _applyRestrictions(List<BlockedList> lists,
+      {required bool silent}) async {
+    final browsers = _browsers ?? const [];
+    if (browsers.isEmpty) return;
+    final sites = <String>{for (final l in lists) ...l.sites}.toList()..sort();
+    final bundle = <String, dynamic>{'URLBlocklist': sites};
+    try {
+      for (final b in browsers) {
+        await widget.controller.channel
+            .setApplicationRestrictions(b.packageName, bundle, merge: true);
+      }
+      if (!silent && mounted) {
+        showInfoSnackBar(
+            context, 'Applied to ${browsers.length} browser(s), verified.');
+      }
+    } catch (e) {
+      if (mounted) await showErrorSnackBar(context, e);
     }
   }
 
@@ -104,17 +143,22 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           FilledButton(
+            // A blank title discards the list, exactly as the original:
+            // the dialog closes and nothing is saved or applied.
             onPressed: () => Navigator.pop(
               context,
-              BlockedList(
-                id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
-                title: titleC.text.trim(),
-                sites: sitesC.text
-                    .split('\n')
-                    .map((s) => s.trim())
-                    .where((s) => s.isNotEmpty)
-                    .toList(),
-              ),
+              titleC.text.trim().isEmpty
+                  ? null
+                  : BlockedList(
+                      id: existing?.id ??
+                          DateTime.now().microsecondsSinceEpoch.toString(),
+                      title: titleC.text.trim(),
+                      sites: sitesC.text
+                          .split('\n')
+                          .map((s) => s.trim())
+                          .where((s) => s.isNotEmpty)
+                          .toList(),
+                    ),
             ),
             child: const Text('Save'),
           ),
@@ -135,20 +179,20 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
 
   Future<void> _applyToBrowsers() async {
     final browsers = _browsers ?? const [];
-    if (browsers.isEmpty) return;
+    if (browsers.isEmpty || _lists == null) return;
     final sites = <String>{for (final l in _lists!) ...l.sites}.toList()..sort();
-    final bundle = <String, dynamic>{
-      'URLBlocklist': sites,
-      'ForceGoogleSafeSearch': true,
-    };
-    // Loosening check against the first browser's current bundle.
+    final bundle = <String, dynamic>{'URLBlocklist': sites};
+    // Loosening check against the first browser's current bundle. The
+    // write merges, so the effective new state is the current bundle
+    // with URLBlocklist replaced — other keys are preserved and must
+    // not count as loosened.
     var loosening = false;
     try {
       final current = await widget.controller.channel
           .getApplicationRestrictions(browsers.first.packageName);
       loosening = Loosening.isLooserRestrictions(
         oldRestrictions: current,
-        newRestrictions: bundle,
+        newRestrictions: {...current, ...bundle},
       );
     } catch (_) {
       loosening = false;
@@ -156,15 +200,7 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
     Future<void> apply() async {
       setState(() => _busy = true);
       try {
-        for (final b in browsers) {
-          await widget.controller.channel
-              .setApplicationRestrictions(b.packageName, bundle, merge: false);
-        }
-        if (mounted) {
-          showInfoSnackBar(context, 'Applied to ${browsers.length} browser(s), verified.');
-        }
-      } catch (e) {
-        await showErrorSnackBar(context, e);
+        await _applyRestrictions(_lists!, silent: false);
       } finally {
         if (mounted) setState(() => _busy = false);
       }
@@ -206,8 +242,8 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                 const SizedBox(height: 4),
                 if (_browsers == null || _browsers!.isEmpty)
                   const Text(
-                    'No installed browser declares both URLBlocklist and '
-                    'ForceGoogleSafeSearch, so there is nothing to push '
+                    'No installed browser declares URLBlocklist in its '
+                    'managed restrictions, so there is nothing to push '
                     'policy to. Browsers without support are handled by '
                     'suspension rules (v1.1 auto-suspension).',
                   )
@@ -550,6 +586,42 @@ class _UsageWarningsScreenState extends State<UsageWarningsScreen> {
     }
   }
 
+  void _updateStage(UsageWarningStage updated) {
+    _save(_enabled ?? false, [
+      for (final s in _stages!)
+        if (s.id == updated.id) updated else s,
+    ]);
+  }
+
+  void _removeStage(UsageWarningStage stage) {
+    _save(_enabled ?? false,
+        _stages!.where((s) => s.id != stage.id).toList());
+  }
+
+  /// The original's `addStage` (`UsageWarningViewModel.kt:32-35`): the
+  /// new stage starts at half the earliest existing stage's minutes
+  /// (floored at the 0.1 minimum; 10 minutes when there are no stages),
+  /// with type SOUND. The row it creates is itself the editor.
+  void _addStage() {
+    final stages = _stages!;
+    final base = stages.isEmpty
+        ? 10.0
+        : stages.map((s) => s.minutesBefore).reduce((a, b) => a < b ? a : b);
+    var minutes = base / 2;
+    if (minutes < 0.1) minutes = 0.1;
+    _save(_enabled ?? false, [
+      ...stages,
+      UsageWarningStage(
+        // The original assigns a fresh UUID in `addStage`; any unique
+        // opaque id satisfies the stored schema.
+        id: 'stage-${DateTime.now().microsecondsSinceEpoch}',
+        minutesBefore: minutes,
+        type: UsageWarningType.sound,
+        vibrationCount: 1,
+      ),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_error != null) {
@@ -564,6 +636,10 @@ class _UsageWarningsScreenState extends State<UsageWarningsScreen> {
         body: const LoadingView(message: 'Loading warning stages…'),
       );
     }
+    final enabled = _enabled ?? false;
+    // Display order mirrors the original: descending by minutes.
+    final sorted = [..._stages!]
+      ..sort((a, b) => b.minutesBefore.compareTo(a.minutesBefore));
     return Scaffold(
       appBar: AppBar(title: const Text('Usage warnings')),
       body: ListView(
@@ -571,34 +647,191 @@ class _UsageWarningsScreenState extends State<UsageWarningsScreen> {
         children: [
           SwitchListTile(
             title: const Text('Staged warnings before a limit expires'),
-            value: _enabled ?? false,
+            value: enabled,
             onChanged: (v) => _save(v, _stages!),
           ),
           const Text(
-            'Stages are stored for the Accessibility Service to fire. '
-            'Notification delivery depends on the native notifier.',
+            'Each stage warns once, the configured number of minutes '
+            'before an app\'s daily limit runs out. Stages are stored '
+            'for the Accessibility Service to fire; notification '
+            'delivery depends on the native notifier.',
           ),
           const SizedBox(height: 8),
-          for (var i = 0; i < _stages!.length; i++)
-            ListTile(
-              title: Text('${_stages![i].minutesBefore} min before the limit'),
-              subtitle: Text(
-                  '${_stages![i].type.name}${_stages![i].type == UsageWarningType.vibrate ? ' ×${_stages![i].vibrationCount}' : ''}'),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _save(_enabled ?? false,
-                    [..._stages!]..removeAt(i)),
+          if (sorted.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'No warning stages. Add at least one stage or no '
+                'warnings will be shown.',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
+          for (final stage in sorted)
+            _UsageStageCard(
+              key: ValueKey(stage.id),
+              stage: stage,
+              enabled: enabled,
+              onChanged: _updateStage,
+              onRemove: () => _removeStage(stage),
+            ),
           TextButton.icon(
-            onPressed: () => _save(_enabled ?? false, [
-              ..._stages!,
-              const UsageWarningStage(minutesBefore: 10, type: UsageWarningType.silent),
-            ]),
+            onPressed: enabled ? _addStage : null,
             icon: const Icon(Icons.add),
-            label: const Text('Add stage (10 min, silent)'),
+            label: const Text('Add stage'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One editable warning stage — a direct port of the original's
+/// `UsageAlertStageRow` (`UsageWarningScreen.kt:144-240`): a minutes
+/// field (decimal, at most 3 integer + 2 fraction digits, comma accepted
+/// as the decimal separator, committed only inside 0.1–180), a
+/// Silent/Sound/Vibrate segmented choice, and a vibration-count field
+/// shown only for Vibrate stages (1–10). All controls are disabled when
+/// the master switch is off, as in the original.
+class _UsageStageCard extends StatefulWidget {
+  const _UsageStageCard({
+    super.key,
+    required this.stage,
+    required this.enabled,
+    required this.onChanged,
+    required this.onRemove,
+  });
+
+  final UsageWarningStage stage;
+  final bool enabled;
+  final ValueChanged<UsageWarningStage> onChanged;
+  final VoidCallback onRemove;
+
+  @override
+  State<_UsageStageCard> createState() => _UsageStageCardState();
+}
+
+class _UsageStageCardState extends State<_UsageStageCard> {
+  late final TextEditingController _minutesC;
+  late final TextEditingController _vibrationC;
+
+  static String _formatMinutes(double minutes) =>
+      minutes == minutes.truncateToDouble()
+          ? minutes.toInt().toString()
+          : minutes.toString();
+
+  @override
+  void initState() {
+    super.initState();
+    _minutesC =
+        TextEditingController(text: _formatMinutes(widget.stage.minutesBefore));
+    _vibrationC =
+        TextEditingController(text: widget.stage.vibrationCount.toString());
+  }
+
+  @override
+  void dispose() {
+    _minutesC.dispose();
+    _vibrationC.dispose();
+    super.dispose();
+  }
+
+  void _onMinutesChanged(String value) {
+    final parsed = double.tryParse(value.replaceAll(',', '.'));
+    if (parsed != null && parsed >= 0.1 && parsed <= 180) {
+      widget.onChanged(widget.stage.copyWith(minutesBefore: parsed));
+    }
+  }
+
+  void _onVibrationChanged(String value) {
+    final parsed = int.tryParse(value);
+    if (parsed != null && parsed >= 1 && parsed <= 10) {
+      widget.onChanged(widget.stage.copyWith(vibrationCount: parsed));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stage = widget.stage;
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  width: 120,
+                  child: TextField(
+                    controller: _minutesC,
+                    enabled: widget.enabled,
+                    textAlign: TextAlign.center,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d{0,3}([.,]\d{0,2})?$')),
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'Minutes before',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: _onMinutesChanged,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.delete_outline,
+                      color: Theme.of(context).colorScheme.error),
+                  tooltip: 'Remove stage',
+                  onPressed: widget.enabled ? widget.onRemove : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<UsageWarningType>(
+              segments: const [
+                ButtonSegment(
+                    value: UsageWarningType.silent, label: Text('Silent')),
+                ButtonSegment(
+                    value: UsageWarningType.sound, label: Text('Sound')),
+                ButtonSegment(
+                    value: UsageWarningType.vibrate, label: Text('Vibrate')),
+              ],
+              selected: {stage.type},
+              onSelectionChanged: widget.enabled
+                  ? (s) => widget
+                      .onChanged(stage.copyWith(type: s.first))
+                  : null,
+            ),
+            if (stage.type == UsageWarningType.vibrate) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Expanded(child: Text('Vibration count')),
+                  SizedBox(
+                    width: 72,
+                    child: TextField(
+                      controller: _vibrationC,
+                      enabled: widget.enabled,
+                      textAlign: TextAlign.center,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(2),
+                      ],
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: _onVibrationChanged,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

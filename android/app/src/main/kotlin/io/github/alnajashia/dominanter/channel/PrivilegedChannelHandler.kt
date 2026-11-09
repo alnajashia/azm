@@ -2,6 +2,7 @@ package io.github.alnajashia.dominanter.channel
 
 import android.content.ComponentName
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -9,11 +10,13 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import io.github.alnajashia.dominanter.NotificationPermissionBridge
 import io.github.alnajashia.dominanter.accessibility.DominanterAccessibilityService
 import io.github.alnajashia.dominanter.data.DominanterState
 import io.github.alnajashia.dominanter.data.SettingsStore
 import io.github.alnajashia.dominanter.data.SuspensionReason
 import io.github.alnajashia.dominanter.deviceowner.DeviceOwnerManager
+import io.github.alnajashia.dominanter.focus.FocusSessionStore
 import io.github.alnajashia.dominanter.security.RecoveryStore
 import io.github.alnajashia.dominanter.shizuku.ShizukuGateway
 import io.github.alnajashia.dominanter.shizuku.ShizukuProvisioning
@@ -108,6 +111,7 @@ class PrivilegedChannelHandler(
             ShizukuGateway.requestPermission(appContext)
             mapOf("requested" to true)
         }
+        "installShizuku" -> mapOf("launched" to DeviceOwnerManager.installShizuku(appContext))
         // Device Owner provisioning & removal
         "provisionDeviceOwner" -> {
             val r = ShizukuProvisioning.provisionDeviceOwner(appContext)
@@ -183,6 +187,13 @@ class PrivilegedChannelHandler(
                 "restrictions" to DeviceOwnerManager.getApplicationRestrictions(appContext, pkg),
             )
         }
+        "getAvailableRestrictions" -> {
+            val pkg = call.reqString("packageName")
+            mapOf(
+                "packageName" to pkg,
+                "restrictions" to DeviceOwnerManager.getAvailableRestrictions(appContext, pkg),
+            )
+        }
         "setApplicationRestrictions" -> {
             val pkg = call.reqString("packageName")
             val restrictions = call.reqMap("restrictions")
@@ -212,6 +223,9 @@ class PrivilegedChannelHandler(
             }
             mapOf("granted" to true)
         }
+        "isWriteSecureSettingsGranted" -> mapOf(
+            "granted" to ShizukuProvisioning.hasWriteSecureSettings(appContext),
+        )
         "setAccessibilityEnabled" -> {
             val enabled = call.reqBool("enabled")
             mapOf("isEnabled" to ShizukuProvisioning.setAccessibilityEnabled(appContext, enabled))
@@ -222,6 +236,48 @@ class PrivilegedChannelHandler(
         )
         // Usage
         "getUsageToday" -> getUsageToday(call.argument<String>("packageName"))
+        // Focus mode native runtime (F25) — the persisted session in
+        // FocusSessionStore; Dart's FocusSession is a view over this state.
+        "startFocusSession" -> {
+            FocusSessionStore.startSession(
+                context = appContext,
+                focusMinutes = call.reqInt("focusMinutes"),
+                breakMinutes = call.reqInt("breakMinutes"),
+                longBreakMinutes = call.reqInt("longBreakMinutes"),
+                cycles = call.reqInt("cycles"),
+                autoStartFocus = call.reqBool("autoStartFocus"),
+                soundEnabled = call.reqBool("soundEnabled"),
+                vibrationEnabled = call.reqBool("vibrationEnabled"),
+            )
+            FocusSessionStore.stateMap(appContext)
+        }
+        "getFocusSession" -> {
+            FocusSessionStore.syncIfDue(appContext)
+            FocusSessionStore.stateMap(appContext)
+        }
+        "pauseFocusSession" -> {
+            FocusSessionStore.pause(appContext, call.argument<Boolean>("releaseApps") ?: false)
+            FocusSessionStore.stateMap(appContext)
+        }
+        "resumeFocusSession" -> {
+            FocusSessionStore.resume(appContext)
+            FocusSessionStore.stateMap(appContext)
+        }
+        "skipFocusSession" -> {
+            FocusSessionStore.skipBreak(appContext)
+            FocusSessionStore.stateMap(appContext)
+        }
+        "stopFocusSession" -> {
+            FocusSessionStore.stop(appContext)
+            null
+        }
+        // Notification permission (F12/F25 notifications)
+        "hasNotificationPermission" -> mapOf(
+            "granted" to FocusSessionStore.hasNotificationPermission(appContext),
+        )
+        "requestNotificationPermission" -> mapOf(
+            "granted" to requestNotificationPermission(),
+        )
         // Recovery code (Kotlin only — ARCH §7.1)
         "setRecoveryCode" -> {
             val code = call.reqString("code")
@@ -247,14 +303,20 @@ class PrivilegedChannelHandler(
                 (v as? Number)?.toInt() ?: throw PrivException.invalidArgument("weeklyMinutes must be ints")
             }
             val daily = call.argument<Number>("dailyMinutes")?.toInt()
-            val limit = when {
-                weekly != null -> {
-                    if (weekly.size != 7) throw PrivException.invalidArgument("weeklyMinutes must have 7 entries")
-                    io.github.alnajashia.dominanter.data.TimeLimit.perDay(weekly)
-                }
-                daily != null -> io.github.alnajashia.dominanter.data.TimeLimit.daily(daily)
-                else -> throw PrivException.invalidArgument("setTimeLimit needs dailyMinutes or weeklyMinutes")
+            if (weekly == null && daily == null) {
+                throw PrivException.invalidArgument("setTimeLimit needs dailyMinutes or weeklyMinutes")
             }
+            if (weekly != null && weekly.size != 7) {
+                throw PrivException.invalidArgument("weeklyMinutes must have 7 entries")
+            }
+            // Dual storage: one call may carry BOTH components at once. The
+            // combined model goes to SettingsStore, whose write follows the
+            // original AppTimeLimits.write exactly (weekly wins when set and
+            // the other prefs file is cleared, so a package is never in both).
+            val limit = io.github.alnajashia.dominanter.data.TimeLimit(
+                dailyMinutes = daily ?: 0,
+                weeklyMinutes = weekly,
+            )
             SettingsStore.setTimeLimit(pkg, limit)
             call.argument<Number>("reopenSeconds")?.toInt()?.let { SettingsStore.setReopenSeconds(pkg, it) }
             timeLimitPayload(pkg)
@@ -263,17 +325,21 @@ class PrivilegedChannelHandler(
         "setTimeWindows" -> {
             val pkg = call.reqString("packageName")
             val weeklyRaw = call.argument<List<*>>("weeklyWindows")
-            val windows = when {
-                weeklyRaw != null -> {
-                    if (weeklyRaw.size != 7) throw PrivException.invalidArgument("weeklyWindows must have 7 day lists")
-                    io.github.alnajashia.dominanter.data.TimeWindows.perDay(
-                        weeklyRaw.map { day -> parseWindows(day) },
-                    )
-                }
-                call.argument<List<*>>("dailyWindows") != null ->
-                    io.github.alnajashia.dominanter.data.TimeWindows.daily(parseWindows(call.argument<List<*>>("dailyWindows")))
-                else -> throw PrivException.invalidArgument("setTimeWindows needs dailyWindows or weeklyWindows")
+            val dailyRaw = call.argument<List<*>>("dailyWindows")
+            if (weeklyRaw == null && dailyRaw == null) {
+                throw PrivException.invalidArgument("setTimeWindows needs dailyWindows or weeklyWindows")
             }
+            if (weeklyRaw != null && weeklyRaw.size != 7) {
+                throw PrivException.invalidArgument("weeklyWindows must have 7 day lists")
+            }
+            // Dual storage: one call may carry BOTH components at once; the
+            // combined model goes to SettingsStore, whose write follows the
+            // original AppTimeWindows.write exactly (weekly wins when set and
+            // the other prefs file is cleared).
+            val windows = io.github.alnajashia.dominanter.data.TimeWindows(
+                dailyWindows = dailyRaw?.let { parseWindows(it) } ?: emptyList(),
+                weeklyWindows = weeklyRaw?.map { day -> parseWindows(day) },
+            )
             SettingsStore.setTimeWindows(pkg, windows)
             timeWindowsPayload(pkg)
         }
@@ -360,6 +426,22 @@ class PrivilegedChannelHandler(
         ) ?: return false
         val component = ComponentName(appContext, DominanterAccessibilityService::class.java)
         return flat.split(':').any { ComponentName.unflattenFromString(it) == component }
+    }
+
+    /**
+     * `requestNotificationPermission` resolution order: already granted →
+     * the original's device-owner policy grant (no UI) → the host Activity's
+     * runtime prompt via [NotificationPermissionBridge]. Runs on the
+     * dispatch executor; the bridge wait is bounded and reports the real
+     * state afterwards. Pre-Android-13 there is no runtime permission, so
+     * the answer is simply whether notifications are enabled.
+     */
+    private fun requestNotificationPermission(): Boolean {
+        if (FocusSessionStore.hasNotificationPermission(appContext)) return true
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
+        if (FocusSessionStore.tryGrantNotificationPermissionViaDpm(appContext)) return true
+        val activity = NotificationPermissionBridge.currentActivity() ?: return false
+        return NotificationPermissionBridge.request(activity)
     }
 
     private fun getUsageToday(packageName: String?): Map<String, Any?> {
@@ -467,6 +549,10 @@ class PrivilegedChannelHandler(
 
     private fun MethodCall.reqBool(key: String): Boolean =
         argument<Boolean>(key) ?: throw PrivException.invalidArgument("Missing or invalid argument: $key")
+
+    private fun MethodCall.reqInt(key: String): Int =
+        (argument<Number>(key))?.toInt()
+            ?: throw PrivException.invalidArgument("Missing or invalid argument: $key")
 
     private fun MethodCall.reqStringList(key: String): List<String> {
         val value = argument<List<*>>(key)

@@ -3,6 +3,17 @@
 /// commits. Applying a restriction is tightening (free); clearing one is
 /// loosening and routes through the recovery gate. Without Device Owner
 /// the tab shows the original's NoDeviceOwnerPrivileges state.
+///
+/// Presentation follows the original's `RestrictionAccordion` /
+/// `RestrictionItem` (`RestrictionsTab.kt`): each row shows a humanised
+/// label with the raw key beneath it (the original resolves a string
+/// resource per key and falls back to the key; the channel model carries
+/// no label, so the humanised key is the label and the raw key stays
+/// visible), an Active badge for applied restrictions, a per-section
+/// select-all checkbox that toggles the section's (filtered) drafts, and
+/// search normalised the way the original's
+/// `SystemRestrictions.normalizeForSearch` normalises (case- and
+/// diacritic-insensitive, matched against label and key).
 library;
 
 import 'package:flutter/material.dart';
@@ -68,10 +79,14 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
   }
 
   List<UserRestriction> _filter(List<UserRestriction> list, {required bool recommended}) {
+    final query = _normalizeForSearch(_query);
     return list.where((r) {
       if (r.recommended != recommended) return false;
-      if (_query.isEmpty) return true;
-      return r.key.toLowerCase().contains(_query.toLowerCase());
+      if (query.isEmpty) return true;
+      // The original matches the normalised query against the normalised
+      // label and the normalised key (`RestrictionsTab.kt` accordion).
+      return _normalizeForSearch(_humaniseRestrictionKey(r.key)).contains(query) ||
+          _normalizeForSearch(r.key).contains(query);
     }).toList();
   }
 
@@ -175,23 +190,132 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
 
   Widget _section(String title, List<UserRestriction> items) {
     if (items.isEmpty) return const SizedBox.shrink();
+    // The original's accordion header carries a select-all checkbox bound
+    // to `isAllDraftsEnabled(filteredKeys)`; toggling it sets every draft
+    // in the (filtered) section (`RestrictionsTab.kt` RestrictionAccordion).
+    final allEnabled = items.every((r) => _draft[r.key] == true);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-          child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+          padding: const EdgeInsets.fromLTRB(4, 12, 16, 4),
+          child: Row(
+            children: [
+              Checkbox(
+                value: allEnabled,
+                onChanged: _applying
+                    ? null
+                    : (v) => setState(() {
+                          for (final r in items) {
+                            _draft[r.key] = v ?? true;
+                          }
+                        }),
+              ),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
         ),
         for (final r in items)
           SwitchListTile(
-            title: Text(r.key),
-            subtitle: _draft[r.key] != r.active
-                ? const Text('Changed — not applied yet')
-                : null,
+            title: Row(
+              children: [
+                Expanded(child: Text(_humaniseRestrictionKey(r.key))),
+                if (r.active) _activeBadge(),
+              ],
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  r.key,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontFamily: 'monospace',
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                if (_draft[r.key] != r.active)
+                  const Text('Changed — not applied yet'),
+              ],
+            ),
             value: _draft[r.key] ?? r.active,
             onChanged: (v) => setState(() => _draft[r.key] = v),
           ),
       ],
     );
   }
+
+  /// The original's "Active" badge for an applied restriction
+  /// (`RestrictionsTab.kt` RestrictionItem).
+  Widget _activeBadge() {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        'Active',
+        style: Theme.of(context)
+            .textTheme
+            .labelSmall
+            ?.copyWith(color: scheme.onPrimaryContainer),
+      ),
+    );
+  }
 }
+
+/// Humanised form of a restriction key (`no_install_apps` → "No Install
+/// Apps") — the label shown when no richer label exists for the key.
+String _humaniseRestrictionKey(String key) {
+  final words =
+      key.split(RegExp(r'[_\.\-]+')).where((w) => w.isNotEmpty).toList();
+  if (words.isEmpty) return key;
+  return words.map((w) => '${w[0].toUpperCase()}${w.substring(1)}').join(' ');
+}
+
+/// Port of the original's `SystemRestrictions.normalizeForSearch`
+/// (`SystemRestrictions.kt:79-82`): NFD-normalise, strip combining
+/// diacritical marks, lowercase. Dart has no Unicode normaliser, so
+/// precomposed Latin letters are folded to their base letters directly —
+/// the same net effect for the Latin-script labels these keys produce —
+/// and any combining marks already present are dropped.
+String _normalizeForSearch(String text) {
+  final buffer = StringBuffer();
+  for (final rune in text.toLowerCase().runes) {
+    if (rune >= 0x0300 && rune <= 0x036f) continue;
+    final ch = String.fromCharCode(rune);
+    buffer.write(_diacriticFold[ch] ?? ch);
+  }
+  return buffer.toString();
+}
+
+const Map<String, String> _diacriticFold = {
+  'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
+  'ā': 'a', 'ă': 'a', 'ą': 'a', 'æ': 'ae',
+  'ç': 'c', 'ć': 'c', 'ĉ': 'c', 'ċ': 'c', 'č': 'c',
+  'ď': 'd', 'đ': 'd',
+  'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e', 'ē': 'e', 'ĕ': 'e',
+  'ė': 'e', 'ę': 'e', 'ě': 'e',
+  'ĝ': 'g', 'ğ': 'g', 'ġ': 'g', 'ģ': 'g',
+  'ĥ': 'h', 'ħ': 'h',
+  'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i', 'ĩ': 'i', 'ī': 'i',
+  'ĭ': 'i', 'į': 'i', 'ı': 'i',
+  'ĵ': 'j', 'ķ': 'k',
+  'ĺ': 'l', 'ļ': 'l', 'ľ': 'l', 'ŀ': 'l', 'ł': 'l',
+  'ñ': 'n', 'ń': 'n', 'ņ': 'n', 'ň': 'n', 'ŋ': 'n',
+  'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ø': 'o',
+  'ō': 'o', 'ŏ': 'o', 'ő': 'o', 'œ': 'oe',
+  'ŕ': 'r', 'ŗ': 'r', 'ř': 'r',
+  'ś': 's', 'ŝ': 's', 'ş': 's', 'š': 's', 'ș': 's', 'ß': 'ss',
+  'ť': 't', 'ŧ': 't', 'ț': 't',
+  'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u', 'ũ': 'u', 'ū': 'u',
+  'ŭ': 'u', 'ů': 'u', 'ű': 'u', 'ų': 'u',
+  'ý': 'y', 'ÿ': 'y', 'ŷ': 'y',
+  'ź': 'z', 'ż': 'z', 'ž': 'z', 'þ': 'th',
+};

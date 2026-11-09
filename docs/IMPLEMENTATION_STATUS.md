@@ -269,3 +269,14 @@ Plan: `ARCHITECTURE.md` §9 (the master prompt's 17 areas).
 
 *Update this file at every milestone: move a row only when its evidence
 (build log, test run, or device report) exists, and link that evidence.*
+
+
+## Phase B parity fixes (2026-11-09, v1.0.1)
+
+The full literal parity audit (docs/PARITY_AUDIT_FULL.md) found 37 defects
+(D-01…D-37) against DeChainer 1.12.0; all were fixed in Phase B. Tests are
+now 72/72 including parity contract tests; release builds are minified.
+APKs v1.0.1: debug sha256 6179e37e89f564d6a7d3e83c9181dbfc58deb4a7ece68c602886995ac13cebeb;
+release sha256 040d70dc24f774c703b87f8c2c7011ee75bdbcab071d14f62beefa729bf9d183
+(debug-signed, device-untested). Open user decisions U-1…U-5 and the v1.1
+deferrals are unchanged — see PARITY_AUDIT_FULL.md §D.

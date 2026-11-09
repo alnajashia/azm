@@ -1,13 +1,16 @@
-/// Floating capsule bottom navigation (redesign 2026-11-09, after the
-/// user's reference images).
+/// Floating capsule bottom navigation (redesign v2 2026-11-09, after
+/// the user's reference images — red & black only).
 ///
-/// A floating pill: black bar in dark mode, white in light mode, large
-/// radius, soft shadow, margined from the screen edges. The active
-/// destination sits inside a red indicator whose top edge sweeps up in a
-/// curve around the icon (approximated with a custom clipper), white
-/// icon + label, and a small dot under the label. Inactive destinations
-/// are muted icon + label. Behaviour is identical to the NavigationBar
-/// it replaces: same destinations, same order, same tap-to-switch state.
+/// A floating pill that is ALWAYS black, in both brightness modes: the
+/// fusion of the reference's red-bar and black-bar variants. Large
+/// radius, soft black shadow plus a faint red glow, margined from the
+/// screen edges. The active destination sits inside a filled red
+/// indicator whose top edge sweeps up in a curve around the icon
+/// (approximated with a custom clipper), white icon + label, and a
+/// small white dot under the label. Inactive destinations are muted
+/// light-grey (a tint of black) icon + label — never dark-on-black.
+/// Behaviour is identical to the NavigationBar it replaces: same
+/// destinations, same order, same tap-to-switch state.
 library;
 
 import 'package:flutter/material.dart';
@@ -40,7 +43,6 @@ class DominanterNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     return SafeArea(
       top: false,
@@ -51,18 +53,24 @@ class DominanterNavBar extends StatelessWidget {
         child: Container(
           height: 70,
           decoration: BoxDecoration(
-            color: dark ? const Color(0xFF101013) : Colors.white,
+            // Always black — light mode gets the reference's black pill
+            // bar too, not a white one (red & black only identity).
+            color: DominanterColors.blackBar,
             borderRadius: BorderRadius.circular(36),
             border: Border.all(
-              color: dark
-                  ? Colors.white.withValues(alpha: 0.10)
-                  : Colors.black.withValues(alpha: 0.06),
+              color: Colors.white.withValues(alpha: dark ? 0.10 : 0.16),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: dark ? 0.55 : 0.16),
+                color: Colors.black.withValues(alpha: dark ? 0.55 : 0.28),
                 blurRadius: 22,
                 offset: const Offset(0, 10),
+              ),
+              // Faint red under-glow, the reference bars' red halo.
+              BoxShadow(
+                color: DominanterColors.red.withValues(alpha: 0.22),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -73,7 +81,10 @@ class DominanterNavBar extends StatelessWidget {
                   child: _PillNavItem(
                     destination: destinations[i],
                     selected: i == selectedIndex,
-                    mutedColor: scheme.onSurfaceVariant,
+                    // Muted light-grey in BOTH modes: the bar is always
+                    // black, so the theme's onSurfaceVariant (near-black
+                    // in light mode) would be unreadable here.
+                    mutedColor: DominanterColors.onBlackMuted,
                     onTap: () => onSelected(i),
                   ),
                 ),
@@ -150,9 +161,11 @@ class _PillNavItem extends StatelessWidget {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              DominanterColors.redBright,
+                              DominanterColors.redGlow,
                               DominanterColors.red,
+                              DominanterColors.redDark,
                             ],
+                            stops: [0.0, 0.55, 1.0],
                           ),
                         ),
                         child: Center(

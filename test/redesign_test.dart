@@ -1,6 +1,8 @@
-/// Redesign (2026-11-09) widget tests: floating pill navigation and the
-/// circular focus timer ring. Presentation only — both widgets are driven
-/// by the same state/handlers as the surfaces they replaced.
+// Redesign (2026-11-09; v2 red & black only) widget tests: floating
+// pill navigation, the circular focus timer ring, and the palette
+// guard that keeps every scheme/gradient colour inside the red scale
+// or the black neutrals. Presentation only — all widgets are driven
+// by the same state/handlers as the surfaces they replaced.
 import 'package:dominanter/app_controller.dart';
 import 'package:dominanter/data/privileged_channel.dart';
 import 'package:dominanter/theme.dart';
@@ -96,6 +98,23 @@ void main() {
           return {'value': null}; // defaults: 25 min focus / 5 min break
         case 'listInstalledApps':
           return <Object?>[];
+        case 'getGroups':
+          return {'groups': <Object?>[]};
+        case 'getFocusSession':
+          return null; // no persisted native session: screen loads idle
+        case 'startFocusSession':
+          // The native store's state map for a just-started 25-minute
+          // focus phase (elapsed-realtime clock values, ms).
+          return {
+            'phase': 'focus',
+            'phaseStartedElapsedMs': 1000000,
+            'phaseDurationMs': 1500000,
+            'completedFocusInCycle': 0,
+            'pausedFrom': null,
+            'deadlineElapsedMs': 2500000,
+          };
+        case 'hasNotificationPermission':
+          return {'granted': true};
         default:
           throw MissingPluginException('no mock for ${call.method}');
       }
@@ -119,8 +138,8 @@ void main() {
     expect(find.text('Not started'), findsOneWidget);
     expect(find.text('25:00'), findsOneWidget);
 
-    // Start is the existing free action (same handler as before the
-    // redesign); the ring must now track the running session. (The button
+    // Start drives the native session (startFocusSession); the ring must
+    // track the running session the channel reports back. (The button
     // sits below the taller ring card in the default test viewport, so
     // scroll it into view first.)
     // Note: FilledButton.icon has a private runtime type, so tap by label.
@@ -139,5 +158,94 @@ void main() {
     expect(ring.progress, greaterThan(0.9));
 
     await tester.pumpWidget(const SizedBox()); // dispose tickers
+  });
+
+  // Redesign v2 (red & black only): no colour in either scheme, the
+  // hero gradients or the shared palette may be blue-dominant (or any
+  // other non-red hue family). Neutrals — tints/shades of black — pass
+  // because their channels stay close together.
+  test('Red/black identity: no blue-dominant colour anywhere', () {
+    bool isBlueDominant(Color c) => c.b > c.r + 0.08 && c.b > c.g + 0.04;
+
+    final colors = <Color>[
+      DominanterColors.red,
+      DominanterColors.redBright,
+      DominanterColors.redGlow,
+      DominanterColors.redDark,
+      DominanterColors.redDeep,
+      DominanterColors.redDeepest,
+      DominanterColors.black,
+      DominanterColors.blackBackground,
+      DominanterColors.blackBar,
+      DominanterColors.blackSurface,
+      DominanterColors.blackSurfaceHigh,
+      DominanterColors.blackSurfaceHighest,
+      for (final scheme in [
+        dominanterLightTheme().colorScheme,
+        dominanterDarkTheme().colorScheme,
+      ]) ...[
+        scheme.primary,
+        scheme.onPrimary,
+        scheme.primaryContainer,
+        scheme.onPrimaryContainer,
+        scheme.secondary,
+        scheme.onSecondary,
+        scheme.secondaryContainer,
+        scheme.onSecondaryContainer,
+        scheme.tertiary,
+        scheme.onTertiary,
+        scheme.error,
+        scheme.surface,
+        scheme.onSurface,
+        scheme.inversePrimary,
+      ],
+      ...heroGradient(Brightness.light).colors,
+      ...heroGradient(Brightness.dark).colors,
+    ];
+    for (final c in colors) {
+      expect(isBlueDominant(c), isFalse, reason: '$c is blue-dominant');
+    }
+    // And the break ring must live in the red scale now, not blue.
+    expect(DominanterColors.redDark.b, lessThan(DominanterColors.redDark.r));
+  });
+
+  // Redesign v2: the pill bar is the reference's BLACK variant in both
+  // brightness modes (previously white in light mode).
+  testWidgets('Pill nav bar is black even in the light theme', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: dominanterLightTheme(),
+        home: Scaffold(
+          bottomNavigationBar: DominanterNavBar(
+            selectedIndex: 0,
+            onSelected: (_) {},
+            destinations: const [
+              PillNavDestination(
+                icon: Icons.admin_panel_settings_outlined,
+                selectedIcon: Icons.admin_panel_settings,
+                label: 'Status',
+              ),
+              PillNavDestination(
+                icon: Icons.shield_outlined,
+                selectedIcon: Icons.shield,
+                label: 'Restrictions',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final containers = tester.widgetList<Container>(
+      find.descendant(
+        of: find.byType(DominanterNavBar),
+        matching: find.byType(Container),
+      ),
+    );
+    final barColors = containers
+        .map((c) => (c.decoration as BoxDecoration?)?.color)
+        .whereType<Color>()
+        .toList();
+    expect(barColors, contains(DominanterColors.blackBar));
   });
 }

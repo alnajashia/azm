@@ -99,6 +99,38 @@
             </intent-filter>
         </receiver>
 
+        <!-- Focus mode runtime (F25): foreground countdown service + phase-end /
+             notification-action receiver + boot/time-change resync receiver.
+             Declarations mirror the original DeChainer manifest. -->
+        <service
+            android:name=".focus.FocusService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Pomodoro focus timer: keeps the countdown of the current focus or break period on screen" />
+        </service>
+
+        <receiver
+            android:name=".notifications.FocusReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".notifications.FocusSystemReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Usage warnings (F12): records a warning notification's dismissal. -->
+        <receiver
+            android:name=".notifications.UsageWarningDismissReceiver"
+            android:exported="false" />
+
         <!-- Shizuku provider — exact declaration prescribed by the Shizuku API (13.1.5).
              Without it no binder is ever delivered to this process. -->
         <provider

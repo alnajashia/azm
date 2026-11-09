@@ -48,12 +48,32 @@ class AppController extends ChangeNotifier {
   ImpulseLock impulseLock = const ImpulseLock();
   ForcedRemoval forcedRemoval = const ForcedRemoval();
 
+  /// The exact set of packages suspended when the current impulse lock
+  /// started. The original records this as the "active impulse
+  /// suspension" (`SecurityManager.setActiveImpulseSuspension`) and
+  /// releases exactly that set when the block expires
+  /// (`releaseImpulseSuspension`). Captured in [startImpulseLock];
+  /// re-seeded in [initialise] for a lock that outlives the process
+  /// (from the then-current config — impulse settings are
+  /// session-gated, so the list can only have drifted through a
+  /// recovery session).
+  List<String> _impulseSuspendedApps = const [];
+
   Future<void> initialise() async {
     startup = StartupState.loading;
     notifyListeners();
     try {
       language = await config.getLanguage();
       impulseLock = await config.getImpulseLock();
+      if (impulseLock.active && !impulseLock.isComplete) {
+        // A lock from a previous process is still running: re-seed the
+        // recorded suspension set so its natural expiry releases the
+        // same apps it suspended.
+        final ic = await config.getImpulseConfig();
+        if (ic.action == ImpulseAction.timerAndSuspend) {
+          _impulseSuspendedApps = ic.suspendApps;
+        }
+      }
       forcedRemoval = await config.getForcedRemoval();
       final isSet = await channel.isRecoveryCodeSet();
       startup = isSet ? StartupState.locked : StartupState.needsRecoverySetup;
@@ -84,6 +104,13 @@ class AppController extends ChangeNotifier {
       impulseLock = impulseLock.tick(delta);
       await config.setImpulseLock(impulseLock);
       changed = true;
+      if (impulseLock.isComplete) {
+        // Natural expiry: release exactly the apps this lock suspended
+        // (the original releases its recorded impulse suspension when
+        // the block ends — there is no other release path, and no
+        // early stop).
+        await _releaseImpulseSuspension();
+      }
     }
     if (forcedRemoval.active && !forcedRemoval.isComplete) {
       forcedRemoval = forcedRemoval.advance(delta);
@@ -119,11 +146,42 @@ class AppController extends ChangeNotifier {
   Future<void> startImpulseLock(Duration duration) async {
     impulseLock = impulseLock.start(duration);
     await config.setImpulseLock(impulseLock);
+    // Record exactly what the caller is about to suspend: both start
+    // paths (Impulse screen, lock-screen panic button) suspend the
+    // configured list with reason IMPULSE_LOCK right after this call,
+    // and natural expiry must release that set and nothing else.
+    try {
+      final ic = await config.getImpulseConfig();
+      _impulseSuspendedApps =
+          ic.action == ImpulseAction.timerAndSuspend ? ic.suspendApps : const [];
+    } catch (_) {
+      // Without the record, expiry releases nothing — the fail-safe
+      // direction (apps stay suspended rather than the wrong set being
+      // released).
+      _impulseSuspendedApps = const [];
+    }
     notifyListeners();
+  }
+
+  /// Releases the recorded impulse suspension. Called only from the
+  /// natural-expiry path in [_tick].
+  Future<void> _releaseImpulseSuspension() async {
+    final apps = _impulseSuspendedApps;
+    _impulseSuspendedApps = const [];
+    if (apps.isEmpty) return;
+    try {
+      await channel.setAppSuspended(apps, false, reason: 'IMPULSE_LOCK');
+    } catch (_) {
+      // Best effort: the lock itself is already complete and
+      // persisted. A failed release leaves the apps suspended — the
+      // fail-safe direction for this app — and they remain releasable
+      // from the Apps tab.
+    }
   }
 
   Future<void> stopImpulseLock() async {
     impulseLock = impulseLock.stop();
+    _impulseSuspendedApps = const [];
     await config.setImpulseLock(impulseLock);
     notifyListeners();
   }

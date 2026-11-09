@@ -1,11 +1,15 @@
 package io.github.alnajashia.dominanter.deviceowner
 
 import android.app.admin.DevicePolicyManager
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.RestrictionEntry
 import android.content.RestrictionsManager
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.UserManager
 import android.util.Log
@@ -13,6 +17,7 @@ import io.github.alnajashia.dominanter.channel.ErrorCodes
 import io.github.alnajashia.dominanter.channel.PrivException
 import io.github.alnajashia.dominanter.data.SettingsStore
 import io.github.alnajashia.dominanter.data.SuspensionReason
+import io.github.alnajashia.dominanter.shizuku.ShizukuGateway
 
 /**
  * Runtime Device Owner operations (`docs/ARCHITECTURE.md` §3): everything the
@@ -320,6 +325,142 @@ object DeviceOwnerManager {
             throw PrivException.dpmFailed("getApplicationRestrictions failed for $packageName", e)
         }
         return bundleToMap(bundle)
+    }
+
+    /**
+     * Keys the original's editor deliberately hides from the declared-restrictions
+     * list: `AppRestrictionsScreen.kt` filters them out
+     * (`.filter { !it.key.equals("URLBlocklist", ignoreCase = true) }`, line 157)
+     * and force-preserves their current value on save (lines 392-394), because
+     * the browser-restriction flow owns them. The model flags them `hidden`
+     * instead of dropping them, so the Dart UI can apply the same rule.
+     */
+    private val hiddenDeclaredRestrictionKeys: Set<String> = setOf("URLBlocklist")
+
+    /**
+     * The declared-restrictions model behind the original's
+     * `AppRestrictionsScreen` — a port of `AppRepository.getAvailableRestrictions`
+     * (original lines 228-240), exposed there via
+     * `DeviceOwnerViewModel.getAvailableRestrictions`.
+     *
+     * Data source: the **target app's own** manifest-declared restrictions,
+     * read through [RestrictionsManager.getManifestRestrictions] — NOT the
+     * UserManager system-restriction constants. As in the original, a package
+     * that does not exist, or whose application info carries no meta-data,
+     * yields an empty list. Each entry carries its declared default (the
+     * entry's selected value, populated from the target app's restrictions
+     * XML) and, when this app is Device Owner, the currently applied value
+     * from DPM — mirroring how the original's `ManagedRestrictionState` merged
+     * the manifest entries with `getApplicationRestrictions`.
+     *
+     * Unlike [getApplicationRestrictions] this does not require Device Owner:
+     * the declared model exists independently of ownership, so a non-owner
+     * caller gets the entries with `currentValue = null` throughout.
+     */
+    fun getAvailableRestrictions(context: Context, packageName: String): List<Map<String, Any?>> {
+        val pm = context.packageManager
+        try {
+            val appInfo = pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+            if (appInfo.metaData == null) return emptyList()
+        } catch (_: PackageManager.NameNotFoundException) {
+            return emptyList()
+        }
+        val rm = context.getSystemService(Context.RESTRICTIONS_SERVICE) as RestrictionsManager
+        val entries = rm.getManifestRestrictions(packageName) ?: return emptyList()
+        val current = try {
+            dpm(context).getApplicationRestrictions(adminComponent(context), packageName)
+        } catch (_: Exception) {
+            Bundle()
+        }
+        return entries.map { entry -> restrictionEntryToMap(entry, current) }
+    }
+
+    /**
+     * Serialises one [RestrictionEntry] for the channel. Type mapping onto the
+     * contract vocabulary: BOOLEAN→`bool`, INTEGER→`int`,
+     * MULTI_SELECT→`stringList`, BUNDLE/BUNDLE_ARRAY→`bundle`,
+     * CHOICE/STRING (and the value-less NULL)→`string`. Bundle entries carry
+     * their child entries recursively under `children` (for BUNDLE_ARRAY the
+     * children are the per-item template, so they carry defaults only).
+     */
+    private fun restrictionEntryToMap(entry: RestrictionEntry, current: Bundle): Map<String, Any?> {
+        val key = entry.key
+        val type = when (entry.type) {
+            RestrictionEntry.TYPE_BOOLEAN -> "bool"
+            RestrictionEntry.TYPE_INTEGER -> "int"
+            RestrictionEntry.TYPE_MULTI_SELECT -> "stringList"
+            RestrictionEntry.TYPE_BUNDLE, RestrictionEntry.TYPE_BUNDLE_ARRAY -> "bundle"
+            else -> "string"
+        }
+        val defaultValue: Any? = when (entry.type) {
+            RestrictionEntry.TYPE_BOOLEAN -> entry.selectedState
+            RestrictionEntry.TYPE_INTEGER -> entry.intValue
+            RestrictionEntry.TYPE_MULTI_SELECT -> entry.allSelectedStrings?.toList()
+            RestrictionEntry.TYPE_BUNDLE, RestrictionEntry.TYPE_BUNDLE_ARRAY -> null
+            else -> entry.selectedString
+        }
+        val currentValue: Any? = if (current.containsKey(key)) bundleToMap(current)[key] else null
+        val children: List<Map<String, Any?>>? =
+            if (entry.type == RestrictionEntry.TYPE_BUNDLE ||
+                entry.type == RestrictionEntry.TYPE_BUNDLE_ARRAY
+            ) {
+                val childCurrent = if (entry.type == RestrictionEntry.TYPE_BUNDLE) {
+                    current.getBundle(key) ?: Bundle()
+                } else {
+                    Bundle()
+                }
+                (entry.restrictions ?: emptyArray()).map { child ->
+                    restrictionEntryToMap(child, childCurrent)
+                }
+            } else {
+                null
+            }
+        return mapOf(
+            "key" to key,
+            "type" to type,
+            "defaultValue" to defaultValue,
+            "currentValue" to currentValue,
+            "titleKey" to entry.title,
+            "description" to entry.description,
+            "hidden" to hiddenDeclaredRestrictionKeys.any { it.equals(key, ignoreCase = true) },
+            "choices" to entry.choiceValues?.toList(),
+            "children" to children,
+        )
+    }
+
+    /**
+     * Port of the original `DeviceOwnerRepository.installShizuku`
+     * (original lines 42-53): opens Shizuku's Play Store page — the
+     * `market://` intent first, the https Play Store URL as fallback — with
+     * FLAG_ACTIVITY_NEW_TASK. The original wraps intent *construction* in the
+     * try/catch (which can never throw ActivityNotFoundException); this port
+     * wraps the `startActivity` calls instead, so the documented fallback
+     * actually fires on devices with no market app, and reports whether any
+     * intent was launched. References [ShizukuGateway.SHIZUKU_PACKAGE], a
+     * compile-time constant — this class still has no runtime Shizuku
+     * dependency (§1.3).
+     */
+    fun installShizuku(context: Context): Boolean {
+        val marketIntent = Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse("market://details?id=${ShizukuGateway.SHIZUKU_PACKAGE}"),
+        ).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+        try {
+            context.startActivity(marketIntent)
+            return true
+        } catch (_: ActivityNotFoundException) {
+            // fall through to the web URL, as the original intends
+        }
+        val webIntent = Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse("https://play.google.com/store/apps/details?id=${ShizukuGateway.SHIZUKU_PACKAGE}"),
+        ).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+        return try {
+            context.startActivity(webIntent)
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        }
     }
 
     fun setApplicationRestrictions(

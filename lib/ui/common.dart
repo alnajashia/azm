@@ -156,10 +156,12 @@ class ErrorView extends StatelessWidget {
   }
 }
 
-/// Gradient / glass hero card (redesign 2026-11-09). Dark mode: a subtle
-/// deep-red → deep-blue gradient with a glossy top highlight and a light
-/// hairline border. Light mode: a white card with a soft shadow and a
-/// faint red/blue wash. Same identity, both modes. Content is unchanged —
+/// Gradient / glass hero card (redesign v2 2026-11-09 — red & black
+/// only). Dark mode: the reference image's glossy red plane — a
+/// saturated deep-red → burgundy → near-black gradient with a glossy
+/// top highlight, a red hairline border and a faint red glow under the
+/// card. Light mode: a white card with a soft black shadow and a red
+/// wash at the top. Same identity, both modes. Content is unchanged —
 /// this only replaces the surface it sits on.
 class GradientCard extends StatelessWidget {
   const GradientCard({
@@ -178,10 +180,11 @@ class GradientCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: heroGradient(brightness),
-        borderRadius: BorderRadius.circular(20),
+        // Deeply rounded, like the reference's floating red planes.
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: dark
-              ? Colors.white.withValues(alpha: 0.14)
+              ? DominanterColors.red.withValues(alpha: 0.38)
               : Colors.black.withValues(alpha: 0.06),
         ),
         boxShadow: [
@@ -190,10 +193,16 @@ class GradientCard extends StatelessWidget {
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
+          if (dark)
+            BoxShadow(
+              color: DominanterColors.red.withValues(alpha: 0.20),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
             Padding(padding: padding, child: child),
@@ -202,7 +211,7 @@ class GradientCard extends StatelessWidget {
               top: 0,
               left: 0,
               right: 0,
-              height: 46,
+              height: 56,
               child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -234,8 +243,11 @@ String formatClock(Duration d) {
   return h > 0 ? '$h:$m:$s' : '$m:$s';
 }
 
-/// Large circular timer in the reference style: a thick rounded ring,
-/// big centre numerals, phase label above the digits and a cycle label
+/// Large circular timer in the reference style: a thick rounded RED
+/// ring (red & black only — focus burns bright red, a break dims to
+/// dark red; the old blue break ring is gone) around a black disc with
+/// a red hairline rim and a soft red glow, big centre numerals like the
+/// reference's «05», phase label above the digits and a cycle label
 /// below. Presentation only — callers drive it from the existing models.
 class FocusTimerRing extends StatelessWidget {
   const FocusTimerRing({
@@ -259,8 +271,9 @@ class FocusTimerRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final ringColor = isBreak
-        ? DominanterColors.blue
+        ? DominanterColors.redDark
         : DominanterColors.redBright;
     return SizedBox(
       width: size,
@@ -268,6 +281,36 @@ class FocusTimerRing extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
+          // The reference's dark disc inside the chunky red ring.
+          Container(
+            width: size - 26,
+            height: size - 26,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: dark
+                    ? const [
+                        DominanterColors.blackSurfaceHigh,
+                        DominanterColors.blackBackground,
+                      ]
+                    : const [Colors.white, Color(0xFFECECEF)],
+              ),
+              border: Border.all(
+                color: DominanterColors.red.withValues(alpha: 0.30),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: DominanterColors.red.withValues(
+                    alpha: dark ? 0.25 : 0.14,
+                  ),
+                  blurRadius: 26,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
           SizedBox(
             width: size,
             height: size,

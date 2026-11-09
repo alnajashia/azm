@@ -1,61 +1,80 @@
-/// Dominanter visual identity (redesign 2026-11-09).
+/// Dominanter visual identity — RED & BLACK ONLY (redesign v2,
+/// 2026-11-09, superseding the earlier red/blue/black identity at the
+/// user's explicit request).
 ///
-/// Identity, taken from the user's reference images:
-/// * deep-red glossy surfaces and a chunky red timer ring;
-/// * floating capsule (pill) bottom navigation with a red swept indicator;
-/// * secondary deep-blue accents; near-black surfaces in dark mode.
+/// Taken from the user's two reference images:
+/// * Image 1 — glossy deep-red gradient planes and cards floating over a
+///   light-grey backdrop, pill-shaped red list rows, circular white/red
+///   icon badges, and a chunky 3D red timer ring with big white numerals
+///   («05») on a dark-red disc.
+/// * Image 2 — floating pill bottom bars; this design fuses its red-bar
+///   and black-bar variants: an ALWAYS-BLACK capsule with a filled red
+///   swept active indicator, a white dot under the active label, and
+///   muted light-grey inactive items.
+///
+/// Colour rule (strict): the only chromatic colour is RED, in one scale
+/// (#5C0212 → #D90429 → #E5383B → #FF2E4D). Everything else is BLACK and
+/// its tints/shades (charcoals, greys, white for text/background
+/// legibility). There is no blue, green or any other hue anywhere —
+/// secondary/tertiary scheme roles are monochrome or red on purpose,
+/// and a widget test guards the palette against blue-dominant colours.
 ///
 /// The [ColorScheme]s are hand-built rather than `ColorScheme.fromSeed`:
 /// a seed tints *every* surface toward the seed colour, which would wash
-/// the dark theme's neutral near-black surfaces and the light theme's
-/// clean whites pink. Hand-building keeps surfaces neutral and reserves
-/// red/blue strictly for accents, indicators and CTAs — which is also the
-/// contrast rule: red is never long body text. Body text is near-white on
-/// near-black (dark) and near-black on white (light), both far above WCAG
-/// AA; filled CTAs are white text on #D90429 (~5.9:1) or #E5383B.
+/// the neutral black/white surfaces pink. Hand-building keeps surfaces
+/// neutral and reserves red strictly for accents, indicators and CTAs —
+/// which is also the contrast rule: red is never long body text. Body
+/// text is near-white on near-black (dark) and near-black on white
+/// (light); filled CTAs are white text on #D90429 (~5.9:1).
 library;
 
 import 'package:flutter/material.dart';
 
 abstract final class DominanterColors {
-  /// Primary red scale (references cluster around #D90429 / #E5383B).
+  /// The red scale — the app's ONLY chromatic colour.
   static const red = Color(0xFFD90429);
   static const redBright = Color(0xFFE5383B);
+  static const redGlow = Color(0xFFFF2E4D);
   static const redDark = Color(0xFF9E031E);
   static const redDeep = Color(0xFF5C0212);
+  static const redDeepest = Color(0xFF2A0208);
 
-  /// Secondary deep-blue scale (#1D3557 family, #2563EB accent).
-  static const blueDeep = Color(0xFF1D3557);
-  static const blue = Color(0xFF2563EB);
-  static const blueBright = Color(0xFF5B8DEF);
-
-  /// Dark-mode surfaces: neutral near-black, never red-tinted.
+  /// The black scale — surfaces, the navigation capsule, secondary roles.
+  static const black = Color(0xFF000000);
   static const blackBackground = Color(0xFF0A0A0C);
+  static const blackBar = Color(0xFF101013);
   static const blackSurface = Color(0xFF141417);
   static const blackSurfaceHigh = Color(0xFF1E1E23);
+  static const blackSurfaceHighest = Color(0xFF2A2A31);
 
-  /// Light-mode surfaces.
-  static const lightBackground = Color(0xFFF7F7F9);
+  /// Monochrome neutrals (tints of black) for inactive items on the
+  /// always-black pill bar, in either brightness.
+  static const onBlackMuted = Color(0xFFB9B9C2);
+  static const onBlackFaint = Color(0xFF7A7A85);
+
+  /// Light-mode surfaces: white and black-tinted greys only.
+  static const lightBackground = Color(0xFFF4F4F5);
   static const lightSurface = Color(0xFFFFFFFF);
 }
 
 /// Gradient used by [GradientCard] hero surfaces, per brightness.
+/// Dark: the reference's glossy red plane — saturated deep red at the
+/// top-left, falling through burgundy to near-black at the bottom-right.
+/// Light: a white card washed with red at the top and black-tinted grey
+/// at the bottom (the reference's light-grey backdrop). Red → black in
+/// both modes; no other hue.
 LinearGradient heroGradient(Brightness brightness) =>
     brightness == Brightness.dark
     ? const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF7A0C1D),
-          Color(0xFF2A0A14),
-          DominanterColors.blueDeep,
-        ],
+        colors: [Color(0xFF9E031E), Color(0xFF5C0212), Color(0xFF12030A)],
         stops: [0.0, 0.55, 1.0],
       )
     : const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFFFE9EC), Color(0xFFFFFFFF), Color(0xFFE8EEF9)],
+        colors: [Color(0xFFFFD9DE), Color(0xFFFFFFFF), Color(0xFFECECEF)],
         stops: [0.0, 0.55, 1.0],
       );
 
@@ -77,11 +96,14 @@ ThemeData dominanterLightTheme() {
     onPrimary: Colors.white,
     primaryContainer: Color(0xFFFFD9DE),
     onPrimaryContainer: DominanterColors.redDeep,
-    secondary: DominanterColors.blueDeep,
+    // Secondary is BLACK in light mode: black chips, black secondary
+    // buttons and badges against the light backdrop, as in the black
+    // pill-bar variant of the reference.
+    secondary: Color(0xFF17171A),
     onSecondary: Colors.white,
-    secondaryContainer: Color(0xFFDCE7F7),
-    onSecondaryContainer: DominanterColors.blueDeep,
-    tertiary: DominanterColors.blue,
+    secondaryContainer: Color(0xFFE4E4EA),
+    onSecondaryContainer: Color(0xFF17171A),
+    tertiary: DominanterColors.redDark,
     onTertiary: Colors.white,
     error: DominanterColors.redDark,
     onError: Colors.white,
@@ -113,12 +135,15 @@ ThemeData dominanterDarkTheme() {
     onPrimary: Colors.white,
     primaryContainer: DominanterColors.redDeep,
     onPrimaryContainer: Color(0xFFFFD9DE),
-    secondary: DominanterColors.blueBright,
+    // Secondary is a monochrome light tint of black in dark mode (the
+    // capsule and surfaces already carry the black role); tertiary
+    // stays inside the red scale.
+    secondary: Color(0xFFE8E8EC),
     onSecondary: Color(0xFF0A0A0C),
-    secondaryContainer: DominanterColors.blueDeep,
-    onSecondaryContainer: Color(0xFFDCE7F7),
-    tertiary: DominanterColors.blueBright,
-    onTertiary: Color(0xFF0A0A0C),
+    secondaryContainer: DominanterColors.blackSurfaceHighest,
+    onSecondaryContainer: Color(0xFFF5F5F7),
+    tertiary: DominanterColors.redGlow,
+    onTertiary: Colors.white,
     error: Color(0xFFFF6B74),
     onError: Color(0xFF2A0208),
     errorContainer: Color(0xFF4A0A12),
@@ -157,7 +182,8 @@ ThemeData _baseTheme(ColorScheme scheme, Color scaffoldBackground) {
       style: FilledButton.styleFrom(
         backgroundColor: DominanterColors.red,
         foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        // Pill-leaning buttons, echoing the reference's pill rows.
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
@@ -174,9 +200,14 @@ ThemeData _baseTheme(ColorScheme scheme, Color scaffoldBackground) {
     chipTheme: base.chipTheme.copyWith(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
+    // Larger corner radius, matching the reference's deeply rounded
+    // floating cards (was 16 in the previous identity).
     cardTheme: CardThemeData(
       elevation: scheme.brightness == Brightness.dark ? 0 : 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    dialogTheme: DialogThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     ),
   );
 }

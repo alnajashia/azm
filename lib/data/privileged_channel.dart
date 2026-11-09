@@ -13,6 +13,8 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+import '../domain/focus.dart';
+
 /// A failure from the privileged channel, in the §5.4 taxonomy shape.
 class PrivilegedException implements Exception {
   PrivilegedException(this.code, this.message, [this.details = const {}]);
@@ -159,6 +161,61 @@ class CapableApp {
       );
 }
 
+/// One entry of a target app's own manifest-declared restrictions, as
+/// returned by `getAvailableRestrictions` — the model behind the original's
+/// `AppRestrictionsScreen` (its `RestrictionEntry` list from
+/// `RestrictionsManager.getManifestRestrictions`).
+///
+/// [type] is the contract vocabulary: 'bool' | 'string' | 'stringList' |
+/// 'int' | 'bundle'. [defaultValue] is the default declared in the target
+/// app's restrictions XML; [currentValue] is the value currently applied via
+/// Device Owner, or null when the key is not set (or this app is not owner).
+/// [hidden] marks keys the original deliberately hides from the editor and
+/// force-preserves on save (e.g. `URLBlocklist`, owned by the browser
+/// restrictions flow) — the UI must not offer them for editing. For
+/// type 'bundle', [children] carries the nested entries (for bundle arrays,
+/// the per-item template entries, with defaults only).
+class AvailableRestriction {
+  const AvailableRestriction({
+    required this.key,
+    required this.type,
+    required this.titleKey,
+    this.defaultValue,
+    this.currentValue,
+    this.description,
+    this.hidden = false,
+    this.choices = const [],
+    this.children = const [],
+  });
+
+  final String key;
+  final String type;
+  final Object? defaultValue;
+  final Object? currentValue;
+  final String titleKey;
+  final String? description;
+  final bool hidden;
+  final List<String> choices;
+  final List<AvailableRestriction> children;
+
+  bool get isManaged => currentValue != null;
+
+  factory AvailableRestriction.fromMap(Map<dynamic, dynamic> m) => AvailableRestriction(
+        key: m['key'] as String,
+        type: m['type'] as String? ?? 'string',
+        titleKey: m['titleKey'] as String? ?? (m['key'] as String),
+        defaultValue: m['defaultValue'],
+        currentValue: m['currentValue'],
+        description: m['description'] as String?,
+        hidden: m['hidden'] as bool? ?? false,
+        choices: (m['choices'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+        children: (m['children'] as List?)
+                ?.map((e) => AvailableRestriction.fromMap(e as Map<dynamic, dynamic>))
+                .toList() ??
+            const [],
+      );
+}
+
 class ProvisioningDiagnostics {
   const ProvisioningDiagnostics({required this.accounts, required this.extraUsers, this.currentOwner});
   final List<Map<String, String>> accounts;
@@ -278,6 +335,7 @@ class AppGroupModel {
     this.packages = const [],
     this.dailyMinutes = 0,
     this.weeklyMinutes,
+    this.reopenSeconds = 0,
     this.dailyWindows = const [],
     this.weeklyWindows,
   });
@@ -287,6 +345,13 @@ class AppGroupModel {
   final List<String> packages;
   final int dailyMinutes;
   final List<int>? weeklyMinutes;
+
+  /// Reopening cooldown in seconds, mirroring the per-app limit model's
+  /// `reopenSeconds` (same `'reopenSeconds'` key in the groups JSON the
+  /// Kotlin SettingsStore round-trips). Enforcement is F11/v1.1, as with
+  /// per-app limits; the value is stored and gate-relevant (decreasing it
+  /// loosens).
+  final int reopenSeconds;
   final List<TimeWindowModel> dailyWindows;
   final List<List<TimeWindowModel>>? weeklyWindows;
 
@@ -295,6 +360,7 @@ class AppGroupModel {
         name: m['name'] as String? ?? '',
         packages: (m['packages'] as List?)?.map((e) => e.toString()).toList() ?? const [],
         dailyMinutes: (m['dailyMinutes'] as num?)?.toInt() ?? 0,
+        reopenSeconds: (m['reopenSeconds'] as num?)?.toInt() ?? 0,
         weeklyMinutes:
             (m['weeklyMinutes'] as List?)?.map((e) => (e as num).toInt()).toList(),
         dailyWindows: _windows(m['dailyWindows']),
@@ -313,6 +379,7 @@ class AppGroupModel {
         'packages': packages,
         'dailyMinutes': dailyMinutes,
         'weeklyMinutes': weeklyMinutes,
+        'reopenSeconds': reopenSeconds,
         'dailyWindows': dailyWindows.map((w) => w.toMap()).toList(),
         'weeklyWindows': weeklyWindows?.map((d) => d.map((w) => w.toMap()).toList()).toList(),
       };
@@ -323,6 +390,7 @@ class AppGroupModel {
     int? dailyMinutes,
     List<int>? weeklyMinutes,
     bool clearWeeklyMinutes = false,
+    int? reopenSeconds,
     List<TimeWindowModel>? dailyWindows,
     List<List<TimeWindowModel>>? weeklyWindows,
     bool clearWeeklyWindows = false,
@@ -333,6 +401,7 @@ class AppGroupModel {
         packages: packages ?? this.packages,
         dailyMinutes: dailyMinutes ?? this.dailyMinutes,
         weeklyMinutes: clearWeeklyMinutes ? null : (weeklyMinutes ?? this.weeklyMinutes),
+        reopenSeconds: reopenSeconds ?? this.reopenSeconds,
         dailyWindows: dailyWindows ?? this.dailyWindows,
         weeklyWindows: clearWeeklyWindows ? null : (weeklyWindows ?? this.weeklyWindows),
       );
@@ -397,6 +466,122 @@ class PrivilegedEvent {
   String toString() => 'PrivilegedEvent($type, $payload)';
 }
 
+/// The native focus session's wire state, exactly as the Kotlin
+/// `FocusSessionStore.stateMap` produces it (`startFocusSession` result /
+/// `getFocusSession`).
+///
+/// The native store is authoritative: the session is persisted natively
+/// (elapsed-realtime + wall-clock anchors + boot count) and survives
+/// process death; this snapshot is how Dart views it. [phase] is one of
+/// `waiting | focus | shortBreak | longBreak | paused | idle` — the
+/// native phases of the original `FocusMode`. When [phase] is `paused`,
+/// [pausedFrom] carries the underlying phase and [deadlineElapsedMs] is
+/// the nominal pre-pause deadline (the paused remaining time itself is
+/// held natively and is not part of the wire shape; a restored paused
+/// session therefore displays its full phase duration until resumed —
+/// the native session still ends at the true deadline).
+class NativeFocusSessionState {
+  const NativeFocusSessionState({
+    required this.phase,
+    required this.phaseStartedElapsedMs,
+    required this.phaseDurationMs,
+    required this.completedFocusInCycle,
+    required this.pausedFrom,
+    required this.deadlineElapsedMs,
+  });
+
+  /// Wire phase: `waiting|focus|shortBreak|longBreak|paused|idle`.
+  final String phase;
+
+  /// `SystemClock.elapsedRealtime()` at the (re-anchored) phase start.
+  final int phaseStartedElapsedMs;
+  final int phaseDurationMs;
+  final int completedFocusInCycle;
+
+  /// Underlying phase when [phase] is `paused`; otherwise null.
+  final String? pausedFrom;
+
+  /// `elapsedRealtime` deadline of the current phase (nominal when paused).
+  final int deadlineElapsedMs;
+
+  bool get isPaused => phase == 'paused';
+  bool get isWaiting => phase == 'waiting';
+  bool get isIdle => phase == 'idle';
+
+  factory NativeFocusSessionState.fromMap(Map<dynamic, dynamic> m) =>
+      NativeFocusSessionState(
+        phase: m['phase'] as String? ?? 'idle',
+        phaseStartedElapsedMs: (m['phaseStartedElapsedMs'] as num?)?.toInt() ?? 0,
+        phaseDurationMs: (m['phaseDurationMs'] as num?)?.toInt() ?? 0,
+        completedFocusInCycle: (m['completedFocusInCycle'] as num?)?.toInt() ?? 0,
+        pausedFrom: m['pausedFrom'] as String?,
+        deadlineElapsedMs: (m['deadlineElapsedMs'] as num?)?.toInt() ?? 0,
+      );
+
+  static FocusPhase _phaseFor(String wire) => switch (wire) {
+        'focus' => FocusPhase.focus,
+        'shortBreak' => FocusPhase.breakTime,
+        'longBreak' => FocusPhase.longBreak,
+        'waiting' => FocusPhase.waiting,
+        'paused' => FocusPhase.paused,
+        'done' => FocusPhase.done,
+        _ => FocusPhase.idle,
+      };
+
+  /// Rebuilds the domain [FocusSession] for [config] from this snapshot.
+  ///
+  /// Anchoring: when [elapsedRealtimeOffsetMs] is known (the difference
+  /// between the native elapsed-realtime clock and Dart's monotonic
+  /// clock, captured by [PrivilegedChannel] when this process started the
+  /// session), the remaining time is computed exactly from
+  /// [deadlineElapsedMs] and both of the session's clocks are re-anchored
+  /// consistently. Without an offset (a session restored after a process
+  /// restart) the phase is anchored at [now] with its full duration —
+  /// an approximation for display only: the native alarm still ends the
+  /// phase at the true deadline and the `focusPhaseChanged` event then
+  /// re-syncs the UI.
+  FocusSession toFocusSession(
+    FocusConfig config, {
+    int? elapsedRealtimeOffsetMs,
+    DateTime? now,
+  }) {
+    final at = now ?? DateTime.now();
+    if (phase == 'idle') return FocusSession(config: config);
+    final duration = Duration(milliseconds: phaseDurationMs);
+    if (isPaused) {
+      return FocusSession(
+        config: config,
+        phase: FocusPhase.paused,
+        phaseDuration: duration,
+        completedFocusPeriods: completedFocusInCycle,
+        pausedFrom: pausedFrom != null ? _phaseFor(pausedFrom!) : null,
+        // Not carried by the wire shape; see the class doc.
+        pausedRemaining: duration,
+      );
+    }
+    final phaseEnum = _phaseFor(phase);
+    Duration elapsedWithinPhase;
+    if (elapsedRealtimeOffsetMs != null && phaseEnum != FocusPhase.waiting) {
+      final nativeNowMs =
+          FocusSession.monotonicNow.inMilliseconds + elapsedRealtimeOffsetMs;
+      var remainingMs = deadlineElapsedMs - nativeNowMs;
+      if (remainingMs < 0) remainingMs = 0;
+      if (remainingMs > phaseDurationMs) remainingMs = phaseDurationMs;
+      elapsedWithinPhase = duration - Duration(milliseconds: remainingMs);
+    } else {
+      elapsedWithinPhase = Duration.zero;
+    }
+    return FocusSession(
+      config: config,
+      phase: phaseEnum,
+      phaseStartedAt: at.subtract(elapsedWithinPhase),
+      phaseStartedElapsed: FocusSession.monotonicNow - elapsedWithinPhase,
+      phaseDuration: duration,
+      completedFocusPeriods: completedFocusInCycle,
+    );
+  }
+}
+
 /// The single Dart-side caller of `dominanter/privileged`.
 class PrivilegedChannel {
   PrivilegedChannel({MethodChannel? methodChannel, EventChannel? eventChannel})
@@ -454,6 +639,11 @@ class PrivilegedChannel {
 
   Future<bool> requestShizukuPermission() async =>
       (await _invokeMap('requestShizukuPermission'))['requested'] as bool? ?? false;
+
+  /// Opens Shizuku's Play Store page (market:// intent, https fallback —
+  /// the original's `installShizuku`). Returns whether an intent launched.
+  Future<bool> installShizuku() async =>
+      (await _invokeMap('installShizuku'))['launched'] as bool? ?? false;
 
   // ---------------------------------------------------------- Device Owner
 
@@ -538,6 +728,17 @@ class PrivilegedChannel {
     return r is Map ? r.map((k, v) => MapEntry(k.toString(), v)) : <String, dynamic>{};
   }
 
+  /// The target app's declared restrictions model (the original's
+  /// `getAvailableRestrictions`): every restriction the app declares in its
+  /// manifest, with declared defaults and currently applied values. Entries
+  /// flagged [AvailableRestriction.hidden] must not be offered for editing.
+  Future<List<AvailableRestriction>> getAvailableRestrictions(String packageName) async {
+    final m = await _invokeMap('getAvailableRestrictions', {'packageName': packageName});
+    return (m['restrictions'] as List? ?? const [])
+        .map((e) => AvailableRestriction.fromMap(e as Map<dynamic, dynamic>))
+        .toList();
+  }
+
   Future<Map<String, dynamic>> setApplicationRestrictions(
     String packageName,
     Map<String, dynamic> restrictions, {
@@ -573,6 +774,11 @@ class PrivilegedChannel {
   Future<bool> grantWriteSecureSettings() async =>
       (await _invokeMap('grantWriteSecureSettings'))['granted'] as bool? ?? false;
 
+  /// Read-only check of the WRITE_SECURE_SETTINGS grant: the native
+  /// side's verified `checkSelfPermission` re-check, without granting.
+  Future<bool> isWriteSecureSettingsGranted() async =>
+      (await _invokeMap('isWriteSecureSettingsGranted'))['granted'] as bool? ?? false;
+
   Future<bool> setAccessibilityEnabled(bool enabled) async =>
       (await _invokeMap('setAccessibilityEnabled', {'enabled': enabled}))['isEnabled'] as bool? ??
       !enabled;
@@ -589,6 +795,97 @@ class PrivilegedChannel {
 
   Future<UsageToday> getUsageToday({String? packageName}) async => UsageToday.fromMap(
       await _invokeMap('getUsageToday', {if (packageName != null) 'packageName': packageName}));
+
+  // ---------------------------------------------------------- Focus (native runtime)
+
+  /// Difference between the native elapsed-realtime clock and Dart's
+  /// monotonic clock, in milliseconds, captured when this process starts
+  /// a focus session (the phase start in the reply is, to within channel
+  /// transit, "now" on the native clock). Used by
+  /// [NativeFocusSessionState.toFocusSession] for exact remaining-time
+  /// reconstruction; null for sessions this process did not start.
+  int? get focusElapsedRealtimeOffsetMs => _focusElapsedRealtimeOffsetMs;
+  int? _focusElapsedRealtimeOffsetMs;
+
+  NativeFocusSessionState? _parseFocusState(dynamic result, String method) {
+    if (result == null) return null;
+    if (result is Map) {
+      return NativeFocusSessionState.fromMap(result);
+    }
+    throw PrivilegedException('INTERNAL', 'Malformed reply from native layer for $method',
+        {'cause': 'expected Map or null, got ${result.runtimeType}'});
+  }
+
+  /// Persists the session natively and starts its first focus phase.
+  /// The native side clamps durations/cycles to the original's bounds,
+  /// snapshots the config, and takes the suspension targets from the
+  /// persisted focus config (`ConfigStore`).
+  Future<NativeFocusSessionState> startFocusSession({
+    required int focusMinutes,
+    required int breakMinutes,
+    required int longBreakMinutes,
+    required int cycles,
+    required bool autoStartFocus,
+    required bool soundEnabled,
+    required bool vibrationEnabled,
+  }) async {
+    final m = await _invokeMap('startFocusSession', {
+      'focusMinutes': focusMinutes,
+      'breakMinutes': breakMinutes,
+      'longBreakMinutes': longBreakMinutes,
+      'cycles': cycles,
+      'autoStartFocus': autoStartFocus,
+      'soundEnabled': soundEnabled,
+      'vibrationEnabled': vibrationEnabled,
+    });
+    final state = NativeFocusSessionState.fromMap(m);
+    // The phase has just started on the native clock: capture the offset
+    // between the two monotonic clocks for later reconstruction.
+    _focusElapsedRealtimeOffsetMs =
+        state.phaseStartedElapsedMs - FocusSession.monotonicNow.inMilliseconds;
+    return state;
+  }
+
+  /// The persisted native session, or null when no session exists. The
+  /// native side advances an expired phase before replying.
+  Future<NativeFocusSessionState?> getFocusSession() async =>
+      _parseFocusState(await _invoke<dynamic>('getFocusSession'), 'getFocusSession');
+
+  /// Pauses the native session. With [releaseApps] the suspended apps are
+  /// released for the pause (a loosening — callers gate it behind the
+  /// recovery session, as in the original); otherwise they stay suspended.
+  Future<NativeFocusSessionState?> pauseFocusSession({bool releaseApps = false}) async =>
+      _parseFocusState(
+        await _invoke<dynamic>('pauseFocusSession', {'releaseApps': releaseApps}),
+        'pauseFocusSession',
+      );
+
+  /// Resumes into the phase the session was paused from (never forces
+  /// the focus phase — the original's `resume` semantics).
+  Future<NativeFocusSessionState?> resumeFocusSession() async =>
+      _parseFocusState(await _invoke<dynamic>('resumeFocusSession'), 'resumeFocusSession');
+
+  /// Skips the current break, entering the next focus phase (the
+  /// original's `FocusMode.skipBreak`); a no-op outside a break phase.
+  Future<NativeFocusSessionState?> skipFocusSession() async =>
+      _parseFocusState(await _invoke<dynamic>('skipFocusSession'), 'skipFocusSession');
+
+  /// Stops the native session: releases its suspensions/restrictions,
+  /// cancels the alarm and the status notification.
+  Future<void> stopFocusSession() async {
+    await _invoke<dynamic>('stopFocusSession');
+    _focusElapsedRealtimeOffsetMs = null;
+  }
+
+  // ---------------------------------------------------------- Notification permission
+
+  Future<bool> hasNotificationPermission() async =>
+      (await _invokeMap('hasNotificationPermission'))['granted'] as bool? ?? false;
+
+  /// Resolution order on the native side: already granted → device-owner
+  /// policy grant (no UI) → the host Activity's runtime prompt.
+  Future<bool> requestNotificationPermission() async =>
+      (await _invokeMap('requestNotificationPermission'))['granted'] as bool? ?? false;
 
   // ---------------------------------------------------------- Recovery code
 
@@ -628,8 +925,11 @@ class PrivilegedChannel {
   }) async {
     await _invokeMap('setTimeLimit', {
       'packageName': packageName,
+      // Dual storage: both components may ride in one call; the native side
+      // persists the combined model (weekly wins when set, as in the
+      // original). Sending only one component keeps the old behaviour.
+      if (dailyMinutes != null) 'dailyMinutes': dailyMinutes,
       if (weeklyMinutes != null) 'weeklyMinutes': weeklyMinutes,
-      if (weeklyMinutes == null && dailyMinutes != null) 'dailyMinutes': dailyMinutes,
       if (reopenSeconds != null) 'reopenSeconds': reopenSeconds,
     });
     return getAppEnforcement(packageName);
@@ -642,10 +942,10 @@ class PrivilegedChannel {
   }) async {
     await _invokeMap('setTimeWindows', {
       'packageName': packageName,
+      // Dual storage: both components may ride in one call (see setTimeLimit).
+      if (dailyWindows != null) 'dailyWindows': dailyWindows.map((w) => w.toMap()).toList(),
       if (weeklyWindows != null)
         'weeklyWindows': weeklyWindows.map((d) => d.map((w) => w.toMap()).toList()).toList(),
-      if (weeklyWindows == null && dailyWindows != null)
-        'dailyWindows': dailyWindows.map((w) => w.toMap()).toList(),
     });
     return getAppEnforcement(packageName);
   }

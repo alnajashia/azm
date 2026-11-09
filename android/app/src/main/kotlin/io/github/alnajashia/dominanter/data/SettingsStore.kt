@@ -57,7 +57,7 @@ object SettingsStore {
     private const val KEY_LOGS = "logs"
     private const val KEY_USAGE_DATE = "date"
     private const val KEY_INTENTIONAL_A11Y_DISABLE = "intentional_a11y_disable_at"
-    private const val MAX_LOGS = 500
+    private const val MAX_LOGS = 100
     private const val INTENTIONAL_DISABLE_WINDOW_MS = 120_000L
 
     @Volatile
@@ -185,29 +185,60 @@ object SettingsStore {
 
     fun groups(): List<AppGroup> = decodeGroups(prefs(PREFS_GROUPS).getString(KEY_GROUPS, null))
 
-    /** Persists groups in exactly the JSON schema [decodeGroups] reads. */
+    /**
+     * Persists groups in exactly the JSON schema [decodeGroups] reads, mirroring
+     * the original `AppGroupRepository.encode` (data/AppGroupRepository.kt:118-133):
+     * `limit` (daily) and `windows` are ALWAYS written, with `weeklyLimit` /
+     * `weeklyWindows` added when the group is per-weekday — never an either/or.
+     * The group's per-group reopening cooldown is round-tripped as
+     * `reopenSeconds`.
+     *
+     * The one-group-per-app invariant is enforced here for whole-list saves,
+     * mirroring the original's `setGroupPackages` / `setPackageGroup`
+     * (AppGroupRepository.kt:66-94): the group a package is assigned to wins
+     * and every other group loses it. A whole-list save has no per-operation
+     * target group, so the LAST group in the list containing a package is the
+     * assignment that wins; earlier groups lose the package.
+     *
+     * Usage entries of groups that no longer exist after this save are
+     * removed from `group_usage_stats`, mirroring the original's `deleteGroup`
+     * cleanup (AppGroupRepository.kt:56-59).
+     */
     fun saveGroups(groups: List<AppGroup>) {
+        // One-group-per-app: the last group in the list wins each package.
+        val winningGroupIndex = HashMap<String, Int>()
+        groups.forEachIndexed { index, g ->
+            g.packageNames.forEach { pkg -> winningGroupIndex[pkg] = index }
+        }
+        val deduped = groups.mapIndexed { index, g ->
+            val kept = g.packageNames.filter { winningGroupIndex[it] == index }.toSet()
+            if (kept == g.packageNames) g else g.copy(packageNames = kept)
+        }
+        // Group-usage cleanup for groups deleted by this save.
+        val deletedIds = groups().map { it.id }.toSet() - deduped.map { it.id }.toSet()
+        if (deletedIds.isNotEmpty()) {
+            val usageEdit = prefs(PREFS_GROUP_USAGE).edit()
+            deletedIds.forEach { usageEdit.remove(it) }
+            usageEdit.apply()
+        }
         val array = JSONArray()
-        groups.forEach { g ->
+        deduped.forEach { g ->
             val obj = JSONObject()
             obj.put("id", g.id)
             obj.put("name", g.name)
             val packages = JSONArray()
             g.packageNames.forEach { packages.put(it) }
             obj.put("packages", packages)
-            val weeklyLimit = g.timeLimit.weeklyMinutes
-            if (weeklyLimit != null) {
+            obj.put("limit", g.timeLimit.dailyMinutes)
+            g.timeLimit.weeklyMinutes?.let { weekly ->
                 val arr = JSONArray()
-                weeklyLimit.forEach { arr.put(it) }
+                weekly.forEach { arr.put(it) }
                 obj.put("weeklyLimit", arr)
-            } else {
-                obj.put("limit", g.timeLimit.dailyMinutes)
             }
-            val weeklyWindows = g.timeWindows.weeklyWindows
-            if (weeklyWindows != null) {
-                obj.put("weeklyWindows", encodeWeeklyWindows(weeklyWindows))
-            } else {
-                obj.put("windows", encodeWindowArray(g.timeWindows.dailyWindows))
+            obj.put("reopenSeconds", g.reopenSeconds)
+            obj.put("windows", encodeWindowArray(g.timeWindows.dailyWindows))
+            g.timeWindows.weeklyWindows?.let { weekly ->
+                obj.put("weeklyWindows", encodeWeeklyWindows(weekly))
             }
             array.put(obj)
         }
@@ -245,6 +276,7 @@ object SettingsStore {
                         ?: TimeLimit.daily(obj.optInt("limit", 0)),
                     timeWindows = weeklyWindows?.let { TimeWindows.perDay(it) }
                         ?: TimeWindows.daily(windows),
+                    reopenSeconds = obj.optInt("reopenSeconds", 0),
                 )
             }
         } catch (e: Exception) {

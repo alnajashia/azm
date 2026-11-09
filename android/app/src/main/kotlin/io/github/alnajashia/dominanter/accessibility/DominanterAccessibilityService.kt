@@ -19,6 +19,9 @@ import io.github.alnajashia.dominanter.data.SettingsStore
 import io.github.alnajashia.dominanter.data.SuspensionReason
 import io.github.alnajashia.dominanter.data.TimeWindow
 import io.github.alnajashia.dominanter.deviceowner.DominanterDeviceAdminReceiver
+import io.github.alnajashia.dominanter.notifications.UsageAlertStage
+import io.github.alnajashia.dominanter.notifications.UsageWarningNotifier
+import io.github.alnajashia.dominanter.notifications.UsageWarningSettings
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.TimeUnit
@@ -35,6 +38,11 @@ import java.util.concurrent.TimeUnit
  *    never used it.)
  *  - **allowed time windows** (F10), app ∩ group intersection, blocking
  *    outside the window;
+ *  - **staged usage warnings** (F12): as the foreground app (or its group)
+ *    approaches its limit, warnings fire through
+ *    [UsageWarningNotifier] on the original's schedule/tick cadence —
+ *    settings come from the `usage_warning_prefs` store, whose schema
+ *    [UsageWarningSettings] shares with the Dart editor;
  *  - **active word blocking** (F14: forbidden word in the focused editable
  *    field of a target app, checked when typing stops, as in the original)
  *    and **passive word blocking** (F15: word anywhere on screen);
@@ -47,9 +55,11 @@ import java.util.concurrent.TimeUnit
  * Deliberately NOT in this v1 service (per ARCH §6 scope calls): the NSFW
  * TFLite pipeline (F16/F17, v1.1), reopening cooldown enforcement (F11,
  * v1.1), colour-filter sync (F26, v1.1), install-watcher auto-suspension
- * (F6/F19/F20, v1.1 / not ported), impulse/focus suspension sync and staged
- * usage warnings (F12/F21/F25 effects — their Kotlin FGS/alarm components
- * are separate v1 work, not part of this service port).
+ * (F6/F19/F20, v1.1 / not ported) and impulse suspension sync (F21 effects).
+ * Focus (F25) is likewise not driven from here: its native runtime lives in
+ * `focus/FocusSessionStore` + `focus/FocusService`, independent of this
+ * service — as in the original, where `FocusMode` is independent of the
+ * Accessibility Service too.
  *
  * This class contains **no Shizuku import** (ARCH §1.3).
  */
@@ -58,6 +68,7 @@ class DominanterAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
 
     private var currentPackage: String? = null
+    private var lastForegroundPackage: String? = null
     private var sessionStartElapsed: Long = 0L
     private var wasTypingActively: Boolean = false
     private var lastActiveTypedText: String = ""
@@ -67,11 +78,63 @@ class DominanterAccessibilityService : AccessibilityService() {
     private var forbiddenPatterns: Map<String, Regex> = emptyMap()
     private var passiveForbiddenPatterns: Map<String, Map<String, Regex>> = emptyMap()
 
+    // Staged usage warnings (F12), mirroring the original's fields
+    // (DechainerAccessibilityService.kt:133-138).
+    private var usageWarningEnabled: Boolean = UsageWarningSettings.DEFAULT_ENABLED
+    private var usageWarningStages: List<UsageAlertStage> = emptyList()
+    private var currentWarnKey: String? = null
+    private var activeStageId: String? = null
+
     private val blockRunnable = Runnable { executeBlocking() }
     private val windowEndRunnable = Runnable { executeBlocking(outsideWindow = true) }
+    private val warnTickRunnable = Runnable { tickUsageWarning() }
 
-    private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
-        updateForbiddenPatterns()
+    /**
+     * Per-store dispatch, mirroring the original's `prefsListener`
+     * (DechainerAccessibilityService.kt:257-306): a limit change for the
+     * CURRENT package re-arms the block callback and re-tracks it; a window
+     * or group change additionally re-arms the window-end callback and
+     * re-tracks unconditionally (group membership of the current package may
+     * itself have changed); blocked-words changes only rebuild the patterns;
+     * a usage-warning change reloads the warning settings, cancels the
+     * active warning when warnings were switched off, and re-tracks the
+     * current package (the original's usage-warning branch, :292-301).
+     * (The original also syncs visual-blocking / colour-filter / impulse
+     * state here — F16/F17/F26/F21 syncs are v1.1 and intentionally absent,
+     * as in the rest of this service.)
+     */
+    private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+        when (prefs) {
+            SettingsStore.prefs(SettingsStore.PREFS_APP_LIMITS),
+            SettingsStore.prefs(SettingsStore.PREFS_APP_WEEKLY_LIMITS) -> {
+                if (key == currentPackage) retrackCurrent(removeWindowCallback = false)
+            }
+            SettingsStore.prefs(SettingsStore.PREFS_APP_WINDOWS),
+            SettingsStore.prefs(SettingsStore.PREFS_APP_WEEKLY_WINDOWS) -> {
+                if (key == currentPackage) retrackCurrent(removeWindowCallback = true)
+            }
+            SettingsStore.prefs(SettingsStore.PREFS_GROUPS) ->
+                retrackCurrent(removeWindowCallback = true)
+            SettingsStore.prefs(SettingsStore.PREFS_BLOCKED_WORDS) ->
+                updateForbiddenPatterns()
+            SettingsStore.prefs(SettingsStore.PREFS_USAGE_WARNING) -> {
+                updateUsageWarningSettings()
+                if (!usageWarningEnabled) {
+                    cancelActiveUsageWarning()
+                }
+                currentPackage?.let { startTracking(it) }
+            }
+            // Activity-blocker changes need no refresh: blocked activities are
+            // read live from SettingsStore on every window-state event.
+        }
+    }
+
+    /** Re-arms tracking for the foreground app after its limits/windows/group changed. */
+    private fun retrackCurrent(removeWindowCallback: Boolean) {
+        val pkg = currentPackage ?: return
+        handler.removeCallbacks(blockRunnable)
+        if (removeWindowCallback) handler.removeCallbacks(windowEndRunnable)
+        startTracking(pkg)
     }
 
     private val watchedPrefs = listOf(
@@ -82,12 +145,32 @@ class DominanterAccessibilityService : AccessibilityService() {
         SettingsStore.PREFS_GROUPS,
         SettingsStore.PREFS_BLOCKED_WORDS,
         SettingsStore.PREFS_ACTIVITY_BLOCKER,
+        SettingsStore.PREFS_USAGE_WARNING,
     )
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                Intent.ACTION_SCREEN_OFF -> stopTrackingAndSave(screenOff = true)
+                Intent.ACTION_SCREEN_OFF -> {
+                    // Mirror the original (DechainerAccessibilityService.kt:227-249):
+                    // stash the foreground package so SCREEN_ON can resume it.
+                    lastForegroundPackage = currentPackage
+                    stopTrackingAndSave(screenOff = true)
+                    currentPackage = null
+                }
+                Intent.ACTION_SCREEN_ON -> {
+                    // Resume accounting for the app that was in front when the
+                    // screen went off — without this, usage between unlock and
+                    // the next window-state event goes unaccounted (fail-open).
+                    // (The original also calls syncColorFilters() here — F26,
+                    // v1.1, intentionally absent.)
+                    lastForegroundPackage?.let {
+                        currentPackage = it
+                        sessionStartElapsed = SystemClock.elapsedRealtime()
+                        checkDateReset()
+                        startTracking(it)
+                    }
+                }
                 Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED -> checkDateReset()
             }
         }
@@ -95,6 +178,9 @@ class DominanterAccessibilityService : AccessibilityService() {
 
     companion object {
         const val MAX_SCREEN_TEXT = 64_000
+
+        /** The original's warning re-check cadence (DechainerAccessibilityService.kt:403). */
+        private const val USAGE_WARNING_TICK_INTERVAL_MS = 2000L
 
         data class ActivityLog(
             val packageName: String,
@@ -127,6 +213,7 @@ class DominanterAccessibilityService : AccessibilityService() {
             SettingsStore.prefs(it).registerOnSharedPreferenceChangeListener(prefsListener)
         }
         updateForbiddenPatterns()
+        updateUsageWarningSettings()
 
         val screenFilter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -199,6 +286,7 @@ class DominanterAccessibilityService : AccessibilityService() {
     override fun onInterrupt() {
         handler.removeCallbacks(blockRunnable)
         handler.removeCallbacks(windowEndRunnable)
+        handler.removeCallbacks(warnTickRunnable)
     }
 
     private fun emitState() {
@@ -264,10 +352,20 @@ class DominanterAccessibilityService : AccessibilityService() {
     private fun buildScreenText(event: AccessibilityEvent): String? {
         val builder = StringBuilder()
         event.text?.forEach { builder.append(it).append(' ') }
-        val root = rootInActiveWindow
-        if (root != null) {
-            traverse(root, builder)
-            root.recycle()
+        // Mirror the original (DechainerAccessibilityService.kt:749-767): walk
+        // the EVENT SOURCE's subtree — the node the event actually came from —
+        // not the whole active window. Fall back to the active window's root
+        // only when the event carries no source.
+        val source = event.source
+        if (source != null) {
+            traverse(source, builder)
+            source.recycle()
+        } else {
+            val root = rootInActiveWindow
+            if (root != null) {
+                traverse(root, builder)
+                root.recycle()
+            }
         }
         return builder.toString().takeIf { it.isNotBlank() }
     }
@@ -293,8 +391,17 @@ class DominanterAccessibilityService : AccessibilityService() {
         }
     }
 
+    /**
+     * The original's pattern (DechainerAccessibilityService.kt:353-356,
+     * 368-371): Unicode letter/number/underscore lookarounds instead of ASCII
+     * `\b`, so a forbidden word inside a longer non-ASCII word (e.g. a
+     * Portuguese compound) does NOT match, while standalone words still do.
+     */
     private fun wordPattern(word: String): Regex =
-        Regex("\\b" + Regex.escape(word) + "\\b", RegexOption.IGNORE_CASE)
+        Regex(
+            "(?<![\\p{L}\\p{N}_])" + Regex.escape(word) + "(?![\\p{L}\\p{N}_])",
+            RegexOption.IGNORE_CASE,
+        )
 
     private fun checkForbiddenWord(text: String): String? {
         for ((word, regex) in forbiddenPatterns) {
@@ -375,6 +482,8 @@ class DominanterAccessibilityService : AccessibilityService() {
     }
 
     private fun startTracking(pkg: String) {
+        handler.removeCallbacks(warnTickRunnable)
+
         val config = trackingConfigFor(pkg)
 
         if (config.windows.isNotEmpty()) {
@@ -414,11 +523,14 @@ class DominanterAccessibilityService : AccessibilityService() {
         if (remainingMillis != null) {
             handler.postDelayed(blockRunnable, remainingMillis)
         }
+
+        scheduleUsageWarning(pkg, config, appRemaining, groupRemaining)
     }
 
     private fun stopTrackingAndSave(screenOff: Boolean = false) {
         handler.removeCallbacks(blockRunnable)
         handler.removeCallbacks(windowEndRunnable)
+        handler.removeCallbacks(warnTickRunnable)
         val pkg = currentPackage ?: return
         if (sessionStartElapsed == 0L) return
         val config = trackingConfigFor(pkg)
@@ -438,6 +550,16 @@ class DominanterAccessibilityService : AccessibilityService() {
         val config = trackingConfigFor(pkg)
         stopTrackingAndSave()
         currentPackage = null
+
+        if (!outsideWindow) {
+            // Mirror the original (DechainerAccessibilityService.kt,
+            // executeBlocking): a reached limit ends the warning countdown —
+            // cancel every stage's notification for the app and its group.
+            usageWarningStages.forEach { stage ->
+                UsageWarningNotifier.cancel(applicationContext, pkg, stage.id)
+                config.groupId?.let { UsageWarningNotifier.cancel(applicationContext, it, stage.id) }
+            }
+        }
 
         var displayName = appLabel(pkg)
         var displayLimit = config.appLimitMinutes
@@ -469,6 +591,121 @@ class DominanterAccessibilityService : AccessibilityService() {
             }
         }
         startActivity(intent)
+    }
+
+    // ---------------------------------------------------------------- usage warnings (F12)
+
+    /**
+     * The F12 engine, ported from the original
+     * (DechainerAccessibilityService.kt:336-348, 1350-1445): settings are
+     * re-read from the shared `usage_warning_prefs` store; [startTracking]
+     * schedules the first tick for when the farthest stage is entered; the
+     * tick (every [USAGE_WARNING_TICK_INTERVAL_MS]) recomputes the remaining
+     * time from stored usage plus the live session's elapsed time, fires or
+     * updates the entered stage's notification, and retires stages whose
+     * window has passed. The warning key is the group id when the group's
+     * limit is the binding one, else the package — as in the original.
+     */
+    private fun updateUsageWarningSettings() {
+        val prefs = SettingsStore.prefs(SettingsStore.PREFS_USAGE_WARNING)
+        usageWarningEnabled = UsageWarningSettings.isEnabled(prefs)
+        usageWarningStages = UsageWarningSettings.loadOrSeedStages(prefs)
+            .sortedByDescending { it.minutesBefore }
+    }
+
+    private fun cancelActiveUsageWarning() {
+        val key = currentWarnKey ?: return
+        val stageId = activeStageId ?: return
+        UsageWarningNotifier.cancel(applicationContext, key, stageId)
+    }
+
+    private fun scheduleUsageWarning(
+        pkg: String,
+        config: TrackingConfig,
+        appRemaining: Long?,
+        groupRemaining: Long?,
+    ) {
+        currentWarnKey = null
+        activeStageId = null
+        if (!usageWarningEnabled || usageWarningStages.isEmpty()) return
+
+        val useGroup = groupRemaining != null && config.groupId != null &&
+            (appRemaining == null || groupRemaining < appRemaining)
+        val key = when {
+            useGroup -> config.groupId!!
+            appRemaining != null -> pkg
+            else -> return
+        }
+        val remaining = if (useGroup) groupRemaining!! else appRemaining!!
+
+        currentWarnKey = key
+
+        val farthestMillis = stageMillis(usageWarningStages.first())
+        if (remaining > farthestMillis) {
+            handler.postDelayed(warnTickRunnable, remaining - farthestMillis)
+        } else {
+            tickUsageWarning()
+        }
+    }
+
+    private fun stageMillis(stage: UsageAlertStage): Long = (stage.minutesBefore * 60_000).toLong()
+
+    private fun tickUsageWarning() {
+        handler.removeCallbacks(warnTickRunnable)
+        val pkg = currentPackage ?: return
+        val key = currentWarnKey ?: return
+        if (usageWarningStages.isEmpty()) return
+
+        val config = trackingConfigFor(pkg)
+        val elapsed = SystemClock.elapsedRealtime() - sessionStartElapsed
+        val isGroupKey = config.groupId == key
+
+        val remaining = when {
+            isGroupKey && config.groupLimitMinutes > 0 ->
+                TimeUnit.MINUTES.toMillis(config.groupLimitMinutes.toLong()) -
+                    SettingsStore.groupUsageMs(key) - elapsed
+            !isGroupKey && config.appLimitMinutes > 0 ->
+                TimeUnit.MINUTES.toMillis(config.appLimitMinutes.toLong()) -
+                    SettingsStore.usageMs(pkg) - elapsed
+            else -> return
+        }
+
+        if (remaining <= 0) {
+            activeStageId?.let { UsageWarningNotifier.cancel(applicationContext, key, it) }
+            activeStageId = null
+            return
+        }
+
+        val enteredStage = usageWarningStages.lastOrNull { remaining <= stageMillis(it) }
+
+        if (enteredStage == null) {
+            activeStageId?.let { staleId ->
+                UsageWarningNotifier.cancel(applicationContext, key, staleId)
+                UsageWarningNotifier.reset(applicationContext, key, staleId)
+            }
+            activeStageId = null
+            val farthestMillis = stageMillis(usageWarningStages.first())
+            handler.postDelayed(warnTickRunnable, (remaining - farthestMillis).coerceAtLeast(500L))
+            return
+        }
+
+        if (enteredStage.id != activeStageId) {
+            activeStageId?.let { UsageWarningNotifier.cancel(applicationContext, key, it) }
+            activeStageId = enteredStage.id
+        }
+
+        if (!UsageWarningNotifier.isDismissed(applicationContext, key, enteredStage.id)) {
+            if (!UsageWarningNotifier.hasBeenShown(applicationContext, key, enteredStage.id)) {
+                UsageWarningNotifier.markShown(applicationContext, key, enteredStage.id)
+            }
+            val displayName = if (isGroupKey) config.groupName ?: key else appLabel(pkg)
+            val barMillis = stageMillis(usageWarningStages.first())
+            UsageWarningNotifier.showOrUpdate(
+                applicationContext, key, enteredStage, displayName, remaining, barMillis,
+            )
+        }
+
+        handler.postDelayed(warnTickRunnable, USAGE_WARNING_TICK_INTERVAL_MS)
     }
 
     // ---------------------------------------------------------------- helpers

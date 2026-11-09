@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Ported from the original DeChainer accessibility_service_config.xml.
-     settingsActivity points at this app's (Flutter) MainActivity. -->
+     settingsActivity points at this app's (Flutter) MainActivity.
+     accessibilityFeedbackType is feedbackSpoken, the original's value
+     (an earlier build of ours drifted to feedbackGeneric — parity audit D-37). -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeViewTextChanged|typeWindowStateChanged|typeWindowContentChanged"
-    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFeedbackType="feedbackSpoken"
     android:accessibilityFlags="flagIncludeNotImportantViews|flagRetrieveInteractiveWindows"
     android:notificationTimeout="100"
     android:settingsActivity="io.github.alnajashia.dominanter.MainActivity"

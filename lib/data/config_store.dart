@@ -3,9 +3,11 @@
 /// These stores hold UI/domain configuration — browser blocklists, focus
 /// and impulse config, challenge selection, usage-warning stages, forced
 /// removal state — persisted in the native SharedPreferences files through
-/// the channel's allowlisted `getSetting`/`setSetting`, as JSON strings
-/// mirroring the original schema. Enforcement state (limits, windows,
-/// groups, words, logs) goes through the typed channel methods instead.
+/// the channel's allowlisted `getSetting`/`setSetting`, mirroring the
+/// original's storage shapes under the same keys (StringSets stay
+/// StringSets, the original's JSON encodings are kept byte-compatible).
+/// Enforcement state (limits, windows, groups, words, logs) goes through
+/// the typed channel methods instead.
 library;
 
 import 'dart:convert';
@@ -31,11 +33,36 @@ class BlockedList {
       BlockedList(id: id, title: title ?? this.title, sites: sites ?? this.sites);
 }
 
+/// A user-written reading passage, mirroring the original
+/// `ReadingPassage(text, source)` (`data/ReadingPassages.kt`). Custom
+/// passages are stored under `reading_custom_passages` as a JSON array
+/// of `{"text": ..., "source": ...}` objects — the original's shape
+/// (`SecurityManager.kt` L209–229).
+class ReadingPassage {
+  const ReadingPassage(this.text, {this.source = ''});
+  final String text;
+  final String source;
+
+  Map<String, dynamic> toJson() => {'text': text, 'source': source};
+  factory ReadingPassage.fromJson(Map<String, dynamic> j) => ReadingPassage(
+        j['text'] as String? ?? '',
+        source: j['source'] as String? ?? '',
+      );
+}
+
+/// Where the reading challenge takes its texts from — the original
+/// `SecurityManager.ReadingSource`, stored under `reading_source` as the
+/// enum name (`BIBLE` by default).
+enum ReadingSource { bible, quran, quotes, custom }
+
 enum ImpulseAction { timerOnly, timerAndSuspend }
 
 class ImpulseConfig {
   const ImpulseConfig({
-    this.action = ImpulseAction.timerAndSuspend,
+    // The original's default action is TIMER_ONLY
+    // (`SecurityManager.getImpulseAction` falls back to it both when
+    // unset and when the stored name is unrecognised).
+    this.action = ImpulseAction.timerOnly,
     this.durationMinutes = 60,
     this.suspendApps = const [],
   });
@@ -51,7 +78,7 @@ class ImpulseConfig {
   factory ImpulseConfig.fromJson(Map<String, dynamic> j) => ImpulseConfig(
         action: ImpulseAction.values.firstWhere(
           (a) => a.name == j['action'],
-          orElse: () => ImpulseAction.timerAndSuspend,
+          orElse: () => ImpulseAction.timerOnly,
         ),
         durationMinutes: (j['durationMinutes'] as num?)?.toInt() ?? 60,
         suspendApps:
@@ -67,30 +94,68 @@ class ImpulseConfig {
 
 enum UsageWarningType { silent, sound, vibrate }
 
+/// One usage-warning stage, mirroring the original `UsageAlertStage`
+/// and its JSON encoding (`UsageWarningSettings.encodeStages`):
+/// `{"id": ..., "minutes": ..., "type": "SILENT"|"SOUND"|"VIBRATE",
+/// "vibrationCount": ...}` — the type is stored under the original's
+/// uppercase enum name. Values written by the previous Dart schema
+/// (lowercase type names, no `id`) are still parsed. Bounds mirror the
+/// original: minutes 0.1–180 (`MIN/MAX_MINUTES_BEFORE`),
+/// vibrationCount ≤ 10 (`MAX_VIBRATION_COUNT`).
 class UsageWarningStage {
   const UsageWarningStage({
+    this.id = '',
     required this.minutesBefore,
     required this.type,
     this.vibrationCount = 0,
   });
+
+  /// Stable stage identifier (the original generates a UUID when
+  /// seeding). Empty until the stage has been through [ConfigStore],
+  /// which assigns one — see `ConfigStore._withStageIds`.
+  final String id;
   final double minutesBefore;
   final UsageWarningType type;
   final int vibrationCount;
 
-  Map<String, dynamic> toJson() =>
-      {'minutes': minutesBefore, 'type': type.name, 'vibrationCount': vibrationCount};
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'minutes': minutesBefore,
+        'type': type.name.toUpperCase(),
+        'vibrationCount': vibrationCount,
+      };
+
   factory UsageWarningStage.fromJson(Map<String, dynamic> j) => UsageWarningStage(
-        minutesBefore: (j['minutes'] as num?)?.toDouble() ?? 0,
+        id: j['id'] as String? ?? '',
+        minutesBefore: ((j['minutes'] as num?)?.toDouble() ?? 0).clamp(0.1, 180.0).toDouble(),
         type: UsageWarningType.values.firstWhere(
-          (t) => t.name == j['type'],
-          orElse: () => UsageWarningType.silent,
+          // Accepts the original's uppercase names and the previous
+          // schema's lowercase ones.
+          (t) => t.name == (j['type'] as String?)?.toLowerCase(),
+          // The original's decoder falls back to SOUND on unknown types.
+          orElse: () => UsageWarningType.sound,
         ),
-        vibrationCount: (j['vibrationCount'] as num?)?.toInt() ?? 0,
+        vibrationCount: ((j['vibrationCount'] as num?)?.toInt() ?? 0).clamp(0, 10),
+      );
+
+  UsageWarningStage copyWith({
+    String? id,
+    double? minutesBefore,
+    UsageWarningType? type,
+    int? vibrationCount,
+  }) =>
+      UsageWarningStage(
+        id: id ?? this.id,
+        minutesBefore: minutesBefore ?? this.minutesBefore,
+        type: type ?? this.type,
+        vibrationCount: vibrationCount ?? this.vibrationCount,
       );
 }
 
 /// The original's defaults: 15 min silent, 5 min sound, 1 min vibrate×1,
-/// 0.5 min vibrate×3.
+/// 0.5 min vibrate×3 (`UsageWarningSettings.defaultStages`). The
+/// original assigns each a fresh UUID when seeding; here the ids are
+/// left empty and assigned by [ConfigStore] on first read/write.
 const defaultUsageWarningStages = <UsageWarningStage>[
   UsageWarningStage(minutesBefore: 15, type: UsageWarningType.silent),
   UsageWarningStage(minutesBefore: 5, type: UsageWarningType.sound),
@@ -123,28 +188,110 @@ class ConfigStore {
 
   // ------------------------------------------------------------ challenges
 
+  /// The original stores `access_challenges` as a SharedPreferences
+  /// **StringSet** of enum names (`MATH`, `WORDS`, `TETRIS`, `READING`)
+  /// (`SecurityManager.getAccessChallenges`). The channel persists a
+  /// Dart `List<String>` as exactly that StringSet, so reads accept the
+  /// List form; values left by the previous Dart schema (a JSON string
+  /// of lowercase names under the same key) are parsed case-insensitively
+  /// and migrated to the StringSet shape on read.
   Future<List<ChallengeType>> getChallengeSelection() async {
     final raw = await _channel.getSetting(security, 'access_challenges');
-    final names = raw is String && raw.isNotEmpty
-        ? (jsonDecode(raw) as List).map((e) => e.toString()).toList()
-        : <String>['math'];
-    final selected = ChallengeType.values.where((t) => names.contains(t.name)).toList();
-    return selected.isEmpty ? [ChallengeType.math] : selected;
+    List<String>? names;
+    var legacyJson = false;
+    if (raw is List) {
+      names = raw.map((e) => e.toString()).toList();
+    } else if (raw is String && raw.isNotEmpty) {
+      legacyJson = true;
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) names = decoded.map((e) => e.toString()).toList();
+      } catch (_) {
+        names = null;
+      }
+    }
+    if (names == null) return const [ChallengeType.math];
+    final nameList = names;
+    final selected = ChallengeType.values
+        .where((t) => nameList.any((n) => n.toLowerCase() == t.name))
+        .toList();
+    if (selected.isEmpty) return const [ChallengeType.math];
+    if (legacyJson) {
+      // Best-effort migration to the original's StringSet shape; the
+      // parsed selection above is returned either way.
+      try {
+        await setChallengeSelection(selected);
+      } catch (_) {
+        // The stored value is left as-is; the next write fixes it.
+      }
+    }
+    return selected;
   }
 
   Future<void> setChallengeSelection(List<ChallengeType> types) => _channel.setSetting(
-      security, 'access_challenges', jsonEncode(types.map((t) => t.name).toList()));
+      security, 'access_challenges', types.map((t) => t.name.toUpperCase()).toList());
 
-  Future<List<String>> getCustomReadingPhrases() async {
+  /// Custom reading passages in the original's `{text, source}` object
+  /// shape. Entries written by the previous Dart schema (plain strings
+  /// in the same JSON array) are read as passages with an empty source
+  /// and upgraded to objects on the next write.
+  Future<List<ReadingPassage>> getCustomReadingPassages() async {
     final raw = await _channel.getSetting(security, 'reading_custom_passages');
     if (raw is String && raw.isNotEmpty) {
-      return (jsonDecode(raw) as List).map((e) => e.toString()).toList();
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          return decoded
+              .map((e) => e is Map
+                  ? ReadingPassage.fromJson(e.cast<String, dynamic>())
+                  : ReadingPassage(e.toString()))
+              .toList();
+        }
+      } catch (_) {
+        return const [];
+      }
     }
     return const [];
   }
 
-  Future<void> setCustomReadingPhrases(List<String> phrases) => _channel.setSetting(
-      security, 'reading_custom_passages', jsonEncode(phrases));
+  Future<void> setCustomReadingPassages(List<ReadingPassage> passages) =>
+      _channel.setSetting(security, 'reading_custom_passages',
+          jsonEncode(passages.map((p) => p.toJson()).toList()));
+
+  Future<List<String>> getCustomReadingPhrases() async =>
+      (await getCustomReadingPassages()).map((p) => p.text).toList();
+
+  Future<void> setCustomReadingPhrases(List<String> phrases) => setCustomReadingPassages(
+      phrases.map((p) => ReadingPassage(p)).toList());
+
+  // ------------------------------------------------------------ reading
+
+  /// The original's `reading_source` (`SecurityManager.getReadingSource`):
+  /// the enum name as a String, BIBLE when unset or unrecognised.
+  Future<ReadingSource> getReadingSource() async {
+    final raw = await _channel.getSetting(security, 'reading_source');
+    if (raw is String) {
+      for (final source in ReadingSource.values) {
+        if (source.name == raw.toLowerCase()) return source;
+      }
+    }
+    return ReadingSource.bible;
+  }
+
+  Future<void> setReadingSource(ReadingSource source) =>
+      _channel.setSetting(security, 'reading_source', source.name.toUpperCase());
+
+  /// The original's `reading_count` (`SecurityManager.getReadingCount`):
+  /// an int, `READING_DEFAULT_COUNT` = 5 when unset, never below
+  /// `READING_MIN_COUNT` = 1.
+  Future<int> getReadingCount() async {
+    final raw = await _channel.getSetting(security, 'reading_count');
+    final value = raw is num ? raw.toInt() : 5;
+    return value < 1 ? 1 : value;
+  }
+
+  Future<void> setReadingCount(int count) =>
+      _channel.setSetting(security, 'reading_count', count < 1 ? 1 : count);
 
   Future<bool> getShuffleKeyboard() async =>
       await _channel.getSetting(security, 'shuffle_keyboard') == true;
@@ -174,10 +321,13 @@ class ConfigStore {
 
   Future<FocusConfig> getFocusConfig() async {
     final j = await _getJson(focus, 'config');
+    // FocusConfig.fromJson clamps every value into the original's
+    // bounds, as the original's getters do on read.
     return j == null ? const FocusConfig() : FocusConfig.fromJson(j);
   }
 
-  Future<void> setFocusConfig(FocusConfig config) => _setJson(focus, 'config', config.toJson());
+  Future<void> setFocusConfig(FocusConfig config) =>
+      _setJson(focus, 'config', config.normalized().toJson());
 
   // ------------------------------------------------------------ browser lists
 
@@ -199,27 +349,41 @@ class ConfigStore {
 
   // ------------------------------------------------------------ usage warnings
 
+  static int _stageIdSeq = 0;
+
+  /// The original seeds each stage with a `UUID.randomUUID()`; any
+  /// unique opaque string satisfies the schema.
+  static String _newStageId() =>
+      'stage-${DateTime.now().microsecondsSinceEpoch}-${_stageIdSeq++}';
+
+  static List<UsageWarningStage> _withStageIds(List<UsageWarningStage> stages) => [
+        for (final s in stages) s.id.isEmpty ? s.copyWith(id: _newStageId()) : s,
+      ];
+
   Future<({bool enabled, List<UsageWarningStage> stages})> getUsageWarnings() async {
-    final enabled = await _channel.getSetting(usageWarning, 'enabled') == true;
+    final rawEnabled = await _channel.getSetting(usageWarning, 'enabled');
+    // The original's DEFAULT_ENABLED is true: only an explicitly stored
+    // boolean overrides it.
+    final enabled = rawEnabled is bool ? rawEnabled : true;
     final raw = await _channel.getSetting(usageWarning, 'stages');
     if (raw is String && raw.isNotEmpty) {
       final decoded = jsonDecode(raw);
       if (decoded is List) {
         return (
           enabled: enabled,
-          stages: decoded
+          stages: _withStageIds(decoded
               .map((e) => UsageWarningStage.fromJson((e as Map).cast<String, dynamic>()))
-              .toList(),
+              .toList()),
         );
       }
     }
-    return (enabled: enabled, stages: defaultUsageWarningStages);
+    return (enabled: enabled, stages: _withStageIds(defaultUsageWarningStages));
   }
 
   Future<void> setUsageWarnings(bool enabled, List<UsageWarningStage> stages) async {
     await _channel.setSetting(usageWarning, 'enabled', enabled);
-    await _channel.setSetting(
-        usageWarning, 'stages', jsonEncode(stages.map((s) => s.toJson()).toList()));
+    await _channel.setSetting(usageWarning, 'stages',
+        jsonEncode(_withStageIds(stages).map((s) => s.toJson()).toList()));
   }
 
   // ------------------------------------------------------------ forced removal

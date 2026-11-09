@@ -148,39 +148,80 @@ void main() {
     });
   });
 
-  group('PendingChange undo window', () {
-    test('undo inside 5 s reverts; after 5 s the change stands', () async {
+  group('PendingChange undo window (original: deferred apply)', () {
+    test('run() only schedules: nothing is applied during the window', () async {
+      var applied = false;
+      var undoCallbacks = 0;
+      final change = PendingChange(
+        description: 'test',
+        direction: ChangeDirection.tightening,
+        apply: () async => applied = true,
+        onUndo: () async => undoCallbacks++,
+      );
+      addTearDown(change.dispose);
+      await change.run();
+      expect(applied, isFalse); // deferred — NOT apply-then-revert
+      expect(change.isPending, isTrue);
+      expect(change.isApplied, isFalse);
+      expect(change.canUndo, isTrue);
+
+      // Undo inside the window: the change is never applied at all.
+      expect(await change.undo(), isTrue);
+      expect(applied, isFalse);
+      expect(change.isUndone, isTrue);
+      expect(undoCallbacks, 1);
+      await change.done; // settled
+      expect(await change.undo(), isFalse); // cannot undo twice
+      expect(undoCallbacks, 1);
+    });
+
+    test('when the window lapses the change applies exactly once', () async {
+      var applyCount = 0;
+      final change = PendingChange(
+        description: 'test',
+        direction: ChangeDirection.tightening,
+        apply: () async => applyCount++,
+        undoWindow: const Duration(milliseconds: 60),
+      );
+      await change.run();
+      expect(applyCount, 0);
+      await change.done; // window lapses -> commit
+      expect(applyCount, 1);
+      expect(change.isApplied, isTrue);
+      expect(change.canUndo, isFalse);
+      expect(await change.undo(), isFalse); // too late: the change stands
+      expect(applyCount, 1);
+    });
+
+    test('undo attempted after the (injected) clock passes the window commits instead', () async {
       var now = DateTime(2026, 1, 1, 12);
       var applied = false;
       final change = PendingChange(
         description: 'test',
         direction: ChangeDirection.tightening,
         apply: () async => applied = true,
-        revert: () async => applied = false,
         now: () => now,
       );
       await change.run();
-      expect(applied, isTrue);
-      expect(change.canUndo, isTrue);
-
-      now = now.add(const Duration(seconds: 6));
-      expect(change.canUndo, isFalse);
+      expect(applied, isFalse);
+      now = now.add(const Duration(seconds: 6)); // past the 5 s window
       expect(await change.undo(), isFalse);
-      expect(applied, isTrue);
+      expect(applied, isTrue); // lapsed window => the change stands
+      expect(change.isApplied, isTrue);
     });
 
-    test('undo inside the window reverts exactly once', () async {
+    test('commitNow applies a pending change immediately', () async {
       var applied = false;
       final change = PendingChange(
         description: 'test',
         direction: ChangeDirection.tightening,
         apply: () async => applied = true,
-        revert: () async => applied = false,
       );
+      addTearDown(change.dispose);
       await change.run();
-      expect(await change.undo(), isTrue);
-      expect(applied, isFalse);
-      expect(await change.undo(), isFalse);
+      await change.commitNow();
+      expect(applied, isTrue);
+      expect(change.isApplied, isTrue);
     });
   });
 

@@ -53,8 +53,9 @@ class _DominanterAppState extends State<DominanterApp> {
         title: 'Dominanter',
         debugShowCheckedModeBanner: false,
         themeMode: _controller.themeMode,
-        // Redesign 2026-11-09: deep-red / deep-blue / near-black identity
-        // (see theme.dart for the palette and the contrast rules).
+        // Redesign v2 2026-11-09: RED & BLACK ONLY identity, inspired by
+        // the user's reference images (see theme.dart for the palette,
+        // the fusion pill bar and the contrast rules).
         theme: dominanterLightTheme(),
         darkTheme: dominanterDarkTheme(),
         home: switch (_controller.startup) {

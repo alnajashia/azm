@@ -5,6 +5,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Toolchain versions are pinned by the Flutter 3.35.1 template in
+// android/settings.gradle.kts (AGP 8.9.1, Kotlin 2.1.0). The original
+// DeChainer uses AGP 8.13.2 / Kotlin 2.4.10 (its gradle/libs.versions.toml).
+// That delta (parity audit D-37) is DELIBERATELY HELD: upgrading AGP/Kotlin
+// independently of the Flutter template risks breaking the fragile sandbox
+// build (see build_apk.sh) for no behavioural gain, and the versions will
+// move when the Flutter template itself moves. Recorded here so the parity
+// documentation stays honest — do not "fix" this silently.
+
 android {
     namespace = "io.github.alnajashia.dominanter"
     // Envelope matches the original DeChainer (minSdk 30, target/compile 36) — see
@@ -36,6 +45,18 @@ android {
         release {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // Release hardening, mirroring the original's posture
+            // (DeChainer app/build.gradle.kts, release block: minify and
+            // resource shrinking on, proguard-android-optimize.txt plus
+            // proguard-rules.pro). Parity audit D-37: an earlier build of
+            // ours shipped release with both off.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
