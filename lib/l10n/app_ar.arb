@@ -1,0 +1,1440 @@
+{
+  "@@locale": "ar",
+  "appTitle": "Dominanter",
+  "loadingDefault": "جارٍ التحميل…",
+  "retry": "إعادة المحاولة",
+  "cancel": "إلغاء",
+  "save": "حفظ",
+  "close": "إغلاق",
+  "confirm": "تأكيد",
+  "continueAction": "متابعة",
+  "undo": "تراجع",
+  "errorCodeLine": "رمز الخطأ: {code}",
+  "@errorCodeLine": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCodeExitLine": "رمز الخطأ: {code} · الخروج {exitCode}",
+  "@errorCodeExitLine": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "exitCode": {
+        "type": "int"
+      }
+    }
+  },
+  "errUnavailable": "طبقة خدمات أندرويد غير متاحة هنا (يحدث هذا في الاختبارات أو خارج الجهاز). لم تُنفَّذ أي عملية.",
+  "errShizukuNotInstalled": "تطبيق Shizuku غير مثبّت على هذا الجهاز.",
+  "errShizukuNotRunning": "تطبيق Shizuku مثبّت لكن خادمه لا يعمل. شغّله من تطبيق Shizuku ثم أعد المحاولة.",
+  "errShizukuNoPermission": "لم يُمنح Dominanter إذن Shizuku بعد.",
+  "errShizukuPreV11": "خادم Shizuku هذا أقدم من الإصدار 11. حدّث Shizuku ثم أعد المحاولة.",
+  "errShizukuBinderDead": "انقطع اتصال Shizuku أثناء العملية. نتيجتها غير معروفة — تحقق من الحالة الحالية قبل إعادة المحاولة.",
+  "errShellFailed": "فشل أحد أوامر النظام.",
+  "errShellFailedExit": "فشل أحد أوامر النظام (رمز الخروج {exitCode}).",
+  "@errShellFailedExit": {
+    "placeholders": {
+      "exitCode": {
+        "type": "int"
+      }
+    }
+  },
+  "errProvisioningFailed": "فشل تجهيز مالك الجهاز في المسار المباشر والاحتياطي معاً. راجع التشخيصات في شاشة الإعداد.",
+  "errDpmNotOwner": "تطبيق Dominanter ليس مالك الجهاز، لذا هذه العملية غير متاحة. أكمل الإعداد أولاً.",
+  "errDpmFailed": "رفض النظام هذا التغيير أو تعذّر التحقق منه. لم يُبلَّغ عن أي نجاح.",
+  "errPackageNotFound": "هذا التطبيق غير مثبّت على هذا الجهاز.",
+  "errPermissionDenied": "أحد الأذونات المطلوبة غير ممنوح.",
+  "errUnsupportedAndroid": "إصدار أندرويد هذا لا يدعم هذه العملية.",
+  "errTimeout": "انتهت مهلة العملية ولم يُبلَّغ عن نجاحها.",
+  "errInvalidArgument": "إدخال غير صالح: {message}",
+  "@errInvalidArgument": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "errNotImplemented": "هذا غير منفّذ في هذا الإصدار.",
+  "noLimit": "بلا حد",
+  "minutesOnly": "{count} دقيقة",
+  "@minutesOnly": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursOnly": "{count} ساعة",
+  "@hoursOnly": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursMinutes": "{hours} ساعة و{minutes} دقيقة",
+  "@hoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours} س {minutes} د",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "durationMinutesSeconds": "{minutes} د {seconds} ث",
+  "@durationMinutesSeconds": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "durationSecondsOnly": "{seconds} ث",
+  "@durationSecondsOnly": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "chipV11": "v1.1",
+  "sessionRemaining": "جلسة الاسترداد",
+  "renewSession": "تجديد",
+  "endSession": "إنهاء الجلسة",
+  "wordYes": "نعم",
+  "wordNo": "لا",
+  "startingDominanter": "جارٍ بدء Dominanter…",
+  "unknownStartupError": "خطأ غير معروف عند البدء",
+  "tabStatus": "الحالة",
+  "tabRestrictions": "القيود",
+  "tabApps": "التطبيقات",
+  "tabConfig": "الإعدادات",
+  "lockTitle": "تطبيق Dominanter مقفل",
+  "panicButton": "أشعر بنزوات",
+  "accessApp": "فتح التطبيق",
+  "viewLimits": "عرض الحدود",
+  "lockHelperBiometric": "استخدم بصمتك أو وجهك أو رمز PIN لفتح التطبيق.",
+  "lockHelperWithPassword": "استخدم بصمتك أو وجهك أو رمز PIN — أو كلمة مرور التطبيق.",
+  "usePasswordInstead": "استخدم كلمة المرور بدلاً من ذلك",
+  "versionFooter": "Dominanter {version}",
+  "@versionFooter": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "impulseBlockActive": "قفل النزوات مفعّل",
+  "impulseStartedSuspended": "بدأ قفل النزوات؛ عُلّقت التطبيقات المختارة لمدة {minutes} دقيقة.",
+  "@impulseStartedSuspended": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "impulseStarted": "بدأ قفل النزوات لمدة {minutes} دقيقة.",
+  "@impulseStarted": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "focusPhaseFocusOf": "تركيز {current}/{total}",
+  "@focusPhaseFocusOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "focusPhaseShortBreak": "استراحة قصيرة",
+  "focusPhaseLongBreak": "استراحة طويلة",
+  "focusPhaseBreakOver": "انتهت الاستراحة",
+  "focusPhaseMode": "وضع التركيز",
+  "focusPausedTitle": "{title} · متوقف مؤقتاً",
+  "@focusPausedTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "focusConfigSummary": "{minutes} دقيقة من التركيز، مع تعليق التطبيقات المختارة",
+  "@focusConfigSummary": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "focusPeriodsCompleted": "فترات التركيز المكتملة: {done}/{total}",
+  "@focusPeriodsCompleted": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "focusStart": "بدء التركيز",
+  "focusResume": "استئناف",
+  "focusSkipBreak": "تخطي الاستراحة",
+  "focusPause": "إيقاف مؤقت",
+  "focusEndSession": "إنهاء الجلسة",
+  "todaysUsage": "استخدام اليوم",
+  "loadingUsageLimits": "جارٍ تحميل حدود الاستخدام…",
+  "noLimitsSet": "لا توجد حدود زمنية مضبوطة للتطبيقات أو المجموعات.",
+  "sectionGroups": "المجموعات",
+  "sectionApps": "التطبيقات",
+  "groupPrefix": "المجموعة: {name}",
+  "@groupPrefix": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "usageOf": "{used} من {limit}",
+  "@usageOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "limitReached": "تم بلوغ الحد",
+  "timeLeft": "تبقّى {time}",
+  "@timeLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "overviewMinutes": "{count} د",
+  "@overviewMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "overviewHours": "{count} س",
+  "@overviewHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "overviewHoursMinutes": "{hours} س {minutes} د",
+  "@overviewHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "noDeviceLockTitle": "لا يوجد قفل مضبوط على الجهاز",
+  "noDeviceLockBody": "لا توجد بصمة أو بيانات قفل شاشة مسجّلة على هذا الجهاز، فلا يوجد ما يمكن التحقق مقابله. يُسمح بالدخول — تماماً كما يتصرف التطبيق الأصلي في هذه الحالة. فكّر في تعيين رمز PIN للجهاز.",
+  "unlockReason": "فتح Dominanter",
+  "authNotCompleted": "لم تكتمل المصادقة.",
+  "authFailed": "فشلت المصادقة: {message}",
+  "@authFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "authCouldNotStart": "تعذّر بدء المصادقة: {error}",
+  "@authCouldNotStart": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordPromptTitle": "أدخل كلمة مرور التطبيق",
+  "passwordFieldLabel": "كلمة مرور التطبيق",
+  "passwordUnlock": "فتح",
+  "passwordWrong": "كلمة المرور غير صحيحة.",
+  "passwordRetryIn": "أعد المحاولة بعد {seconds} ث",
+  "@passwordRetryIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordChecking": "جارٍ التحقق…",
+  "appEntrySection": "الدخول إلى التطبيق",
+  "appEntryExplanation": "عيّن كلمة مرور للتطبيق كطريقة إضافية لفتح Dominanter من شاشة القفل. كلمة المرور تفتح التطبيق فقط — تخفيف القيود أو إزالة مالك الجهاز ما زال يتطلب رمز الاسترداد.",
+  "appEntryStatusSet": "كلمة مرور التطبيق معيّنة.",
+  "appEntryStatusUnset": "لا توجد كلمة مرور للتطبيق.",
+  "appEntrySet": "تعيين كلمة المرور",
+  "appEntryChange": "تغيير كلمة المرور",
+  "appEntryRemove": "إزالة كلمة المرور",
+  "passwordNewLabel": "كلمة المرور الجديدة",
+  "passwordConfirmLabel": "أعد كلمة المرور",
+  "passwordMinLength": "استخدم {count} أحرف على الأقل.",
+  "@passwordMinLength": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordMismatch": "كلمتا المرور غير متطابقتين.",
+  "passwordSetDone": "عُيّنت كلمة مرور التطبيق.",
+  "passwordRemovedDone": "أُزيلت كلمة مرور التطبيق.",
+  "passwordRemoveTitle": "إزالة كلمة مرور التطبيق؟",
+  "passwordRemoveBody": "ستفتح التطبيق ببصمتك أو بيانات قفل الجهاز من جديد. هذا لا يغيّر رمز الاسترداد.",
+  "passwordRemoveConfirm": "إزالة",
+  "passwordShow": "إظهار كلمة المرور",
+  "passwordHide": "إخفاء كلمة المرور",
+  "recoveryCodeLabel": "رمز الاسترداد",
+  "wizardSetupTitle": "إعداد رمز الاسترداد",
+  "wizardChangeTitle": "تغيير رمز الاسترداد",
+  "stepOf": "الخطوة {step} من {total}",
+  "@stepOf": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "grabPaper": "أحضر قلماً وورقة قبل المتابعة.",
+  "back": "رجوع",
+  "next": "التالي",
+  "finish": "إنهاء",
+  "wizardIntroTitle": "رمز الاسترداد الخاص بك",
+  "howItWorks": "كيف يعمل",
+  "tipGenerates": "يولّد Dominanter رمزاً من 16 حرفاً",
+  "tipWrite": "اكتب الرمز على ورقة",
+  "tipTypeBack": "اكتبه مجدداً للتأكد من صحته",
+  "tipStorePaper": "احفظ الورقة في مكان آمن",
+  "wizardIntroBody": "سيُطلب الرمز كلما غيّرت إعدادات Dominanter. بدونه قد تُحجب عن الميزات المحظورة. يُحفظ الرمز على هذا الجهاز فقط على صورة تجزئة مملّحة — لا يمكن إظهاره بعد هذا المعالج، ولا توجد نسخة حساب أو سحابة.",
+  "writeTitle": "اكتبه على الورق",
+  "writeBody": "انسخ الأحرف الستة عشر تماماً كما تظهر. لا تلتقط صورة شاشة ولا تحفظه على هاتفك — النسخة القريبة سهلة الاستخدام في لحظة نزوة.",
+  "generatingCode": "جارٍ توليد الرمز…",
+  "showCode": "إظهار الرمز",
+  "wroteOnPaper": "كتبت الرمز على الورق",
+  "confirmTitle": "تحقق مما كتبت",
+  "confirmBody": "الرمز مخفي الآن. اكتبه من ورقتك للتأكد من صحة كل حرف.",
+  "codeCorrect": "الرمز صحيح",
+  "codeMismatchBack": "غير متطابق. ارجع وقارنه بورقتك.",
+  "codeCountOf": "{count}/16",
+  "@codeCountOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeTitle": "احفظه في مكان آمن",
+  "storeBody": "الورقة الآن هي النسخة الوحيدة من رمزك. اختر بعناية أين تحتفظ بها.",
+  "tipAway": "بعيداً عن هاتفك، في مكان لن تصل إليه عند النزوة",
+  "tipEasyFind": "سهل الوصول عندما تحتاجه فعلاً — درج أو مجلد أو لدى شخص تثق به",
+  "tipNoPhotos": "لا صور ولا نسخ رقمية",
+  "tipThrowOld": "تخلّص من الورقة ذات الرمز القديم",
+  "storedPaperCheckbox": "حفظت الورقة في مكان آمن",
+  "codeMismatchStore": "هذا لا يطابق الرمز المعروض. تحقق من نسختك الورقية وأعد المحاولة.",
+  "codeNotStored": "لم يُحفظ الرمز. لم يتغيّر شيء.",
+  "firstRunTitle": "Dominanter — التشغيل الأول",
+  "gateChallengesTitle": "تحديات الوصول",
+  "gateCodeTitle": "أدخل رمز الاسترداد",
+  "gateIntroText": "أدخل رمز الاسترداد لفتح جلسة مدتها 10 دقائق. تحديات الوصول التي ضبطتها تعمل فقط بعد قبول الرمز.",
+  "gateEnterCodeError": "أدخل الرمز المكوّن من 16 حرفاً من نسختك الورقية.",
+  "gateWrongCode": "هذا الرمز غير متطابق. لم يُفتح أي شيء.",
+  "preparingGate": "جارٍ تجهيز البوابة…",
+  "undoWindowPassed": "انتهت مهلة التراجع؛ التغيير قائم.",
+  "mathSolveTitle": "حل {count} مسائل",
+  "@mathSolveTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mathNotQuite": "ليس تماماً — حاول مجدداً.",
+  "answerLabel": "الإجابة",
+  "check": "تحقق",
+  "wordsTypeTitle": "اكتب الكلمات",
+  "wordsCounter": "{current} / {total}",
+  "@wordsCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "typeWordLabel": "اكتب الكلمة",
+  "readingTitle": "اقرأ ببطء — المقطع {current} من {total}: {title}",
+  "@readingTitle": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "readingFinish": "إنهاء",
+  "readingNextPassage": "المقطع التالي",
+  "tetrisSkippedNote": "ملاحظة: تحدي Tetris غير متاح في هذا الإصدار (v1.1) وتم تخطيه — لم يُحاكَ.",
+  "passageOnWaiting": "عن الانتظار",
+  "passageOnFutureSelf": "عن ذاتك في المستقبل",
+  "passageOnAttention": "عن الانتباه",
+  "passageOnBeginningAgain": "عن البدء من جديد",
+  "passageOnPatience": "عن الصبر",
+  "yourPhrase": "عبارتك",
+  "challengeMath": "مسائل رياضية",
+  "challengeWords": "كتابة كلمات",
+  "challengeTetris": "Tetris",
+  "challengeReading": "قراءة تأملية",
+  "checkingSetupState": "جارٍ التحقق من حالة الإعداد…",
+  "iUnderstand": "فهمت",
+  "details": "التفاصيل",
+  "shizukuNotInstalledTitle": "Shizuku: غير مثبّت",
+  "shizukuNotInstalledBody": "ثبّت Shizuku (moe.shizuku.privileged.api) من متجر Play أو موقعه الرسمي، ثم عد إلى هنا.",
+  "shizukuNotRunningTitle": "Shizuku: لا يعمل",
+  "shizukuNotRunningBody": "تطبيق Shizuku مثبّت لكن خادمه لا يعمل. لا يستطيع Dominanter تشغيله — افتح تطبيق Shizuku وشغّل الخادم (عبر التصحيح اللاسلكي أو ADB)، ثم اسحب للتحديث.",
+  "shizukuPreV11Title": "Shizuku: قديم جداً (قبل v11)",
+  "shizukuPreV11Body": "خادم Shizuku هذا أقدم من الإصدار 11 ولا يستطيع تنفيذ الأوامر. حدّث Shizuku وأعد تشغيل خادمه ثم حدّث هذه الشاشة.",
+  "shizukuNoPermissionTitle": "Shizuku: الإذن مطلوب",
+  "shizukuNoPermissionBody": "الخادم يعمل. امنح Dominanter الإذن في Shizuku لمتابعة الإعداد.",
+  "shizukuGrantedTitle": "Shizuku: متصل وممنوح",
+  "shizukuGrantedBody": "عمليات الإعداد متاحة. الإنفاذ اليومي لا يحتاج Shizuku بعد التجهيز.",
+  "shizukuUnknownTitle": "Shizuku: حالة غير معروفة",
+  "shizukuUnknownBody": "أعادت الطبقة الأصلية حالة غير معروفة.",
+  "serverVersionLine": "إصدار الخادم {version}، UID {uid}",
+  "@serverVersionLine": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      },
+      "uid": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosticLine": "التشخيص: {text}",
+  "@diagnosticLine": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "installShizuku": "تثبيت Shizuku",
+  "waitingShizukuAppear": "بانتظار ظهور Shizuku…",
+  "requestShizukuPermission": "طلب إذن Shizuku",
+  "waitingShizukuAnswer": "بانتظار رد Shizuku…",
+  "shizukuPermissionGrantedMsg": "مُنح إذن Shizuku — التجهيز مفتوح الآن.",
+  "permissionNotGrantedYetMsg": "لم يُمنح الإذن بعد. وافق على Dominanter في Shizuku ثم اضغط طلب مجدداً.",
+  "noStoreOpenedMsg": "تعذّر فتح أي متجر أو متصفح لصفحة Shizuku.",
+  "shizukuDetectedMsg": "تم اكتشاف Shizuku.",
+  "deviceOwnerTitle": "مالك الجهاز",
+  "deviceOwnerYes": "تطبيق Dominanter هو مالك هذا الجهاز.",
+  "deviceOwnerNo": "غير مجهّز. معظم القيود تحتاج مالك الجهاز. المسؤول نشط: {admin}.",
+  "@deviceOwnerNo": {
+    "placeholders": {
+      "admin": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsNote": "ملاحظة: تم اكتشاف {count} حساب. التجهيز عبر Shizuku يعمل عادةً رغم ذلك، لكن إزالة الحسابات أولاً هي المسار الذي يوصي به التطبيق الأصلي.",
+  "@accountsNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "becomeDeviceOwner": "كن مالك الجهاز عبر Shizuku",
+  "provisioningUnlocksNote": "يُفتح التجهيز عندما يعمل Shizuku ويُمنح الإذن.",
+  "pathUsed": "المسار المستخدم: {path}",
+  "@pathUsed": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "accessibilityService": "خدمة إمكانية الوصول",
+  "a11yUnknown": "غير معروف",
+  "a11yRunning": "مُفعّلة وتعمل — الإنفاذ جارٍ.",
+  "a11yBinding": "مُفعّلة لكنها لا تعمل بعد (جارٍ الربط).",
+  "a11yOff": "مُعطّلة. إيقافها لاحقاً يعلّق كل تطبيق خاضع للتحكم (إغلاق مضاد للتجاوز).",
+  "wssTitle": "إذن نظام إضافي",
+  "wssGrantedText": "ممنوح (تم التحقق بإعادة الفحص).",
+  "wssPurpose": "يمنح إذن WRITE_SECURE_SETTINGS اللازم لأوضاع الألوان (v1.1). يُمنح عبر Shizuku ويُتحقق منه بإعادة الفحص؛ الحالة المعروضة هنا تُقرأ عند كل تحديث.",
+  "granted": "ممنوح",
+  "granting": "جارٍ المنح…",
+  "grant": "منح",
+  "wssGrantedMsg": "إذن WRITE_SECURE_SETTINGS ممنوح.",
+  "wssStillNotGrantedMsg": "إذن WRITE_SECURE_SETTINGS ما زال غير ممنوح. يجب أن يعمل Shizuku مع منح الإذن أولاً.",
+  "diagnosticsTitle": "تشخيصات التجهيز",
+  "diagnosticsSubtitle": "الحسابات والمستخدمون الإضافيون ومالك الجهاز الحالي — هذه قد تمنع التجهيز.",
+  "runDiagnostics": "تشغيل التشخيصات",
+  "diagAccounts": "الحسابات ({count})",
+  "@diagAccounts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "diagNoAccounts": "لم يتم العثور على حسابات — جيد للتجهيز.",
+  "diagUsers": "المستخدمون ({count})",
+  "@diagUsers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "diagOnlyPrimaryUser": "المستخدم الرئيسي فقط.",
+  "diagCurrentOwner": "مالك الجهاز الحالي",
+  "diagNone": "لا شيء",
+  "blockerExtraUsersTitle": "التجهيز محظور: مستخدمون إضافيون",
+  "blockerExtraUsersBody": "يحتوي هذا الجهاز على مستخدمين أو ملفات إضافية: {names}.\n\nلا يستطيع أندرويد تجهيز مالك جهاز أثناء وجود مستخدمين آخرين. أزل المستخدمين/الملفات الإضافية (الإعدادات ← المستخدمون)، ثم عد إلى هنا وحدّث. يطابق هذا التطبيق الأصلي الذي يستبدل زر التجهيز بهذا التحذير.",
+  "@blockerExtraUsersBody": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "blockerOtherOwnerTitle": "التجهيز محظور: مالك جهاز آخر",
+  "blockerOtherOwnerBody": "تطبيق {packageName} هو مالك هذا الجهاز بالفعل ({receiver}).\n\nلا يمكن أن يكون للجهاز أكثر من مالك واحد. يجب أن يتنازل ذلك التطبيق عن الملكية (أو إعادة ضبط الجهاز إلى المصنع) قبل أن يمكن تجهيز Dominanter. يطابق هذا التطبيق الأصلي الذي يستبدل زر التجهيز بهذا التحذير.",
+  "@blockerOtherOwnerBody": {
+    "placeholders": {
+      "packageName": {
+        "type": "String"
+      },
+      "receiver": {
+        "type": "String"
+      }
+    }
+  },
+  "userIdSuffix": "{name} (المعرّف {id})",
+  "@userIdSuffix": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "setupAppBarTitle": "الإعداد",
+  "setupTileTitle": "الإعداد ومالك الجهاز",
+  "checking": "جارٍ التحقق…",
+  "provisionedAsOwner": "مجهّز كمالك للجهاز",
+  "notOwnerOpenSetup": "ليس مالك الجهاز — افتح الإعداد",
+  "privateDns": "DNS الخاص",
+  "dnsCouldNotRead": "تعذّرت قراءة حالة DNS الحالية",
+  "dnsRequiresOwner": "يتطلب مالك الجهاز",
+  "dnsForcedHost": "المضيف المفروض: {host}",
+  "@dnsForcedHost": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsMode": "الوضع: {mode}",
+  "@dnsMode": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsRequiresOwnerSnack": "يتطلب DNS الخاص مالك الجهاز — أكمل الإعداد أولاً.",
+  "browserRestrictions": "قيود المتصفح",
+  "browserRestrictionsSub": "قوائم حظر URL وبحث آمن في المتصفحات الداعمة",
+  "blockedWords": "الكلمات المحظورة",
+  "blockedWordsSub": "حظر كلمات نشط وعلى الشاشة لكل تطبيق",
+  "impulseLock": "قفل النزوات",
+  "impulseLockSub": "قفل الذعر والتحديات وخيارات لوحة مفاتيح الاسترداد",
+  "focusMode": "وضع التركيز",
+  "focusModeSub": "جلسات بومودورو تعلّق التطبيقات المختارة",
+  "usageWarnings": "تحذيرات الاستخدام",
+  "usageWarningsSub": "تحذيرات متدرجة قبل انتهاء الحد الزمني",
+  "suspensionLogs": "سجلات التعليق",
+  "suspensionLogsSub": "سجل تدقيق لكل عملية تعليق",
+  "colourModes": "أوضاع الألوان",
+  "colourModesNote": "التدرج الرمادي المجدول والإضاءة الليلية والتعتيم الإضافي قادمة في v1.1 (منح WRITE_SECURE_SETTINGS اللازم لها موجود في شاشة الإعداد).",
+  "activityBlocker": "حاجب الأنشطة",
+  "activityBlockerNote": "حظر شاشات نشاط محددة قادم في v1.1.",
+  "language": "اللغة",
+  "languageDialogTitle": "اللغة",
+  "languageEnglish": "English",
+  "languageArabic": "العربية",
+  "languageSaved": "تم حفظ اللغة.",
+  "theme": "المظهر",
+  "themeSystem": "افتراضي النظام",
+  "themeLight": "فاتح",
+  "themeDark": "داكن",
+  "changeRecoveryCode": "تغيير رمز الاسترداد",
+  "changeRecoveryCodeSub": "يتطلب جلسة استرداد؛ الرمز القديم يتوقف عن العمل",
+  "recoveryCodeChanged": "تم تغيير رمز الاسترداد.",
+  "dangerZone": "منطقة الخطر",
+  "removeOwnerNow": "إزالة مالك الجهاز الآن",
+  "removeOwnerNowSub": "إزالة فورية، داخل جلسة استرداد — كل قيد يفرضه هذا التطبيق يتوقف فوراً.",
+  "forcedRemoval48": "الإزالة القسرية بعد 48 ساعة",
+  "forcedIdleSub": "المخرج الوحيد بلا رمز: بعد 48 ساعة يمكن إزالة مالك الجهاز دون رمز الاسترداد.",
+  "forcedCompleteSub": "اكتمل — يمكن إنهاء الإزالة الآن دون رمز.",
+  "forcedProgressSub": "جارٍ — تبقّى {remaining} (يتقدم أثناء عمل التطبيق)",
+  "@forcedProgressSub": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "startForcedRemoval": "بدء الإزالة القسرية",
+  "cancelForcedRemoval": "إلغاء الإزالة القسرية",
+  "finishRemoval": "إنهاء الإزالة",
+  "startForcedTitle": "بدء الإزالة القسرية؟",
+  "startForcedBody": "يبدأ هذا عدًّا تنازليًا مدته 48 ساعة. عند انتهائه يمكن إزالة مالك الجهاز — ومعه كل قيد يفرضه هذا التطبيق — دون رمز الاسترداد. إنه المهرب الوحيد دون رمز، ويمكن إلغاؤه في أي وقت قبل اكتماله.",
+  "cancelForcedTitle": "إلغاء الإزالة القسرية؟",
+  "cancelForcedBody": "سيتم التخلص من العد التنازلي لـ 48 ساعة. ستتطلب إزالة مالك الجهاز رمز الاسترداد من جديد.",
+  "finishForcedTitle": "إنهاء الإزالة القسرية؟",
+  "finishForcedBody": "اكتمل انتظار 48 ساعة. إزالة مالك الجهاز الآن ترفع كل قيد يفرضه هذا التطبيق على هذا الجهاز.",
+  "understandRemovesAll": "أفهم أن هذا يزيل كل الحماية",
+  "removeDeviceOwnerAction": "إزالة مالك الجهاز",
+  "deviceOwnerRemovedVerified": "تمت إزالة مالك الجهاز (تم التحقق).",
+  "dnsSettingsTitle": "إعدادات DNS الخاص",
+  "dnsCustom": "مخصص",
+  "dnsHostnameLabel": "اسم مضيف DNS",
+  "dnsHostnameHint": "dns.example.com",
+  "dnsInvalidHostname": "اسم مضيف DNS غير صالح",
+  "apply": "تطبيق",
+  "dnsTimeoutError": "انتهت مهلة تطبيق مضيف DNS. تحقق من حالة DNS الحالية قبل إعادة المحاولة.",
+  "dnsNotServingError": "مضيف DNS المختار لا يخدم. اختر مضيفاً آخر.",
+  "dnsApplyFailedError": "فشل تطبيق مضيف DNS الخاص.",
+  "dnsAppliedVerified": "فُرض DNS الخاص إلى {host} (تم التحقق).",
+  "@dnsAppliedVerified": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "newBlocklist": "قائمة حظر جديدة",
+  "editBlocklist": "تحرير قائمة الحظر",
+  "titleLabel": "العنوان",
+  "sitesLabel": "المواقع، واحد في كل سطر (مثال: example.com)",
+  "appliedToBrowsers": "تم التطبيق على {count} متصفح وتم التحقق.",
+  "@appliedToBrowsers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supportingBrowsers": "المتصفحات الداعمة",
+  "noSupportingBrowser": "لا يصرّح أي متصفح مثبّت بـ URLBlocklist في قيوده المُدارة، فلا توجد سياسة لدفعها. المتصفحات غير الداعمة تُعالج بقواعد التعليق (التعليق التلقائي v1.1).",
+  "blocklists": "قوائم الحظر",
+  "noBlocklists": "لا توجد قوائم حظر بعد. أنشئ واحدة لبدء حظر المواقع.",
+  "sitesCount": "{count} موقع",
+  "@sitesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "applyBlocklists": "تطبيق قوائم الحظر على المتصفحات",
+  "loadingBlocklists": "جارٍ تحميل قوائم الحظر…",
+  "activeBlockingWords": "كلمات الحظر النشطة",
+  "oneWordPerLine": "كلمة أو عبارة في كل سطر",
+  "appsWhereWordsBlock": "التطبيقات التي تحظر فيها الكلمات النشطة",
+  "onScreenWordsFor": "كلمات الشاشة لتطبيق {app}",
+  "@onScreenWordsFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingBlockedWords": "جارٍ تحميل الكلمات المحظورة…",
+  "activeBlockingSection": "الحظر النشط (F14)",
+  "activeBlockingBody": "عندما توجد كلمة في حقل نص تطبيق مختار وتنتهي الكتابة، يخرج التطبيق منه وتظهر شاشة حظر.",
+  "wordsCount": "{count} كلمة",
+  "@wordsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "targetAppsCount": "{count} تطبيق مستهدف",
+  "@targetAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passiveBlockingSection": "الحظر السلبي (F15)",
+  "passiveBlockingBody": "كلمات تظهر في أي مكان على الشاشة في تطبيق محدد.",
+  "noPerAppLists": "لا توجد قوائم لكل تطبيق بعد.",
+  "addTargetAppsFirst": "أضف التطبيقات المستهدفة أعلاه أولاً — القوائم السلبية ترتبط بها في v1.",
+  "addPerAppList": "إضافة قائمة لكل تطبيق",
+  "loadingWarningStages": "جارٍ تحميل مراحل التحذير…",
+  "stagedWarningsTitle": "تحذيرات متدرجة قبل انتهاء الحد",
+  "warningsBody": "تحذّر كل مرحلة مرة واحدة، قبل نفاد حد التطبيق اليومي بعدد الدقائق المضبوط. تُحفظ المراحل لتشغّلها خدمة إمكانية الوصول؛ توصيل الإشعارات يعتمد على المنبّه الأصلي.",
+  "noWarningStages": "لا توجد مراحل تحذير. أضف مرحلة واحدة على الأقل وإلا فلن تظهر أي تحذيرات.",
+  "addStage": "إضافة مرحلة",
+  "minutesBeforeLabel": "الدقائق قبل",
+  "removeStage": "إزالة المرحلة",
+  "silent": "صامت",
+  "sound": "صوت",
+  "vibrate": "اهتزاز",
+  "vibrationCount": "عدد الاهتزازات",
+  "clearLogsTooltip": "مسح السجلات (تتطلب جلسة استرداد)",
+  "searchLogs": "بحث في السجلات",
+  "loadingLogs": "جارٍ تحميل السجلات…",
+  "noSuspensionsLogged": "لم تُسجَّل أي عمليات تعليق.",
+  "impulseLockTitle": "قفل الاندفاع",
+  "loadingImpulseLock": "جارٍ تحميل قفل النزوات…",
+  "impulseActiveTitle": "قفل النزوات مفعّل — تبقّى {remaining}",
+  "@impulseActiveTitle": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "impulseActiveBody": "كما في الأصل، لا إيقاف مبكر للقفل: ينتهي من تلقاء نفسه بنفاد المؤقّت، وتُحرَّر التطبيقات التي علّقها عندها.",
+  "startImpulseLockFor": "بدء قفل النزوات ({minutes} دقيقة)",
+  "@startImpulseLockFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsLockedTitle": "الإعدادات مقفلة",
+  "settingsLockedBody": "لا يمكن تغيير إعدادات قفل النزوات إلا أثناء جلسة استرداد. اضغط لفتح واحدة.",
+  "configurationSection": "الضبط",
+  "durationLabel": "المدة",
+  "durationSubtitle": "{minutes} دقيقة (15–360)",
+  "@durationSubtitle": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesSliderLabel": "{minutes} د",
+  "@minutesSliderLabel": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timerOnly": "مؤقّت فقط",
+  "timerAndSuspend": "مؤقّت + تعليق التطبيقات المختارة",
+  "appsToSuspendCount": "{count} تطبيق للتعليق",
+  "@appsToSuspendCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accessChallengesTitle": "تحديات الوصول (قبل جلسة الاسترداد)",
+  "accessChallengesBody": "يُطلب رمز الاسترداد أولاً؛ ثم تعمل التحديات المختارة بالترتيب قبل بدء الجلسة.",
+  "challengeUnavailableNote": "غير متاح في هذا الإصدار — v1.1. يمكن اختياره في الضبط المحفوظ لكنه يُتخطى، ولا يُحاكى أبداً.",
+  "shuffledKeypadTitle": "لوحة مفاتيح مخلوطة لرمز الاسترداد",
+  "shuffledKeypadSub": "حتى لا يُتعلَّم الرمز من مواضع الأصابع (F24).",
+  "customPhrasesCount": "{count} عبارة قراءة مخصصة",
+  "@customPhrasesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "customPhrasesSub": "تُضاف إلى مقاطع القراءة المدمجة",
+  "customReadingPhrases": "عبارات قراءة مخصصة",
+  "onePhrasePerLine": "عبارة في كل سطر (كلماتك الخاصة)",
+  "appsSuspendedDuringImpulse": "التطبيقات المعلّقة أثناء قفل النزوات",
+  "focusModeTitle": "وضع التركيز",
+  "loadingFocusMode": "جارٍ تحميل وضع التركيز…",
+  "phaseNotStarted": "لم يبدأ",
+  "phaseFocusing": "جارٍ التركيز",
+  "phaseBreak": "استراحة",
+  "phaseLongBreak": "استراحة طويلة",
+  "phaseWaiting": "بانتظار",
+  "phasePaused": "متوقف مؤقتاً",
+  "phaseDone": "انتهى",
+  "ringIdleSummary": "تركيز {focus} د · استراحة {breakTime} د",
+  "@ringIdleSummary": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "breakTime": {
+        "type": "int"
+      }
+    }
+  },
+  "waitingNextFocus": "بانتظار بدء التركيز التالي",
+  "cycleOf": "الدورة {current} من {total}",
+  "@cycleOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "completedFocusPeriods": "فترات التركيز المكتملة: {count}",
+  "@completedFocusPeriods": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "start": "بدء",
+  "startFocusBtn": "بدء التركيز",
+  "endSessionBtn": "إنهاء الجلسة",
+  "pauseBtn": "إيقاف مؤقت",
+  "endRecoveryBtn": "إنهاء (الاسترداد)",
+  "resumeBtn": "استئناف",
+  "skipBreakBtn": "تخطي الاستراحة",
+  "focusWaitingBody": "انتهت الاستراحة. لا شيء معلّق أثناء الانتظار — ابدأ التركيز التالي عندما تكون جاهزاً، أو أنهِ الجلسة.",
+  "focusFocusBody": "الإيقاف المؤقت مجاني ما دامت التطبيقات معلّقة. اضغط طويلاً على إيقاف مؤقت لتحريرها بدلاً من ذلك (تتطلب جلسة استرداد).",
+  "focusDefaultBody": "تحتفظ خدمة التركيز الأصلية بالجلسة: تنجو من إغلاق هذا التطبيق، وتحتفظ بتعليقاتها بين المراحل، وهذه الشاشة تعكسها.",
+  "durationsSection": "المدد",
+  "focusMinutesLabel": "دقائق التركيز",
+  "breakMinutesLabel": "دقائق الاستراحة",
+  "longBreakMinutesLabel": "دقائق الاستراحة الطويلة",
+  "cyclesLabel": "الدورات قبل الاستراحة الطويلة",
+  "autoStartTitle": "بدء التركيز التالي تلقائياً",
+  "autoStartSub": "بدء مرحلة التركيز التالية من تلقاء نفسها عند انتهاء الاستراحة؛ وإلا تنتظر الجلسة. إيقافه تخفيف.",
+  "soundTitle": "الصوت",
+  "soundSub": "تشغيل صوت عند تغيّر المراحل.",
+  "vibrationTitle": "الاهتزاز",
+  "vibrationSub": "الاهتزاز عند تغيّر المراحل.",
+  "suspendedWhileFocusing": "المعلّق أثناء التركيز",
+  "appsSuspendedWhileFocusing": "{count} تطبيق معلّق أثناء التركيز",
+  "@appsSuspendedWhileFocusing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groupsSuspendedWhileFocusing": "{count} مجموعة معلّقة أثناء التركيز",
+  "@groupsSuspendedWhileFocusing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restrictionsAppliedWhileFocusing": "{count} قيد مطبّق أثناء التركيز",
+  "@restrictionsAppliedWhileFocusing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "focusSchedulesTitle": "جداول التركيز والتذكيرات",
+  "focusSchedulesNote": "الجلسات ذات البدء التلقائي المجدول ليست في هذا الإصدار.",
+  "appsToSuspendWhileFocusing": "التطبيقات المُعلّقة أثناء التركيز",
+  "groupsToSuspendWhileFocusing": "المجموعات المعلّقة أثناء التركيز",
+  "noGroupsYet": "لا توجد مجموعات بعد",
+  "groupAppsCount": "{count} تطبيق",
+  "@groupAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restrictionsDuringFocus": "القيود أثناء التركيز",
+  "noDeviceOwnerPrivileges": "لا توجد صلاحيات مالك الجهاز",
+  "noOwnerBody": "تعمل قيود النظام فقط بينما Dominanter هو مالك الجهاز. أكمل تدفق الإعداد أولاً — القيود لا تُزيَّف بدونه.",
+  "openSetup": "فتح الإعداد",
+  "restrictionsUpdatedVerified": "تم تحديث القيود والتحقق منها.",
+  "searchRestrictions": "بحث في القيود",
+  "loadingRestrictions": "جارٍ تحميل القيود…",
+  "recommendedSection": "موصى بها",
+  "otherRestrictionsSection": "قيود أخرى",
+  "changedNotApplied": "تم التغيير — لم يُطبَّق بعد",
+  "applying": "جارٍ التطبيق…",
+  "applyChanges": "تطبيق التغييرات",
+  "activeBadge": "نشط",
+  "searchApps": "بحث في التطبيقات",
+  "includeSystemApps": "تضمين تطبيقات النظام",
+  "appGroups": "مجموعات التطبيقات",
+  "appGroupsSub": "حدود ونوافذ مشتركة لمجموعة تطبيقات",
+  "loadingInstalledApps": "جارٍ تحميل التطبيقات المثبّتة…",
+  "noAppsMatch": "لا توجد تطبيقات مطابقة. جرّب بحثاً مختلفاً، أو ضمّن تطبيقات النظام.",
+  "stateSystem": "نظام",
+  "stateHidden": "مخفي",
+  "stateSuspended": "معلّق",
+  "stateUninstallBlocked": "إلغاء التثبيت محظور",
+  "usedTodaySuffix": "استُخدم {duration} اليوم",
+  "@usedTodaySuffix": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "suspendedTitle": "معلّق",
+  "suspendedSub": "لا يمكن فتح التطبيق أثناء تعليقه.",
+  "hiddenTitle": "مخفي",
+  "hiddenSub": "مُزال من المشغّل وقائمة التطبيقات.",
+  "uninstallBlockedTitle": "إلغاء التثبيت محظور",
+  "suspensionEnabledFor": "تم تفعيل التعليق لتطبيق {app}",
+  "@suspensionEnabledFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "hidingEnabledFor": "تم تفعيل الإخفاء لتطبيق {app}",
+  "@hidingEnabledFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "uninstallBlockEnabledFor": "تم تفعيل حظر إلغاء التثبيت لتطبيق {app}",
+  "@uninstallBlockEnabledFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLimitUpdatedFor": "تم تحديث الحد الزمني لتطبيق {app}",
+  "@timeLimitUpdatedFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeWindowsUpdatedFor": "تم تحديث النوافذ الزمنية لتطبيق {app}",
+  "@timeWindowsUpdatedFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "groupMembersUpdated": "تم تحديث أعضاء {group}",
+  "@groupMembersUpdated": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "groupLimitUpdated": "تم تحديث حد {group}",
+  "@groupLimitUpdated": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "restrictionsUpdatedFor": "تم تحديث القيود لتطبيق {app}",
+  "@restrictionsUpdatedFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLimitTile": "الحد الزمني",
+  "loadingEllipsis": "جارٍ التحميل…",
+  "todayLimit": "اليوم: {limit}",
+  "@todayLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "perWeekdaySuffix": " (لكل يوم)",
+  "noLimitSet": "لا يوجد حد مضبوط",
+  "allowedWindowsTile": "النوافذ الزمنية المسموحة",
+  "windowsCount": "{count} نافذة",
+  "@windowsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "usableAnyTime": "قابل للاستخدام في أي وقت",
+  "managedRestrictionsTile": "القيود المُدارة",
+  "managedRestrictionsSub": "تحرير ضبط هذا التطبيق المُدار المُصرّح به",
+  "timeLimitDialogTitle": "الحد الزمني (بالدقائق)",
+  "dailySegment": "يومي",
+  "perWeekdaySegment": "لكل يوم",
+  "minutesPerDayLabel": "الدقائق في اليوم (0 = بلا حد)",
+  "dayNoLimit": "{day} (0 = بلا حد)",
+  "@dayNoLimit": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "reopenLabel": "مهلة إعادة الفتح، بالثواني (تُحفظ؛ الإنفاذ في v1.1)",
+  "dayMon": "الإثنين",
+  "dayTue": "الثلاثاء",
+  "dayWed": "الأربعاء",
+  "dayThu": "الخميس",
+  "dayFri": "الجمعة",
+  "daySat": "السبت",
+  "daySun": "الأحد",
+  "allowedWindowsTitle": "النوافذ المسموحة (يومياً)",
+  "windowsBody": "خارج هذه النوافذ يكون التطبيق محظوراً. القائمة الفارغة تعني قابلاً للاستخدام في أي وقت.",
+  "noWindowsSet": "لا توجد نوافذ مضبوطة.",
+  "addWindow": "إضافة نافذة",
+  "windowStartHelp": "بداية النافذة",
+  "windowEndHelp": "نهاية النافذة (قد تكون في اليوم التالي)",
+  "appGroupsTitle": "مجموعات التطبيقات",
+  "newGroupTooltip": "مجموعة جديدة",
+  "loadingGroups": "جارٍ تحميل المجموعات…",
+  "noGroupsYetEmpty": "لا توجد مجموعات بعد. أنشئ واحدة لمشاركة حد عبر التطبيقات.",
+  "newGroup": "مجموعة جديدة",
+  "groupNameLabel": "اسم المجموعة",
+  "create": "إنشاء",
+  "renameGroup": "إعادة تسمية المجموعة",
+  "groupAppsLimitLine": "{count} تطبيق · الحد {limit}",
+  "@groupAppsLimitLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "editMembers": "تحرير الأعضاء",
+  "editLimit": "تحرير الحد",
+  "renameGroupAction": "إعادة تسمية المجموعة",
+  "deleteGroup": "حذف المجموعة",
+  "membersOf": "أعضاء {group}",
+  "@membersOf": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "restrictionsForApp": "القيود — {app}",
+  "@restrictionsForApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingDeclaredRestrictions": "جارٍ تحميل القيود المُصرّح بها…",
+  "noRestrictionsForApp": "لا توجد قيود متاحة لتطبيق {app}. هذا التطبيق لا يصرّح بأي قيود مُدارة.",
+  "@noRestrictionsForApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "clearAllRestrictions": "مسح كل القيود",
+  "clearAllBody": "إزالة كل قيد مُدار لتطبيق {app}؟ هذا يحرّر المسودة فقط — اضغط حفظ للتطبيق.",
+  "@clearAllBody": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "unsavedChangesTitle": "تغييرات غير محفوظة",
+  "unsavedChangesBody": "لديك تغييرات قيود غير محفوظة. أتهملها؟",
+  "keepEditing": "متابعة التحرير",
+  "discard": "إهمال",
+  "allFilter": "الكل",
+  "activeFilterCount": "نشط ({count})",
+  "@activeFilterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "defaultFilterCount": "افتراضي ({count})",
+  "@defaultFilterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noRestrictionsMatching": "لا قيود مطابقة لـ \"{query}\"",
+  "@noRestrictionsMatching": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noRestrictionsAvailableFor": "لا توجد قيود متاحة لتطبيق {app}",
+  "@noRestrictionsAvailableFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "savingEllipsis": "جارٍ الحفظ…",
+  "saveRestrictions": "حفظ القيود",
+  "seeMore": "عرض المزيد",
+  "seeLess": "عرض أقل",
+  "enabledLabel": "مفعّل",
+  "disabledLabel": "معطّل",
+  "unsupportedRestrictionType": "نوع قيد غير مدعوم: {type}",
+  "@unsupportedRestrictionType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "removeValue": "إزالة القيمة",
+  "addValueLabel": "إضافة قيمة",
+  "addValueTooltip": "إضافة قيمة",
+  "itemNumber": "عنصر {number}",
+  "@itemNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "removeItem": "إزالة العنصر",
+  "addItem": "إضافة عنصر",
+  "brandTagline": "اكسر القيد",
+  "lockedTitle": "دومينانتر مقفل",
+  "startFocusAction": "بدء التركيز",
+  "skipBreakAction": "تخطي الاستراحة",
+  "pauseAction": "إيقاف مؤقت",
+  "resumeAction": "استئناف",
+  "focusCycleTitle": "التركيز {current}/{total}",
+  "@focusCycleTitle": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "focusPausedSuffix": " · متوقف مؤقتًا",
+  "focusShortBreak": "استراحة قصيرة",
+  "focusLongBreak": "استراحة طويلة",
+  "focusBreakOver": "انتهت الاستراحة",
+  "focusSuspendingSummary": "{minutes} دقيقة من التركيز، مع تعليق التطبيقات المحددة",
+  "@focusSuspendingSummary": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "groupsSection": "المجموعات",
+  "appsSection": "التطبيقات",
+  "gateBody": "أدخل رمز الاسترداد لفتح جلسة مدتها 10 دقائق. تحديات الوصول التي ضبطتها لا تعمل إلا بعد قبول الرمز.",
+  "provisionOutput": "المسار المستخدم: {path}\n{output}",
+  "@provisionOutput": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "noStoreMsg": "تعذّر فتح أي متجر أو متصفح لصفحة Shizuku.",
+  "setupAndOwner": "الإعداد ومالك الجهاز",
+  "setupTitle": "الإعداد",
+  "dnsNeedsOwnerMsg": "يتطلب DNS الخاص مالك الجهاز — أكمل الإعداد أولًا.",
+  "forcedRemovalTitle": "الإزالة القسرية بعد 48 ساعة",
+  "forcedInProgressSub": "جارٍ — تبقّى {remaining} (يتقدّم أثناء تشغيل التطبيق)",
+  "@forcedInProgressSub": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsApplyTimeout": "انتهت مهلة تطبيق مضيف DNS. تحقق من حالة DNS الحالية قبل إعادة المحاولة.",
+  "dnsNotServing": "مضيف DNS المختار لا يستجيب. اختر مضيفًا آخر.",
+  "dnsApplyFailed": "فشل تطبيق مضيف DNS الخاص.",
+  "dnsAppliedMsg": "تم فرض DNS الخاص على {host} (تم التحقق).",
+  "@dnsAppliedMsg": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ownerStillActiveMsg": "ما زال مالك الجهاز نشطًا بعد الإزالة",
+  "noCapableBrowser": "لا يعلن أي متصفح مثبّت عن URLBlocklist في قيوده المُدارة، فلا يوجد ما تُدفع إليه السياسة. المتصفحات غير الداعمة تُعالج بقواعد التعليق (التعليق التلقائي في v1.1).",
+  "blocklistsSection": "قوائم الحظر",
+  "noBlocklistsYet": "لا قوائم حظر بعد. أنشئ واحدة لبدء حظر المواقع.",
+  "usageWarningsBody": "تحذّر كل مرحلة مرة واحدة قبل انتهاء الحد اليومي للتطبيق بعدد الدقائق المضبوط. تُحفظ المراحل لتطلقها خدمة إمكانية الوصول؛ ويعتمد وصول الإشعار على المُشعِر الأصلي.",
+  "removeStageTooltip": "إزالة المرحلة",
+  "vibrationCountLabel": "عدد الاهتزازات",
+  "noLogsYet": "لم تُسجَّل أي عمليات تعليق.",
+  "impulseActiveLeft": "قفل الاندفاع نشط — تبقّى {time}",
+  "@impulseActiveLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "impulseNoEarlyStop": "كما في الأصل، لا إيقاف مبكرًا للقفل: ينتهي من تلقاء نفسه عند انتهاء المؤقّت، وتُحرَّر حينها التطبيقات التي علّقها.",
+  "startImpulseLock": "بدء قفل الاندفاع ({minutes} دقيقة)",
+  "@startImpulseLock": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsLocked": "الإعدادات مقفلة",
+  "settingsLockedSub": "لا يمكن تغيير إعدادات قفل الاندفاع إلا أثناء جلسة استرداد. اضغط لفتح واحدة.",
+  "durationMinutes": "{minutes} دقيقة (15–360)",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesShort": "{minutes} د",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "accessChallengesSection": "تحديات الوصول (قبل جلسة الاسترداد)",
+  "shuffledKeypad": "لوحة مفاتيح مخلوطة لرمز الاسترداد",
+  "focusIdleSummary": "{focus} د تركيز · {breakTime} د استراحة",
+  "@focusIdleSummary": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "breakTime": {
+        "type": "int"
+      }
+    }
+  },
+  "startAction": "ابدأ",
+  "endRecovery": "إنهاء (الاسترداد)",
+  "waitingBody": "انتهت الاستراحة. لا شيء معلّق أثناء الانتظار — ابدأ التركيز التالي عندما تكون جاهزًا، أو أَنهِ الجلسة.",
+  "focusPauseNote": "الإيقاف المؤقت مجاني بينما تبقى التطبيقات معلّقة. اضغط مطولًا على إيقاف مؤقت لتحريرها بدلًا من ذلك (يتطلب جلسة استرداد).",
+  "focusNativeNote": "تحتفظ خدمة التركيز الأصلية بالجلسة: تنجو من إغلاق التطبيق، وتحافظ على تعليقاتها بين المراحل، وهذه الشاشة تعكسها.",
+  "groupsSuspendedCount": "{count} مجموعة معلّقة أثناء التركيز",
+  "@groupsSuspendedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restrictionsAppliedCount": "{count} قيد مطبّق أثناء التركيز",
+  "@restrictionsAppliedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "memberCount": "{count} تطبيق",
+  "@memberCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noOwnerRestrictionsBody": "تعمل قيود النظام فقط بينما دومينانتر هو مالك الجهاز. أكمل خطوات الإعداد أولًا — لا تُزيَّف القيود بدونه.",
+  "restrictionsUpdated": "تم تحديث القيود والتحقق منها.",
+  "usedToday": "استُخدم {time} اليوم",
+  "@usedToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "badgeSystem": "نظام",
+  "badgeHidden": "مخفي",
+  "badgeSuspended": "معلّق",
+  "badgeUninstallBlocked": "إلغاء التثبيت محظور",
+  "loadingShort": "جارٍ التحميل…",
+  "todayLimitLine": "اليوم: {limit}",
+  "@todayLimitLine": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "managedRestrictions": "القيود المُدارة",
+  "timeLimitUpdatedDesc": "تم تحديث حد الوقت لـ{app}",
+  "@timeLimitUpdatedDesc": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeWindowsUpdatedDesc": "تم تحديث النوافذ الزمنية لـ{app}",
+  "@timeWindowsUpdatedDesc": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLimitEditorTitle": "حد الوقت (بالدقائق)",
+  "dayLimitLabel": "{day} (0 = بلا حد)",
+  "@dayLimitLabel": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "noGroupsYetMsg": "لا مجموعات بعد. أنشئ واحدة لمشاركة حد عبر التطبيقات.",
+  "membersUpdatedDesc": "تم تحديث أعضاء {name}",
+  "@membersUpdatedDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupLimitUpdatedDesc": "تم تحديث حد {name}",
+  "@groupLimitUpdatedDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noRestrictionsFor": "لا قيود متاحة لـ{app}. هذا التطبيق لا يعلن عن أي قيود مُدارة.",
+  "@noRestrictionsFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "restrictionsForTitle": "القيود — {app}",
+  "@restrictionsForTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "unsavedTitle": "تغييرات غير محفوظة",
+  "unsavedBody": "لديك تغييرات قيود غير محفوظة. تجاهلها؟",
+  "saving": "جارٍ الحفظ…",
+  "unsupportedType": "نوع قيد غير مدعوم: {type}",
+  "@unsupportedType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "removeValueTooltip": "إزالة القيمة",
+  "removeItemTooltip": "إزالة العنصر",
+  "restrictionsUpdatedDesc": "تم تحديث قيود {app}",
+  "@restrictionsUpdatedDesc": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  }
+}

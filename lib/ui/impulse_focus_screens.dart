@@ -27,8 +27,21 @@ import '../data/privileged_channel.dart';
 import '../domain/challenges.dart';
 import '../domain/focus.dart';
 import '../domain/recovery.dart';
+import '../l10n/l10n.dart';
 import 'common.dart';
 import 'recovery_ui.dart';
+
+/// Localized display name for a challenge type (the domain enum's
+/// `label` stays the stable English identifier for logic/tests).
+String challengeTypeLabel(BuildContext context, ChallengeType t) {
+  final l10n = context.l10n;
+  return switch (t) {
+    ChallengeType.math => l10n.challengeMath,
+    ChallengeType.words => l10n.challengeWords,
+    ChallengeType.reading => l10n.challengeReading,
+    ChallengeType.tetris => l10n.challengeTetris,
+  };
+}
 
 // ------------------------------------------------------------------ Impulse
 
@@ -106,6 +119,7 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
           reason: 'IMPULSE_LOCK',
         );
       } catch (e) {
+        if (!mounted) return;
         await showErrorSnackBar(context, e);
       }
     }
@@ -118,7 +132,7 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setLocal) => AlertDialog(
-          title: const Text('Apps suspended during impulse lock'),
+          title: Text(context.l10n.appsSuspendedDuringImpulse),
           content: SizedBox(
             width: 360,
             height: 400,
@@ -142,11 +156,11 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, selected.toList()),
-              child: const Text('Save'),
+              child: Text(context.l10n.save),
             ),
           ],
         ),
@@ -159,22 +173,23 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Impulse lock')),
+        appBar: AppBar(title: Text(l10n.impulseLockTitle)),
         body: ErrorView(error: _error!, onRetry: _load),
       );
     }
     final config = _config;
     if (config == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Impulse lock')),
-        body: const LoadingView(message: 'Loading impulse lock…'),
+        appBar: AppBar(title: Text(l10n.impulseLockTitle)),
+        body: LoadingView(message: l10n.loadingImpulseLock),
       );
     }
     final lock = widget.controller.impulseLock;
     return Scaffold(
-      appBar: AppBar(title: const Text('Impulse lock')),
+      appBar: AppBar(title: Text(l10n.impulseLockTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -184,20 +199,17 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
               child: ListTile(
                 leading: const Icon(Icons.lock_clock),
                 title: Text(
-                  'Impulse lock active — ${formatDuration(lock.remaining)} left',
+                  l10n.impulseActiveLeft(
+                      formatDuration(lock.remaining, l10n)),
                 ),
-                subtitle: const Text(
-                  'Like the original, the lock has no early stop: it ends '
-                  'on its own when the timer runs out, and the apps it '
-                  'suspended are released then.',
-                ),
+                subtitle: Text(l10n.impulseNoEarlyStop),
               ),
             )
           else
             FilledButton.icon(
               onPressed: _startLock,
               icon: const Icon(Icons.emergency_outlined),
-              label: Text('Start impulse lock (${config.durationMinutes} min)'),
+              label: Text(l10n.startImpulseLock(config.durationMinutes)),
             ),
           const SizedBox(height: 16),
           // All settings below are session-gated, as in the original:
@@ -214,22 +226,19 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                   if (!sessionActive)
                     ListTile(
                       leading: const Icon(Icons.lock_outline),
-                      title: const Text('Settings are locked'),
-                      subtitle: const Text(
-                        'Impulse lock settings can only be changed during '
-                        'a recovery session. Tap to open one.',
-                      ),
+                      title: Text(l10n.settingsLocked),
+                      subtitle: Text(l10n.settingsLockedSub),
                       trailing: const Icon(Icons.lock_open_outlined),
                       onTap: () =>
                           ensureRecoverySession(context, widget.controller),
                     ),
                   Text(
-                    'Configuration',
+                    l10n.configurationSection,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   ListTile(
-                    title: const Text('Duration'),
-                    subtitle: Text('${config.durationMinutes} minutes (15–360)'),
+                    title: Text(l10n.durationLabel),
+                    subtitle: Text(l10n.durationMinutes(config.durationMinutes)),
                     trailing: SizedBox(
                       width: 180,
                       child: Slider(
@@ -237,7 +246,7 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                         min: 15,
                         max: 360,
                         divisions: 23,
-                        label: '${config.durationMinutes} min',
+                        label: l10n.minutesShort(config.durationMinutes),
                         onChanged: sessionActive
                             ? (v) => _saveConfig(
                                   config.copyWith(durationMinutes: v.round()),
@@ -246,24 +255,36 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                       ),
                     ),
                   ),
-                  RadioListTile<ImpulseAction>(
-                    title: const Text('Timer only'),
-                    value: ImpulseAction.timerOnly,
+                  // RadioGroup migration (Flutter 3.32+ deprecates
+                  // RadioListTile.groupValue/onChanged): the group now
+                  // carries the value and the change handler — same values,
+                  // same initial selection. RadioGroup.onChanged is
+                  // non-nullable in the new API, so the session gate moves
+                  // to each tile's `enabled` flag: with no active session
+                  // both tiles are disabled and can never fire the handler,
+                  // exactly as null per-tile handlers behaved before.
+                  RadioGroup<ImpulseAction>(
                     groupValue: config.action,
-                    onChanged: sessionActive
-                        ? (v) => _saveConfig(config.copyWith(action: v))
-                        : null,
-                  ),
-                  RadioListTile<ImpulseAction>(
-                    title: const Text('Timer + suspend chosen apps'),
-                    value: ImpulseAction.timerAndSuspend,
-                    groupValue: config.action,
-                    onChanged: sessionActive
-                        ? (v) => _saveConfig(config.copyWith(action: v))
-                        : null,
+                    onChanged: (v) => _saveConfig(config.copyWith(action: v)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RadioListTile<ImpulseAction>(
+                          title: Text(l10n.timerOnly),
+                          value: ImpulseAction.timerOnly,
+                          enabled: sessionActive,
+                        ),
+                        RadioListTile<ImpulseAction>(
+                          title: Text(l10n.timerAndSuspend),
+                          value: ImpulseAction.timerAndSuspend,
+                          enabled: sessionActive,
+                        ),
+                      ],
+                    ),
                   ),
                   ListTile(
-                    title: Text('${config.suspendApps.length} app(s) to suspend'),
+                    title: Text(l10n.appsToSuspendCount(config.suspendApps.length)),
                     subtitle: Text(
                       config.suspendApps.map(_labelFor).take(3).join(', '),
                     ),
@@ -272,23 +293,16 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                   ),
                   const Divider(),
                   Text(
-                    'Access challenges (before a recovery session)',
+                    l10n.accessChallengesSection,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const Text(
-                    'The recovery code is asked for first; the selected '
-                    'challenges then run, in order, before the session '
-                    'starts.',
-                  ),
+                  Text(l10n.accessChallengesBody),
                   for (final t in ChallengeType.values)
                     CheckboxListTile(
-                      title: Text(t.label),
+                      title: Text(challengeTypeLabel(context, t)),
                       subtitle: t.isAvailableInV1
                           ? null
-                          : const Text(
-                              'Not available in this version — v1.1. It can '
-                              'be selected in stored config but is skipped, never simulated.',
-                            ),
+                          : Text(l10n.challengeUnavailableNote),
                       value: _challenges.contains(t),
                       onChanged: t.isAvailableInV1 && sessionActive
                           ? (v) async {
@@ -306,10 +320,8 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                           : null,
                     ),
                   SwitchListTile(
-                    title: const Text('Shuffled keypad for recovery code'),
-                    subtitle: const Text(
-                      'So the code cannot be learned from finger positions (F24).',
-                    ),
+                    title: Text(l10n.shuffledKeypad),
+                    subtitle: Text(l10n.shuffledKeypadSub),
                     value: _shuffle,
                     onChanged: (v) async {
                       if (v) {
@@ -332,9 +344,9 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                   ),
                   ListTile(
                     title: Text(
-                      '${_customPhrases.length} custom reading phrase(s)',
+                      l10n.customPhrasesCount(_customPhrases.length),
                     ),
-                    subtitle: const Text('Added to the bundled reading passages'),
+                    subtitle: Text(l10n.customPhrasesSub),
                     trailing: const Icon(Icons.edit_outlined),
                     onTap: sessionActive ? _editPhrases : null,
                   ),
@@ -353,31 +365,31 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
     );
     final saved = await showDialog<List<String>>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Custom reading phrases'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.customReadingPhrases),
         content: TextField(
           controller: textController,
           maxLines: 8,
-          decoration: const InputDecoration(
-            labelText: 'One phrase per line (your own words)',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: dialogContext.l10n.onePhrasePerLine,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(dialogContext.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(
-              context,
+              dialogContext,
               textController.text
                   .split('\n')
                   .map((s) => s.trim())
                   .where((s) => s.isNotEmpty)
                   .toList(),
             ),
-            child: const Text('Save'),
+            child: Text(dialogContext.l10n.save),
           ),
         ],
       ),
@@ -529,6 +541,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       if (mounted) setState(() => _applyNative(state));
       await _ensureNotificationPermission();
     } catch (e) {
+      if (!mounted) return;
       await showErrorSnackBar(context, e);
     }
   }
@@ -557,6 +570,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       );
       if (mounted) setState(() => _applyNative(state));
     } catch (e) {
+      if (!mounted) return;
       await showErrorSnackBar(context, e);
     }
   }
@@ -566,6 +580,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       final state = await widget.controller.channel.resumeFocusSession();
       if (mounted) setState(() => _applyNative(state));
     } catch (e) {
+      if (!mounted) return;
       await showErrorSnackBar(context, e);
     }
   }
@@ -577,6 +592,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       final state = await widget.controller.channel.skipFocusSession();
       if (mounted) setState(() => _applyNative(state));
     } catch (e) {
+      if (!mounted) return;
       await showErrorSnackBar(context, e);
     }
   }
@@ -586,6 +602,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       await widget.controller.channel.stopFocusSession();
       if (mounted) setState(() => _applyNative(null));
     } catch (e) {
+      if (!mounted) return;
       await showErrorSnackBar(context, e);
     }
   }
@@ -616,9 +633,10 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Focus mode')),
+        appBar: AppBar(title: Text(l10n.focusMode)),
         body: ErrorView(error: _error!, onRetry: _load),
       );
     }
@@ -626,8 +644,8 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     final session = _session;
     if (config == null || session == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Focus mode')),
-        body: const LoadingView(message: 'Loading focus mode…'),
+        appBar: AppBar(title: Text(l10n.focusMode)),
+        body: LoadingView(message: l10n.loadingFocusMode),
       );
     }
     final remaining = session.remainingAt(DateTime.now());
@@ -636,13 +654,13 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     // phaseDuration), and the buttons drive the native session through
     // the channel.
     final phaseLabel = switch (session.phase) {
-      FocusPhase.idle => 'Not started',
-      FocusPhase.focus => 'Focusing',
-      FocusPhase.breakTime => 'Break',
-      FocusPhase.longBreak => 'Long break',
-      FocusPhase.waiting => 'Waiting',
-      FocusPhase.paused => 'Paused',
-      FocusPhase.done => 'Done',
+      FocusPhase.idle => l10n.phaseNotStarted,
+      FocusPhase.focus => l10n.phaseFocusing,
+      FocusPhase.breakTime => l10n.phaseBreak,
+      FocusPhase.longBreak => l10n.focusLongBreak,
+      FocusPhase.waiting => l10n.phaseWaiting,
+      FocusPhase.paused => l10n.phasePaused,
+      FocusPhase.done => l10n.phaseDone,
     };
     final isBreakPhase =
         session.phase == FocusPhase.breakTime ||
@@ -675,7 +693,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     final idleLike =
         session.phase == FocusPhase.idle || session.phase == FocusPhase.done;
     return Scaffold(
-      appBar: AppBar(title: const Text('Focus mode')),
+      appBar: AppBar(title: Text(l10n.focusMode)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -689,16 +707,18 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
                   phaseLabel: phaseLabel,
                   isBreak: isBreakPhase,
                   cycleLabel: session.phase == FocusPhase.idle
-                      ? '${config.focusMinutes} min focus · ${config.breakMinutes} min break'
+                      ? l10n.focusIdleSummary(
+                          config.focusMinutes, config.breakMinutes)
                       : session.phase == FocusPhase.done
                       ? null
                       : session.phase == FocusPhase.waiting
-                      ? 'Waiting to start the next focus'
-                      : 'Cycle $currentCycle of ${config.cyclesBeforeLongBreak}',
+                      ? l10n.waitingNextFocus
+                      : l10n.cycleOf(
+                          currentCycle, config.cyclesBeforeLongBreak),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Completed focus periods: ${session.completedFocusPeriods}',
+                  l10n.completedFocusPeriods(session.completedFocusPeriods),
                 ),
                 const SizedBox(height: 16),
                 Wrap(
@@ -708,17 +728,17 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
                       FilledButton.icon(
                         onPressed: _startFocus,
                         icon: const Icon(Icons.play_arrow),
-                        label: const Text('Start'),
+                        label: Text(l10n.startAction),
                       ),
                     if (session.phase == FocusPhase.waiting) ...[
                       FilledButton.icon(
                         onPressed: _startFocus,
                         icon: const Icon(Icons.play_arrow),
-                        label: const Text('Start focus'),
+                        label: Text(l10n.startFocusAction),
                       ),
                       OutlinedButton(
                         onPressed: _stopFocus,
-                        child: const Text('End session'),
+                        child: Text(l10n.endSession),
                       ),
                     ],
                     if (session.isRunning) ...[
@@ -735,54 +755,47 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
                                 () => _pauseFocus(releaseApps: true),
                               )
                             : null,
-                        child: const Text('Pause'),
+                        child: Text(l10n.pauseAction),
                       ),
                       OutlinedButton(
                         onPressed: _endFocus,
-                        child: const Text('End (recovery)'),
+                        child: Text(l10n.endRecovery),
                       ),
                     ],
                     if (session.isPaused) ...[
                       FilledButton(
                         onPressed: _resumeFocus,
-                        child: const Text('Resume'),
+                        child: Text(l10n.resumeAction),
                       ),
                       OutlinedButton(
                         onPressed: _endFocus,
-                        child: const Text('End (recovery)'),
+                        child: Text(l10n.endRecovery),
                       ),
                     ],
                     if (inBreakPhase)
                       OutlinedButton.icon(
                         onPressed: _skipBreak,
                         icon: const Icon(Icons.skip_next),
-                        label: const Text('Skip break'),
+                        label: Text(l10n.skipBreakAction),
                       ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   session.phase == FocusPhase.waiting
-                      ? 'The break is over. Nothing is suspended while '
-                            'waiting — start the next focus when ready, or '
-                            'end the session.'
+                      ? l10n.waitingBody
                       : session.phase == FocusPhase.focus
-                      ? 'Pause is free while the apps stay suspended. '
-                            'Long-press Pause to release them instead '
-                            '(recovery session required).'
-                      : 'The session is kept by the native focus service: '
-                            'it survives this app being closed, holds its '
-                            'suspensions between phases, and this screen '
-                            'mirrors it.',
+                      ? l10n.focusPauseNote
+                      : l10n.focusNativeNote,
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          Text('Durations', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.durationsSection, style: Theme.of(context).textTheme.titleMedium),
           _durationRow(
-            'Focus minutes',
+            l10n.focusMinutesLabel,
             config.focusMinutes,
             min: FocusConfig.focusMinMinutes,
             max: FocusConfig.focusMaxMinutes,
@@ -793,7 +806,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
             ),
           ),
           _durationRow(
-            'Break minutes',
+            l10n.breakMinutesLabel,
             config.breakMinutes,
             min: FocusConfig.shortBreakMinMinutes,
             max: FocusConfig.shortBreakMaxMinutes,
@@ -804,7 +817,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
             ),
           ),
           _durationRow(
-            'Long break minutes',
+            l10n.longBreakMinutesLabel,
             config.longBreakMinutes,
             min: FocusConfig.longBreakMinMinutes,
             max: FocusConfig.longBreakMaxMinutes,
@@ -814,7 +827,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
             ),
           ),
           _durationRow(
-            'Cycles before long break',
+            l10n.cyclesLabel,
             config.cyclesBeforeLongBreak,
             min: FocusConfig.cyclesMin,
             max: FocusConfig.cyclesMax,
@@ -825,11 +838,8 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
             ),
           ),
           SwitchListTile(
-            title: const Text('Auto-start next focus'),
-            subtitle: const Text(
-              'Start the next focus phase by itself when a break ends; '
-              'otherwise the session waits. Turning it off is a loosening.',
-            ),
+            title: Text(l10n.autoStartTitle),
+            subtitle: Text(l10n.autoStartSub),
             value: config.autoStartFocus,
             onChanged: (v) => _changeConfig(
               config.copyWith(autoStartFocus: v),
@@ -837,26 +847,26 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
             ),
           ),
           SwitchListTile(
-            title: const Text('Sound'),
-            subtitle: const Text('Play a sound at phase changes.'),
+            title: Text(l10n.soundTitle),
+            subtitle: Text(l10n.soundSub),
             value: config.soundEnabled,
             onChanged: (v) => _saveConfig(config.copyWith(soundEnabled: v)),
           ),
           SwitchListTile(
-            title: const Text('Vibration'),
-            subtitle: const Text('Vibrate at phase changes.'),
+            title: Text(l10n.vibrationTitle),
+            subtitle: Text(l10n.vibrationSub),
             value: config.vibrationEnabled,
             onChanged: (v) =>
                 _saveConfig(config.copyWith(vibrationEnabled: v)),
           ),
           const Divider(),
           Text(
-            'Suspended while focusing',
+            l10n.suspendedWhileFocusing,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           ListTile(
             title: Text(
-              '${config.suspendApps.length} app(s) suspended while focusing',
+              l10n.appsSuspendedWhileFocusing(config.suspendApps.length),
             ),
             subtitle: Text(
               config.suspendApps.map(_labelFor).take(3).join(', '),
@@ -867,17 +877,24 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
               if (result != null) {
                 await _changeConfig(
                   config.copyWith(suspendApps: result),
+                  // The `loosening` flag here means "session required":
+                  // removals loosen (F23), and ADDING a target ACTIVATES
+                  // focus blocking for it — code-gated by the user's
+                  // v1.0.4 directive (see docs/CODE_AUDIT_v1.0.4.md).
+                  // The same rule applies to the groups/restrictions
+                  // pickers below.
                   loosening: Loosening.isLooserSet(
-                    oldSet: config.suspendApps.toSet(),
-                    newSet: result.toSet(),
-                  ),
+                        oldSet: config.suspendApps.toSet(),
+                        newSet: result.toSet(),
+                      ) ||
+                      result.any((e) => !config.suspendApps.contains(e)),
                 );
               }
             },
           ),
           ListTile(
             title: Text(
-              '${config.suspendGroups.length} group(s) suspended while focusing',
+              l10n.groupsSuspendedCount(config.suspendGroups.length),
             ),
             subtitle: Text(
               config.suspendGroups.map(_groupNameFor).take(3).join(', '),
@@ -887,16 +904,16 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
           ),
           ListTile(
             title: Text(
-              '${config.restrictions.length} restriction(s) applied while focusing',
+              l10n.restrictionsAppliedCount(config.restrictions.length),
             ),
             subtitle: Text(config.restrictions.take(3).join(', ')),
             trailing: const Icon(Icons.edit_outlined),
             onTap: _pickRestrictions,
           ),
-          const UnavailableTile(
+          UnavailableTile(
             icon: Icons.schedule_send_outlined,
-            title: 'Focus schedules & reminders',
-            note: 'Scheduled auto-start sessions are not in this version.',
+            title: l10n.focusSchedulesTitle,
+            note: l10n.focusSchedulesNote,
           ),
         ],
       ),
@@ -937,7 +954,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setLocal) => AlertDialog(
-          title: const Text('Apps to suspend while focusing'),
+          title: Text(context.l10n.appsToSuspendWhileFocusing),
           content: SizedBox(
             width: 360,
             height: 400,
@@ -961,11 +978,11 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, selected.toList()),
-              child: const Text('Save'),
+              child: Text(context.l10n.save),
             ),
           ],
         ),
@@ -983,6 +1000,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     try {
       groups = await widget.controller.channel.getGroups();
     } catch (e) {
+      if (!mounted) return;
       await showErrorSnackBar(context, e);
       return;
     }
@@ -993,18 +1011,19 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setLocal) => AlertDialog(
-          title: const Text('Groups to suspend while focusing'),
+          title: Text(context.l10n.groupsToSuspendWhileFocusing),
           content: SizedBox(
             width: 360,
             height: 400,
             child: groups.isEmpty
-                ? const Center(child: Text('No groups yet'))
+                ? Center(child: Text(context.l10n.noGroupsYet))
                 : ListView(
                     children: [
                       for (final group in groups)
                         CheckboxListTile(
                           title: Text(group.name),
-                          subtitle: Text('${group.packages.length} app(s)'),
+                          subtitle:
+                              Text(context.l10n.memberCount(group.packages.length)),
                           value: selected.contains(group.id),
                           onChanged: (v) => setLocal(() {
                             if (v == true) {
@@ -1020,11 +1039,11 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, selected.toList()),
-              child: const Text('Save'),
+              child: Text(context.l10n.save),
             ),
           ],
         ),
@@ -1034,9 +1053,10 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     await _changeConfig(
       config.copyWith(suspendGroups: result),
       loosening: Loosening.isLooserSet(
-        oldSet: config.suspendGroups.toSet(),
-        newSet: result.toSet(),
-      ),
+            oldSet: config.suspendGroups.toSet(),
+            newSet: result.toSet(),
+          ) ||
+          result.any((e) => !config.suspendGroups.contains(e)),
     );
   }
 
@@ -1051,6 +1071,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     try {
       all = await widget.controller.channel.listUserRestrictions();
     } catch (e) {
+      if (!mounted) return;
       await showErrorSnackBar(context, e);
       return;
     }
@@ -1069,17 +1090,17 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
               )
               .toList();
           return AlertDialog(
-            title: const Text('Restrictions during focus'),
+            title: Text(context.l10n.restrictionsDuringFocus),
             content: SizedBox(
               width: 360,
               height: 440,
               child: Column(
                 children: [
                   TextField(
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.search),
-                      labelText: 'Search restrictions',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      labelText: context.l10n.searchRestrictions,
+                      border: const OutlineInputBorder(),
                     ),
                     onChanged: (v) => setLocal(() => query = v),
                   ),
@@ -1108,11 +1129,11 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: Text(context.l10n.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, selected.toList()),
-                child: const Text('Save'),
+                child: Text(context.l10n.save),
               ),
             ],
           );
@@ -1123,9 +1144,10 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     await _changeConfig(
       config.copyWith(restrictions: result),
       loosening: Loosening.isLooserSet(
-        oldSet: config.restrictions.toSet(),
-        newSet: result.toSet(),
-      ),
+            oldSet: config.restrictions.toSet(),
+            newSet: result.toSet(),
+          ) ||
+          result.any((e) => !config.restrictions.contains(e)),
     );
   }
 }

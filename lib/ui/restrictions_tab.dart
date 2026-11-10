@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
 import '../data/privileged_channel.dart';
+import '../l10n/l10n.dart';
 import 'common.dart';
 import 'recovery_ui.dart';
 import 'setup_screen.dart';
@@ -94,9 +95,14 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
     final list = _restrictions!;
     final toApply = list.where((r) => _draft[r.key] == true && !r.active).toList();
     final toClear = list.where((r) => _draft[r.key] == false && r.active).toList();
-    if (toClear.isNotEmpty &&
+    // Clearing a restriction is a loosening (F23). APPLYING one is an
+    // activation of system-level blocking, which the user's v1.0.4
+    // security directive also puts behind the paper recovery code —
+    // so any apply with pending changes in either direction opens the
+    // gate first; a refused gate applies nothing at all.
+    if ((toApply.isNotEmpty || toClear.isNotEmpty) &&
         !await ensureRecoverySession(context, widget.controller)) {
-      return; // loosening refused: nothing is applied at all
+      return; // gate refused: nothing is applied at all
     }
     setState(() => _applying = true);
     try {
@@ -106,8 +112,11 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
       for (final r in toClear) {
         await _channel.clearUserRestriction(r.key);
       }
-      if (mounted) showInfoSnackBar(context, 'Restrictions updated and verified.');
+      if (mounted) {
+        showInfoSnackBar(context, context.l10n.restrictionsUpdated);
+      }
     } catch (e) {
+      if (!mounted) return;
       await showErrorSnackBar(context, e);
     } finally {
       if (mounted) {
@@ -119,6 +128,7 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_notOwner) {
       return ListView(
         padding: const EdgeInsets.all(24),
@@ -126,41 +136,37 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
           const Icon(Icons.shield_outlined, size: 48),
           const SizedBox(height: 12),
           Text(
-            'No Device Owner privileges',
+            l10n.noDeviceOwnerPrivileges,
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
-          const Text(
-            'System restrictions only work while Dominanter is the Device '
-            'Owner. Complete the Setup flow first — restrictions are not '
-            'faked without it.',
-          ),
+          Text(l10n.noOwnerRestrictionsBody),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => Scaffold(
-                appBar: AppBar(title: const Text('Setup')),
+                appBar: AppBar(title: Text(l10n.setupTitle)),
                 body: SetupScreen(controller: widget.controller),
               ),
             )),
             icon: const Icon(Icons.admin_panel_settings),
-            label: const Text('Open Setup'),
+            label: Text(l10n.openSetup),
           ),
         ],
       );
     }
     if (_error != null) return ErrorView(error: _error!, onRetry: _load);
     final list = _restrictions;
-    if (list == null) return const LoadingView(message: 'Loading restrictions…');
+    if (list == null) return LoadingView(message: l10n.loadingRestrictions);
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: TextField(
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              labelText: 'Search restrictions',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              labelText: l10n.searchRestrictions,
+              border: const OutlineInputBorder(),
             ),
             onChanged: (v) => setState(() => _query = v),
           ),
@@ -168,8 +174,8 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
         Expanded(
           child: ListView(
             children: [
-              _section('Recommended', _filter(list, recommended: true)),
-              _section('Other restrictions', _filter(list, recommended: false)),
+              _section(l10n.recommendedSection, _filter(list, recommended: true)),
+              _section(l10n.otherRestrictionsSection, _filter(list, recommended: false)),
             ],
           ),
         ),
@@ -180,7 +186,7 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
               child: FilledButton.icon(
                 onPressed: _applying ? null : _apply,
                 icon: const Icon(Icons.check),
-                label: Text(_applying ? 'Applying…' : 'Apply changes'),
+                label: Text(_applying ? l10n.applying : l10n.applyChanges),
               ),
             ),
           ),
@@ -198,7 +204,7 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 12, 16, 4),
+          padding: const EdgeInsetsDirectional.fromSTEB(4, 12, 16, 4),
           child: Row(
             children: [
               Checkbox(
@@ -239,7 +245,7 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
                       ),
                 ),
                 if (_draft[r.key] != r.active)
-                  const Text('Changed — not applied yet'),
+                  Text(context.l10n.changedNotApplied),
               ],
             ),
             value: _draft[r.key] ?? r.active,
@@ -260,7 +266,7 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        'Active',
+        context.l10n.activeBadge,
         style: Theme.of(context)
             .textTheme
             .labelSmall

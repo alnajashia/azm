@@ -27,7 +27,9 @@ import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
 import '../data/privileged_channel.dart';
+import '../l10n/l10n.dart';
 import 'common.dart';
+import 'recovery_ui.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key, required this.controller});
@@ -114,35 +116,28 @@ class _SetupScreenState extends State<SetupScreen> {
   ({String key, String title, String body})? get _blocker {
     final d = _diagnostics;
     if (_isOwner || d == null) return null;
+    // context.l10n never throws (it falls back to English strings when
+    // no localization delegate is installed, e.g. in bare widget tests).
+    final l10n = context.l10n;
     if (d.extraUsers.isNotEmpty) {
       final names = d.extraUsers
           .map((u) => '${u['name']} (id ${u['id']})')
           .join(', ');
       return (
         key: 'users:${d.extraUsers.map((u) => u['id']).join('/')}',
-        title: 'Provisioning blocked: extra users',
-        body:
-            'This device has additional users or profiles: $names.\n\n'
-            'Android cannot provision a Device Owner while other users '
-            'exist. Remove the extra users/profiles (Settings → Users), '
-            'then return here and refresh. This matches the original '
-            'app, which replaces the provisioning button with this '
-            'warning.',
+        title: l10n.blockerExtraUsersTitle,
+        body: l10n.blockerExtraUsersBody(names),
       );
     }
     final owner = d.currentOwner;
     if (owner != null && owner['packageName'] != _ownPackage) {
       return (
         key: 'owner:${owner['packageName']}',
-        title: 'Provisioning blocked: another Device Owner',
-        body:
-            '${owner['packageName']} is already the Device Owner of this '
-            'device (${owner['receiver']}).\n\n'
-            'A device can have only one Device Owner. That app must '
-            'relinquish ownership (or the device must be factory-reset) '
-            'before Dominanter can be provisioned. This matches the '
-            'original app, which replaces the provisioning button with '
-            'this warning.',
+        title: l10n.blockerOtherOwnerTitle,
+        body: l10n.blockerOtherOwnerBody(
+          '${owner['packageName']}',
+          '${owner['receiver']}',
+        ),
       );
     }
     return null;
@@ -174,7 +169,7 @@ class _SetupScreenState extends State<SetupScreen> {
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('I understand'),
+            child: Text(context.l10n.iUnderstand),
           ),
         ],
       ),
@@ -324,7 +319,7 @@ class _SetupScreenState extends State<SetupScreen> {
         setState(() => _awaitingPermission = false);
         showInfoSnackBar(
           context,
-          'Shizuku permission granted — provisioning is unlocked.',
+          context.l10n.shizukuPermissionGrantedMsg,
         );
         _refresh();
       },
@@ -333,8 +328,7 @@ class _SetupScreenState extends State<SetupScreen> {
         setState(() => _awaitingPermission = false);
         showInfoSnackBar(
           context,
-          'Permission not granted yet. Approve Dominanter in Shizuku, '
-          'then tap Request again.',
+          context.l10n.permissionNotGrantedYetMsg,
         );
       },
     );
@@ -349,7 +343,7 @@ class _SetupScreenState extends State<SetupScreen> {
       if (mounted && !launched) {
         showInfoSnackBar(
           context,
-          'No store or browser could be opened for the Shizuku page.',
+          context.l10n.noStoreMsg,
         );
       }
     } catch (e) {
@@ -365,7 +359,7 @@ class _SetupScreenState extends State<SetupScreen> {
       onReached: (_) {
         if (!mounted) return;
         setState(() => _awaitingInstall = false);
-        showInfoSnackBar(context, 'Shizuku detected.');
+        showInfoSnackBar(context, context.l10n.shizukuDetectedMsg);
         _refresh();
       },
       onTimeout: () {
@@ -386,6 +380,12 @@ class _SetupScreenState extends State<SetupScreen> {
   /// not a blind repeat. (The passive display state comes from
   /// `isWriteSecureSettingsGranted`, read on every refresh.)
   Future<void> _grantWriteSecureSettings() async {
+    // Granting a privilege is recovery-gated (user security directive,
+    // v1.0.4 audit): the paper code session must be active first. The
+    // poll below re-invokes the channel method directly, so this gate
+    // runs exactly once per user tap.
+    if (!await ensureRecoverySession(context, widget.controller)) return;
+    if (!mounted) return;
     setState(() => _wssBusy = true);
     try {
       final granted = await _channel.grantWriteSecureSettings();
@@ -395,7 +395,7 @@ class _SetupScreenState extends State<SetupScreen> {
           _wssGranted = true;
           _wssBusy = false;
         });
-        showInfoSnackBar(context, 'WRITE_SECURE_SETTINGS is granted.');
+        showInfoSnackBar(context, context.l10n.wssGrantedMsg);
         return;
       }
     } catch (e) {
@@ -440,7 +440,7 @@ class _SetupScreenState extends State<SetupScreen> {
           _wssGranted = true;
           _wssBusy = false;
         });
-        showInfoSnackBar(context, 'WRITE_SECURE_SETTINGS is granted.');
+        showInfoSnackBar(context, context.l10n.wssGrantedMsg);
         return;
       }
       if (_wssTicks >= 20) {
@@ -452,8 +452,7 @@ class _SetupScreenState extends State<SetupScreen> {
         });
         showInfoSnackBar(
           context,
-          'WRITE_SECURE_SETTINGS is still not granted. Shizuku must be '
-          'running with permission granted first.',
+          context.l10n.wssStillNotGrantedMsg,
         );
       }
     });
@@ -464,7 +463,7 @@ class _SetupScreenState extends State<SetupScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _shizuku == null) {
-      return const LoadingView(message: 'Checking setup state…');
+      return LoadingView(message: context.l10n.checkingSetupState);
     }
     if (_error != null && _shizuku == null) {
       return ErrorView(error: _error!, onRetry: _refresh);
@@ -493,12 +492,11 @@ class _SetupScreenState extends State<SetupScreen> {
                   leading: Icon(
                     _isOwner ? Icons.verified_user : Icons.shield_outlined,
                   ),
-                  title: const Text('Device Owner'),
+                  title: Text(context.l10n.deviceOwnerTitle),
                   subtitle: Text(
                     _isOwner
-                        ? 'Dominanter is the Device Owner of this device.'
-                        : 'Not provisioned. Most restrictions need Device Owner. '
-                              'Admin active: $_isAdmin.',
+                        ? context.l10n.deviceOwnerYes
+                        : context.l10n.deviceOwnerNo('$_isAdmin'),
                   ),
                 ),
                 if (!_isOwner && blocker != null)
@@ -511,7 +509,7 @@ class _SetupScreenState extends State<SetupScreen> {
                         Expanded(child: Text(blocker.title)),
                         TextButton(
                           onPressed: _showBlockerDialog,
-                          child: const Text('Details'),
+                          child: Text(context.l10n.details),
                         ),
                       ],
                     ),
@@ -523,10 +521,7 @@ class _SetupScreenState extends State<SetupScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: Text(
-                      'Note: ${_diagnostics!.accounts.length} account(s) '
-                      'detected. Provisioning usually still works via '
-                      'Shizuku, but removing accounts first is the '
-                      'original app\'s recommended path.',
+                      context.l10n.accountsNote(_diagnostics!.accounts.length),
                     ),
                   ),
                 if (!_isOwner)
@@ -538,27 +533,42 @@ class _SetupScreenState extends State<SetupScreen> {
                               blocker != null ||
                               shizuku.state != ShizukuState.granted)
                           ? null
-                          : () => _run(() async {
+                          : () async {
+                              // Granting Device Owner is the app's
+                              // biggest privilege grant — recovery-gated
+                              // (user security directive, v1.0.4 audit).
+                              // The setup wizard has already issued and
+                              // confirmed the paper code by the time this
+                              // screen is reachable, so the code exists
+                              // before the privilege does.
+                              if (!await ensureRecoverySession(
+                                  context, widget.controller)) {
+                                return;
+                              }
+                              if (!mounted) return;
+                              await _run(() async {
                               final r = await _channel.provisionDeviceOwner();
                               if (mounted) {
                                 setState(() {
-                                  _provisionOutput =
-                                      'Path used: ${r['pathUsed']}\n${r['commandOutput'] ?? ''}';
+                                  _provisionOutput = context.l10n
+                                      .provisionOutput(
+                                        '${r['pathUsed']}',
+                                        '${r['commandOutput'] ?? ''}',
+                                      );
                                 });
                               }
-                            }),
+                              });
+                            },
                       icon: const Icon(Icons.admin_panel_settings),
-                      label: const Text('Become Device Owner via Shizuku'),
+                      label: Text(context.l10n.becomeDeviceOwner),
                     ),
                   ),
                 if (blocker == null &&
                     shizuku.state != ShizukuState.granted &&
                     !_isOwner)
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Text(
-                      'Provisioning unlocks when Shizuku is running and permission is granted.',
-                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Text(context.l10n.provisioningUnlocksNote),
                   ),
                 if (_provisionOutput != null)
                   Padding(
@@ -574,43 +584,58 @@ class _SetupScreenState extends State<SetupScreen> {
               children: [
                 SwitchListTile(
                   secondary: const Icon(Icons.accessibility_new),
-                  title: const Text('Accessibility Service'),
+                  title: Text(context.l10n.accessibilityService),
                   subtitle: Text(
                     _a11y == null
-                        ? 'Unknown'
+                        ? context.l10n.a11yUnknown
                         : _a11y!.isEnabled
                         ? (_a11y!.isServiceRunning
-                              ? 'Enabled and running — enforcement is live.'
-                              : 'Enabled but not yet running (binding).')
-                        : 'Off. Turning it off later suspends every controlled app (anti-bypass lockdown).',
+                              ? context.l10n.a11yRunning
+                              : context.l10n.a11yBinding)
+                        : context.l10n.a11yOff,
                   ),
                   value: _a11y?.isEnabled ?? false,
                   onChanged: _busy
                       ? null
                       : (v) => _run(() async {
+                          // ENABLING the service grants a privilege —
+                          // recovery-gated (user security directive,
+                          // v1.0.4 audit). DISABLING stays ungated: it
+                          // triggers the F28 lockdown, the protective
+                          // direction.
+                          if (v &&
+                              !await ensureRecoverySession(
+                                  context, widget.controller)) {
+                            return;
+                          }
                           await _channel.setAccessibilityEnabled(v);
                         }),
                 ),
                 ListTile(
                   leading: const Icon(Icons.key_outlined),
-                  title: const Text('Grant WRITE_SECURE_SETTINGS'),
+                  // Plain-language title (v1.0.4 UX pass): what the
+                  // permission is FOR, with the technical name kept in
+                  // the subtitle (wssPurpose names WRITE_SECURE_SETTINGS).
+                  title: Text(context.l10n.wssTitle),
                   subtitle: Text(
                     _wssGranted == true
-                        ? 'Granted (verified by re-check).'
-                        : 'Needed for colour modes (v1.1). Granted via '
-                              'Shizuku and verified by re-check; the '
-                              'state shown here is read on every refresh.',
+                        ? context.l10n.wssGrantedText
+                        : context.l10n.wssPurpose,
                   ),
                   trailing: _wssGranted == true
-                      ? const FilledButton.tonal(
+                      ? FilledButton.tonal(
                           onPressed: null,
-                          child: Text('Granted'),
+                          child: Text(context.l10n.granted),
                         )
                       : FilledButton.tonal(
                           onPressed: (_busy || _wssBusy)
                               ? null
                               : _grantWriteSecureSettings,
-                          child: Text(_wssBusy ? 'Granting…' : 'Grant'),
+                          child: Text(
+                            _wssBusy
+                                ? context.l10n.granting
+                                : context.l10n.grant,
+                          ),
                         ),
                 ),
               ],
@@ -621,13 +646,10 @@ class _SetupScreenState extends State<SetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const ListTile(
-                  leading: Icon(Icons.medical_information_outlined),
-                  title: Text('Provisioning diagnostics'),
-                  subtitle: Text(
-                    'Accounts, extra users and the current Device Owner — '
-                    'these can block provisioning.',
-                  ),
+                ListTile(
+                  leading: const Icon(Icons.medical_information_outlined),
+                  title: Text(context.l10n.diagnosticsTitle),
+                  subtitle: Text(context.l10n.diagnosticsSubtitle),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -651,7 +673,7 @@ class _SetupScreenState extends State<SetupScreen> {
                               }
                             }
                           }),
-                    child: const Text('Run diagnostics'),
+                    child: Text(context.l10n.runDiagnostics),
                   ),
                 ),
                 if (_diagnosticsError != null)
@@ -661,6 +683,7 @@ class _SetupScreenState extends State<SetupScreen> {
                       _diagnosticsError is PrivilegedException
                           ? friendlyError(
                               _diagnosticsError! as PrivilegedException,
+                              context.l10n,
                             )
                           : _diagnosticsError.toString(),
                     ),
@@ -693,42 +716,37 @@ class _ShizukuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final (icon, title, body) = switch (status.state) {
       ShizukuState.notInstalled => (
         Icons.block,
-        'Shizuku: not installed',
-        'Install Shizuku (moe.shizuku.privileged.api) from the Play Store '
-            'or its official site, then return here.',
+        l10n.shizukuNotInstalledTitle,
+        l10n.shizukuNotInstalledBody,
       ),
       ShizukuState.notRunning => (
         Icons.power_off,
-        'Shizuku: not running',
-        'Shizuku is installed, but its server is not running. Dominanter '
-            'cannot start it — open the Shizuku app and start the server '
-            '(via wireless debugging or ADB), then pull to refresh.',
+        l10n.shizukuNotRunningTitle,
+        l10n.shizukuNotRunningBody,
       ),
       ShizukuState.preV11 => (
         Icons.update,
-        'Shizuku: too old (pre-v11)',
-        'This Shizuku server predates v11 and cannot run commands. '
-            'Update Shizuku, restart its server, then refresh.',
+        l10n.shizukuPreV11Title,
+        l10n.shizukuPreV11Body,
       ),
       ShizukuState.noPermission => (
         Icons.lock_outline,
-        'Shizuku: permission needed',
-        'The server is running. Grant Dominanter permission in Shizuku to '
-            'continue setup.',
+        l10n.shizukuNoPermissionTitle,
+        l10n.shizukuNoPermissionBody,
       ),
       ShizukuState.granted => (
         Icons.check_circle,
-        'Shizuku: connected & granted',
-        'Setup operations are available. Day-to-day enforcement does not '
-            'need Shizuku after provisioning.',
+        l10n.shizukuGrantedTitle,
+        l10n.shizukuGrantedBody,
       ),
       ShizukuState.unknown => (
         Icons.help_outline,
-        'Shizuku: unknown state',
-        'The native layer returned an unrecognised state.',
+        l10n.shizukuUnknownTitle,
+        l10n.shizukuUnknownBody,
       ),
     };
     return GradientCard(
@@ -745,7 +763,10 @@ class _ShizukuCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
               child: Text(
-                'Server version ${status.serverVersion}, UID ${status.serverUid}',
+                l10n.serverVersionLine(
+                  status.serverVersion!,
+                  status.serverUid ?? 0,
+                ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -753,7 +774,7 @@ class _ShizukuCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
               child: Text(
-                'Diagnostic: ${status.diagnostic}',
+                l10n.diagnosticLine(status.diagnostic!),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -767,8 +788,8 @@ class _ShizukuCard extends StatelessWidget {
                 icon: const Icon(Icons.install_mobile),
                 label: Text(
                   awaitingInstall
-                      ? 'Waiting for Shizuku to appear…'
-                      : 'Install Shizuku',
+                      ? l10n.waitingShizukuAppear
+                      : l10n.installShizuku,
                 ),
               ),
             ),
@@ -782,8 +803,8 @@ class _ShizukuCard extends StatelessWidget {
                 icon: const Icon(Icons.key),
                 label: Text(
                   awaitingPermission
-                      ? 'Waiting for Shizuku\'s answer…'
-                      : 'Request Shizuku permission',
+                      ? l10n.waitingShizukuAnswer
+                      : l10n.requestShizukuPermission,
                 ),
               ),
             ),
@@ -800,33 +821,33 @@ class _DiagnosticsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Accounts (${d.accounts.length})',
+            l10n.diagAccounts(d.accounts.length),
             style: Theme.of(context).textTheme.titleSmall,
           ),
-          if (d.accounts.isEmpty)
-            const Text('No accounts found — good for provisioning.'),
+          if (d.accounts.isEmpty) Text(l10n.diagNoAccounts),
           for (final a in d.accounts) Text('• ${a['name']} (${a['type']})'),
           const SizedBox(height: 8),
           Text(
-            'Users (${d.extraUsers.length})',
+            l10n.diagUsers(d.extraUsers.length),
             style: Theme.of(context).textTheme.titleSmall,
           ),
-          if (d.extraUsers.isEmpty) const Text('Only the primary user.'),
+          if (d.extraUsers.isEmpty) Text(l10n.diagOnlyPrimaryUser),
           for (final u in d.extraUsers) Text('• ${u['name']} (id ${u['id']})'),
           const SizedBox(height: 8),
           Text(
-            'Current Device Owner',
+            l10n.diagCurrentOwner,
             style: Theme.of(context).textTheme.titleSmall,
           ),
           Text(
             d.currentOwner == null
-                ? 'None'
+                ? l10n.diagNone
                 : '${d.currentOwner!['packageName']} / ${d.currentOwner!['receiver']}',
           ),
         ],

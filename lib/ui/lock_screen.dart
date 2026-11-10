@@ -40,7 +40,9 @@ import '../app_controller.dart';
 import '../data/config_store.dart';
 import '../data/privileged_channel.dart';
 import '../domain/focus.dart';
+import '../l10n/l10n.dart';
 import 'common.dart';
+import 'entry_password_ui.dart';
 import 'recovery_ui.dart';
 
 class LockScreen extends StatefulWidget {
@@ -76,9 +78,15 @@ class _LimitEntry {
     required this.usedMinutes,
     required this.isGroup,
     this.detail,
+    this.groupName,
   });
   final String name;
   final String? detail;
+
+  /// For app entries: the name of the group the app belongs to, shown
+  /// as a localized "Group: X" detail at render time (formatting it in
+  /// _loadLimits would need the localizations during initState).
+  final String? groupName;
   final int limitMinutes;
   final int usedMinutes;
   final bool isGroup;
@@ -98,6 +106,10 @@ class _LimitsData {
 class _LockScreenState extends State<LockScreen> {
   final _auth = LocalAuthentication();
   bool _authBusy = false;
+
+  /// Whether an app entry password is set (v1.0.4): when true, the lock
+  /// screen offers "Use password instead" next to the biometric action.
+  bool _passwordSet = false;
 
   Timer? _ticker;
 
@@ -131,7 +143,26 @@ class _LockScreenState extends State<LockScreen> {
     _syncImpulseAnchor();
     _loadLimits();
     _refreshFocus();
+    _loadPasswordState();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _onSecond());
+  }
+
+  Future<void> _loadPasswordState() async {
+    try {
+      final isSet = await widget.controller.config.isEntryPasswordSet();
+      if (mounted) setState(() => _passwordSet = isSet);
+    } catch (_) {
+      // Best-effort, like the focus card: without the flag the screen
+      // simply offers the biometric path only.
+    }
+  }
+
+  /// Password entry (v1.0.4): a verified password unlocks app entry —
+  /// the same effect as biometric success. It must NOT open a recovery
+  /// session, and it doesn't (see entry_password_ui.dart).
+  Future<void> _accessWithPassword() async {
+    final ok = await showEntryPasswordPrompt(context, widget.controller);
+    if (ok) widget.controller.unlock();
   }
 
   @override
@@ -185,6 +216,7 @@ class _LockScreenState extends State<LockScreen> {
   }
 
   Future<void> _panic() async {
+    final l10n = context.l10n;
     final config = await widget.controller.config.getImpulseConfig();
     await widget.controller.startImpulseLock(
       Duration(minutes: config.durationMinutes),
@@ -200,17 +232,14 @@ class _LockScreenState extends State<LockScreen> {
         if (mounted) {
           showInfoSnackBar(
             context,
-            'Impulse lock started; chosen apps suspended for ${config.durationMinutes} min.',
+            l10n.impulseStartedSuspended(config.durationMinutes),
           );
         }
       } catch (e) {
         if (mounted) await showErrorSnackBar(context, e);
       }
     } else if (mounted) {
-      showInfoSnackBar(
-        context,
-        'Impulse lock started for ${config.durationMinutes} min.',
-      );
+      showInfoSnackBar(context, l10n.impulseStarted(config.durationMinutes));
     }
     if (mounted) setState(() {});
   }
@@ -237,7 +266,7 @@ class _LockScreenState extends State<LockScreen> {
             Icon(Icons.timer_outlined, size: 48, color: scheme.onErrorContainer),
             const SizedBox(height: 16),
             Text(
-              'Impulse block active',
+              context.l10n.impulseBlockActive,
               style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
@@ -318,17 +347,18 @@ class _LockScreenState extends State<LockScreen> {
 
   /// Phase title, mirroring `phaseTitle` in `FocusSessionCard.kt`.
   String _focusPhaseTitle(FocusSession session) {
+    final l10n = context.l10n;
     final cycles = session.config.cyclesBeforeLongBreak;
     final phase = session.isPaused ? session.pausedFrom : session.phase;
     final title = switch (phase) {
-      FocusPhase.focus =>
-        'Focus ${math.min(session.completedFocusPeriods + 1, cycles)}/$cycles',
-      FocusPhase.breakTime => 'Short break',
-      FocusPhase.longBreak => 'Long break',
-      FocusPhase.waiting => 'Break over',
-      _ => 'Focus mode',
+      FocusPhase.focus => l10n.focusCycleTitle(
+          math.min(session.completedFocusPeriods + 1, cycles), cycles),
+      FocusPhase.breakTime => l10n.focusShortBreak,
+      FocusPhase.longBreak => l10n.focusLongBreak,
+      FocusPhase.waiting => l10n.focusBreakOver,
+      _ => l10n.focusMode,
     };
-    return session.isPaused ? '$title · paused' : title;
+    return session.isPaused ? '$title${l10n.focusPausedSuffix}' : title;
   }
 
   Future<void> _runFocusAction(Future<void> Function() action) async {
@@ -413,9 +443,10 @@ class _LockScreenState extends State<LockScreen> {
   /// free, the releasing pause (long-press, focus phase only) and end
   /// are gated. Skip break appears during the break phases only.
   List<_FocusCardAction> _focusActions(FocusSession? session) {
+    final l10n = context.l10n;
     final start = _FocusCardAction(
       icon: Icons.play_arrow_outlined,
-      label: 'Start focus',
+      label: l10n.startFocusAction,
       onTap: _focusStart,
     );
     if (session == null || session.phase == FocusPhase.idle) {
@@ -427,21 +458,21 @@ class _LockScreenState extends State<LockScreen> {
     if (session.isPaused) {
       actions.add(_FocusCardAction(
         icon: Icons.play_arrow_outlined,
-        label: 'Resume',
+        label: l10n.resumeAction,
         onTap: _focusResume,
       ));
     }
     if (phase == FocusPhase.breakTime || phase == FocusPhase.longBreak) {
       actions.add(_FocusCardAction(
         icon: Icons.skip_next_outlined,
-        label: 'Skip break',
+        label: l10n.skipBreakAction,
         onTap: _focusSkipBreak,
       ));
     }
     if (!session.isWaiting && !session.isPaused) {
       actions.add(_FocusCardAction(
         icon: Icons.pause_outlined,
-        label: 'Pause',
+        label: l10n.pauseAction,
         onTap: _focusPausePlain,
         onLongPress:
             phase == FocusPhase.focus ? _focusPauseReleasing : null,
@@ -449,7 +480,7 @@ class _LockScreenState extends State<LockScreen> {
     }
     actions.add(_FocusCardAction(
       icon: Icons.stop_outlined,
-      label: 'End session',
+      label: l10n.endSession,
       onTap: session.isWaiting ? _focusEndFree : _focusEndGated,
     ));
     return actions;
@@ -475,13 +506,14 @@ class _LockScreenState extends State<LockScreen> {
     final cycles = session?.config.cyclesBeforeLongBreak ??
         _focusConfig?.cyclesBeforeLongBreak ??
         0;
-    final title = session == null ? 'Focus mode' : _focusPhaseTitle(session);
+    final l10n = context.l10n;
+    final title = session == null ? l10n.focusMode : _focusPhaseTitle(session);
     final subtitle = session == null
         ? (_focusConfig == null
             ? null
-            : '${_focusConfig!.focusMinutes} min of focus, suspending the selected apps')
-        : 'Focus periods completed: '
-            '${math.min(session.completedFocusPeriods, cycles)}/$cycles';
+            : l10n.focusSuspendingSummary(_focusConfig!.focusMinutes))
+        : l10n.focusPeriodsCompleted(
+            math.min(session.completedFocusPeriods, cycles), cycles);
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -631,7 +663,7 @@ class _LockScreenState extends State<LockScreen> {
         }
         appEntries.add(_LimitEntry(
           name: labels[pkg] ?? pkg,
-          detail: group == null ? null : 'Group: ${group.name}',
+          groupName: group?.name,
           limitMinutes: limit,
           usedMinutes: (usage.packages[pkg] ?? 0) ~/ 60000,
           isGroup: false,
@@ -650,13 +682,14 @@ class _LockScreenState extends State<LockScreen> {
   }
 
   /// The original's minute format for the overview: `Xh Ymin`, `Xh`,
-  /// or `Ymin`.
+  /// or `Ymin` (localized).
   String _formatOverviewMinutes(int minutes) {
+    final l10n = context.l10n;
     final h = minutes ~/ 60;
     final m = minutes % 60;
-    if (h > 0 && m > 0) return '${h}h ${m}min';
-    if (h > 0) return '${h}h';
-    return '${m}min';
+    if (h > 0 && m > 0) return l10n.overviewHoursMinutes(h, m);
+    if (h > 0) return l10n.overviewHours(h);
+    return l10n.overviewMinutes(m);
   }
 
   Widget _limitCard(BuildContext context, _LimitEntry entry) {
@@ -695,9 +728,10 @@ class _LockScreenState extends State<LockScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (entry.detail != null)
+                      if (entry.detail != null || entry.groupName != null)
                         Text(
-                          entry.detail!,
+                          entry.detail ??
+                              context.l10n.groupPrefix(entry.groupName!),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -723,15 +757,18 @@ class _LockScreenState extends State<LockScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    '${_formatOverviewMinutes(entry.usedMinutes)} of '
-                    '${_formatOverviewMinutes(entry.limitMinutes)}',
+                    context.l10n.usageOf(
+                      _formatOverviewMinutes(entry.usedMinutes),
+                      _formatOverviewMinutes(entry.limitMinutes),
+                    ),
                     style: theme.textTheme.labelLarge,
                   ),
                 ),
                 Text(
                   entry.reached
-                      ? 'Limit reached'
-                      : '${_formatOverviewMinutes(entry.limitMinutes - entry.usedMinutes)} left',
+                      ? context.l10n.limitReached
+                      : context.l10n.timeLeft(_formatOverviewMinutes(
+                          entry.limitMinutes - entry.usedMinutes)),
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: accent,
                     fontWeight: FontWeight.w600,
@@ -754,14 +791,14 @@ class _LockScreenState extends State<LockScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => setState(() => _showingLimits = false),
         ),
-        title: const Text("Today's usage"),
+        title: Text(context.l10n.todaysUsage),
       ),
       body: data == null
-          ? const LoadingView(message: 'Loading usage limits…')
+          ? LoadingView(message: context.l10n.loadingUsageLimits)
           : data.isEmpty
-              ? const EmptyView(
+              ? EmptyView(
                   icon: Icons.hourglass_bottom_outlined,
-                  message: 'No time limit set for apps or groups.',
+                  message: context.l10n.noLimitsSet,
                 )
               : ListView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -770,7 +807,7 @@ class _LockScreenState extends State<LockScreen> {
                       Padding(
                         padding: const EdgeInsets.only(top: 12, bottom: 4),
                         child: Text(
-                          'Groups',
+                          context.l10n.groupsSection,
                           style: theme.textTheme.titleSmall
                               ?.copyWith(color: theme.colorScheme.primary),
                         ),
@@ -784,7 +821,7 @@ class _LockScreenState extends State<LockScreen> {
                       Padding(
                         padding: const EdgeInsets.only(top: 12, bottom: 4),
                         child: Text(
-                          'Apps',
+                          context.l10n.appsSection,
                           style: theme.textTheme.titleSmall
                               ?.copyWith(color: theme.colorScheme.primary),
                         ),
@@ -802,6 +839,7 @@ class _LockScreenState extends State<LockScreen> {
   // --------------------------------------------------------- Access
 
   Future<void> _access() async {
+    final l10n = context.l10n;
     setState(() => _authBusy = true);
     try {
       final supported = await _auth.isDeviceSupported();
@@ -811,18 +849,13 @@ class _LockScreenState extends State<LockScreen> {
         if (mounted) {
           await showDialog<void>(
             context: context,
-            builder: (_) => AlertDialog(
-              title: const Text('No device lock is set up'),
-              content: const Text(
-                'This device has no biometric or screen credential enrolled, '
-                'so there is nothing to authenticate against. Entry is '
-                'allowed — exactly as the original app behaves in this '
-                'case. Consider setting a device PIN.',
-              ),
+            builder: (dialogContext) => AlertDialog(
+              title: Text(l10n.noDeviceLockTitle),
+              content: Text(l10n.noDeviceLockBody),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Continue'),
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(l10n.continueAction),
                 ),
               ],
             ),
@@ -832,14 +865,14 @@ class _LockScreenState extends State<LockScreen> {
         return;
       }
       final ok = await _auth.authenticate(
-        localizedReason: 'Unlock Dominanter',
+        localizedReason: l10n.unlockReason,
         biometricOnly: false, // device credential is an allowed fallback
         persistAcrossBackgrounding: true,
       );
       if (ok) {
         widget.controller.unlock();
       } else if (mounted) {
-        showInfoSnackBar(context, 'Authentication was not completed.');
+        showInfoSnackBar(context, l10n.authNotCompleted);
       }
     } on PlatformException catch (e) {
       // Not enrolled / no passcode set: same documented fallback as above.
@@ -852,7 +885,7 @@ class _LockScreenState extends State<LockScreen> {
           context,
           PrivilegedException(
             'PERMISSION_DENIED',
-            'Authentication failed: ${e.message}',
+            l10n.authFailed(e.message ?? ''),
           ),
         );
       }
@@ -866,7 +899,7 @@ class _LockScreenState extends State<LockScreen> {
           context,
           PrivilegedException(
             'PERMISSION_DENIED',
-            'Authentication could not start: $e',
+            l10n.authCouldNotStart('$e'),
           ),
         );
       }
@@ -879,7 +912,8 @@ class _LockScreenState extends State<LockScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final strings = AppStrings(widget.controller.language);
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
     return PopScope(
       canPop: !_showingLimits,
       onPopInvokedWithResult: (didPop, _) {
@@ -890,18 +924,49 @@ class _LockScreenState extends State<LockScreen> {
       child: _showingLimits
           ? _limitsView(context)
           : Scaffold(
-              appBar: AppBar(title: Text(strings.appTitle)),
+              appBar: AppBar(title: Text(l10n.appTitle)),
               body: ListView(
                 padding: const EdgeInsets.all(24),
                 children: [
-                  const Icon(Icons.lock_outline, size: 56),
-                  const SizedBox(height: 12),
+                  // Brand header (v1.0.4): the official Broken D mark,
+                  // the wordmark in Cairo Bold, and the brand tagline.
+                  const SizedBox(height: 8),
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        'assets/branding/dominanter_logo.png',
+                        width: 84,
+                        height: 84,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
                   Text(
-                    'Dominanter is locked',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    l10n.appTitle,
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w700),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.brandTagline,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.6,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    l10n.lockedTitle,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 28),
                   if (_impulseRunning) ...[
                     // While the impulse block runs, the original hides
                     // "Access app": countdown + focus card + quiet
@@ -914,27 +979,54 @@ class _LockScreenState extends State<LockScreen> {
                   ] else ...[
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.errorContainer,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onErrorContainer,
+                        backgroundColor: theme.colorScheme.errorContainer,
+                        foregroundColor: theme.colorScheme.onErrorContainer,
                         minimumSize: const Size.fromHeight(56),
                       ),
                       onPressed: _panic,
                       icon: const Icon(Icons.emergency_outlined),
-                      label: Text(strings.panicButton),
+                      label: Text(l10n.panicButton),
                     ),
                     const SizedBox(height: 16),
                     _focusCard(context),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: _authBusy ? null : _access,
-                      icon: const Icon(Icons.fingerprint),
-                      label: Text(strings.accessApp),
+                    const SizedBox(height: 24),
+                    Text(
+                      _passwordSet
+                          ? l10n.lockHelperWithPassword
+                          : l10n.lockHelperBiometric,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      onPressed: _authBusy ? null : _access,
+                      icon: const Icon(Icons.fingerprint),
+                      label: Text(l10n.accessApp),
+                    ),
+                    if (_passwordSet) ...[
+                      const SizedBox(height: 4),
+                      TextButton.icon(
+                        onPressed: _authBusy ? null : _accessWithPassword,
+                        icon: const Icon(Icons.password, size: 20),
+                        label: Text(l10n.usePasswordInstead),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
                     _viewLimitsButton(context),
                   ],
+                  const SizedBox(height: 32),
+                  Text(
+                    l10n.versionFooter(kAppVersion),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -948,7 +1040,7 @@ class _LockScreenState extends State<LockScreen> {
         _loadLimits(); // refresh on open, like the original's produceState
       },
       icon: const Icon(Icons.hourglass_bottom_outlined, size: 20),
-      label: const Text('View limits'),
+      label: Text(context.l10n.viewLimits),
     );
   }
 }

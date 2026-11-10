@@ -3,7 +3,7 @@
 ///
 /// A floating pill that is ALWAYS black, in both brightness modes: the
 /// fusion of the reference's red-bar and black-bar variants. Large
-/// radius, soft black shadow plus a faint red glow, margined from the
+/// radius, one soft black shadow, margined from the
 /// screen edges. The active destination sits inside a filled red
 /// indicator whose top edge sweeps up in a curve around the icon
 /// (approximated with a custom clipper), white icon + label, and a
@@ -60,17 +60,13 @@ class DominanterNavBar extends StatelessWidget {
             border: Border.all(
               color: Colors.white.withValues(alpha: dark ? 0.10 : 0.16),
             ),
+            // One soft shadow only — the v2 build's red under-glow was
+            // retired in the v1.0.4 premium-minimal polish pass.
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: dark ? 0.55 : 0.28),
                 blurRadius: 22,
                 offset: const Offset(0, 10),
-              ),
-              // Faint red under-glow, the reference bars' red halo.
-              BoxShadow(
-                color: DominanterColors.red.withValues(alpha: 0.22),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -156,17 +152,10 @@ class _PillNavItem extends StatelessWidget {
                   ? ClipPath(
                       clipper: const _SweptIndicatorClipper(),
                       child: DecoratedBox(
+                        // Flat red fill (v1.0.4 polish retired the
+                        // three-stop gradient; the swept shape stays).
                         decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              DominanterColors.redGlow,
-                              DominanterColors.red,
-                              DominanterColors.redDark,
-                            ],
-                            stops: [0.0, 0.55, 1.0],
-                          ),
+                          color: DominanterColors.red,
                         ),
                         child: Center(
                           child: DefaultTextStyle.merge(

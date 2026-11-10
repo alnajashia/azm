@@ -31,12 +31,6 @@ class DominanterApplication : Application() {
 
     companion object {
         private const val TAG = "DominanterApplication"
-
-        @Volatile
-        private var instance: DominanterApplication? = null
-
-        fun getInstance(): DominanterApplication =
-            instance ?: throw IllegalStateException("DominanterApplication not created yet")
     }
 
     private val packageChangeReceiver = object : BroadcastReceiver() {
@@ -89,7 +83,6 @@ class DominanterApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
         SettingsStore.init(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

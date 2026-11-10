@@ -45,7 +45,8 @@ object FocusStatusNotifier {
         if (manager.getNotificationChannel(CHANNEL_TIMER) == null) {
             manager.createNotificationChannel(
                 NotificationChannel(
-                    CHANNEL_TIMER, "Focus timer", NotificationManager.IMPORTANCE_LOW,
+                    CHANNEL_TIMER, context.getString(R.string.focus_channel_name),
+                    NotificationManager.IMPORTANCE_LOW,
                 ).apply {
                     setSound(null, null)
                     enableVibration(false)
@@ -71,13 +72,20 @@ object FocusStatusNotifier {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-    private fun phaseTitle(status: FocusSessionStore.Status): String = when (status.phase) {
-        FocusSessionStore.Phase.FOCUS ->
-            "Focus ${minOf(status.completedFocus + 1, status.cyclesBeforeLongBreak)}/${status.cyclesBeforeLongBreak}"
-        FocusSessionStore.Phase.SHORT_BREAK -> "Short break"
-        FocusSessionStore.Phase.LONG_BREAK -> "Long break"
-        FocusSessionStore.Phase.WAITING -> "Waiting"
-    }
+    private fun phaseTitle(context: Context, status: FocusSessionStore.Status): String =
+        when (status.phase) {
+            FocusSessionStore.Phase.FOCUS -> context.getString(
+                R.string.focus_phase_focus,
+                minOf(status.completedFocus + 1, status.cyclesBeforeLongBreak),
+                status.cyclesBeforeLongBreak,
+            )
+            FocusSessionStore.Phase.SHORT_BREAK ->
+                context.getString(R.string.focus_phase_short_break)
+            FocusSessionStore.Phase.LONG_BREAK ->
+                context.getString(R.string.focus_phase_long_break)
+            FocusSessionStore.Phase.WAITING ->
+                context.getString(R.string.focus_phase_waiting)
+        }
 
     /** Also makes sure [FocusService] is running to keep the progress bar moving. */
     fun showStatus(context: Context) {
@@ -91,7 +99,7 @@ object FocusStatusNotifier {
         ensureChannel(context)
         return Notification.Builder(context, CHANNEL_TIMER)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Focus mode")
+            .setContentTitle(context.getString(R.string.focus_mode_title))
             .setPriority(Notification.PRIORITY_LOW)
             .build()
     }
@@ -114,19 +122,25 @@ object FocusStatusNotifier {
         val status = FocusSessionStore.getStatus(context) ?: return null
         ensureChannel(context)
 
-        val title = phaseTitle(status).let { if (status.paused) "Paused · $it" else it }
+        val title = phaseTitle(context, status).let {
+            if (status.paused) context.getString(R.string.focus_paused_prefix, it) else it
+        }
         val message = when {
             status.phase == FocusSessionStore.Phase.WAITING ->
-                "Start the next focus period when you're ready."
+                context.getString(R.string.focus_msg_waiting)
             status.paused && !status.releasedApps &&
                 FocusSessionStore.getActiveSuspension().isNotEmpty() ->
-                "Paused — your apps stay suspended."
-            status.paused -> "Session paused."
+                context.getString(R.string.focus_msg_paused_apps)
+            status.paused -> context.getString(R.string.focus_msg_paused)
             status.phase == FocusSessionStore.Phase.FOCUS -> {
                 val apps = FocusSessionStore.getActiveSuspension().size
-                if (apps > 0) "$apps apps suspended" else "Stay focused."
+                if (apps > 0) {
+                    context.getString(R.string.focus_msg_apps_suspended, apps)
+                } else {
+                    context.getString(R.string.focus_msg_stay_focused)
+                }
             }
-            else -> "Take a break."
+            else -> context.getString(R.string.focus_msg_break)
         }
 
         val builder = Notification.Builder(context, CHANNEL_TIMER)
@@ -160,13 +174,15 @@ object FocusStatusNotifier {
             builder
                 .addAction(
                     Notification.Action.Builder(
-                        android.R.drawable.ic_media_play, "Start focus",
+                        android.R.drawable.ic_media_play,
+                        context.getString(R.string.focus_action_start),
                         actionIntent(context, FocusReceiver.ACTION_START_FOCUS),
                     ).build(),
                 )
                 .addAction(
                     Notification.Action.Builder(
-                        android.R.drawable.ic_menu_close_clear_cancel, "End session",
+                        android.R.drawable.ic_menu_close_clear_cancel,
+                        context.getString(R.string.focus_action_end),
                         actionIntent(context, FocusReceiver.ACTION_STOP),
                     ).build(),
                 )
@@ -174,7 +190,8 @@ object FocusStatusNotifier {
         if (status.paused) {
             builder.addAction(
                 Notification.Action.Builder(
-                    android.R.drawable.ic_media_play, "Resume",
+                    android.R.drawable.ic_media_play,
+                    context.getString(R.string.focus_action_resume),
                     actionIntent(context, FocusReceiver.ACTION_RESUME),
                 ).build(),
             )
@@ -182,7 +199,8 @@ object FocusStatusNotifier {
         if (isBreak) {
             builder.addAction(
                 Notification.Action.Builder(
-                    android.R.drawable.ic_media_next, "Skip break",
+                    android.R.drawable.ic_media_next,
+                    context.getString(R.string.focus_action_skip_break),
                     actionIntent(context, FocusReceiver.ACTION_SKIP_BREAK),
                 ).build(),
             )

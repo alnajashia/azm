@@ -27,6 +27,12 @@ void main() {
 
   testWidgets('Lock screen: panic button is visible BEFORE any auth (F21/F32)',
       (tester) async {
+    // Tall viewport: the v1.0.4 lock screen gained the brand header
+    // (logo, wordmark, tagline, helper line, version footer), so the
+    // default 800x600 surface no longer fits it without scrolling.
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final client = mockClient({
       'getUsageToday': (_) => {
             'date': '2026-11-09',

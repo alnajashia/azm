@@ -11,7 +11,7 @@ import 'package:flutter/services.dart';
 import '../app_controller.dart';
 import '../data/config_store.dart';
 import '../data/privileged_channel.dart';
-import '../domain/recovery.dart';
+import '../l10n/l10n.dart';
 import 'common.dart';
 import 'recovery_ui.dart';
 
@@ -64,7 +64,7 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
     }
   }
 
-  Future<void> _saveLists(List<BlockedList> lists, {required bool loosening}) async {
+  Future<void> _saveLists(List<BlockedList> lists) async {
     // The original's editor discards blank-title lists outright
     // (`BrowserRestrictionsScreen.kt`: save only `if (title.isNotBlank())`),
     // so they are never persisted.
@@ -78,11 +78,12 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       await _applyRestrictions(kept, silent: true);
     }
 
-    if (loosening) {
-      await runLoosening(context, widget.controller, save);
-    } else {
-      await save();
-    }
+    // EVERY save is recovery-gated: a save re-applies the lists to the
+    // browsers immediately (above), so it is never a purely local edit —
+    // it either ACTIVATES URL blocking (user directive, v1.0.4 audit:
+    // activations are code-gated) or loosens it (F23). An already-active
+    // session passes through without a prompt.
+    await runLoosening(context, widget.controller, save);
   }
 
   /// Pushes the union of all lists' sites to every target browser,
@@ -104,7 +105,7 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       }
       if (!silent && mounted) {
         showInfoSnackBar(
-            context, 'Applied to ${browsers.length} browser(s), verified.');
+            context, context.l10n.appliedToBrowsers(browsers.length));
       }
     } catch (e) {
       if (mounted) await showErrorSnackBar(context, e);
@@ -117,8 +118,10 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
         TextEditingController(text: (existing?.sites ?? const []).join('\n'));
     final saved = await showDialog<BlockedList>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(existing == null ? 'New blocklist' : 'Edit blocklist'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(existing == null
+            ? dialogContext.l10n.newBlocklist
+            : dialogContext.l10n.editBlocklist),
         content: SizedBox(
           width: 360,
           child: Column(
@@ -126,27 +129,30 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
             children: [
               TextField(
                 controller: titleC,
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration:
+                    InputDecoration(labelText: dialogContext.l10n.titleLabel),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: sitesC,
                 maxLines: 8,
-                decoration: const InputDecoration(
-                  labelText: 'Sites, one per line (e.g. example.com)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: dialogContext.l10n.sitesLabel,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(dialogContext.l10n.cancel)),
           FilledButton(
             // A blank title discards the list, exactly as the original:
             // the dialog closes and nothing is saved or applied.
             onPressed: () => Navigator.pop(
-              context,
+              dialogContext,
               titleC.text.trim().isEmpty
                   ? null
                   : BlockedList(
@@ -160,43 +166,23 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                           .toList(),
                     ),
             ),
-            child: const Text('Save'),
+            child: Text(dialogContext.l10n.save),
           ),
         ],
       ),
     );
     if (saved == null || _lists == null) return;
-    final loosening = existing != null &&
-        (saved.sites.length < existing.sites.length ||
-            !existing.sites.every(saved.sites.contains));
     final next = [
       for (final l in _lists!)
         if (l.id == saved.id) saved else l,
       if (existing == null) saved,
     ];
-    await _saveLists(next, loosening: loosening);
+    await _saveLists(next);
   }
 
   Future<void> _applyToBrowsers() async {
     final browsers = _browsers ?? const [];
     if (browsers.isEmpty || _lists == null) return;
-    final sites = <String>{for (final l in _lists!) ...l.sites}.toList()..sort();
-    final bundle = <String, dynamic>{'URLBlocklist': sites};
-    // Loosening check against the first browser's current bundle. The
-    // write merges, so the effective new state is the current bundle
-    // with URLBlocklist replaced — other keys are preserved and must
-    // not count as loosened.
-    var loosening = false;
-    try {
-      final current = await widget.controller.channel
-          .getApplicationRestrictions(browsers.first.packageName);
-      loosening = Loosening.isLooserRestrictions(
-        oldRestrictions: current,
-        newRestrictions: {...current, ...bundle},
-      );
-    } catch (_) {
-      loosening = false;
-    }
     Future<void> apply() async {
       setState(() => _busy = true);
       try {
@@ -206,28 +192,29 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       }
     }
 
-    if (loosening) {
-      await runLoosening(context, widget.controller, apply);
-    } else {
-      await apply();
-    }
+    if (!mounted) return;
+    // Pushing the blocklists ACTIVATES (or loosens) URL blocking in the
+    // browsers — recovery-gated in both directions (user directive,
+    // v1.0.4 audit; see _saveLists).
+    await runLoosening(context, widget.controller, apply);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Browser restrictions'),
+        title: Text(l10n.browserRestrictions),
         actions: [
           IconButton(
             onPressed: () => _editList(null),
             icon: const Icon(Icons.add),
-            tooltip: 'New blocklist',
+            tooltip: l10n.newBlocklist,
           ),
         ],
       ),
       body: _lists == null
-          ? const LoadingView(message: 'Loading blocklists…')
+          ? LoadingView(message: l10n.loadingBlocklists)
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -235,37 +222,31 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(_error is PrivilegedException
-                        ? friendlyError(_error! as PrivilegedException)
+                        ? friendlyError(_error! as PrivilegedException, l10n)
                         : _error.toString()),
                   ),
-                Text('Supporting browsers', style: Theme.of(context).textTheme.titleMedium),
+                Text(l10n.supportingBrowsers, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 4),
                 if (_browsers == null || _browsers!.isEmpty)
-                  const Text(
-                    'No installed browser declares URLBlocklist in its '
-                    'managed restrictions, so there is nothing to push '
-                    'policy to. Browsers without support are handled by '
-                    'suspension rules (v1.1 auto-suspension).',
-                  )
+                  Text(l10n.noCapableBrowser)
                 else
                   for (final b in _browsers!) Text('• ${b.label} (${b.packageName})'),
                 const SizedBox(height: 16),
-                Text('Blocklists', style: Theme.of(context).textTheme.titleMedium),
+                Text(l10n.blocklistsSection, style: Theme.of(context).textTheme.titleMedium),
                 if (_lists!.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('No blocklists yet. Create one to start blocking sites.'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(l10n.noBlocklistsYet),
                   )
                 else
                   for (final l in _lists!)
                     ListTile(
                       title: Text(l.title),
-                      subtitle: Text('${l.sites.length} site(s)'),
+                      subtitle: Text(l10n.sitesCount(l.sites.length)),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () => _saveLists(
                           _lists!.where((x) => x.id != l.id).toList(),
-                          loosening: true,
                         ),
                       ),
                       onTap: () => _editList(l),
@@ -274,7 +255,7 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                 FilledButton.icon(
                   onPressed: _busy || (_browsers?.isEmpty ?? true) ? null : _applyToBrowsers,
                   icon: const Icon(Icons.upload_outlined),
-                  label: const Text('Apply blocklists to browsers'),
+                  label: Text(l10n.applyBlocklists),
                 ),
               ],
             ),
@@ -324,28 +305,30 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
     final controller = TextEditingController(text: _state!.words.join('\n'));
     final saved = await showDialog<List<String>>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Active blocking words'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.activeBlockingWords),
         content: TextField(
           controller: controller,
           maxLines: 8,
-          decoration: const InputDecoration(
-            labelText: 'One word or phrase per line',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: dialogContext.l10n.oneWordPerLine,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(dialogContext.l10n.cancel)),
           FilledButton(
             onPressed: () => Navigator.pop(
-              context,
+              dialogContext,
               controller.text
                   .split('\n')
                   .map((s) => s.trim())
                   .where((s) => s.isNotEmpty)
                   .toList(),
             ),
-            child: const Text('Save'),
+            child: Text(dialogContext.l10n.save),
           ),
         ],
       ),
@@ -359,6 +342,7 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
       if (mounted) setState(() => _state = s);
     }
 
+    if (!mounted) return;
     if (loosening) {
       await runLoosening(context, widget.controller, save);
     } else {
@@ -372,7 +356,7 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setLocal) => AlertDialog(
-          title: const Text('Apps where active words block'),
+          title: Text(context.l10n.appsWhereWordsBlock),
           content: SizedBox(
             width: 360,
             height: 400,
@@ -394,23 +378,30 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(context.l10n.cancel)),
             FilledButton(
               onPressed: () => Navigator.pop(context, selected.toList()),
-              child: const Text('Save'),
+              child: Text(context.l10n.save),
             ),
           ],
         ),
       ),
     );
     if (result == null) return;
-    final loosening = result.length < _state!.targetPackages.length;
+    // ANY change to the target set is recovery-gated: removing a target
+    // loosens (F23), and ADDING one ACTIVATES word blocking inside an
+    // app that did not have it (user directive, v1.0.4 audit).
+    final changed = result.length != _state!.targetPackages.length ||
+        !_state!.targetPackages.every(result.contains);
     Future<void> save() async {
       final s = await widget.controller.channel.setBlockedWords(_state!.words, result);
       if (mounted) setState(() => _state = s);
     }
 
-    if (loosening) {
+    if (!mounted) return;
+    if (changed) {
       await runLoosening(context, widget.controller, save);
     } else {
       await save();
@@ -422,40 +413,48 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
     final controller = TextEditingController(text: current.join('\n'));
     final saved = await showDialog<List<String>>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('On-screen words for ${_labelFor(packageName)}'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+            dialogContext.l10n.onScreenWordsFor(_labelFor(packageName))),
         content: TextField(
           controller: controller,
           maxLines: 8,
-          decoration: const InputDecoration(
-            labelText: 'One word or phrase per line',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: dialogContext.l10n.oneWordPerLine,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(dialogContext.l10n.cancel)),
           FilledButton(
             onPressed: () => Navigator.pop(
-              context,
+              dialogContext,
               controller.text
                   .split('\n')
                   .map((s) => s.trim())
                   .where((s) => s.isNotEmpty)
                   .toList(),
             ),
-            child: const Text('Save'),
+            child: Text(dialogContext.l10n.save),
           ),
         ],
       ),
     );
     if (saved == null) return;
     final loosening = saved.length < current.length || !current.every(saved.contains);
+    // Creating a per-app list where none existed ACTIVATES on-screen
+    // word blocking for that app — code-gated (user directive, v1.0.4
+    // audit), like the loosening direction already was.
+    final creating = !_state!.passiveWords.containsKey(packageName);
     Future<void> save() async {
       final s = await widget.controller.channel.setPassiveWords(packageName, saved);
       if (mounted) setState(() => _state = s);
     }
 
-    if (loosening) {
+    if (!mounted) return;
+    if (loosening || creating) {
       await runLoosening(context, widget.controller, save);
     } else {
       await save();
@@ -464,49 +463,47 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_error != null) return Scaffold(appBar: AppBar(title: const Text('Blocked words')), body: ErrorView(error: _error!, onRetry: _load));
+    final l10n = context.l10n;
+    if (_error != null) return Scaffold(appBar: AppBar(title: Text(l10n.blockedWords)), body: ErrorView(error: _error!, onRetry: _load));
     if (_state == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Blocked words')),
-        body: const LoadingView(message: 'Loading blocked words…'),
+        appBar: AppBar(title: Text(l10n.blockedWords)),
+        body: LoadingView(message: l10n.loadingBlockedWords),
       );
     }
     final s = _state!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Blocked words')),
+      appBar: AppBar(title: Text(l10n.blockedWords)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Active blocking (F14)', style: Theme.of(context).textTheme.titleMedium),
-          const Text(
-            'When a word is present in the text field of a chosen app and '
-            'typing ends, the app is backed out of and a block screen shows.',
-          ),
+          Text(l10n.activeBlockingSection, style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.activeBlockingBody),
           ListTile(
-            title: Text('${s.words.length} word(s)'),
+            title: Text(l10n.wordsCount(s.words.length)),
             subtitle: Text(s.words.take(5).join(', ')),
             trailing: const Icon(Icons.edit_outlined),
             onTap: _editWords,
           ),
           ListTile(
-            title: Text('${s.targetPackages.length} target app(s)'),
+            title: Text(l10n.targetAppsCount(s.targetPackages.length)),
             subtitle: Text(s.targetPackages.map(_labelFor).take(3).join(', ')),
             trailing: const Icon(Icons.edit_outlined),
             onTap: _pickTargets,
           ),
           const Divider(),
-          Text('Passive blocking (F15)', style: Theme.of(context).textTheme.titleMedium),
-          const Text('Words appearing anywhere on screen in a specific app.'),
+          Text(l10n.passiveBlockingSection, style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.passiveBlockingBody),
           if (s.passiveWords.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('No per-app lists yet.'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(l10n.noPerAppLists),
             )
           else
             for (final entry in s.passiveWords.entries)
               ListTile(
                 title: Text(_labelFor(entry.key)),
-                subtitle: Text('${entry.value.length} word(s)'),
+                subtitle: Text(l10n.wordsCount(entry.value.length)),
                 trailing: const Icon(Icons.edit_outlined),
                 onTap: () => _editPassive(entry.key),
               ),
@@ -517,14 +514,13 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
                   .where((p) => !s.passiveWords.containsKey(p))
                   .toList();
               if (candidates.isEmpty) {
-                showInfoSnackBar(context,
-                    'Add target apps above first — passive lists attach to them in v1.');
+                showInfoSnackBar(context, l10n.addTargetAppsFirst);
                 return;
               }
               await _editPassive(candidates.first);
             },
             icon: const Icon(Icons.add),
-            label: const Text('Add per-app list'),
+            label: Text(l10n.addPerAppList),
           ),
         ],
       ),
@@ -624,16 +620,17 @@ class _UsageWarningsScreenState extends State<UsageWarningsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Usage warnings')),
+        appBar: AppBar(title: Text(l10n.usageWarnings)),
         body: ErrorView(error: _error!, onRetry: _load),
       );
     }
     if (_stages == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Usage warnings')),
-        body: const LoadingView(message: 'Loading warning stages…'),
+        appBar: AppBar(title: Text(l10n.usageWarnings)),
+        body: LoadingView(message: l10n.loadingWarningStages),
       );
     }
     final enabled = _enabled ?? false;
@@ -641,28 +638,22 @@ class _UsageWarningsScreenState extends State<UsageWarningsScreen> {
     final sorted = [..._stages!]
       ..sort((a, b) => b.minutesBefore.compareTo(a.minutesBefore));
     return Scaffold(
-      appBar: AppBar(title: const Text('Usage warnings')),
+      appBar: AppBar(title: Text(l10n.usageWarnings)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           SwitchListTile(
-            title: const Text('Staged warnings before a limit expires'),
+            title: Text(l10n.stagedWarningsTitle),
             value: enabled,
             onChanged: (v) => _save(v, _stages!),
           ),
-          const Text(
-            'Each stage warns once, the configured number of minutes '
-            'before an app\'s daily limit runs out. Stages are stored '
-            'for the Accessibility Service to fire; notification '
-            'delivery depends on the native notifier.',
-          ),
+          Text(l10n.usageWarningsBody),
           const SizedBox(height: 8),
           if (sorted.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
-                'No warning stages. Add at least one stage or no '
-                'warnings will be shown.',
+                l10n.noWarningStages,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
@@ -677,7 +668,7 @@ class _UsageWarningsScreenState extends State<UsageWarningsScreen> {
           TextButton.icon(
             onPressed: enabled ? _addStage : null,
             icon: const Icon(Icons.add),
-            label: const Text('Add stage'),
+            label: Text(l10n.addStage),
           ),
         ],
       ),
@@ -773,9 +764,9 @@ class _UsageStageCardState extends State<_UsageStageCard> {
                       FilteringTextInputFormatter.allow(
                           RegExp(r'^\d{0,3}([.,]\d{0,2})?$')),
                     ],
-                    decoration: const InputDecoration(
-                      labelText: 'Minutes before',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.minutesBeforeLabel,
+                      border: const OutlineInputBorder(),
                     ),
                     onChanged: _onMinutesChanged,
                   ),
@@ -784,20 +775,23 @@ class _UsageStageCardState extends State<_UsageStageCard> {
                 IconButton(
                   icon: Icon(Icons.delete_outline,
                       color: Theme.of(context).colorScheme.error),
-                  tooltip: 'Remove stage',
+                  tooltip: context.l10n.removeStageTooltip,
                   onPressed: widget.enabled ? widget.onRemove : null,
                 ),
               ],
             ),
             const SizedBox(height: 8),
             SegmentedButton<UsageWarningType>(
-              segments: const [
+              segments: [
                 ButtonSegment(
-                    value: UsageWarningType.silent, label: Text('Silent')),
+                    value: UsageWarningType.silent,
+                    label: Text(context.l10n.silent)),
                 ButtonSegment(
-                    value: UsageWarningType.sound, label: Text('Sound')),
+                    value: UsageWarningType.sound,
+                    label: Text(context.l10n.sound)),
                 ButtonSegment(
-                    value: UsageWarningType.vibrate, label: Text('Vibrate')),
+                    value: UsageWarningType.vibrate,
+                    label: Text(context.l10n.vibrate)),
               ],
               selected: {stage.type},
               onSelectionChanged: widget.enabled
@@ -809,7 +803,7 @@ class _UsageStageCardState extends State<_UsageStageCard> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Expanded(child: Text('Vibration count')),
+                  Expanded(child: Text(context.l10n.vibrationCountLabel)),
                   SizedBox(
                     width: 72,
                     child: TextField(
@@ -877,11 +871,11 @@ class _SuspensionLogsScreenState extends State<SuspensionLogsScreen> {
     }).toList();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Suspension logs'),
+        title: Text(context.l10n.suspensionLogs),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Clear logs (recovery session required)',
+            tooltip: context.l10n.clearLogsTooltip,
             onPressed: _logs == null || _logs!.isEmpty
                 ? null
                 : () => runLoosening(context, widget.controller, () async {
@@ -894,25 +888,25 @@ class _SuspensionLogsScreenState extends State<SuspensionLogsScreen> {
       body: _error != null
           ? ErrorView(error: _error!, onRetry: _load)
           : _logs == null
-              ? const LoadingView(message: 'Loading logs…')
+              ? LoadingView(message: context.l10n.loadingLogs)
               : Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                       child: TextField(
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.search),
-                          labelText: 'Search logs',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.search),
+                          labelText: context.l10n.searchLogs,
+                          border: const OutlineInputBorder(),
                         ),
                         onChanged: (v) => setState(() => _query = v),
                       ),
                     ),
                     Expanded(
                       child: filtered.isEmpty
-                          ? const EmptyView(
+                          ? EmptyView(
                               icon: Icons.history,
-                              message: 'No suspensions have been logged.',
+                              message: context.l10n.noLogsYet,
                             )
                           : ListView(
                               children: [

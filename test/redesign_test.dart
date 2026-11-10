@@ -209,6 +209,106 @@ void main() {
     expect(DominanterColors.redDark.b, lessThan(DominanterColors.redDark.r));
   });
 
+  // v1.0.4 palette law (amendment B): the ONLY hue allowed anywhere is
+  // red; every other colour must be true greyscale (R == G == B). This
+  // asserts every shared-palette constant, EVERY ColorScheme role of
+  // both themes, and both hero gradients.
+  test('Strict palette: every theme colour is red-dominant or greyscale',
+      () {
+    bool isRedDominant(Color c) => c.r > c.g && c.r > c.b;
+    bool isGreyscale(Color c) => c.r == c.g && c.g == c.b;
+
+    final colors = <String, Color>{
+      'red': DominanterColors.red,
+      'redBright': DominanterColors.redBright,
+      'redGlow': DominanterColors.redGlow,
+      'redDark': DominanterColors.redDark,
+      'redDeep': DominanterColors.redDeep,
+      'redDeepest': DominanterColors.redDeepest,
+      'black': DominanterColors.black,
+      'blackBackground': DominanterColors.blackBackground,
+      'blackBar': DominanterColors.blackBar,
+      'blackSurface': DominanterColors.blackSurface,
+      'blackSurfaceHigh': DominanterColors.blackSurfaceHigh,
+      'blackSurfaceHighest': DominanterColors.blackSurfaceHighest,
+      'onBlackMuted': DominanterColors.onBlackMuted,
+      'onBlackFaint': DominanterColors.onBlackFaint,
+      'lightBackground': DominanterColors.lightBackground,
+      'lightSurface': DominanterColors.lightSurface,
+    };
+    for (final theme in [dominanterLightTheme(), dominanterDarkTheme()]) {
+      final s = theme.colorScheme;
+      final roles = <String, Color>{
+        'primary': s.primary,
+        'onPrimary': s.onPrimary,
+        'primaryContainer': s.primaryContainer,
+        'onPrimaryContainer': s.onPrimaryContainer,
+        'primaryFixed': s.primaryFixed,
+        'primaryFixedDim': s.primaryFixedDim,
+        'onPrimaryFixed': s.onPrimaryFixed,
+        'onPrimaryFixedVariant': s.onPrimaryFixedVariant,
+        'secondary': s.secondary,
+        'onSecondary': s.onSecondary,
+        'secondaryContainer': s.secondaryContainer,
+        'onSecondaryContainer': s.onSecondaryContainer,
+        'secondaryFixed': s.secondaryFixed,
+        'secondaryFixedDim': s.secondaryFixedDim,
+        'onSecondaryFixed': s.onSecondaryFixed,
+        'onSecondaryFixedVariant': s.onSecondaryFixedVariant,
+        'tertiary': s.tertiary,
+        'onTertiary': s.onTertiary,
+        'tertiaryContainer': s.tertiaryContainer,
+        'onTertiaryContainer': s.onTertiaryContainer,
+        'tertiaryFixed': s.tertiaryFixed,
+        'tertiaryFixedDim': s.tertiaryFixedDim,
+        'onTertiaryFixed': s.onTertiaryFixed,
+        'onTertiaryFixedVariant': s.onTertiaryFixedVariant,
+        'error': s.error,
+        'onError': s.onError,
+        'errorContainer': s.errorContainer,
+        'onErrorContainer': s.onErrorContainer,
+        'surface': s.surface,
+        'onSurface': s.onSurface,
+        'surfaceDim': s.surfaceDim,
+        'surfaceBright': s.surfaceBright,
+        'surfaceContainerLowest': s.surfaceContainerLowest,
+        'surfaceContainerLow': s.surfaceContainerLow,
+        'surfaceContainer': s.surfaceContainer,
+        'surfaceContainerHigh': s.surfaceContainerHigh,
+        'surfaceContainerHighest': s.surfaceContainerHighest,
+        'onSurfaceVariant': s.onSurfaceVariant,
+        'outline': s.outline,
+        'outlineVariant': s.outlineVariant,
+        'shadow': s.shadow,
+        'scrim': s.scrim,
+        'inverseSurface': s.inverseSurface,
+        'onInverseSurface': s.onInverseSurface,
+        'inversePrimary': s.inversePrimary,
+        'surfaceTint': s.surfaceTint,
+      };
+      roles.forEach((name, color) {
+        colors['${theme.brightness.name}.$name'] = color;
+      });
+      colors['scaffold.${theme.brightness.name}'] =
+          theme.scaffoldBackgroundColor;
+    }
+    for (final brightness in Brightness.values) {
+      final gradient = heroGradient(brightness);
+      for (var i = 0; i < gradient.colors.length; i++) {
+        colors['hero.${brightness.name}.$i'] = gradient.colors[i];
+      }
+    }
+
+    for (final entry in colors.entries) {
+      expect(
+        isRedDominant(entry.value) || isGreyscale(entry.value),
+        isTrue,
+        reason: '${entry.key} = ${entry.value} is neither red-dominant '
+            'nor true greyscale (R==G==B)',
+      );
+    }
+  });
+
   // Redesign v2: the pill bar is the reference's BLACK variant in both
   // brightness modes (previously white in light mode).
   testWidgets('Pill nav bar is black even in the light theme', (tester) async {

@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import '../app_controller.dart';
 import '../data/privileged_channel.dart';
 import '../domain/recovery.dart';
+import '../l10n/l10n.dart';
 import 'common.dart';
 import 'recovery_ui.dart';
 
@@ -74,21 +75,22 @@ class _AppsTabState extends State<AppsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: TextField(
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              labelText: 'Search apps',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              labelText: l10n.searchApps,
+              border: const OutlineInputBorder(),
             ),
             onChanged: (v) => setState(() => _query = v),
           ),
         ),
         SwitchListTile(
-          title: const Text('Include system apps'),
+          title: Text(l10n.includeSystemApps),
           value: _includeSystem,
           onChanged: (v) {
             setState(() => _includeSystem = v);
@@ -97,9 +99,9 @@ class _AppsTabState extends State<AppsTab> {
         ),
         ListTile(
           leading: const Icon(Icons.group_work_outlined),
-          title: const Text('App groups'),
-          subtitle: const Text('Shared limits and windows for a set of apps'),
-          trailing: const Icon(Icons.chevron_right),
+          title: Text(l10n.appGroups),
+          subtitle: Text(l10n.appGroupsSub),
+          trailing: const Icon(Icons.navigate_next),
           onTap: _apps == null
               ? null
               : () => Navigator.of(context).push(MaterialPageRoute(
@@ -116,12 +118,13 @@ class _AppsTabState extends State<AppsTab> {
   }
 
   Widget _body() {
+    final l10n = context.l10n;
     if (_error != null) return ErrorView(error: _error!, onRetry: _load);
-    if (_apps == null) return const LoadingView(message: 'Loading installed apps…');
+    if (_apps == null) return LoadingView(message: l10n.loadingInstalledApps);
     if (_filtered.isEmpty) {
-      return const EmptyView(
+      return EmptyView(
         icon: Icons.apps_outlined,
-        message: 'No apps match. Try a different search, or include system apps.',
+        message: l10n.noAppsMatch,
       );
     }
     return RefreshIndicator(
@@ -136,13 +139,15 @@ class _AppsTabState extends State<AppsTab> {
             title: Text(app.label),
             subtitle: Text([
               app.packageName,
-              if (app.isSystem) 'system',
-              if (app.isHidden) 'hidden',
-              if (app.isSuspended) 'suspended',
-              if (app.isUninstallBlocked) 'uninstall blocked',
-              if (usedMs != null) 'used ${formatDuration(Duration(milliseconds: usedMs))} today',
+              if (app.isSystem) l10n.badgeSystem,
+              if (app.isHidden) l10n.badgeHidden,
+              if (app.isSuspended) l10n.badgeSuspended,
+              if (app.isUninstallBlocked) l10n.badgeUninstallBlocked,
+              if (usedMs != null)
+                l10n.usedToday(formatDuration(
+                    Duration(milliseconds: usedMs), l10n)),
             ].join(' · ')),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(Icons.navigate_next),
             onTap: () => _openApp(app),
           );
         },
@@ -172,7 +177,9 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
   late InstalledApp _app;
   AppEnforcement? _enforcement;
   Object? _enforcementError;
-  bool _busy = false;
+  // Never reassigned in this sheet (read-only busy flag for its controls);
+  // the analyzer's prefer_final_fields is correct, so it is final.
+  final bool _busy = false;
 
   PrivilegedChannel get _channel => widget.controller.channel;
 
@@ -194,7 +201,6 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
 
   Future<void> _toggleProtection({
     required bool newValue,
-    required String label,
     required Future<bool> Function(bool) apply,
     required void Function(bool verified) onVerified,
   }) async {
@@ -203,29 +209,21 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
       if (mounted) setState(() => onVerified(verified));
     }
 
-    if (newValue) {
-      // Tightening: free, deferred behind the 5 s undo window (F23) — the
-      // change is only applied once the window lapses; undoing inside the
-      // window means it is never applied at all. No onUndo rollback is
-      // needed: this sheet's state changes only inside doApply, after the
-      // native side verifies, so while the window is open there is no
-      // optimistic UI state to restore.
-      await runTighteningWithUndo(
-        context,
-        PendingChange(
-          description: '$label enabled for ${_app.label}',
-          direction: ChangeDirection.tightening,
-          apply: doApply,
-        ),
-      );
-    } else {
-      // Loosening: recovery session required.
-      await runLoosening(context, widget.controller, doApply);
-    }
+    // BOTH directions are recovery-gated. Turning a protection OFF is a
+    // loosening (F23). Turning one ON *activates* an advanced-block
+    // feature for this app, which the user's v1.0.4 security directive
+    // also puts behind the paper recovery code — overriding the
+    // original's "tightening is free" rule for activations (recorded in
+    // docs/CODE_AUDIT_v1.0.4.md as a user directive). The change applies
+    // immediately once the session is open, like every gated action;
+    // this sheet's state changes only inside doApply, after the native
+    // side verifies.
+    await runLoosening(context, widget.controller, doApply);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.75,
@@ -237,14 +235,13 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
           Text(_app.packageName, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           SwitchListTile(
-            title: const Text('Suspended'),
-            subtitle: const Text('The app cannot be opened while suspended.'),
+            title: Text(l10n.suspendedTitle),
+            subtitle: Text(l10n.suspendedSub),
             value: _app.isSuspended,
             onChanged: _busy
                 ? null
                 : (v) => _toggleProtection(
                       newValue: v,
-                      label: 'Suspension',
                       apply: (value) async {
                         final r = await _channel
                             .setAppSuspended([_app.packageName], value, reason: 'MANUAL');
@@ -255,26 +252,24 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
                     ),
           ),
           SwitchListTile(
-            title: const Text('Hidden'),
-            subtitle: const Text('Removed from the launcher and app list.'),
+            title: Text(l10n.hiddenTitle),
+            subtitle: Text(l10n.hiddenSub),
             value: _app.isHidden,
             onChanged: _busy
                 ? null
                 : (v) => _toggleProtection(
                       newValue: v,
-                      label: 'Hiding',
                       apply: (value) => _channel.setAppHidden(_app.packageName, value),
                       onVerified: (verified) => _app = _app.copyWith(isHidden: verified),
                     ),
           ),
           SwitchListTile(
-            title: const Text('Uninstall blocked'),
+            title: Text(l10n.uninstallBlockedTitle),
             value: _app.isUninstallBlocked,
             onChanged: _busy
                 ? null
                 : (v) => _toggleProtection(
                       newValue: v,
-                      label: 'Uninstall block',
                       apply: (value) =>
                           _channel.setUninstallBlocked(_app.packageName, value),
                       onVerified: (verified) =>
@@ -284,32 +279,32 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.timer_outlined),
-            title: const Text('Time limit'),
+            title: Text(l10n.timeLimitTile),
             subtitle: Text(_enforcement == null
-                ? 'Loading…'
+                ? l10n.loadingShort
                 : _enforcement!.hasLimit
-                    ? 'Today: ${formatMinutes(_enforcement!.todayLimitMinutes)}'
-                        '${_enforcement!.weeklyMinutes != null ? ' (per-weekday)' : ''}'
-                    : 'No limit set'),
+                    ? '${l10n.todayLimitLine(formatMinutes(_enforcement!.todayLimitMinutes, l10n))}'
+                        '${_enforcement!.weeklyMinutes != null ? l10n.perWeekdaySuffix : ''}'
+                    : l10n.noLimitSet),
             trailing: const Icon(Icons.edit_outlined),
             onTap: _enforcement == null ? null : _editLimit,
           ),
           ListTile(
             leading: const Icon(Icons.schedule_outlined),
-            title: const Text('Allowed time windows'),
+            title: Text(l10n.allowedWindowsTile),
             subtitle: Text(_enforcement == null
-                ? 'Loading…'
+                ? l10n.loadingShort
                 : _enforcement!.hasWindows
-                    ? '${_enforcement!.dailyWindows.length + (_enforcement!.weeklyWindows?.expand((d) => d).length ?? 0)} window(s)'
-                    : 'Usable at any time'),
+                    ? l10n.windowsCount(_enforcement!.dailyWindows.length + (_enforcement!.weeklyWindows?.expand((d) => d).length ?? 0))
+                    : l10n.usableAnyTime),
             trailing: const Icon(Icons.edit_outlined),
             onTap: _enforcement == null ? null : _editWindows,
           ),
           ListTile(
             leading: const Icon(Icons.policy_outlined),
-            title: const Text('Managed restrictions'),
-            subtitle: const Text('Edit this app\'s declared managed configuration'),
-            trailing: const Icon(Icons.chevron_right),
+            title: Text(l10n.managedRestrictions),
+            subtitle: Text(l10n.managedRestrictionsSub),
+            trailing: const Icon(Icons.navigate_next),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => AppRestrictionsScreen(
                 controller: widget.controller,
@@ -323,7 +318,8 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 _enforcementError is PrivilegedException
-                    ? friendlyError(_enforcementError! as PrivilegedException)
+                    ? friendlyError(
+                        _enforcementError! as PrivilegedException, l10n)
                     : _enforcementError.toString(),
               ),
             ),
@@ -352,6 +348,13 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
           newWeekly: result.weekly,
         ) ||
         result.reopen < current.reopenSeconds;
+    // User directive (v1.0.4 audit): SETTING a limit where none existed
+    // ACTIVATES time-limit blocking for this app — code-gated like a
+    // loosening, overriding the original's free-tightening rule.
+    final resultHasLimit = result.weekly != null
+        ? result.weekly!.any((m) => m > 0)
+        : (result.daily ?? 0) > 0;
+    final activates = !current.hasLimit && resultHasLimit;
     Future<void> save() async {
       try {
         final updated = await _channel.setTimeLimit(
@@ -366,7 +369,7 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
       }
     }
 
-    if (loosening) {
+    if (loosening || activates) {
       await runLoosening(context, widget.controller, save);
     } else {
       // Tightening (or neutral): free, but deferred behind the 5 s undo
@@ -374,7 +377,7 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
       await runTighteningWithUndo(
         context,
         PendingChange(
-          description: 'Time limit updated for ${_app.label}',
+          description: context.l10n.timeLimitUpdatedDesc(_app.label),
           direction: ChangeDirection.tightening,
           apply: save,
         ),
@@ -424,13 +427,16 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
       }
     }
 
-    if (loosening || dropsWeekly) {
+    // User directive (v1.0.4 audit): adding allowed windows where none
+    // existed ACTIVATES window blocking for this app — code-gated.
+    final activates = !current.hasWindows && result.isNotEmpty;
+    if (loosening || dropsWeekly || activates) {
       await runLoosening(context, widget.controller, save);
     } else {
       await runTighteningWithUndo(
         context,
         PendingChange(
-          description: 'Time windows updated for ${_app.label}',
+          description: context.l10n.timeWindowsUpdatedDesc(_app.label),
           direction: ChangeDirection.tightening,
           apply: save,
         ),
@@ -467,7 +473,19 @@ class _TimeLimitEditorState extends State<TimeLimitEditor> {
   late final List<TextEditingController> _days;
   late final TextEditingController _reopen;
 
-  static const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  /// Localized short day names, Monday first (Kotlin DayOfWeek order).
+  List<String> _dayNames(BuildContext context) {
+    final l10n = context.l10n;
+    return [
+      l10n.dayMon,
+      l10n.dayTue,
+      l10n.dayWed,
+      l10n.dayThu,
+      l10n.dayFri,
+      l10n.daySat,
+      l10n.daySun,
+    ];
+  }
 
   @override
   void initState() {
@@ -485,7 +503,9 @@ class _TimeLimitEditorState extends State<TimeLimitEditor> {
   @override
   void dispose() {
     _daily.dispose();
-    for (final d in _days) d.dispose();
+    for (final d in _days) {
+      d.dispose();
+    }
     _reopen.dispose();
     super.dispose();
   }
@@ -494,8 +514,10 @@ class _TimeLimitEditorState extends State<TimeLimitEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final dayNames = _dayNames(context);
     return AlertDialog(
-      title: const Text('Time limit (minutes)'),
+      title: Text(l10n.timeLimitEditorTitle),
       content: SizedBox(
         width: 360,
         child: SingleChildScrollView(
@@ -503,9 +525,10 @@ class _TimeLimitEditorState extends State<TimeLimitEditor> {
             mainAxisSize: MainAxisSize.min,
             children: [
               SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: false, label: Text('Daily')),
-                  ButtonSegment(value: true, label: Text('Per weekday')),
+                segments: [
+                  ButtonSegment(value: false, label: Text(l10n.dailySegment)),
+                  ButtonSegment(
+                      value: true, label: Text(l10n.perWeekdaySegment)),
                 ],
                 selected: {_perWeekday},
                 onSelectionChanged: (s) => setState(() => _perWeekday = s.first),
@@ -515,9 +538,9 @@ class _TimeLimitEditorState extends State<TimeLimitEditor> {
                 TextField(
                   controller: _daily,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Minutes per day (0 = no limit)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.minutesPerDayLabel,
+                    border: const OutlineInputBorder(),
                   ),
                 )
               else
@@ -528,7 +551,7 @@ class _TimeLimitEditorState extends State<TimeLimitEditor> {
                       controller: _days[i],
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: '${_dayNames[i]} (0 = no limit)',
+                        labelText: l10n.dayLimitLabel(dayNames[i]),
                         border: const OutlineInputBorder(),
                       ),
                     ),
@@ -537,9 +560,9 @@ class _TimeLimitEditorState extends State<TimeLimitEditor> {
               TextField(
                 controller: _reopen,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Reopening cooldown, seconds (stored; enforcement is v1.1)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.reopenLabel,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -547,7 +570,9 @@ class _TimeLimitEditorState extends State<TimeLimitEditor> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel)),
         FilledButton(
           onPressed: () {
             final reopen = _parse(_reopen).clamp(0, 86400);
@@ -565,7 +590,7 @@ class _TimeLimitEditorState extends State<TimeLimitEditor> {
               ));
             }
           },
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     );
@@ -592,13 +617,13 @@ class _TimeWindowsEditorState extends State<TimeWindowsEditor> {
     final start = await showTimePicker(
       context: context,
       initialTime: const TimeOfDay(hour: 7, minute: 0),
-      helpText: 'Window start',
+      helpText: context.l10n.windowStartHelp,
     );
     if (start == null || !mounted) return;
     final end = await showTimePicker(
       context: context,
       initialTime: const TimeOfDay(hour: 21, minute: 0),
-      helpText: 'Window end (may be next day)',
+      helpText: context.l10n.windowEndHelp,
     );
     if (end == null) return;
     setState(() => _windows.add(TimeWindowModel(
@@ -611,20 +636,18 @@ class _TimeWindowsEditorState extends State<TimeWindowsEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AlertDialog(
-      title: const Text('Allowed windows (daily)'),
+      title: Text(l10n.allowedWindowsTitle),
       content: SizedBox(
         width: 360,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Outside these windows the app is blocked. An empty list '
-              'means usable at any time.',
-            ),
+            Text(l10n.windowsBody),
             const SizedBox(height: 12),
             if (_windows.isEmpty)
-              const Text('No windows set.')
+              Text(l10n.noWindowsSet)
             else
               for (var i = 0; i < _windows.length; i++)
                 ListTile(
@@ -638,16 +661,18 @@ class _TimeWindowsEditorState extends State<TimeWindowsEditor> {
             TextButton.icon(
               onPressed: _add,
               icon: const Icon(Icons.add),
-              label: const Text('Add window'),
+              label: Text(l10n.addWindow),
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel)),
         FilledButton(
           onPressed: () => Navigator.pop(context, _windows),
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     );
@@ -688,6 +713,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       final saved = await widget.controller.channel.setGroups(groups);
       if (mounted) setState(() => _groups = saved);
     } catch (e) {
+      if (!mounted) return;
       await showErrorSnackBar(context, e);
     }
   }
@@ -696,18 +722,22 @@ class _GroupsScreenState extends State<GroupsScreen> {
     final nameController = TextEditingController();
     final name = await showDialog<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('New group'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.newGroup),
         content: TextField(
           controller: nameController,
-          decoration: const InputDecoration(labelText: 'Group name'),
+          decoration:
+              InputDecoration(labelText: dialogContext.l10n.groupNameLabel),
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(dialogContext.l10n.cancel)),
           FilledButton(
-            onPressed: () => Navigator.pop(context, nameController.text.trim()),
-            child: const Text('Create'),
+            onPressed: () =>
+                Navigator.pop(dialogContext, nameController.text.trim()),
+            child: Text(dialogContext.l10n.create),
           ),
         ],
       ),
@@ -723,18 +753,22 @@ class _GroupsScreenState extends State<GroupsScreen> {
     final nameController = TextEditingController(text: group.name);
     final name = await showDialog<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Rename group'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.renameGroup),
         content: TextField(
           controller: nameController,
-          decoration: const InputDecoration(labelText: 'Group name'),
+          decoration:
+              InputDecoration(labelText: dialogContext.l10n.groupNameLabel),
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(dialogContext.l10n.cancel)),
           FilledButton(
-            onPressed: () => Navigator.pop(context, nameController.text.trim()),
-            child: const Text('Save'),
+            onPressed: () =>
+                Navigator.pop(dialogContext, nameController.text.trim()),
+            child: Text(dialogContext.l10n.save),
           ),
         ],
       ),
@@ -765,7 +799,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setLocal) => AlertDialog(
-          title: Text('Members of ${group.name}'),
+          title: Text(context.l10n.membersOf(group.name)),
           content: SizedBox(
             width: 360,
             height: 400,
@@ -788,10 +822,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(context.l10n.cancel)),
             FilledButton(
               onPressed: () => Navigator.pop(context, selected.toList()),
-              child: const Text('Save'),
+              child: Text(context.l10n.save),
             ),
           ],
         ),
@@ -801,24 +837,29 @@ class _GroupsScreenState extends State<GroupsScreen> {
     // Removing a member strips the group's limit/windows/cooldown from
     // that app — a loosening the original explicitly gates (group-save
     // loosening includes `!newPackages.containsAll(oldPackages)`,
-    // AppManagementDialogs.kt:166-175). Pure additions tighten and stay
-    // ungated, as does removal from a group carrying no restrictions.
+    // AppManagementDialogs.kt:166-175). Removal from a group carrying
+    // no restrictions stays ungated, as in the original.
     final loosening = Loosening.isLooserSet(
           oldSet: group.packages.toSet(),
           newSet: result.toSet(),
         ) &&
         _groupHasRestrictions(group);
+    // User directive (v1.0.4 audit): ADDING a member to a group that
+    // carries restrictions ACTIVATES that blocking for the added app —
+    // code-gated like the removal is.
+    final activates = result.any((p) => !group.packages.contains(p)) &&
+        _groupHasRestrictions(group);
     Future<void> save() => _save([
           for (final g in _groups!)
             if (g.id == group.id) g.copyWith(packages: result) else g,
         ]);
-    if (loosening) {
+    if (loosening || activates) {
       await runLoosening(context, widget.controller, save);
     } else {
       await runTighteningWithUndo(
         context,
         PendingChange(
-          description: 'Members of ${group.name} updated',
+          description: context.l10n.membersUpdatedDesc(group.name),
           direction: ChangeDirection.tightening,
           apply: save,
         ),
@@ -845,6 +886,15 @@ class _GroupsScreenState extends State<GroupsScreen> {
           newWeekly: result.weekly,
         ) ||
         result.reopen < group.reopenSeconds;
+    // User directive (v1.0.4 audit): setting a group limit where none
+    // existed ACTIVATES blocking for every member — code-gated.
+    final groupHasLimit = group.weeklyMinutes != null
+        ? group.weeklyMinutes!.any((m) => m > 0)
+        : group.dailyMinutes > 0;
+    final resultHasLimit = result.weekly != null
+        ? result.weekly!.any((m) => m > 0)
+        : (result.daily ?? 0) > 0;
+    final activates = !groupHasLimit && resultHasLimit;
     Future<void> save() => _save([
           for (final g in _groups!)
             if (g.id == group.id)
@@ -862,13 +912,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
             else
               g,
         ]);
-    if (loosening) {
+    if (loosening || activates) {
       await runLoosening(context, widget.controller, save);
     } else {
       await runTighteningWithUndo(
         context,
         PendingChange(
-          description: 'Limit of ${group.name} updated',
+          description: context.l10n.groupLimitUpdatedDesc(group.name),
           direction: ChangeDirection.tightening,
           apply: save,
         ),
@@ -878,21 +928,25 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('App groups'),
+        title: Text(l10n.appGroupsTitle),
         actions: [
-          IconButton(onPressed: _create, icon: const Icon(Icons.add), tooltip: 'New group'),
+          IconButton(
+              onPressed: _create,
+              icon: const Icon(Icons.add),
+              tooltip: l10n.newGroup),
         ],
       ),
       body: _error != null
           ? ErrorView(error: _error!, onRetry: _load)
           : _groups == null
-              ? const LoadingView(message: 'Loading groups…')
+              ? LoadingView(message: l10n.loadingGroups)
               : _groups!.isEmpty
-                  ? const EmptyView(
+                  ? EmptyView(
                       icon: Icons.group_work_outlined,
-                      message: 'No groups yet. Create one to share a limit across apps.',
+                      message: l10n.noGroupsYetMsg,
                     )
                   : ListView(
                       children: [
@@ -900,7 +954,15 @@ class _GroupsScreenState extends State<GroupsScreen> {
                           ListTile(
                             title: Text(g.name),
                             subtitle: Text(
-                              '${g.packages.length} apps · limit ${formatMinutes(g.weeklyMinutes != null ? g.weeklyMinutes![DateTime.now().weekday - 1] : g.dailyMinutes)}',
+                              l10n.groupAppsLimitLine(
+                                g.packages.length,
+                                formatMinutes(
+                                    g.weeklyMinutes != null
+                                        ? g.weeklyMinutes![
+                                            DateTime.now().weekday - 1]
+                                        : g.dailyMinutes,
+                                    l10n),
+                              ),
                             ),
                             trailing: PopupMenuButton<String>(
                               onSelected: (action) async {
@@ -914,11 +976,19 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                   });
                                 }
                               },
-                              itemBuilder: (_) => const [
-                                PopupMenuItem(value: 'members', child: Text('Edit members')),
-                                PopupMenuItem(value: 'limit', child: Text('Edit limit')),
-                                PopupMenuItem(value: 'rename', child: Text('Rename group')),
-                                PopupMenuItem(value: 'delete', child: Text('Delete group')),
+                              itemBuilder: (_) => [
+                                PopupMenuItem(
+                                    value: 'members',
+                                    child: Text(l10n.editMembers)),
+                                PopupMenuItem(
+                                    value: 'limit',
+                                    child: Text(l10n.editLimit)),
+                                PopupMenuItem(
+                                    value: 'rename',
+                                    child: Text(l10n.renameGroup)),
+                                PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text(l10n.deleteGroup)),
                               ],
                             ),
                             onTap: () => _editMembers(g),
@@ -1329,6 +1399,18 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
     }).toList();
   }
 
+  /// Whether a bundle value counts as an *active* restriction (a bool
+  /// set, a non-empty string/list/map, a non-zero number) — used to spot
+  /// activations in [_save].
+  static bool _valueIsActive(Object? v) => switch (v) {
+        bool b => b,
+        String s => s.isNotEmpty,
+        num n => n != 0,
+        List l => l.isNotEmpty,
+        Map m => m.values.any(_valueIsActive),
+        _ => v != null,
+      };
+
   Future<void> _save() async {
     if (_busy) return;
     final finalBundle = _buildFinalBundle();
@@ -1338,6 +1420,14 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
     final loosening = Loosening.isLooserRestrictions(
       oldRestrictions: _current ?? const {},
       newRestrictions: finalBundle,
+    );
+    // User directive (v1.0.4 audit): turning a declared restriction ON
+    // where it was off/absent ACTIVATES app blocking — code-gated like
+    // a loosening. (Strengthening an already-active value, e.g. growing
+    // a blocklist, stays a free tightening, as in the original.)
+    final current = _current ?? const {};
+    final activates = finalBundle.entries.any(
+      (e) => _valueIsActive(e.value) && !_valueIsActive(current[e.key]),
     );
     Future<void> apply() async {
       setState(() => _busy = true);
@@ -1361,7 +1451,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
       }
     }
 
-    if (loosening) {
+    if (loosening || activates) {
       final done = await runLoosening(context, widget.controller, apply);
       if (done && mounted) _pop();
     } else {
@@ -1370,7 +1460,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
       await runTighteningWithUndo(
         context,
         PendingChange(
-          description: 'Restrictions updated for ${widget.label}',
+          description: context.l10n.restrictionsUpdatedDesc(widget.label),
           direction: ChangeDirection.tightening,
           apply: apply,
         ),
@@ -1390,22 +1480,20 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
   Future<void> _confirmClearAll() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Clear all restrictions'),
-        content: Text(
-          'Remove every managed restriction for ${widget.label}? '
-          'This only edits the draft — tap Save to apply it.',
-        ),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.clearAllRestrictions),
+        content: Text(dialogContext.l10n.clearAllBody(widget.label)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(dialogContext.l10n.cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(
-              'Confirm',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+              dialogContext.l10n.confirm,
+              style: TextStyle(
+                  color: Theme.of(dialogContext).colorScheme.error),
             ),
           ),
         ],
@@ -1424,21 +1512,20 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
     if (didPop || _allowPop || !_isDirty) return;
     final discard = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Unsaved changes'),
-        content: const Text(
-          'You have unsaved restriction changes. Discard them?',
-        ),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.unsavedTitle),
+        content: Text(dialogContext.l10n.unsavedBody),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep editing'),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(dialogContext.l10n.keepEditing),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(
-              'Discard',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+              dialogContext.l10n.discard,
+              style: TextStyle(
+                  color: Theme.of(dialogContext).colorScheme.error),
             ),
           ),
         ],
@@ -1449,22 +1536,20 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return PopScope(
       canPop: _allowPop || !_isDirty,
       onPopInvokedWithResult: (didPop, _) => _onPopInvoked(didPop),
       child: Scaffold(
-        appBar: AppBar(title: Text('Restrictions — ${widget.label}')),
+        appBar: AppBar(title: Text(l10n.restrictionsForTitle(widget.label))),
         body: _error != null
             ? ErrorView(error: _error!, onRetry: _load)
             : _available == null
-                ? const LoadingView(
-                    message: 'Loading declared restrictions…')
+                ? LoadingView(message: l10n.loadingDeclaredRestrictions)
                 : _drafts.isEmpty
                     ? EmptyView(
                         icon: Icons.policy_outlined,
-                        message: 'No restrictions available for '
-                            '${widget.label}. This app does not declare any '
-                            'managed restrictions.',
+                        message: l10n.noRestrictionsFor(widget.label),
                       )
                     : _buildEditor(),
       ),
@@ -1472,6 +1557,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
   }
 
   Widget _buildEditor() {
+    final l10n = context.l10n;
     final filtered = _filteredDrafts;
     return Column(
       children: [
@@ -1485,7 +1571,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
             controller: _searchController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search),
-              labelText: 'Search restrictions',
+              labelText: l10n.searchRestrictions,
               border: const OutlineInputBorder(),
               suffixIcon: _query.isEmpty
                   ? null
@@ -1505,21 +1591,22 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
           child: Row(
             children: [
               FilterChip(
-                label: const Text('All'),
+                label: Text(l10n.allFilter),
                 selected: _filter == _RestrictionFilter.all,
                 onSelected: (_) =>
                     setState(() => _filter = _RestrictionFilter.all),
               ),
               const SizedBox(width: 6),
               FilterChip(
-                label: Text('Active ($_activeCount)'),
+                label: Text(l10n.activeFilterCount(_activeCount)),
                 selected: _filter == _RestrictionFilter.active,
                 onSelected: (_) =>
                     setState(() => _filter = _RestrictionFilter.active),
               ),
               const SizedBox(width: 6),
               FilterChip(
-                label: Text('Default (${_drafts.length - _activeCount})'),
+                label: Text(
+                    l10n.defaultFilterCount(_drafts.length - _activeCount)),
                 selected: _filter == _RestrictionFilter.defaults,
                 onSelected: (_) =>
                     setState(() => _filter = _RestrictionFilter.defaults),
@@ -1534,8 +1621,8 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
                     padding: const EdgeInsets.all(24),
                     child: Text(
                       _query.trim().isNotEmpty
-                          ? 'No restrictions matching "${_query.trim()}"'
-                          : 'No restrictions available for ${widget.label}',
+                          ? l10n.noRestrictionsMatching(_query.trim())
+                          : l10n.noRestrictionsFor(widget.label),
                       style: Theme.of(context).textTheme.bodyMedium
                           ?.copyWith(
                             color:
@@ -1565,7 +1652,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
                 minimumSize: const Size.fromHeight(48),
               ),
               icon: const Icon(Icons.save_outlined),
-              label: Text(_busy ? 'Saving…' : 'Save restrictions'),
+              label: Text(_busy ? l10n.saving : l10n.saveRestrictions),
             ),
           ),
         ),
@@ -1629,7 +1716,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
               ),
             ),
             IconButton(
-              tooltip: 'Clear all restrictions',
+              tooltip: context.l10n.clearAllRestrictions,
               onPressed: _busy ? null : _confirmClearAll,
               icon: Icon(Icons.refresh, color: scheme.error, size: 18),
             ),
@@ -1762,7 +1849,9 @@ class _RestrictionCardView extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      draft.descExpanded ? 'See less' : 'See more',
+                      draft.descExpanded
+                          ? context.l10n.seeLess
+                          : context.l10n.seeMore,
                       style: Theme.of(context)
                           .textTheme
                           .labelSmall
@@ -1788,9 +1877,11 @@ class _RestrictionCardView extends StatelessWidget {
     final entry = draft.entry;
     return switch (entry.type) {
       'bool' => SegmentedButton<bool>(
-          segments: const [
-            ButtonSegment(value: true, label: Text('Enabled')),
-            ButtonSegment(value: false, label: Text('Disabled')),
+          segments: [
+            ButtonSegment(
+                value: true, label: Text(context.l10n.enabledLabel)),
+            ButtonSegment(
+                value: false, label: Text(context.l10n.disabledLabel)),
           ],
           selected: {draft.boolValue},
           onSelectionChanged: busy
@@ -1833,7 +1924,7 @@ class _RestrictionCardView extends StatelessWidget {
           ? _buildBundleArrayEditor(context)
           : _buildBundleEditor(context),
       _ => Text(
-          'Unsupported restriction type: ${entry.type}',
+          context.l10n.unsupportedType(entry.type),
           style: Theme.of(context).textTheme.bodySmall,
         ),
     };
@@ -1916,7 +2007,7 @@ class _RestrictionCardView extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Remove value',
+                tooltip: context.l10n.removeValueTooltip,
                 onPressed: busy
                     ? null
                     : () {
@@ -1933,16 +2024,16 @@ class _RestrictionCardView extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: draft.addController,
-                decoration: const InputDecoration(
-                  labelText: 'Add value',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.addValueLabel,
+                  border: const OutlineInputBorder(),
                 ),
                 onSubmitted: (_) => _addFreeValue(),
               ),
             ),
             const SizedBox(width: 8),
             IconButton(
-              tooltip: 'Add value',
+              tooltip: context.l10n.addValueTooltip,
               onPressed: busy ? null : _addFreeValue,
               icon: const Icon(Icons.add),
             ),
@@ -2008,7 +2099,7 @@ class _RestrictionCardView extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Item ${i + 1}',
+                          context.l10n.itemNumber(i + 1),
                           style: Theme.of(context)
                               .textTheme
                               .labelMedium
@@ -2016,7 +2107,7 @@ class _RestrictionCardView extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Remove item',
+                        tooltip: context.l10n.removeItemTooltip,
                         onPressed: busy
                             ? null
                             : () {
@@ -2048,7 +2139,7 @@ class _RestrictionCardView extends StatelessWidget {
                   onChanged();
                 },
           icon: const Icon(Icons.add, size: 16),
-          label: const Text('Add item'),
+          label: Text(context.l10n.addItem),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(40),
             shape:

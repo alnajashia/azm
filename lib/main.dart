@@ -9,6 +9,7 @@ library;
 import 'package:flutter/material.dart';
 
 import 'app_controller.dart';
+import 'l10n/l10n.dart';
 import 'theme.dart';
 import 'ui/apps_tab.dart';
 import 'ui/common.dart';
@@ -53,18 +54,25 @@ class _DominanterAppState extends State<DominanterApp> {
         title: 'Dominanter',
         debugShowCheckedModeBanner: false,
         themeMode: _controller.themeMode,
+        // Bilingual UI (v1.0.4): Arabic + English. The locale follows
+        // the controller's language (saved choice, else device locale);
+        // Flutter's directionality makes Arabic render RTL.
+        locale: Locale(_controller.language),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         // Redesign v2 2026-11-09: RED & BLACK ONLY identity, inspired by
         // the user's reference images (see theme.dart for the palette,
         // the fusion pill bar and the contrast rules).
         theme: dominanterLightTheme(),
         darkTheme: dominanterDarkTheme(),
         home: switch (_controller.startup) {
-          StartupState.loading => const Scaffold(
-            body: LoadingView(message: 'Starting Dominanter…'),
+          StartupState.loading => Scaffold(
+            body: LoadingView(message: context.l10n.startingDominanter),
           ),
           StartupState.error => Scaffold(
             body: ErrorView(
-              error: _controller.startupError ?? 'Unknown startup error',
+              error: _controller.startupError ??
+                  context.l10n.unknownStartupError,
               onRetry: _controller.initialise,
             ),
           ),
@@ -91,7 +99,7 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final strings = AppStrings(widget.controller.language);
+    final l10n = context.l10n;
     final tabs = <Widget>[
       SetupScreen(controller: widget.controller),
       RestrictionsTab(controller: widget.controller),
@@ -100,7 +108,7 @@ class _AppShellState extends State<AppShell> {
     ];
     return Scaffold(
       appBar: AppBar(
-        title: Text(strings.appTitle),
+        title: Text(l10n.appTitle),
         actions: [SessionChip(controller: widget.controller)],
       ),
       // The floating pill bar lives in the bottomNavigationBar slot, so
@@ -114,22 +122,22 @@ class _AppShellState extends State<AppShell> {
           PillNavDestination(
             icon: Icons.admin_panel_settings_outlined,
             selectedIcon: Icons.admin_panel_settings,
-            label: strings.tabStatus,
+            label: l10n.tabStatus,
           ),
           PillNavDestination(
             icon: Icons.shield_outlined,
             selectedIcon: Icons.shield,
-            label: strings.tabRestrictions,
+            label: l10n.tabRestrictions,
           ),
           PillNavDestination(
             icon: Icons.apps_outlined,
             selectedIcon: Icons.apps,
-            label: strings.tabApps,
+            label: l10n.tabApps,
           ),
           PillNavDestination(
             icon: Icons.settings_outlined,
             selectedIcon: Icons.settings,
-            label: strings.tabConfig,
+            label: l10n.tabConfig,
           ),
         ],
       ),

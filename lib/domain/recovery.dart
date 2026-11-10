@@ -411,8 +411,6 @@ class ImpulseLock {
     return ImpulseLock(active: true, remaining: r.isNegative ? Duration.zero : r, total: total);
   }
 
-  ImpulseLock stop() => const ImpulseLock();
-
   Map<String, dynamic> toJson() => {
         'active': active,
         'remainingMs': remaining.inMilliseconds,

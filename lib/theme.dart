@@ -17,7 +17,8 @@
 /// its tints/shades (charcoals, greys, white for text/background
 /// legibility). There is no blue, green or any other hue anywhere —
 /// secondary/tertiary scheme roles are monochrome or red on purpose,
-/// and a widget test guards the palette against blue-dominant colours.
+/// and a widget test guards the palette: every colour must be either
+/// red-dominant or true greyscale (R == G == B).
 ///
 /// The [ColorScheme]s are hand-built rather than `ColorScheme.fromSeed`:
 /// a seed tints *every* surface toward the seed colour, which would wash
@@ -41,19 +42,19 @@ abstract final class DominanterColors {
 
   /// The black scale — surfaces, the navigation capsule, secondary roles.
   static const black = Color(0xFF000000);
-  static const blackBackground = Color(0xFF0A0A0C);
-  static const blackBar = Color(0xFF101013);
-  static const blackSurface = Color(0xFF141417);
-  static const blackSurfaceHigh = Color(0xFF1E1E23);
-  static const blackSurfaceHighest = Color(0xFF2A2A31);
+  static const blackBackground = Color(0xFF0A0A0A);
+  static const blackBar = Color(0xFF101010);
+  static const blackSurface = Color(0xFF141414);
+  static const blackSurfaceHigh = Color(0xFF1F1F1F);
+  static const blackSurfaceHighest = Color(0xFF2A2A2A);
 
   /// Monochrome neutrals (tints of black) for inactive items on the
   /// always-black pill bar, in either brightness.
-  static const onBlackMuted = Color(0xFFB9B9C2);
-  static const onBlackFaint = Color(0xFF7A7A85);
+  static const onBlackMuted = Color(0xFFBDBDBD);
+  static const onBlackFaint = Color(0xFF7E7E7E);
 
   /// Light-mode surfaces: white and black-tinted greys only.
-  static const lightBackground = Color(0xFFF4F4F5);
+  static const lightBackground = Color(0xFFF4F4F4);
   static const lightSurface = Color(0xFFFFFFFF);
 }
 
@@ -74,7 +75,7 @@ LinearGradient heroGradient(Brightness brightness) =>
     : const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFFFD9DE), Color(0xFFFFFFFF), Color(0xFFECECEF)],
+        colors: [Color(0xFFFFD9DE), Color(0xFFFFFFFF), Color(0xFFECECEC)],
         stops: [0.0, 0.55, 1.0],
       );
 
@@ -99,10 +100,10 @@ ThemeData dominanterLightTheme() {
     // Secondary is BLACK in light mode: black chips, black secondary
     // buttons and badges against the light backdrop, as in the black
     // pill-bar variant of the reference.
-    secondary: Color(0xFF17171A),
+    secondary: Color(0xFF171717),
     onSecondary: Colors.white,
-    secondaryContainer: Color(0xFFE4E4EA),
-    onSecondaryContainer: Color(0xFF17171A),
+    secondaryContainer: Color(0xFFE6E6E6),
+    onSecondaryContainer: Color(0xFF171717),
     tertiary: DominanterColors.redDark,
     onTertiary: Colors.white,
     error: DominanterColors.redDark,
@@ -110,19 +111,19 @@ ThemeData dominanterLightTheme() {
     errorContainer: Color(0xFFFFD9DE),
     onErrorContainer: DominanterColors.redDeep,
     surface: DominanterColors.lightSurface,
-    onSurface: Color(0xFF17171A),
-    onSurfaceVariant: Color(0xFF4A4A52),
+    onSurface: Color(0xFF171717),
+    onSurfaceVariant: Color(0xFF4D4D4D),
     surfaceContainerLowest: Colors.white,
-    surfaceContainerLow: Color(0xFFF1F1F4),
-    surfaceContainer: Color(0xFFECECF0),
-    surfaceContainerHigh: Color(0xFFE4E4EA),
-    surfaceContainerHighest: Color(0xFFD9D9E0),
-    outline: Color(0xFF8A8A94),
-    outlineVariant: Color(0xFFD5D5DC),
+    surfaceContainerLow: Color(0xFFF2F2F2),
+    surfaceContainer: Color(0xFFEDEDED),
+    surfaceContainerHigh: Color(0xFFE6E6E6),
+    surfaceContainerHighest: Color(0xFFDBDBDB),
+    outline: Color(0xFF8E8E8E),
+    outlineVariant: Color(0xFFD7D7D7),
     shadow: Color(0xFF000000),
     scrim: Color(0xFF000000),
-    inverseSurface: Color(0xFF17171A),
-    onInverseSurface: Color(0xFFF5F5F7),
+    inverseSurface: Color(0xFF171717),
+    onInverseSurface: Color(0xFFF5F5F5),
     inversePrimary: DominanterColors.redBright,
   );
   return _baseTheme(scheme, DominanterColors.lightBackground);
@@ -138,10 +139,10 @@ ThemeData dominanterDarkTheme() {
     // Secondary is a monochrome light tint of black in dark mode (the
     // capsule and surfaces already carry the black role); tertiary
     // stays inside the red scale.
-    secondary: Color(0xFFE8E8EC),
-    onSecondary: Color(0xFF0A0A0C),
+    secondary: Color(0xFFE9E9E9),
+    onSecondary: Color(0xFF0A0A0A),
     secondaryContainer: DominanterColors.blackSurfaceHighest,
-    onSecondaryContainer: Color(0xFFF5F5F7),
+    onSecondaryContainer: Color(0xFFF5F5F5),
     tertiary: DominanterColors.redGlow,
     onTertiary: Colors.white,
     error: Color(0xFFFF6B74),
@@ -149,26 +150,35 @@ ThemeData dominanterDarkTheme() {
     errorContainer: Color(0xFF4A0A12),
     onErrorContainer: Color(0xFFFFD9DE),
     surface: DominanterColors.blackSurface,
-    onSurface: Color(0xFFF5F5F7),
-    onSurfaceVariant: Color(0xFFB9B9C2),
+    onSurface: Color(0xFFF5F5F5),
+    onSurfaceVariant: Color(0xFFBDBDBD),
     surfaceContainerLowest: DominanterColors.blackBackground,
-    surfaceContainerLow: Color(0xFF101013),
+    surfaceContainerLow: Color(0xFF101010),
     surfaceContainer: DominanterColors.blackSurface,
     surfaceContainerHigh: DominanterColors.blackSurfaceHigh,
-    surfaceContainerHighest: Color(0xFF2A2A31),
-    outline: Color(0xFF7A7A85),
-    outlineVariant: Color(0xFF33333B),
+    surfaceContainerHighest: Color(0xFF2A2A2A),
+    outline: Color(0xFF7E7E7E),
+    outlineVariant: Color(0xFF363636),
     shadow: Color(0xFF000000),
     scrim: Color(0xFF000000),
-    inverseSurface: Color(0xFFF5F5F7),
-    onInverseSurface: Color(0xFF17171A),
+    inverseSurface: Color(0xFFF5F5F5),
+    onInverseSurface: Color(0xFF171717),
     inversePrimary: DominanterColors.red,
   );
   return _baseTheme(scheme, DominanterColors.blackBackground);
 }
 
 ThemeData _baseTheme(ColorScheme scheme, Color scaffoldBackground) {
-  final base = ThemeData(useMaterial3: true, colorScheme: scheme);
+  // Cairo app-wide (v1.0.4 typography directive): one bundled family
+  // for both locales — Arabic and Latin — so the bilingual UI speaks
+  // with a single voice. Bundled TTF assets only (assets/fonts/); no
+  // runtime font fetching. Headings take the theme's SemiBold/Bold
+  // weights, body text Regular.
+  final base = ThemeData(
+    useMaterial3: true,
+    colorScheme: scheme,
+    fontFamily: 'Cairo',
+  );
   return base.copyWith(
     scaffoldBackgroundColor: scaffoldBackground,
     textTheme: _textTheme(base.textTheme),

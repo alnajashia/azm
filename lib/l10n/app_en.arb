@@ -1,0 +1,1440 @@
+{
+  "@@locale": "en",
+  "appTitle": "Dominanter",
+  "loadingDefault": "Loading…",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "save": "Save",
+  "close": "Close",
+  "confirm": "Confirm",
+  "continueAction": "Continue",
+  "undo": "Undo",
+  "errorCodeLine": "Error code: {code}",
+  "@errorCodeLine": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCodeExitLine": "Error code: {code} · exit {exitCode}",
+  "@errorCodeExitLine": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "exitCode": {
+        "type": "int"
+      }
+    }
+  },
+  "errUnavailable": "The Android service layer is not available here (this happens in tests or off-device). No operation was performed.",
+  "errShizukuNotInstalled": "Shizuku is not installed on this device.",
+  "errShizukuNotRunning": "Shizuku is installed but its server is not running. Start it from the Shizuku app, then retry.",
+  "errShizukuNoPermission": "Shizuku permission has not been granted to Dominanter.",
+  "errShizukuPreV11": "This Shizuku server is older than v11. Update Shizuku, then retry.",
+  "errShizukuBinderDead": "The Shizuku connection dropped during the operation. Its outcome is unknown — check the current state before retrying.",
+  "errShellFailed": "A system command failed.",
+  "errShellFailedExit": "A system command failed (exit code {exitCode}).",
+  "@errShellFailedExit": {
+    "placeholders": {
+      "exitCode": {
+        "type": "int"
+      }
+    }
+  },
+  "errProvisioningFailed": "Device Owner provisioning failed on both the direct and the fallback path. See Diagnostics on the Setup screen.",
+  "errDpmNotOwner": "Dominanter is not the Device Owner, so this operation is not available. Complete Setup first.",
+  "errDpmFailed": "The system refused or could not verify this change. Nothing was reported as successful.",
+  "errPackageNotFound": "That app is not installed on this device.",
+  "errPermissionDenied": "A required permission is not granted.",
+  "errUnsupportedAndroid": "This Android version does not support this operation.",
+  "errTimeout": "The operation timed out and was not reported as successful.",
+  "errInvalidArgument": "Invalid input: {message}",
+  "@errInvalidArgument": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "errNotImplemented": "This is not implemented in this version.",
+  "noLimit": "No limit",
+  "minutesOnly": "{count} min",
+  "@minutesOnly": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursOnly": "{count} h",
+  "@hoursOnly": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursMinutes": "{hours} h {minutes} min",
+  "@hoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "durationMinutesSeconds": "{minutes}m {seconds}s",
+  "@durationMinutesSeconds": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "durationSecondsOnly": "{seconds}s",
+  "@durationSecondsOnly": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "chipV11": "v1.1",
+  "sessionRemaining": "Recovery session",
+  "renewSession": "Renew",
+  "endSession": "End session",
+  "wordYes": "yes",
+  "wordNo": "no",
+  "startingDominanter": "Starting Dominanter…",
+  "unknownStartupError": "Unknown startup error",
+  "tabStatus": "Status",
+  "tabRestrictions": "Restrictions",
+  "tabApps": "Apps",
+  "tabConfig": "Config",
+  "lockTitle": "Dominanter is locked",
+  "panicButton": "I'm having impulses",
+  "accessApp": "Access app",
+  "viewLimits": "View limits",
+  "lockHelperBiometric": "Use your fingerprint, face or device PIN to open the app.",
+  "lockHelperWithPassword": "Use your fingerprint, face or device PIN — or your app password.",
+  "usePasswordInstead": "Use password instead",
+  "versionFooter": "Dominanter {version}",
+  "@versionFooter": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "impulseBlockActive": "Impulse block active",
+  "impulseStartedSuspended": "Impulse lock started; chosen apps suspended for {minutes} min.",
+  "@impulseStartedSuspended": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "impulseStarted": "Impulse lock started for {minutes} min.",
+  "@impulseStarted": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "focusPhaseFocusOf": "Focus {current}/{total}",
+  "@focusPhaseFocusOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "focusPhaseShortBreak": "Short break",
+  "focusPhaseLongBreak": "Long break",
+  "focusPhaseBreakOver": "Break over",
+  "focusPhaseMode": "Focus mode",
+  "focusPausedTitle": "{title} · paused",
+  "@focusPausedTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "focusConfigSummary": "{minutes} min of focus, suspending the selected apps",
+  "@focusConfigSummary": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "focusPeriodsCompleted": "Focus periods completed: {done}/{total}",
+  "@focusPeriodsCompleted": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "focusStart": "Start focus",
+  "focusResume": "Resume",
+  "focusSkipBreak": "Skip break",
+  "focusPause": "Pause",
+  "focusEndSession": "End session",
+  "todaysUsage": "Today's usage",
+  "loadingUsageLimits": "Loading usage limits…",
+  "noLimitsSet": "No time limit set for apps or groups.",
+  "sectionGroups": "Groups",
+  "sectionApps": "Apps",
+  "groupPrefix": "Group: {name}",
+  "@groupPrefix": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "usageOf": "{used} of {limit}",
+  "@usageOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "limitReached": "Limit reached",
+  "timeLeft": "{time} left",
+  "@timeLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "overviewMinutes": "{count}min",
+  "@overviewMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "overviewHours": "{count}h",
+  "@overviewHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "overviewHoursMinutes": "{hours}h {minutes}min",
+  "@overviewHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "noDeviceLockTitle": "No device lock is set up",
+  "noDeviceLockBody": "This device has no biometric or screen credential enrolled, so there is nothing to authenticate against. Entry is allowed — exactly as the original app behaves in this case. Consider setting a device PIN.",
+  "unlockReason": "Unlock Dominanter",
+  "authNotCompleted": "Authentication was not completed.",
+  "authFailed": "Authentication failed: {message}",
+  "@authFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "authCouldNotStart": "Authentication could not start: {error}",
+  "@authCouldNotStart": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordPromptTitle": "Enter app password",
+  "passwordFieldLabel": "App password",
+  "passwordUnlock": "Unlock",
+  "passwordWrong": "That password is not correct.",
+  "passwordRetryIn": "Try again in {seconds}s",
+  "@passwordRetryIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordChecking": "Checking…",
+  "appEntrySection": "App entry",
+  "appEntryExplanation": "Set an app password as another way to open Dominanter from the lock screen. The password only opens the app — loosening restrictions or removing Device Owner still needs the recovery code.",
+  "appEntryStatusSet": "An app password is set.",
+  "appEntryStatusUnset": "No app password is set.",
+  "appEntrySet": "Set password",
+  "appEntryChange": "Change password",
+  "appEntryRemove": "Remove password",
+  "passwordNewLabel": "New password",
+  "passwordConfirmLabel": "Repeat password",
+  "passwordMinLength": "Use at least {count} characters.",
+  "@passwordMinLength": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordMismatch": "The two passwords do not match.",
+  "passwordSetDone": "App password set.",
+  "passwordRemovedDone": "App password removed.",
+  "passwordRemoveTitle": "Remove app password?",
+  "passwordRemoveBody": "You will open the app with your fingerprint or device credential again. This does not change the recovery code.",
+  "passwordRemoveConfirm": "Remove",
+  "passwordShow": "Show password",
+  "passwordHide": "Hide password",
+  "recoveryCodeLabel": "Recovery code",
+  "wizardSetupTitle": "Set up your recovery code",
+  "wizardChangeTitle": "Change recovery code",
+  "stepOf": "Step {step} of {total}",
+  "@stepOf": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "grabPaper": "Grab a pen and paper before continuing.",
+  "back": "Back",
+  "next": "Next",
+  "finish": "Finish",
+  "wizardIntroTitle": "Your recovery code",
+  "howItWorks": "How it works",
+  "tipGenerates": "Dominanter generates a 16-letter code",
+  "tipWrite": "Write the code down on a piece of paper",
+  "tipTypeBack": "Type it back to make sure it's correct",
+  "tipStorePaper": "Store the paper in a safe place",
+  "wizardIntroBody": "The code will be asked for whenever you change Dominanter's settings. Without it, you could be locked out of the blocked features. It is stored only as a salted hash on this device — it cannot be shown again after this wizard, and there is no account or cloud copy.",
+  "writeTitle": "Write it on paper",
+  "writeBody": "Copy the 16 letters exactly as shown. Don't take a screenshot or save it on your phone — a copy within reach is easy to use in a moment of impulse.",
+  "generatingCode": "Generating your code…",
+  "showCode": "Show code",
+  "wroteOnPaper": "I wrote the code on paper",
+  "confirmTitle": "Check what you wrote",
+  "confirmBody": "The code is hidden now. Type it from your paper to make sure every letter is right.",
+  "codeCorrect": "The code is correct",
+  "codeMismatchBack": "It doesn't match. Go back and compare it with your paper.",
+  "codeCountOf": "{count}/16",
+  "@codeCountOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeTitle": "Store it in a safe place",
+  "storeBody": "The paper is now the only copy of your code. Choose carefully where to keep it.",
+  "tipAway": "Away from your phone, somewhere you won't reach on impulse",
+  "tipEasyFind": "Easy to find when you really need it — a drawer, a folder or with someone you trust",
+  "tipNoPhotos": "No photos or digital copies",
+  "tipThrowOld": "Throw away the paper with the old code",
+  "storedPaperCheckbox": "I stored the paper in a safe place",
+  "codeMismatchStore": "That does not match the code shown. Check your paper copy and try again.",
+  "codeNotStored": "The code was not stored. Nothing was changed.",
+  "firstRunTitle": "Dominanter — first run",
+  "gateChallengesTitle": "Access challenges",
+  "gateCodeTitle": "Enter recovery code",
+  "gateIntroText": "Enter your recovery code to open a 10-minute session. Your configured access challenges run only after the code is accepted.",
+  "gateEnterCodeError": "Enter the 16-letter code from your paper copy.",
+  "gateWrongCode": "That code does not match. Nothing was unlocked.",
+  "preparingGate": "Preparing the gate…",
+  "undoWindowPassed": "The undo window has passed; the change stands.",
+  "mathSolveTitle": "Solve {count} problems",
+  "@mathSolveTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mathNotQuite": "Not quite — try again.",
+  "answerLabel": "Answer",
+  "check": "Check",
+  "wordsTypeTitle": "Type the words",
+  "wordsCounter": "{current} / {total}",
+  "@wordsCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "typeWordLabel": "Type the word",
+  "readingTitle": "Read slowly — passage {current} of {total}: {title}",
+  "@readingTitle": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "readingFinish": "Finish",
+  "readingNextPassage": "Next passage",
+  "tetrisSkippedNote": "Note: the Tetris challenge is not available in this version (v1.1) and was skipped — it was not simulated.",
+  "passageOnWaiting": "On waiting",
+  "passageOnFutureSelf": "On the future self",
+  "passageOnAttention": "On attention",
+  "passageOnBeginningAgain": "On beginning again",
+  "passageOnPatience": "On patience",
+  "yourPhrase": "Your phrase",
+  "challengeMath": "Math problems",
+  "challengeWords": "Typing words",
+  "challengeTetris": "Tetris",
+  "challengeReading": "Reflective reading",
+  "checkingSetupState": "Checking setup state…",
+  "iUnderstand": "I understand",
+  "details": "Details",
+  "shizukuNotInstalledTitle": "Shizuku: not installed",
+  "shizukuNotInstalledBody": "Install Shizuku (moe.shizuku.privileged.api) from the Play Store or its official site, then return here.",
+  "shizukuNotRunningTitle": "Shizuku: not running",
+  "shizukuNotRunningBody": "Shizuku is installed, but its server is not running. Dominanter cannot start it — open the Shizuku app and start the server (via wireless debugging or ADB), then pull to refresh.",
+  "shizukuPreV11Title": "Shizuku: too old (pre-v11)",
+  "shizukuPreV11Body": "This Shizuku server predates v11 and cannot run commands. Update Shizuku, restart its server, then refresh.",
+  "shizukuNoPermissionTitle": "Shizuku: permission needed",
+  "shizukuNoPermissionBody": "The server is running. Grant Dominanter permission in Shizuku to continue setup.",
+  "shizukuGrantedTitle": "Shizuku: connected & granted",
+  "shizukuGrantedBody": "Setup operations are available. Day-to-day enforcement does not need Shizuku after provisioning.",
+  "shizukuUnknownTitle": "Shizuku: unknown state",
+  "shizukuUnknownBody": "The native layer returned an unrecognised state.",
+  "serverVersionLine": "Server version {version}, UID {uid}",
+  "@serverVersionLine": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      },
+      "uid": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosticLine": "Diagnostic: {text}",
+  "@diagnosticLine": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "installShizuku": "Install Shizuku",
+  "waitingShizukuAppear": "Waiting for Shizuku to appear…",
+  "requestShizukuPermission": "Request Shizuku permission",
+  "waitingShizukuAnswer": "Waiting for Shizuku's answer…",
+  "shizukuPermissionGrantedMsg": "Shizuku permission granted — provisioning is unlocked.",
+  "permissionNotGrantedYetMsg": "Permission not granted yet. Approve Dominanter in Shizuku, then tap Request again.",
+  "noStoreOpenedMsg": "No store or browser could be opened for the Shizuku page.",
+  "shizukuDetectedMsg": "Shizuku detected.",
+  "deviceOwnerTitle": "Device Owner",
+  "deviceOwnerYes": "Dominanter is the Device Owner of this device.",
+  "deviceOwnerNo": "Not provisioned. Most restrictions need Device Owner. Admin active: {admin}.",
+  "@deviceOwnerNo": {
+    "placeholders": {
+      "admin": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsNote": "Note: {count} account(s) detected. Provisioning usually still works via Shizuku, but removing accounts first is the original app's recommended path.",
+  "@accountsNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "becomeDeviceOwner": "Become Device Owner via Shizuku",
+  "provisioningUnlocksNote": "Provisioning unlocks when Shizuku is running and permission is granted.",
+  "pathUsed": "Path used: {path}",
+  "@pathUsed": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "accessibilityService": "Accessibility Service",
+  "a11yUnknown": "Unknown",
+  "a11yRunning": "Enabled and running — enforcement is live.",
+  "a11yBinding": "Enabled but not yet running (binding).",
+  "a11yOff": "Off. Turning it off later suspends every controlled app (anti-bypass lockdown).",
+  "wssTitle": "Extra system permission",
+  "wssGrantedText": "Granted (verified by re-check).",
+  "wssPurpose": "Grants the WRITE_SECURE_SETTINGS permission, needed for colour modes (v1.1). Granted via Shizuku and verified by re-check; the state shown here is read on every refresh.",
+  "granted": "Granted",
+  "granting": "Granting…",
+  "grant": "Grant",
+  "wssGrantedMsg": "WRITE_SECURE_SETTINGS is granted.",
+  "wssStillNotGrantedMsg": "WRITE_SECURE_SETTINGS is still not granted. Shizuku must be running with permission granted first.",
+  "diagnosticsTitle": "Provisioning diagnostics",
+  "diagnosticsSubtitle": "Accounts, extra users and the current Device Owner — these can block provisioning.",
+  "runDiagnostics": "Run diagnostics",
+  "diagAccounts": "Accounts ({count})",
+  "@diagAccounts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "diagNoAccounts": "No accounts found — good for provisioning.",
+  "diagUsers": "Users ({count})",
+  "@diagUsers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "diagOnlyPrimaryUser": "Only the primary user.",
+  "diagCurrentOwner": "Current Device Owner",
+  "diagNone": "None",
+  "blockerExtraUsersTitle": "Provisioning blocked: extra users",
+  "blockerExtraUsersBody": "This device has additional users or profiles: {names}.\n\nAndroid cannot provision a Device Owner while other users exist. Remove the extra users/profiles (Settings → Users), then return here and refresh. This matches the original app, which replaces the provisioning button with this warning.",
+  "@blockerExtraUsersBody": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "blockerOtherOwnerTitle": "Provisioning blocked: another Device Owner",
+  "blockerOtherOwnerBody": "{packageName} is already the Device Owner of this device ({receiver}).\n\nA device can have only one Device Owner. That app must relinquish ownership (or the device must be factory-reset) before Dominanter can be provisioned. This matches the original app, which replaces the provisioning button with this warning.",
+  "@blockerOtherOwnerBody": {
+    "placeholders": {
+      "packageName": {
+        "type": "String"
+      },
+      "receiver": {
+        "type": "String"
+      }
+    }
+  },
+  "userIdSuffix": "{name} (id {id})",
+  "@userIdSuffix": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "setupAppBarTitle": "Setup",
+  "setupTileTitle": "Setup & Device Owner",
+  "checking": "Checking…",
+  "provisionedAsOwner": "Provisioned as Device Owner",
+  "notOwnerOpenSetup": "Not Device Owner — open Setup",
+  "privateDns": "Private DNS",
+  "dnsCouldNotRead": "Could not read current DNS state",
+  "dnsRequiresOwner": "Requires Device Owner",
+  "dnsForcedHost": "Forced host: {host}",
+  "@dnsForcedHost": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsMode": "Mode: {mode}",
+  "@dnsMode": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsRequiresOwnerSnack": "Private DNS requires Device Owner — finish Setup first.",
+  "browserRestrictions": "Browser restrictions",
+  "browserRestrictionsSub": "URL blocklists + SafeSearch on supporting browsers",
+  "blockedWords": "Blocked words",
+  "blockedWordsSub": "Active and per-app on-screen word blocking",
+  "impulseLock": "Impulse lock",
+  "impulseLockSub": "Panic lock, challenges, recovery keypad options",
+  "focusMode": "Focus mode",
+  "focusModeSub": "Pomodoro sessions that suspend chosen apps",
+  "usageWarnings": "Usage warnings",
+  "usageWarningsSub": "Staged warnings before a time limit expires",
+  "suspensionLogs": "Suspension logs",
+  "suspensionLogsSub": "Audit log of every suspension",
+  "colourModes": "Colour modes",
+  "colourModesNote": "Scheduled grayscale / night light / extra dim ship in v1.1 (the WRITE_SECURE_SETTINGS grant they need is on the Setup screen).",
+  "activityBlocker": "Activity blocker",
+  "activityBlockerNote": "Blocking specific activity screens ships in v1.1.",
+  "language": "Language",
+  "languageDialogTitle": "Language",
+  "languageEnglish": "English",
+  "languageArabic": "العربية",
+  "languageSaved": "Language saved.",
+  "theme": "Theme",
+  "themeSystem": "System default",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "changeRecoveryCode": "Change recovery code",
+  "changeRecoveryCodeSub": "Requires a recovery session; the old code stops working",
+  "recoveryCodeChanged": "Recovery code changed.",
+  "dangerZone": "Danger zone",
+  "removeOwnerNow": "Remove Device Owner now",
+  "removeOwnerNowSub": "Immediate, inside a recovery session — every restriction this app enforces stops at once.",
+  "forcedRemoval48": "Force removal in 48 hours",
+  "forcedIdleSub": "The only code-free escape: after 48 hours, Device Owner can be removed without the recovery code.",
+  "forcedCompleteSub": "Complete — removal can now be finished without a code.",
+  "forcedProgressSub": "In progress — {remaining} remaining (advances while the app is running)",
+  "@forcedProgressSub": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "startForcedRemoval": "Start forced removal",
+  "cancelForcedRemoval": "Cancel forced removal",
+  "finishRemoval": "Finish removal",
+  "startForcedTitle": "Start forced removal?",
+  "startForcedBody": "This starts a 48-hour countdown. When it finishes, Device Owner — and with it every restriction this app enforces — can be removed without the recovery code. It is the only code-free escape, and it can be cancelled at any time before it completes.",
+  "cancelForcedTitle": "Cancel forced removal?",
+  "cancelForcedBody": "The 48-hour countdown will be discarded. Device Owner removal will again require the recovery code.",
+  "finishForcedTitle": "Finish forced removal?",
+  "finishForcedBody": "The 48-hour wait is complete. Removing Device Owner now lifts every restriction this app enforces on this device.",
+  "understandRemovesAll": "I understand this removes all protection",
+  "removeDeviceOwnerAction": "Remove Device Owner",
+  "deviceOwnerRemovedVerified": "Device Owner removed (verified).",
+  "dnsSettingsTitle": "Private DNS settings",
+  "dnsCustom": "Custom",
+  "dnsHostnameLabel": "DNS hostname",
+  "dnsHostnameHint": "dns.example.com",
+  "dnsInvalidHostname": "Invalid DNS hostname",
+  "apply": "Apply",
+  "dnsTimeoutError": "Applying the DNS host timed out. Check the current DNS state before retrying.",
+  "dnsNotServingError": "The chosen DNS host is not serving. Pick another host.",
+  "dnsApplyFailedError": "Failed to apply the private DNS host.",
+  "dnsAppliedVerified": "Private DNS forced to {host} (verified).",
+  "@dnsAppliedVerified": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "newBlocklist": "New blocklist",
+  "editBlocklist": "Edit blocklist",
+  "titleLabel": "Title",
+  "sitesLabel": "Sites, one per line (e.g. example.com)",
+  "appliedToBrowsers": "Applied to {count} browser(s), verified.",
+  "@appliedToBrowsers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supportingBrowsers": "Supporting browsers",
+  "noSupportingBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).",
+  "blocklists": "Blocklists",
+  "noBlocklists": "No blocklists yet. Create one to start blocking sites.",
+  "sitesCount": "{count} site(s)",
+  "@sitesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "applyBlocklists": "Apply blocklists to browsers",
+  "loadingBlocklists": "Loading blocklists…",
+  "activeBlockingWords": "Active blocking words",
+  "oneWordPerLine": "One word or phrase per line",
+  "appsWhereWordsBlock": "Apps where active words block",
+  "onScreenWordsFor": "On-screen words for {app}",
+  "@onScreenWordsFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingBlockedWords": "Loading blocked words…",
+  "activeBlockingSection": "Active blocking (F14)",
+  "activeBlockingBody": "When a word is present in the text field of a chosen app and typing ends, the app is backed out of and a block screen shows.",
+  "wordsCount": "{count} word(s)",
+  "@wordsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "targetAppsCount": "{count} target app(s)",
+  "@targetAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passiveBlockingSection": "Passive blocking (F15)",
+  "passiveBlockingBody": "Words appearing anywhere on screen in a specific app.",
+  "noPerAppLists": "No per-app lists yet.",
+  "addTargetAppsFirst": "Add target apps above first — passive lists attach to them in v1.",
+  "addPerAppList": "Add per-app list",
+  "loadingWarningStages": "Loading warning stages…",
+  "stagedWarningsTitle": "Staged warnings before a limit expires",
+  "warningsBody": "Each stage warns once, the configured number of minutes before an app's daily limit runs out. Stages are stored for the Accessibility Service to fire; notification delivery depends on the native notifier.",
+  "noWarningStages": "No warning stages. Add at least one stage or no warnings will be shown.",
+  "addStage": "Add stage",
+  "minutesBeforeLabel": "Minutes before",
+  "removeStage": "Remove stage",
+  "silent": "Silent",
+  "sound": "Sound",
+  "vibrate": "Vibrate",
+  "vibrationCount": "Vibration count",
+  "clearLogsTooltip": "Clear logs (recovery session required)",
+  "searchLogs": "Search logs",
+  "loadingLogs": "Loading logs…",
+  "noSuspensionsLogged": "No suspensions have been logged.",
+  "impulseLockTitle": "Impulse lock",
+  "loadingImpulseLock": "Loading impulse lock…",
+  "impulseActiveTitle": "Impulse lock active — {remaining} left",
+  "@impulseActiveTitle": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "impulseActiveBody": "Like the original, the lock has no early stop: it ends on its own when the timer runs out, and the apps it suspended are released then.",
+  "startImpulseLockFor": "Start impulse lock ({minutes} min)",
+  "@startImpulseLockFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsLockedTitle": "Settings are locked",
+  "settingsLockedBody": "Impulse lock settings can only be changed during a recovery session. Tap to open one.",
+  "configurationSection": "Configuration",
+  "durationLabel": "Duration",
+  "durationSubtitle": "{minutes} minutes (15–360)",
+  "@durationSubtitle": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesSliderLabel": "{minutes} min",
+  "@minutesSliderLabel": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timerOnly": "Timer only",
+  "timerAndSuspend": "Timer + suspend chosen apps",
+  "appsToSuspendCount": "{count} app(s) to suspend",
+  "@appsToSuspendCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accessChallengesTitle": "Access challenges (before a recovery session)",
+  "accessChallengesBody": "The recovery code is asked for first; the selected challenges then run, in order, before the session starts.",
+  "challengeUnavailableNote": "Not available in this version — v1.1. It can be selected in stored config but is skipped, never simulated.",
+  "shuffledKeypadTitle": "Shuffled keypad for recovery code",
+  "shuffledKeypadSub": "So the code cannot be learned from finger positions (F24).",
+  "customPhrasesCount": "{count} custom reading phrase(s)",
+  "@customPhrasesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "customPhrasesSub": "Added to the bundled reading passages",
+  "customReadingPhrases": "Custom reading phrases",
+  "onePhrasePerLine": "One phrase per line (your own words)",
+  "appsSuspendedDuringImpulse": "Apps suspended during impulse lock",
+  "focusModeTitle": "Focus mode",
+  "loadingFocusMode": "Loading focus mode…",
+  "phaseNotStarted": "Not started",
+  "phaseFocusing": "Focusing",
+  "phaseBreak": "Break",
+  "phaseLongBreak": "Long break",
+  "phaseWaiting": "Waiting",
+  "phasePaused": "Paused",
+  "phaseDone": "Done",
+  "ringIdleSummary": "{focus} min focus · {breakTime} min break",
+  "@ringIdleSummary": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "breakTime": {
+        "type": "int"
+      }
+    }
+  },
+  "waitingNextFocus": "Waiting to start the next focus",
+  "cycleOf": "Cycle {current} of {total}",
+  "@cycleOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "completedFocusPeriods": "Completed focus periods: {count}",
+  "@completedFocusPeriods": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "start": "Start",
+  "startFocusBtn": "Start focus",
+  "endSessionBtn": "End session",
+  "pauseBtn": "Pause",
+  "endRecoveryBtn": "End (recovery)",
+  "resumeBtn": "Resume",
+  "skipBreakBtn": "Skip break",
+  "focusWaitingBody": "The break is over. Nothing is suspended while waiting — start the next focus when ready, or end the session.",
+  "focusFocusBody": "Pause is free while the apps stay suspended. Long-press Pause to release them instead (recovery session required).",
+  "focusDefaultBody": "The session is kept by the native focus service: it survives this app being closed, holds its suspensions between phases, and this screen mirrors it.",
+  "durationsSection": "Durations",
+  "focusMinutesLabel": "Focus minutes",
+  "breakMinutesLabel": "Break minutes",
+  "longBreakMinutesLabel": "Long break minutes",
+  "cyclesLabel": "Cycles before long break",
+  "autoStartTitle": "Auto-start next focus",
+  "autoStartSub": "Start the next focus phase by itself when a break ends; otherwise the session waits. Turning it off is a loosening.",
+  "soundTitle": "Sound",
+  "soundSub": "Play a sound at phase changes.",
+  "vibrationTitle": "Vibration",
+  "vibrationSub": "Vibrate at phase changes.",
+  "suspendedWhileFocusing": "Suspended while focusing",
+  "appsSuspendedWhileFocusing": "{count} app(s) suspended while focusing",
+  "@appsSuspendedWhileFocusing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groupsSuspendedWhileFocusing": "{count} group(s) suspended while focusing",
+  "@groupsSuspendedWhileFocusing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restrictionsAppliedWhileFocusing": "{count} restriction(s) applied while focusing",
+  "@restrictionsAppliedWhileFocusing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "focusSchedulesTitle": "Focus schedules & reminders",
+  "focusSchedulesNote": "Scheduled auto-start sessions are not in this version.",
+  "appsToSuspendWhileFocusing": "Apps to suspend while focusing",
+  "groupsToSuspendWhileFocusing": "Groups to suspend while focusing",
+  "noGroupsYet": "No groups yet",
+  "groupAppsCount": "{count} app(s)",
+  "@groupAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restrictionsDuringFocus": "Restrictions during focus",
+  "noDeviceOwnerPrivileges": "No Device Owner privileges",
+  "noOwnerBody": "System restrictions only work while Dominanter is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.",
+  "openSetup": "Open Setup",
+  "restrictionsUpdatedVerified": "Restrictions updated and verified.",
+  "searchRestrictions": "Search restrictions",
+  "loadingRestrictions": "Loading restrictions…",
+  "recommendedSection": "Recommended",
+  "otherRestrictionsSection": "Other restrictions",
+  "changedNotApplied": "Changed — not applied yet",
+  "applying": "Applying…",
+  "applyChanges": "Apply changes",
+  "activeBadge": "Active",
+  "searchApps": "Search apps",
+  "includeSystemApps": "Include system apps",
+  "appGroups": "App groups",
+  "appGroupsSub": "Shared limits and windows for a set of apps",
+  "loadingInstalledApps": "Loading installed apps…",
+  "noAppsMatch": "No apps match. Try a different search, or include system apps.",
+  "stateSystem": "system",
+  "stateHidden": "hidden",
+  "stateSuspended": "suspended",
+  "stateUninstallBlocked": "uninstall blocked",
+  "usedTodaySuffix": "used {duration} today",
+  "@usedTodaySuffix": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "suspendedTitle": "Suspended",
+  "suspendedSub": "The app cannot be opened while suspended.",
+  "hiddenTitle": "Hidden",
+  "hiddenSub": "Removed from the launcher and app list.",
+  "uninstallBlockedTitle": "Uninstall blocked",
+  "suspensionEnabledFor": "Suspension enabled for {app}",
+  "@suspensionEnabledFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "hidingEnabledFor": "Hiding enabled for {app}",
+  "@hidingEnabledFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "uninstallBlockEnabledFor": "Uninstall block enabled for {app}",
+  "@uninstallBlockEnabledFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLimitUpdatedFor": "Time limit updated for {app}",
+  "@timeLimitUpdatedFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeWindowsUpdatedFor": "Time windows updated for {app}",
+  "@timeWindowsUpdatedFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "groupMembersUpdated": "Members of {group} updated",
+  "@groupMembersUpdated": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "groupLimitUpdated": "Limit of {group} updated",
+  "@groupLimitUpdated": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "restrictionsUpdatedFor": "Restrictions updated for {app}",
+  "@restrictionsUpdatedFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLimitTile": "Time limit",
+  "loadingEllipsis": "Loading…",
+  "todayLimit": "Today: {limit}",
+  "@todayLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "perWeekdaySuffix": " (per-weekday)",
+  "noLimitSet": "No limit set",
+  "allowedWindowsTile": "Allowed time windows",
+  "windowsCount": "{count} window(s)",
+  "@windowsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "usableAnyTime": "Usable at any time",
+  "managedRestrictionsTile": "Managed restrictions",
+  "managedRestrictionsSub": "Edit this app's declared managed configuration",
+  "timeLimitDialogTitle": "Time limit (minutes)",
+  "dailySegment": "Daily",
+  "perWeekdaySegment": "Per weekday",
+  "minutesPerDayLabel": "Minutes per day (0 = no limit)",
+  "dayNoLimit": "{day} (0 = no limit)",
+  "@dayNoLimit": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "reopenLabel": "Reopening cooldown, seconds (stored; enforcement is v1.1)",
+  "dayMon": "Mon",
+  "dayTue": "Tue",
+  "dayWed": "Wed",
+  "dayThu": "Thu",
+  "dayFri": "Fri",
+  "daySat": "Sat",
+  "daySun": "Sun",
+  "allowedWindowsTitle": "Allowed windows (daily)",
+  "windowsBody": "Outside these windows the app is blocked. An empty list means usable at any time.",
+  "noWindowsSet": "No windows set.",
+  "addWindow": "Add window",
+  "windowStartHelp": "Window start",
+  "windowEndHelp": "Window end (may be next day)",
+  "appGroupsTitle": "App groups",
+  "newGroupTooltip": "New group",
+  "loadingGroups": "Loading groups…",
+  "noGroupsYetEmpty": "No groups yet. Create one to share a limit across apps.",
+  "newGroup": "New group",
+  "groupNameLabel": "Group name",
+  "create": "Create",
+  "renameGroup": "Rename group",
+  "groupAppsLimitLine": "{count} apps · limit {limit}",
+  "@groupAppsLimitLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "editMembers": "Edit members",
+  "editLimit": "Edit limit",
+  "renameGroupAction": "Rename group",
+  "deleteGroup": "Delete group",
+  "membersOf": "Members of {group}",
+  "@membersOf": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "restrictionsForApp": "Restrictions — {app}",
+  "@restrictionsForApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingDeclaredRestrictions": "Loading declared restrictions…",
+  "noRestrictionsForApp": "No restrictions available for {app}. This app does not declare any managed restrictions.",
+  "@noRestrictionsForApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "clearAllRestrictions": "Clear all restrictions",
+  "clearAllBody": "Remove every managed restriction for {app}? This only edits the draft — tap Save to apply it.",
+  "@clearAllBody": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "unsavedChangesTitle": "Unsaved changes",
+  "unsavedChangesBody": "You have unsaved restriction changes. Discard them?",
+  "keepEditing": "Keep editing",
+  "discard": "Discard",
+  "allFilter": "All",
+  "activeFilterCount": "Active ({count})",
+  "@activeFilterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "defaultFilterCount": "Default ({count})",
+  "@defaultFilterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noRestrictionsMatching": "No restrictions matching \"{query}\"",
+  "@noRestrictionsMatching": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noRestrictionsAvailableFor": "No restrictions available for {app}",
+  "@noRestrictionsAvailableFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "savingEllipsis": "Saving…",
+  "saveRestrictions": "Save restrictions",
+  "seeMore": "See more",
+  "seeLess": "See less",
+  "enabledLabel": "Enabled",
+  "disabledLabel": "Disabled",
+  "unsupportedRestrictionType": "Unsupported restriction type: {type}",
+  "@unsupportedRestrictionType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "removeValue": "Remove value",
+  "addValueLabel": "Add value",
+  "addValueTooltip": "Add value",
+  "itemNumber": "Item {number}",
+  "@itemNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "removeItem": "Remove item",
+  "addItem": "Add item",
+  "brandTagline": "BREAK THE CHAIN",
+  "lockedTitle": "Dominanter is locked",
+  "startFocusAction": "Start focus",
+  "skipBreakAction": "Skip break",
+  "pauseAction": "Pause",
+  "resumeAction": "Resume",
+  "focusCycleTitle": "Focus {current}/{total}",
+  "@focusCycleTitle": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "focusPausedSuffix": " · paused",
+  "focusShortBreak": "Short break",
+  "focusLongBreak": "Long break",
+  "focusBreakOver": "Break over",
+  "focusSuspendingSummary": "{minutes} min of focus, suspending the selected apps",
+  "@focusSuspendingSummary": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "groupsSection": "Groups",
+  "appsSection": "Apps",
+  "gateBody": "Enter your recovery code to open a 10-minute session. Your configured access challenges run only after the code is accepted.",
+  "provisionOutput": "Path used: {path}\n{output}",
+  "@provisionOutput": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "noStoreMsg": "No store or browser could be opened for the Shizuku page.",
+  "setupAndOwner": "Setup & Device Owner",
+  "setupTitle": "Setup",
+  "dnsNeedsOwnerMsg": "Private DNS requires Device Owner — finish Setup first.",
+  "forcedRemovalTitle": "48-hour forced removal",
+  "forcedInProgressSub": "In progress — {remaining} remaining (advances while the app is running)",
+  "@forcedInProgressSub": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsApplyTimeout": "Applying the DNS host timed out. Check the current DNS state before retrying.",
+  "dnsNotServing": "The chosen DNS host is not serving. Pick another host.",
+  "dnsApplyFailed": "Failed to apply the private DNS host.",
+  "dnsAppliedMsg": "Private DNS forced to {host} (verified).",
+  "@dnsAppliedMsg": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ownerStillActiveMsg": "Device Owner is still active after removal",
+  "noCapableBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).",
+  "blocklistsSection": "Blocklists",
+  "noBlocklistsYet": "No blocklists yet. Create one to start blocking sites.",
+  "usageWarningsBody": "Each stage warns once, the configured number of minutes before an app's daily limit runs out. Stages are stored for the Accessibility Service to fire; notification delivery depends on the native notifier.",
+  "removeStageTooltip": "Remove stage",
+  "vibrationCountLabel": "Vibration count",
+  "noLogsYet": "No suspensions have been logged.",
+  "impulseActiveLeft": "Impulse lock active — {time} left",
+  "@impulseActiveLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "impulseNoEarlyStop": "Like the original, the lock has no early stop: it ends on its own when the timer runs out, and the apps it suspended are released then.",
+  "startImpulseLock": "Start impulse lock ({minutes} min)",
+  "@startImpulseLock": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsLocked": "Settings are locked",
+  "settingsLockedSub": "Impulse lock settings can only be changed during a recovery session. Tap to open one.",
+  "durationMinutes": "{minutes} minutes (15–360)",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesShort": "{minutes} min",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "accessChallengesSection": "Access challenges (before a recovery session)",
+  "shuffledKeypad": "Shuffled keypad for recovery code",
+  "focusIdleSummary": "{focus} min focus · {breakTime} min break",
+  "@focusIdleSummary": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "breakTime": {
+        "type": "int"
+      }
+    }
+  },
+  "startAction": "Start",
+  "endRecovery": "End (recovery)",
+  "waitingBody": "The break is over. Nothing is suspended while waiting — start the next focus when ready, or end the session.",
+  "focusPauseNote": "Pause is free while the apps stay suspended. Long-press Pause to release them instead (recovery session required).",
+  "focusNativeNote": "The session is kept by the native focus service: it survives this app being closed, holds its suspensions between phases, and this screen mirrors it.",
+  "groupsSuspendedCount": "{count} group(s) suspended while focusing",
+  "@groupsSuspendedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restrictionsAppliedCount": "{count} restriction(s) applied while focusing",
+  "@restrictionsAppliedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "memberCount": "{count} app(s)",
+  "@memberCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noOwnerRestrictionsBody": "System restrictions only work while Dominanter is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.",
+  "restrictionsUpdated": "Restrictions updated and verified.",
+  "usedToday": "used {time} today",
+  "@usedToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "badgeSystem": "system",
+  "badgeHidden": "hidden",
+  "badgeSuspended": "suspended",
+  "badgeUninstallBlocked": "uninstall blocked",
+  "loadingShort": "Loading…",
+  "todayLimitLine": "Today: {limit}",
+  "@todayLimitLine": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "managedRestrictions": "Managed restrictions",
+  "timeLimitUpdatedDesc": "Time limit updated for {app}",
+  "@timeLimitUpdatedDesc": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeWindowsUpdatedDesc": "Time windows updated for {app}",
+  "@timeWindowsUpdatedDesc": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLimitEditorTitle": "Time limit (minutes)",
+  "dayLimitLabel": "{day} (0 = no limit)",
+  "@dayLimitLabel": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "noGroupsYetMsg": "No groups yet. Create one to share a limit across apps.",
+  "membersUpdatedDesc": "Members of {name} updated",
+  "@membersUpdatedDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupLimitUpdatedDesc": "Limit of {name} updated",
+  "@groupLimitUpdatedDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noRestrictionsFor": "No restrictions available for {app}. This app does not declare any managed restrictions.",
+  "@noRestrictionsFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "restrictionsForTitle": "Restrictions — {app}",
+  "@restrictionsForTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "unsavedTitle": "Unsaved changes",
+  "unsavedBody": "You have unsaved restriction changes. Discard them?",
+  "saving": "Saving…",
+  "unsupportedType": "Unsupported restriction type: {type}",
+  "@unsupportedType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "removeValueTooltip": "Remove value",
+  "removeItemTooltip": "Remove item",
+  "restrictionsUpdatedDesc": "Restrictions updated for {app}",
+  "@restrictionsUpdatedDesc": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  }
+}

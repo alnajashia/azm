@@ -159,3 +159,40 @@ relay ceremony is specific to this sandbox.
   signingConfig whenever its properties file exists. Anyone migrating from
   v1.0.0/v1.0.1/v1.0.2 must remove the old install once (in-app recovery
   flow) and clean-install; from v1.0.3 onward updates are sequential.
+
+## v1.0.4 verification (2026-11-10)
+
+- **Audit first:** the release build was gated on
+  `docs/CODE_AUDIT_v1.0.4.md` closing at **0 open findings** (19 found:
+  3 high / 9 medium / 5 low / 2 cosmetic, all fixed). Coverage: 29,375
+  lines, every lib/ Dart file, every Kotlin source, manifest, gradle,
+  proguard, all tests.
+- **Analyze:** "No issues found!" **Tests:** 99/99 passed — the 72
+  pre-v1.0.4 tests plus 27 new: `entry_password_test.dart` (PBKDF2
+  set/verify/remove, wrong-password rejection, malformed-record
+  fail-closed), `entry_password_ui_test.dart` (password action only
+  when a password is set; correct password unlocks entry without
+  opening a recovery session), `localization_test.dart` (identical ARB
+  key sets; Arabic lock screen renders RTL), `gate_coverage_test.dart`
+  (restriction activation opens the recovery gate and applies nothing;
+  with a session open it applies directly), and the extended strict
+  palette guard in `redesign_test.dart`.
+- **Release APK:** `release/dominanter-v1.0.4-release.apk`,
+  54,093,015 bytes, sha256
+  `bf7e61a95d8c0c0838dd722e3030effee00d2400d9c25266a2666e4ef512d4d9`.
+  apksigner: cert SHA-256
+  b03543fa7d9ebcee426c61db96935fb27be38dd6d7b2188de1dcaee5c5ede38b
+  (the permanent key). aapt2 badging: versionName 1.0.4, versionCode 5,
+  application icon = the adaptive-icon XML; resource dump confirms
+  `mipmap/ic_launcher`, `ic_launcher_foreground` and
+  `ic_launcher_monochrome`; APK listing confirms
+  `assets/branding/dominanter_logo.png/.svg/dominanter_logo_symbol.png`
+  and all four Cairo TTFs.
+- **Backup:** keystore + properties + this APK + bilingual
+  `BACKUP_README.md` uploaded to Google Drive folder "Dominanter —
+  Signing & Backup" on 2026-11-10 and verified by listing (APK size in
+  Drive matches the local 54,093,015 bytes).
+- **Not done:** no GitHub push, no GitHub release (separate approval),
+  and no on-device install test yet — v1.0.4 should update a v1.0.3
+  install in place (same cert, higher versionCode); that remains to be
+  confirmed on the user's device.

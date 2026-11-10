@@ -24,6 +24,7 @@ import '../app_controller.dart';
 import '../data/privileged_channel.dart';
 import '../domain/challenges.dart';
 import '../domain/recovery.dart';
+import '../l10n/l10n.dart';
 import 'challenges_ui.dart';
 import 'common.dart';
 
@@ -59,12 +60,14 @@ class CodeEntry extends StatefulWidget {
     super.key,
     required this.controller,
     this.shuffled = false,
-    this.label = 'Recovery code',
+    this.label,
   });
 
   final TextEditingController controller;
   final bool shuffled;
-  final String label;
+
+  /// Field label; defaults to the localized "Recovery code".
+  final String? label;
 
   @override
   State<CodeEntry> createState() => _CodeEntryState();
@@ -100,7 +103,7 @@ class _CodeEntryState extends State<CodeEntry> {
           style: Theme.of(context).textTheme.titleLarge,
           textAlign: TextAlign.center,
           decoration: InputDecoration(
-            labelText: widget.label,
+            labelText: widget.label ?? context.l10n.recoveryCodeLabel,
             border: const OutlineInputBorder(),
             suffixIcon: IconButton(
               icon: const Icon(Icons.backspace_outlined),
@@ -235,8 +238,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
     if (!_confirmMatches) {
       setState(() {
         _step = _stepConfirm;
-        _saveError =
-            'That does not match the code shown. Check your paper copy and try again.';
+        _saveError = context.l10n.codeMismatchStore;
       });
       return;
     }
@@ -254,15 +256,16 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
       } else {
         setState(() {
           _saving = false;
-          _saveError = 'The code was not stored. Nothing was changed.';
+          _saveError = context.l10n.codeNotStored;
         });
       }
     } catch (e) {
       if (mounted) {
+        final l10n = context.l10n;
         setState(() {
           _saving = false;
           _saveError = e is PrivilegedException
-              ? friendlyError(e)
+              ? friendlyError(e, l10n)
               : e.toString();
         });
       }
@@ -271,6 +274,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -278,8 +282,8 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
           child: Text(
             widget.isRegeneration
-                ? 'Change recovery code'
-                : 'Set up your recovery code',
+                ? l10n.wizardChangeTitle
+                : l10n.wizardSetupTitle,
             style: Theme.of(context).textTheme.headlineSmall,
             textAlign: TextAlign.center,
           ),
@@ -291,7 +295,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Step ${_step + 1} of $_stepCount',
+          l10n.stepOf(_step + 1, _stepCount),
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -312,7 +316,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
             child: Text(
-              'Grab a pen and paper before continuing.',
+              l10n.grabPaper,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -329,7 +333,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
                   onPressed: _saving
                       ? null
                       : () => setState(() => _step--),
-                  child: const Text('Back'),
+                  child: Text(l10n.back),
                 ),
                 const SizedBox(width: 12),
               ],
@@ -345,7 +349,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(_step == _stepStore ? 'Finish' : 'Next'),
+                    : Text(_step == _stepStore ? l10n.finish : l10n.next),
               ),
             ],
           ),
@@ -355,42 +359,39 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
   }
 
   Widget _introStep(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _StepHeader(
+        _StepHeader(
           icon: Icons.key_outlined,
-          title: 'Your recovery code',
+          title: l10n.wizardIntroTitle,
         ),
         const SizedBox(height: 20),
-        const _InfoCard(
+        _InfoCard(
           children: [
-            _InfoCardTitle('How it works'),
+            _InfoCardTitle(l10n.howItWorks),
             _TipRow(
               icon: Icons.key_outlined,
-              text: 'Dominanter generates a 16-letter code',
+              text: l10n.tipGenerates,
             ),
             _TipRow(
               icon: Icons.edit_note_outlined,
-              text: 'Write the code down on a piece of paper',
+              text: l10n.tipWrite,
             ),
             _TipRow(
               icon: Icons.keyboard_outlined,
-              text: "Type it back to make sure it's correct",
+              text: l10n.tipTypeBack,
             ),
             _TipRow(
               icon: Icons.lock_outlined,
-              text: 'Store the paper in a safe place',
+              text: l10n.tipStorePaper,
             ),
           ],
         ),
         const SizedBox(height: 16),
-        const Text(
-          'The code will be asked for whenever you change Dominanter\'s '
-          'settings. Without it, you could be locked out of the blocked '
-          'features. It is stored only as a salted hash on this device — '
-          'it cannot be shown again after this wizard, and there is no '
-          'account or cloud copy.',
+        Text(
+          l10n.wizardIntroBody,
           textAlign: TextAlign.center,
         ),
       ],
@@ -398,27 +399,25 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
   }
 
   Widget _writeStep(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _StepHeader(
+        _StepHeader(
           icon: Icons.edit_note_outlined,
-          title: 'Write it on paper',
-          text:
-              'Copy the 16 letters exactly as shown. Don\'t take a '
-              'screenshot or save it on your phone — a copy within reach '
-              'is easy to use in a moment of impulse.',
+          title: l10n.writeTitle,
+          text: l10n.writeBody,
         ),
         const SizedBox(height: 24),
         if (_generateError != null)
           ErrorView(error: _generateError!, onRetry: _generate)
         else if (_generated == null)
-          const LoadingView(message: 'Generating your code…')
+          LoadingView(message: l10n.generatingCode)
         else if (!_revealed)
           FilledButton.tonalIcon(
             onPressed: () => setState(() => _revealed = true),
             icon: const Icon(Icons.visibility_outlined),
-            label: const Text('Show code'),
+            label: Text(l10n.showCode),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
             ),
@@ -438,24 +437,23 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
           onChanged: !_revealed
               ? null
               : (v) => setState(() => _writtenOnPaper = v ?? false),
-          title: const Text('I wrote the code on paper'),
+          title: Text(l10n.wroteOnPaper),
         ),
       ],
     );
   }
 
   Widget _confirmStep(BuildContext context) {
+    final l10n = context.l10n;
     final typed = normalizeCode(_confirm.text);
     final complete = _generated != null && typed.length == 16;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _StepHeader(
+        _StepHeader(
           icon: Icons.password_outlined,
-          title: 'Check what you wrote',
-          text:
-              'The code is hidden now. Type it from your paper to make '
-              'sure every letter is right.',
+          title: l10n.confirmTitle,
+          text: l10n.confirmBody,
         ),
         const SizedBox(height: 24),
         CodeEntry(controller: _confirm),
@@ -471,7 +469,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
               ),
               const SizedBox(width: 6),
               Text(
-                'The code is correct',
+                l10n.codeCorrect,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -480,13 +478,13 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
           )
         else if (complete)
           Text(
-            'It doesn\'t match. Go back and compare it with your paper.',
+            l10n.codeMismatchBack,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
             textAlign: TextAlign.center,
           )
         else
           Text(
-            '${typed.length}/16',
+            l10n.codeCountOf(typed.length),
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -505,37 +503,34 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
   }
 
   Widget _storeStep(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _StepHeader(
+        _StepHeader(
           icon: Icons.inventory_2_outlined,
-          title: 'Store it in a safe place',
-          text:
-              'The paper is now the only copy of your code. Choose '
-              'carefully where to keep it.',
+          title: l10n.storeTitle,
+          text: l10n.storeBody,
         ),
         const SizedBox(height: 24),
         _InfoCard(
           children: [
-            const _TipRow(
+            _TipRow(
               icon: Icons.phonelink_erase_outlined,
-              text:
-                  'Away from your phone, somewhere you won\'t reach on impulse',
+              text: l10n.tipAway,
             ),
-            const _TipRow(
+            _TipRow(
               icon: Icons.search_outlined,
-              text:
-                  'Easy to find when you really need it — a drawer, a folder or with someone you trust',
+              text: l10n.tipEasyFind,
             ),
-            const _TipRow(
+            _TipRow(
               icon: Icons.no_photography_outlined,
-              text: 'No photos or digital copies',
+              text: l10n.tipNoPhotos,
             ),
             if (widget.isRegeneration)
-              const _TipRow(
+              _TipRow(
                 icon: Icons.delete_outline,
-                text: 'Throw away the paper with the old code',
+                text: l10n.tipThrowOld,
               ),
           ],
         ),
@@ -543,7 +538,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
         CheckboxListTile(
           value: _storedOnPaper,
           onChanged: (v) => setState(() => _storedOnPaper = v ?? false),
-          title: const Text('I stored the paper in a safe place'),
+          title: Text(l10n.storedPaperCheckbox),
         ),
         if (_saveError != null) ...[
           const SizedBox(height: 12),
@@ -728,7 +723,7 @@ class SetupRecoveryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dominanter — first run')),
+      appBar: AppBar(title: Text(context.l10n.firstRunTitle)),
       body: RecoveryWizard(
         controller: controller,
         onDone: controller.onRecoverySetupComplete,
@@ -839,7 +834,7 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
   Future<void> _verify() async {
     if (!isValidCodeFormat(_code.text)) {
       setState(
-        () => _verifyError = 'Enter the 16-letter code from your paper copy.',
+        () => _verifyError = context.l10n.gateEnterCodeError,
       );
       return;
     }
@@ -855,7 +850,7 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
       if (!matches) {
         setState(() {
           _verifying = false;
-          _verifyError = 'That code does not match. Nothing was unlocked.';
+          _verifyError = context.l10n.gateWrongCode;
         });
         return;
       }
@@ -870,10 +865,11 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = context.l10n;
         setState(() {
           _verifying = false;
           _verifyError = e is PrivilegedException
-              ? friendlyError(e)
+              ? friendlyError(e, l10n)
               : e.toString();
         });
       }
@@ -889,11 +885,12 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AlertDialog(
       title: Text(
         _stage == _GateStage.challenges
-            ? 'Access challenges'
-            : 'Enter recovery code',
+            ? l10n.gateChallengesTitle
+            : l10n.gateCodeTitle,
       ),
       content: SizedBox(
         width: 420,
@@ -902,16 +899,12 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
             _GateStage.loading =>
               _loadError != null
                   ? ErrorView(error: _loadError!, onRetry: _load)
-                  : const LoadingView(message: 'Preparing the gate…'),
+                  : LoadingView(message: l10n.preparingGate),
             _GateStage.code => Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Enter your recovery code to open a 10-minute session. '
-                  'Your configured access challenges run only after the '
-                  'code is accepted.',
-                ),
+                Text(l10n.gateBody),
                 const SizedBox(height: 16),
                 CodeEntry(controller: _code, shuffled: _shuffle),
                 if (_verifyError != null) ...[
@@ -939,7 +932,7 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text('Confirm'),
+                        : Text(l10n.confirm),
                   ),
                 ),
               ],
@@ -955,7 +948,7 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
       ],
     );
@@ -973,6 +966,7 @@ Future<bool> runLoosening(
     await action();
     return true;
   } catch (e) {
+    if (!context.mounted) return false;
     await showErrorSnackBar(context, e);
     return false;
   }
@@ -987,6 +981,7 @@ Future<void> runTighteningWithUndo(
   try {
     await change.run();
   } catch (e) {
+    if (!context.mounted) return;
     await showErrorSnackBar(context, e);
     return;
   }
@@ -996,13 +991,13 @@ Future<void> runTighteningWithUndo(
       content: Text(change.description),
       duration: change.undoWindow,
       action: SnackBarAction(
-        label: 'Undo',
+        label: context.l10n.undo,
         onPressed: () async {
           final undone = await change.undo();
           if (!undone && context.mounted) {
             showInfoSnackBar(
               context,
-              'The undo window has passed; the change stands.',
+              context.l10n.undoWindowPassed,
             );
           }
         },
@@ -1023,25 +1018,26 @@ class SessionChip extends StatelessWidget {
       animation: controller.session,
       builder: (context, _) {
         if (!controller.session.isActive) return const SizedBox.shrink();
-        final strings = AppStrings(controller.language);
+        final l10n = context.l10n;
         return Padding(
-          padding: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsetsDirectional.only(end: 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Chip(
                 avatar: const Icon(Icons.lock_open, size: 18),
                 label: Text(
-                  '${strings.sessionRemaining}: ${formatDuration(controller.session.remaining)}',
+                  '${l10n.sessionRemaining}: '
+                  '${formatDuration(controller.session.remaining, l10n)}',
                 ),
               ),
               TextButton(
                 onPressed: controller.session.renew,
-                child: Text(strings.renewSession),
+                child: Text(l10n.renewSession),
               ),
               TextButton(
                 onPressed: controller.session.end,
-                child: Text(strings.endSession),
+                child: Text(l10n.endSession),
               ),
             ],
           ),

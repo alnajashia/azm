@@ -7,58 +7,55 @@ library;
 import 'package:flutter/material.dart';
 
 import '../data/privileged_channel.dart';
+import '../l10n/l10n.dart';
 import '../theme.dart';
 
 /// Human-readable copy for a channel failure. The raw code is always kept
 /// visible in [ErrorView] so nothing is hidden behind vague wording.
-String friendlyError(PrivilegedException e) {
+String friendlyError(PrivilegedException e, AppLocalizations l10n) {
   switch (e.code) {
     case 'UNAVAILABLE':
-      return 'The Android service layer is not available here (this happens '
-          'in tests or off-device). No operation was performed.';
+      return l10n.errUnavailable;
     case 'SHIZUKU_NOT_INSTALLED':
-      return 'Shizuku is not installed on this device.';
+      return l10n.errShizukuNotInstalled;
     case 'SHIZUKU_NOT_RUNNING':
-      return 'Shizuku is installed but its server is not running. Start it '
-          'from the Shizuku app, then retry.';
+      return l10n.errShizukuNotRunning;
     case 'SHIZUKU_NO_PERMISSION':
-      return 'Shizuku permission has not been granted to Dominanter.';
+      return l10n.errShizukuNoPermission;
     case 'SHIZUKU_PRE_V11':
-      return 'This Shizuku server is older than v11. Update Shizuku, then retry.';
+      return l10n.errShizukuPreV11;
     case 'SHIZUKU_BINDER_DEAD':
-      return 'The Shizuku connection dropped during the operation. Its '
-          'outcome is unknown — check the current state before retrying.';
+      return l10n.errShizukuBinderDead;
     case 'SHELL_FAILED':
-      return 'A system command failed${e.exitCode != null ? ' (exit code ${e.exitCode})' : ''}.';
+      return e.exitCode != null
+          ? l10n.errShellFailedExit(e.exitCode!)
+          : l10n.errShellFailed;
     case 'PROVISIONING_FAILED':
-      return 'Device Owner provisioning failed on both the direct and the '
-          'fallback path. See Diagnostics on the Setup screen.';
+      return l10n.errProvisioningFailed;
     case 'DPM_NOT_OWNER':
-      return 'Dominanter is not the Device Owner, so this operation is not '
-          'available. Complete Setup first.';
+      return l10n.errDpmNotOwner;
     case 'DPM_FAILED':
-      return 'The system refused or could not verify this change. Nothing '
-          'was reported as successful.';
+      return l10n.errDpmFailed;
     case 'PACKAGE_NOT_FOUND':
-      return 'That app is not installed on this device.';
+      return l10n.errPackageNotFound;
     case 'PERMISSION_DENIED':
-      return 'A required permission is not granted.';
+      return l10n.errPermissionDenied;
     case 'UNSUPPORTED_ANDROID':
-      return 'This Android version does not support this operation.';
+      return l10n.errUnsupportedAndroid;
     case 'TIMEOUT':
-      return 'The operation timed out and was not reported as successful.';
+      return l10n.errTimeout;
     case 'INVALID_ARGUMENT':
-      return 'Invalid input: ${e.message}';
+      return l10n.errInvalidArgument(e.message);
     case 'NOT_IMPLEMENTED':
-      return 'This is not implemented in this version.';
+      return l10n.errNotImplemented;
     default:
       return e.message;
   }
 }
 
 class LoadingView extends StatelessWidget {
-  const LoadingView({super.key, this.message = 'Loading…'});
-  final String message;
+  const LoadingView({super.key, this.message});
+  final String? message;
   @override
   Widget build(BuildContext context) => Center(
     child: Column(
@@ -66,7 +63,7 @@ class LoadingView extends StatelessWidget {
       children: [
         const CircularProgressIndicator(),
         const SizedBox(height: 16),
-        Text(message),
+        Text(message ?? context.l10n.loadingDefault),
       ],
     ),
   );
@@ -119,14 +116,17 @@ class ErrorView extends StatelessWidget {
             Icon(Icons.error_outline, size: 48, color: scheme.error),
             const SizedBox(height: 12),
             Text(
-              priv != null ? friendlyError(priv) : error.toString(),
+              priv != null
+                  ? friendlyError(priv, context.l10n)
+                  : error.toString(),
               textAlign: TextAlign.center,
             ),
             if (priv != null) ...[
               const SizedBox(height: 8),
               Text(
-                'Error code: ${priv.code}'
-                '${priv.exitCode != null ? ' · exit ${priv.exitCode}' : ''}',
+                priv.exitCode != null
+                    ? context.l10n.errorCodeExitLine(priv.code, priv.exitCode!)
+                    : context.l10n.errorCodeLine(priv.code),
                 style: Theme.of(context).textTheme.bodySmall,
                 textAlign: TextAlign.center,
               ),
@@ -146,7 +146,7 @@ class ErrorView extends StatelessWidget {
               const SizedBox(height: 16),
               FilledButton.tonal(
                 onPressed: onRetry,
-                child: const Text('Retry'),
+                child: Text(context.l10n.retry),
               ),
             ],
           ],
@@ -156,13 +156,12 @@ class ErrorView extends StatelessWidget {
   }
 }
 
-/// Gradient / glass hero card (redesign v2 2026-11-09 — red & black
-/// only). Dark mode: the reference image's glossy red plane — a
-/// saturated deep-red → burgundy → near-black gradient with a glossy
-/// top highlight, a red hairline border and a faint red glow under the
-/// card. Light mode: a white card with a soft black shadow and a red
-/// wash at the top. Same identity, both modes. Content is unchanged —
-/// this only replaces the surface it sits on.
+/// Hero card (redesign v2 identity, premium-minimal finish in v1.0.4):
+/// one refined deep-red → black gradient in dark mode, a flat white
+/// surface in light mode, a hairline border, and a single soft shadow.
+/// The v2 build's glossy top highlight and red under-glow were retired
+/// in the v1.0.4 polish pass — calm, flat surfaces over effects.
+/// Content is unchanged; this only replaces the surface it sits on.
 class GradientCard extends StatelessWidget {
   const GradientCard({
     super.key,
@@ -184,51 +183,20 @@ class GradientCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: dark
-              ? DominanterColors.red.withValues(alpha: 0.38)
-              : Colors.black.withValues(alpha: 0.06),
+              ? DominanterColors.red.withValues(alpha: 0.28)
+              : Colors.black.withValues(alpha: 0.08),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: dark ? 0.45 : 0.10),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: dark ? 0.35 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-          if (dark)
-            BoxShadow(
-              color: DominanterColors.red.withValues(alpha: 0.20),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            Padding(padding: padding, child: child),
-            // Glossy top highlight (glass cue from the references).
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 56,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withValues(alpha: dark ? 0.13 : 0.35),
-                        Colors.white.withValues(alpha: 0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: Padding(padding: padding, child: child),
       ),
     );
   }
@@ -245,10 +213,11 @@ String formatClock(Duration d) {
 
 /// Large circular timer in the reference style: a thick rounded RED
 /// ring (red & black only — focus burns bright red, a break dims to
-/// dark red; the old blue break ring is gone) around a black disc with
-/// a red hairline rim and a soft red glow, big centre numerals like the
-/// reference's «05», phase label above the digits and a cycle label
-/// below. Presentation only — callers drive it from the existing models.
+/// dark red; the old blue break ring is gone) around a flat black disc
+/// with a red hairline rim (the v1.0.4 polish pass removed the glow),
+/// big centre numerals like the reference's «05», phase label above
+/// the digits and a cycle label below. Presentation only — callers
+/// drive it from the existing models.
 class FocusTimerRing extends StatelessWidget {
   const FocusTimerRing({
     super.key,
@@ -281,34 +250,17 @@ class FocusTimerRing extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // The reference's dark disc inside the chunky red ring.
+          // The reference's dark disc inside the chunky red ring —
+          // flat fill, hairline red rim, no glow (v1.0.4 polish).
           Container(
             width: size - 26,
             height: size - 26,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: dark
-                    ? const [
-                        DominanterColors.blackSurfaceHigh,
-                        DominanterColors.blackBackground,
-                      ]
-                    : const [Colors.white, Color(0xFFECECEF)],
-              ),
+              color: dark ? DominanterColors.blackBackground : Colors.white,
               border: Border.all(
                 color: DominanterColors.red.withValues(alpha: 0.30),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: DominanterColors.red.withValues(
-                    alpha: dark ? 0.25 : 0.14,
-                  ),
-                  blurRadius: 26,
-                  spreadRadius: 2,
-                ),
-              ],
             ),
           ),
           SizedBox(
@@ -377,7 +329,7 @@ class UnavailableTile extends StatelessWidget {
     leading: Icon(icon, color: Theme.of(context).colorScheme.outline),
     title: Text(title),
     subtitle: Text(note),
-    trailing: const Chip(label: Text('v1.1')),
+    trailing: Chip(label: Text(context.l10n.chipV11)),
     enabled: false,
   );
 }
@@ -387,7 +339,9 @@ Future<void> showErrorSnackBar(BuildContext context, Object error) async {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(
-        error is PrivilegedException ? friendlyError(error) : error.toString(),
+        error is PrivilegedException
+            ? friendlyError(error, context.l10n)
+            : error.toString(),
       ),
       backgroundColor: Theme.of(context).colorScheme.errorContainer,
       duration: const Duration(seconds: 5),
@@ -399,38 +353,26 @@ void showInfoSnackBar(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
-String formatMinutes(int minutes) {
-  if (minutes <= 0) return 'No limit';
-  if (minutes < 60) return '$minutes min';
+String formatMinutes(int minutes, AppLocalizations l10n) {
+  if (minutes <= 0) return l10n.noLimit;
+  if (minutes < 60) return l10n.minutesOnly(minutes);
   final h = minutes ~/ 60, m = minutes % 60;
-  return m == 0 ? '$h h' : '$h h $m min';
+  return m == 0 ? l10n.hoursOnly(h) : l10n.hoursMinutes(h, m);
 }
 
-String formatDuration(Duration d) {
+String formatDuration(Duration d, AppLocalizations l10n) {
   final h = d.inHours, m = d.inMinutes % 60, s = d.inSeconds % 60;
-  if (h > 0) return '${h}h ${m.toString().padLeft(2, '0')}m';
-  if (m > 0) return '${m}m ${s.toString().padLeft(2, '0')}s';
-  return '${s}s';
-}
-
-/// Minimal en/pt strings for the app chrome (F33). Full per-screen
-/// translation is partial in v1 — this class covers navigation, the lock
-/// screen, and primary actions; it is the single place strings live so the
-/// remaining screens can be migrated incrementally.
-class AppStrings {
-  const AppStrings(this.language);
-  final String language;
-  bool get isPt => language == 'pt';
-
-  String get appTitle => 'Dominanter';
-  String get tabStatus => isPt ? 'Estado' : 'Status';
-  String get tabRestrictions => isPt ? 'Restrições' : 'Restrictions';
-  String get tabApps => isPt ? 'Apps' : 'Apps';
-  String get tabConfig => isPt ? 'Config.' : 'Config';
-  String get accessApp => isPt ? 'Aceder à app' : 'Access app';
-  String get panicButton => isPt ? 'Estou com impulsos' : "I'm having impulses";
-  String get sessionRemaining =>
-      isPt ? 'Sessão de recuperação' : 'Recovery session';
-  String get renewSession => isPt ? 'Renovar' : 'Renew';
-  String get endSession => isPt ? 'Terminar sessão' : 'End session';
+  if (h > 0) {
+    return l10n.durationHoursMinutes(
+      h.toString(),
+      m.toString().padLeft(2, '0'),
+    );
+  }
+  if (m > 0) {
+    return l10n.durationMinutesSeconds(
+      m.toString(),
+      s.toString().padLeft(2, '0'),
+    );
+  }
+  return l10n.durationSecondsOnly(s.toString());
 }

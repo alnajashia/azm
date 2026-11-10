@@ -291,3 +291,90 @@ outside the repo in the persistent workspace; v1.0.3 is the first release
 signed with it. Full chain and migration note: docs/TESTING.md,
 "Signing chain". v1.0.3 APK: release sha256
 18a9b7eca5ad18dfd4061ccbec2da2cf0e22326deb52d764af6d7d5d282dff20.
+
+
+## Static analysis: 100% clean (2026-11-10)
+
+`flutter analyze` now reports **No issues found** — 0 errors, 0 warnings,
+0 info lints (down from 24 info lints, all `use_build_context_synchronously`
+plus one `prefer_final_fields`, one `curly_braces_in_flow_control_structures`
+and four `deprecated_member_use`). Fixes were behavior-preserving: async-gap
+context uses are guarded by `mounted` / `context.mounted` early returns, and
+the impulse-lock action radios migrated from the deprecated
+RadioListTile.groupValue/onChanged pair to a RadioGroup ancestor (session
+gating preserved via each tile's `enabled` flag, since RadioGroup.onChanged
+is non-nullable). Tests remain 72/72; a verification release build succeeds
+(sha256 ae2f50a34a107f1cf0b030ca2425831b9f0d6e6999e3ee7616598fce69691b0b,
+not published). These changes are local only until a push is separately
+approved.
+
+## v1.0.4 (2026-11-10) — entry password, bilingual UI, audit, Drive backup
+
+Built locally and verified; **not pushed to GitHub and not released** —
+that remains a separate, separately-approved phase.
+
+- **App entry password (new).** Optional user-set password as an
+  alternative entry method alongside the biometric/device-credential
+  prompt. Security model: stored only as a salted PBKDF2-HMAC-SHA256
+  record (210,000 iterations, same discipline as the recovery code,
+  implemented in pure Dart in `lib/domain/entry_password.dart` and
+  verified against the native record format); minimum 6 characters;
+  set/change/remove lives in Config → "App entry" and requires an
+  active recovery session. The password opens the app **only** — it
+  never starts a recovery session, and loosening/removal still require
+  the paper recovery code. The lock-screen prompt applies an in-memory
+  anti-guess delay (2s × consecutive failures, capped at 30s). Entry
+  priority per the user's spec: fingerprint when available, otherwise
+  (or additionally) the app password or the device PIN/pattern/
+  password; the no-credential-at-all fallback is unchanged.
+- **Full line-by-line audit.** `docs/CODE_AUDIT_v1.0.4.md`: 29,375
+  lines across 66 files (Dart, Kotlin, manifest, gradle, proguard,
+  tests, ARB tables, native string resources). 19 findings — 3 high,
+  9 medium, 5 low, 2 cosmetic — **all fixed, 0 open**. The high
+  findings were gate-coverage gaps closed under the user's directive
+  that *activating* advanced-block features requires the paper code
+  too (restrictions apply, per-app protection toggles, setup-time
+  privilege grants); the audit's gate table enumerates 34 sensitive
+  actions with verdicts. Also fixed: a native channel round-trip that
+  silently reset every group's reopen cooldown to 0, English-only
+  native notification strings (now resource-based with a full Arabic
+  translation), an event-stream double subscription on Retry, and an
+  error path that could echo the attempted entry password.
+- **Bilingual UI: Arabic + English only.** Official gen-l10n ARB
+  tables (597 keys per locale, identical sets), language picker in
+  Config, choice persisted across restarts, first-run default = device
+  locale (ar/en, else English), full RTL via Flutter directionality.
+  Native strings (notifications, block screens) are translated in
+  `res/values-ar/` and follow the device locale.
+- **Logo.** The user-picked concept A "The Broken D" (white D, red
+  fragment breaking off; #D90429 / #0B0B0C / white) is the launcher
+  icon (adaptive icon + all densities) and appears in the lock-screen
+  brand header with the "BREAK THE CHAIN / اكسر القيد" tagline;
+  `assets/branding/` is declared in pubspec and verified inside the
+  APK.
+- **Palette: red + black + white only.** Every theme colour is
+  red-dominant or true greyscale (R==G==B), enforced by the palette
+  guard in `test/redesign_test.dart`. Premium-minimal direction:
+  flat surfaces, hairline borders, generous spacing, one refined
+  deep-red→black hero, always-black pill nav (unchanged rule).
+- **Typography.** Cairo bundled as local assets (Regular 400,
+  SemiBold 600, Bold 700, ExtraBold 800; no runtime font fetching) and
+  set as the theme fontFamily for both locales; headings
+  SemiBold/Bold, body Regular, lock-screen brand area Bold.
+- **Build.** versionName 1.0.4 / versionCode 5; 54,093,015 bytes;
+  sha256 `bf7e61a95d8c0c0838dd722e3030effee00d2400d9c25266a2666e4ef512d4d9`;
+  signed with the permanent key (cert SHA-256 b03543fa…e38b, verified
+  via apksigner); adaptive icon, branding assets and Cairo fonts
+  verified inside the APK. Analyze "No issues found!"; tests **99/99**
+  (72 pre-existing + 27 new: entry-password crypto/UI, localization,
+  gate coverage).
+- **Google Drive backup.** The signing keystore, its properties file
+  (by filename only — no secret values in any doc), this APK and a
+  bilingual `BACKUP_README.md` (restore steps + release hashes) were
+  uploaded 2026-11-10 to the Drive folder **"Dominanter — Signing &
+  Backup"** and verified by listing. Losing that key would make
+  in-place updates impossible, so the backup is the recovery path.
+- **Device state note.** v1.0.4 is signed with the permanent key, so
+  it updates v1.0.3 in place; installs from the lost ephemeral keys
+  (v1.0.0–v1.0.2) still need the one-time remove-and-clean-install
+  migration. Not yet device-tested.

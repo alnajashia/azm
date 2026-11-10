@@ -19,4 +19,31 @@
     <string name="a11y_request_title">Dominanter protection is off</string>
     <string name="a11y_request_body">The Dominanter accessibility service was turned off, so controlled apps have been suspended and app installs blocked. Re-enable the service in Android Settings to restore them.</string>
     <string name="a11y_request_open_settings">Open accessibility settings</string>
+
+    <!-- Usage-warning notifications (notifications/UsageWarningNotifier) -->
+    <string name="usage_channel_silent">Usage warnings (silent)</string>
+    <string name="usage_channel_sound">Usage warnings (sound)</string>
+    <string name="usage_channel_vibrate">Usage warnings (vibrate x%1$d)</string>
+    <string name="usage_channel_description">Warns before an app or group reaches its time limit.</string>
+    <string name="usage_warning_title">Usage warning</string>
+    <string name="usage_warning_text">%1$s left for %2$s</string>
+
+    <!-- Focus status notification (focus/FocusService) -->
+    <string name="focus_channel_name">Focus timer</string>
+    <string name="focus_mode_title">Focus mode</string>
+    <string name="focus_phase_focus">Focus %1$d/%2$d</string>
+    <string name="focus_phase_short_break">Short break</string>
+    <string name="focus_phase_long_break">Long break</string>
+    <string name="focus_phase_waiting">Waiting</string>
+    <string name="focus_paused_prefix">Paused · %1$s</string>
+    <string name="focus_msg_waiting">Start the next focus period when you\'re ready.</string>
+    <string name="focus_msg_paused_apps">Paused — your apps stay suspended.</string>
+    <string name="focus_msg_paused">Session paused.</string>
+    <string name="focus_msg_apps_suspended">%1$d apps suspended</string>
+    <string name="focus_msg_stay_focused">Stay focused.</string>
+    <string name="focus_msg_break">Take a break.</string>
+    <string name="focus_action_start">Start focus</string>
+    <string name="focus_action_end">End session</string>
+    <string name="focus_action_resume">Resume</string>
+    <string name="focus_action_skip_break">Skip break</string>
 </resources>

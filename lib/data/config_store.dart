@@ -13,6 +13,7 @@ library;
 import 'dart:convert';
 
 import '../domain/challenges.dart';
+import '../domain/entry_password.dart';
 import '../domain/focus.dart';
 import '../domain/recovery.dart';
 import 'privileged_channel.dart';
@@ -396,11 +397,65 @@ class ConfigStore {
   Future<void> setForcedRemoval(ForcedRemoval value) =>
       _setJson(recoveryState, 'forced_removal', value.toJson());
 
+  // ------------------------------------------------------ entry password
+
+  /// The stored entry-password record (salted PBKDF2 hash only), or null
+  /// when no entry password is set. See `domain/entry_password.dart` for
+  /// the security model: the password opens the app, nothing more.
+  Future<EntryPasswordHash?> getEntryPassword() async {
+    final j = await _getJson(security, 'entry_password');
+    if (j == null) return null;
+    try {
+      return EntryPasswordHash.fromJson(j);
+    } catch (_) {
+      // A corrupt record must behave as "no password set" rather than
+      // crashing the lock screen; setting a new password overwrites it.
+      return null;
+    }
+  }
+
+  Future<bool> isEntryPasswordSet() async =>
+      (await getEntryPassword()) != null;
+
+  /// Sets (or replaces) the entry password, storing only its salted
+  /// hash. Enforces the minimum length; callers surface the
+  /// [ArgumentError] as user feedback.
+  Future<void> setEntryPassword(
+    String password, {
+    int iterations = EntryPasswordHash.standardIterations,
+  }) async {
+    if (password.length < entryPasswordMinLength) {
+      // Deliberately NOT ArgumentError.value: the exception may surface
+      // in an error snackbar, and the attempted password must never be
+      // echoed anywhere.
+      throw ArgumentError(
+        'Entry password must be at least $entryPasswordMinLength characters',
+      );
+    }
+    final hash = EntryPasswordHash.create(password, iterations: iterations);
+    await _setJson(security, 'entry_password', hash.toJson());
+  }
+
+  /// Verifies [password] against the stored hash. False when no
+  /// password is set.
+  Future<bool> verifyEntryPassword(String password) async {
+    final stored = await getEntryPassword();
+    if (stored == null) return false;
+    return stored.verify(password);
+  }
+
+  Future<void> removeEntryPassword() =>
+      _channel.setSetting(security, 'entry_password', null);
+
   // ------------------------------------------------------------ language & theme
 
-  Future<String> getLanguage() async {
+  /// The user's explicitly saved UI language ('ar' or 'en'), or null
+  /// when they have never picked one — in which case the controller
+  /// falls back to the device locale (Arabic/English, else English).
+  /// Values saved by older builds (e.g. 'pt') count as "never picked".
+  Future<String?> getSavedLanguage() async {
     final v = await _channel.getSetting(security, 'language');
-    return v is String && (v == 'pt' || v == 'en') ? v : 'en';
+    return v is String && (v == 'ar' || v == 'en') ? v : null;
   }
 
   Future<void> setLanguage(String language) =>

@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../domain/challenges.dart';
+import '../l10n/l10n.dart';
 
 class MathChallengeView extends StatefulWidget {
   const MathChallengeView({super.key, required this.onComplete});
@@ -41,7 +42,7 @@ class _MathChallengeViewState extends State<MathChallengeView> {
         _input.clear();
         if (_challenge.isComplete) widget.onComplete();
       } else {
-        _feedback = 'Not quite — try again.';
+        _feedback = context.l10n.mathNotQuite;
       }
     });
   }
@@ -55,7 +56,7 @@ class _MathChallengeViewState extends State<MathChallengeView> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Solve ${MathChallenge.requiredProblems} problems',
+        Text(context.l10n.mathSolveTitle(MathChallenge.requiredProblems),
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         LinearProgressIndicator(
@@ -72,14 +73,14 @@ class _MathChallengeViewState extends State<MathChallengeView> {
           keyboardType: TextInputType.number,
           textAlign: TextAlign.center,
           decoration: InputDecoration(
-            labelText: 'Answer',
+            labelText: context.l10n.answerLabel,
             errorText: _feedback,
             border: const OutlineInputBorder(),
           ),
           onSubmitted: (_) => _submit(),
         ),
         const SizedBox(height: 12),
-        FilledButton(onPressed: _submit, child: const Text('Check')),
+        FilledButton(onPressed: _submit, child: Text(context.l10n.check)),
       ],
     );
   }
@@ -141,7 +142,7 @@ class _WordsChallengeViewState extends State<WordsChallengeView> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Type the words',
+        Text(context.l10n.wordsTypeTitle,
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         Text(
@@ -178,9 +179,9 @@ class _WordsChallengeViewState extends State<WordsChallengeView> {
           controller: _input,
           textAlign: TextAlign.center,
           autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'Type the word',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: context.l10n.typeWordLabel,
+            border: const OutlineInputBorder(),
           ),
           onChanged: _onChanged,
         ),
@@ -215,7 +216,10 @@ class _ReadingChallengeViewState extends State<ReadingChallengeView> {
     final passages = <ReadingPassage>[
       ...samplePassages,
       for (final p in widget.customPhrases)
-        if (p.trim().isNotEmpty) ReadingPassage('Your phrase', p.trim()),
+        if (p.trim().isNotEmpty)
+          // Title marker for a user-supplied phrase; the view maps it
+          // (and the sample titles) to localized strings at build time.
+          ReadingPassage('Your phrase', p.trim()),
     ];
     _challenge = ReadingChallenge(
       passages: passages,
@@ -253,6 +257,22 @@ class _ReadingChallengeViewState extends State<ReadingChallengeView> {
     }
   }
 
+  /// Localized display title for a passage: the sample set's titles and
+  /// the custom-phrase marker are chrome; passage TEXT stays the
+  /// authored English content (users' own phrases are shown verbatim).
+  String _passageTitle(BuildContext context, String title) {
+    final l10n = context.l10n;
+    return switch (title) {
+      'On waiting' => l10n.passageOnWaiting,
+      'On the future self' => l10n.passageOnFutureSelf,
+      'On attention' => l10n.passageOnAttention,
+      'On beginning again' => l10n.passageOnBeginningAgain,
+      'On patience' => l10n.passageOnPatience,
+      'Your phrase' => l10n.yourPhrase,
+      _ => title,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_challenge.isComplete) {
@@ -266,8 +286,9 @@ class _ReadingChallengeViewState extends State<ReadingChallengeView> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Read slowly — passage ${_challenge.passageIndex + 1} of '
-            '${widget.requiredPassages}: ${passage.title}',
+        Text(
+            context.l10n.readingTitle(_challenge.passageIndex + 1,
+                widget.requiredPassages, _passageTitle(context, passage.title)),
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         LinearProgressIndicator(
@@ -286,7 +307,9 @@ class _ReadingChallengeViewState extends State<ReadingChallengeView> {
         const SizedBox(height: 16),
         FilledButton(
           onPressed: passageDone ? _next : null,
-          child: Text(isLast ? 'Finish' : 'Next passage'),
+          child: Text(isLast
+              ? context.l10n.readingFinish
+              : context.l10n.readingNextPassage),
         ),
       ],
     );
@@ -337,17 +360,14 @@ class _ChallengeRunnerViewState extends State<ChallengeRunnerView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_skippedTetris)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: Text(
-              'Note: the Tetris challenge is not available in this version '
-              '(v1.1) and was skipped — it was not simulated.',
-            ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(context.l10n.tetrisSkippedNote),
           ),
         if (_queue.isEmpty)
           FilledButton(
             onPressed: widget.onAllComplete,
-            child: const Text('Continue'),
+            child: Text(context.l10n.continueAction),
           )
         else if (_index < _queue.length)
           switch (_queue[_index]) {

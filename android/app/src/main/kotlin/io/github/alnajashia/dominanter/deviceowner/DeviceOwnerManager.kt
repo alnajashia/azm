@@ -12,7 +12,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.UserManager
-import android.util.Log
 import io.github.alnajashia.dominanter.channel.ErrorCodes
 import io.github.alnajashia.dominanter.channel.PrivException
 import io.github.alnajashia.dominanter.data.SettingsStore
@@ -32,8 +31,6 @@ import io.github.alnajashia.dominanter.shizuku.ShizukuGateway
  * `data/DeviceOwnerRepository.kt` (DPM parts) and `data/SystemRestrictions.kt`.
  */
 object DeviceOwnerManager {
-    private const val TAG = "DeviceOwnerManager"
-
     fun adminComponent(context: Context): ComponentName =
         ComponentName(context.applicationContext, DominanterDeviceAdminReceiver::class.java)
 
@@ -620,6 +617,4 @@ object DeviceOwnerManager {
         }
         return mapOf("mode" to modeName, "hostname" to host)
     }
-
-    internal fun logTag(): String = TAG.also { Log.d(TAG, "DeviceOwnerManager ready") }
 }

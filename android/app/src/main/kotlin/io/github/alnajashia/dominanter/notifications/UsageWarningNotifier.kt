@@ -131,21 +131,26 @@ object UsageWarningNotifier {
 
         val channel = when (stage.type) {
             UsageAlertType.SILENT -> NotificationChannel(
-                channelId, "Usage warnings (silent)", NotificationManager.IMPORTANCE_LOW,
+                channelId, context.getString(R.string.usage_channel_silent),
+                NotificationManager.IMPORTANCE_LOW,
             ).apply {
                 setSound(null, null)
                 enableVibration(false)
             }
 
             UsageAlertType.SOUND -> NotificationChannel(
-                channelId, "Usage warnings (sound)", NotificationManager.IMPORTANCE_DEFAULT,
+                channelId, context.getString(R.string.usage_channel_sound),
+                NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
                 enableVibration(false)
             }
 
             UsageAlertType.VIBRATE -> NotificationChannel(
                 channelId,
-                "Usage warnings (vibrate x${stage.vibrationCount.coerceAtLeast(1)})",
+                context.getString(
+                    R.string.usage_channel_vibrate,
+                    stage.vibrationCount.coerceAtLeast(1),
+                ),
                 NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
                 setSound(null, null)
@@ -153,7 +158,7 @@ object UsageWarningNotifier {
                 vibrationPattern = buildVibrationPattern(stage.vibrationCount)
             }
         }
-        channel.description = "Warns before an app or group reaches its time limit."
+        channel.description = context.getString(R.string.usage_channel_description)
         manager.createNotificationChannel(channel)
     }
 
@@ -242,8 +247,8 @@ object UsageWarningNotifier {
 
         val notification = Notification.Builder(context, channelIdFor(stage))
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Usage warning")
-            .setContentText("$timeText left for $displayName")
+            .setContentTitle(context.getString(R.string.usage_warning_title))
+            .setContentText(context.getString(R.string.usage_warning_text, timeText, displayName))
             .setProgress(100, progress, false)
             .setContentIntent(contentIntent)
             .setDeleteIntent(deleteIntent)

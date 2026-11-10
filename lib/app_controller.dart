@@ -12,12 +12,17 @@
 library;
 
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/material.dart';
 
 import 'data/config_store.dart';
 import 'data/privileged_channel.dart';
 import 'domain/recovery.dart';
+
+/// The app's display version (matches `pubspec.yaml`'s versionName;
+/// shown in the lock-screen footer).
+const String kAppVersion = '1.0.4';
 
 enum StartupState { loading, needsRecoverySetup, locked, unlocked, error }
 
@@ -63,7 +68,16 @@ class AppController extends ChangeNotifier {
     startup = StartupState.loading;
     notifyListeners();
     try {
-      language = await config.getLanguage();
+      // Language (v1.0.4): the saved choice wins; until the user picks
+      // one, default to the device locale — Arabic when the device is
+      // Arabic, English otherwise (the app's only two UI languages).
+      final savedLanguage = await config.getSavedLanguage();
+      if (savedLanguage != null) {
+        language = savedLanguage;
+      } else {
+        final device = PlatformDispatcher.instance.locale.languageCode;
+        language = device == 'ar' ? 'ar' : 'en';
+      }
       impulseLock = await config.getImpulseLock();
       if (impulseLock.active && !impulseLock.isComplete) {
         // A lock from a previous process is still running: re-seed the
@@ -77,6 +91,9 @@ class AppController extends ChangeNotifier {
       forcedRemoval = await config.getForcedRemoval();
       final isSet = await channel.isRecoveryCodeSet();
       startup = isSet ? StartupState.locked : StartupState.needsRecoverySetup;
+      // Re-initialisation (the startup error screen's Retry) must not
+      // stack a second subscription on the broadcast stream.
+      await _eventSub?.cancel();
       _eventSub = channel.events.listen((e) {
         lastEvent = e;
         notifyListeners();
@@ -177,13 +194,6 @@ class AppController extends ChangeNotifier {
       // fail-safe direction for this app — and they remain releasable
       // from the Apps tab.
     }
-  }
-
-  Future<void> stopImpulseLock() async {
-    impulseLock = impulseLock.stop();
-    _impulseSuspendedApps = const [];
-    await config.setImpulseLock(impulseLock);
-    notifyListeners();
   }
 
   @override

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Arabic translations of every native user-visible string (v1.0.4
+     audit: the native block screens and notifications follow the
+     device's language just like the bilingual Flutter UI). -->
+<resources>
+    <string name="app_name">Dominanter</string>
+    <string name="accessibility_description">يراقب دومينانتر استخدام التطبيقات لفرض حدود الوقت والنوافذ الزمنية والكلمات المحظورة التي ضبطتها، ويُفعّل الإغلاق إذا أُوقفت الخدمة.</string>
+
+    <!-- Native block screens (accessibility/BlockActivity) -->
+    <string name="block_time_up_title">انتهى الوقت</string>
+    <string name="block_time_up_body">وصل %1$s إلى حده البالغ %2$d دقيقة لهذا اليوم.</string>
+    <string name="block_outside_window_title">خارج الساعات المسموحة</string>
+    <string name="block_outside_window_body">لا يمكن استخدام %1$s إلا خلال:\n%2$s</string>
+    <string name="block_word_title">كلمة محظورة</string>
+    <string name="block_word_body">الكلمة «%1$s» محظورة في هذا التطبيق.</string>
+    <string name="block_reopening_title">خذ استراحة قصيرة</string>
+    <string name="block_reopening_body">يمكن إعادة فتح %1$s بعد %2$d ثانية.</string>
+    <string name="block_generic_title">محظور</string>
+    <string name="block_generic_body">%1$s محظور بواسطة دومينانتر.</string>
+    <string name="block_go_home">الذهاب إلى الشاشة الرئيسية</string>
+
+    <string name="a11y_request_title">حماية دومينانتر متوقفة</string>
+    <string name="a11y_request_body">أُوقفت خدمة إمكانية الوصول الخاصة بدومينانتر، لذا عُلّقت التطبيقات المضبوطة وحُظرت عمليات تثبيت التطبيقات. أعد تفعيل الخدمة من إعدادات أندرويد لاستعادتها.</string>
+    <string name="a11y_request_open_settings">فتح إعدادات إمكانية الوصول</string>
+
+    <!-- Usage-warning notifications (notifications/UsageWarningNotifier) -->
+    <string name="usage_channel_silent">تنبيهات الاستخدام (صامتة)</string>
+    <string name="usage_channel_sound">تنبيهات الاستخدام (بصوت)</string>
+    <string name="usage_channel_vibrate">تنبيهات الاستخدام (اهتزاز ×%1$d)</string>
+    <string name="usage_channel_description">يُنبّه قبل أن يصل تطبيق أو مجموعة إلى حد الوقت.</string>
+    <string name="usage_warning_title">تنبيه استخدام</string>
+    <string name="usage_warning_text">تبقّى %1$s لـ%2$s</string>
+
+    <!-- Focus status notification (focus/FocusService) -->
+    <string name="focus_channel_name">مؤقّت التركيز</string>
+    <string name="focus_mode_title">وضع التركيز</string>
+    <string name="focus_phase_focus">تركيز %1$d/%2$d</string>
+    <string name="focus_phase_short_break">استراحة قصيرة</string>
+    <string name="focus_phase_long_break">استراحة طويلة</string>
+    <string name="focus_phase_waiting">بانتظار البدء</string>
+    <string name="focus_paused_prefix">متوقف مؤقتًا · %1$s</string>
+    <string name="focus_msg_waiting">ابدأ فترة التركيز التالية عندما تكون جاهزًا.</string>
+    <string name="focus_msg_paused_apps">متوقف مؤقتًا — تطبيقاتك تبقى معلّقة.</string>
+    <string name="focus_msg_paused">الجلسة متوقفة مؤقتًا.</string>
+    <string name="focus_msg_apps_suspended">تم تعليق %1$d من التطبيقات</string>
+    <string name="focus_msg_stay_focused">حافظ على تركيزك.</string>
+    <string name="focus_msg_break">خذ استراحة.</string>
+    <string name="focus_action_start">بدء التركيز</string>
+    <string name="focus_action_end">إنهاء الجلسة</string>
+    <string name="focus_action_resume">استئناف</string>
+    <string name="focus_action_skip_break">تخطي الاستراحة</string>
+</resources>

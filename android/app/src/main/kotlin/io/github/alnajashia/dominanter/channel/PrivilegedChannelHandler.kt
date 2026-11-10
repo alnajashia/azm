@@ -506,6 +506,7 @@ class PrivilegedChannelHandler(
         "packages" to g.packageNames.toList(),
         "dailyMinutes" to g.timeLimit.dailyMinutes,
         "weeklyMinutes" to g.timeLimit.weeklyMinutes,
+        "reopenSeconds" to g.reopenSeconds,
         "dailyWindows" to g.timeWindows.dailyWindows.map { windowToMap(it) },
         "weeklyWindows" to g.timeWindows.weeklyWindows?.map { day -> day.map { windowToMap(it) } },
     )
@@ -531,7 +532,11 @@ class PrivilegedChannelHandler(
         } else {
             io.github.alnajashia.dominanter.data.TimeWindows.daily(parseWindows(m["dailyWindows"] ?: emptyList<Any>()))
         }
-        return io.github.alnajashia.dominanter.data.AppGroup(id, name, packages, limit, windows)
+        // reopenSeconds round-trips like the per-app value (it is stored
+        // in SettingsStore and gate-relevant in Dart); dropping it here
+        // silently zeroed every group's cooldown on save.
+        val reopenSeconds = ((m["reopenSeconds"] as? Number)?.toInt() ?: 0).coerceAtLeast(0)
+        return io.github.alnajashia.dominanter.data.AppGroup(id, name, packages, limit, windows, reopenSeconds)
     }
 
     private fun blockedWordsPayload(): Map<String, Any?> = mapOf(
