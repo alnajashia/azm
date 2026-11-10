@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Dominanter",
+  "appTitle": "Azm",
   "loadingDefault": "Loading…",
   "retry": "Retry",
   "cancel": "Cancel",
@@ -31,7 +31,7 @@
   "errUnavailable": "The Android service layer is not available here (this happens in tests or off-device). No operation was performed.",
   "errShizukuNotInstalled": "Shizuku is not installed on this device.",
   "errShizukuNotRunning": "Shizuku is installed but its server is not running. Start it from the Shizuku app, then retry.",
-  "errShizukuNoPermission": "Shizuku permission has not been granted to Dominanter.",
+  "errShizukuNoPermission": "Shizuku permission has not been granted to Azm.",
   "errShizukuPreV11": "This Shizuku server is older than v11. Update Shizuku, then retry.",
   "errShizukuBinderDead": "The Shizuku connection dropped during the operation. Its outcome is unknown — check the current state before retrying.",
   "errShellFailed": "A system command failed.",
@@ -44,7 +44,7 @@
     }
   },
   "errProvisioningFailed": "Device Owner provisioning failed on both the direct and the fallback path. See Diagnostics on the Setup screen.",
-  "errDpmNotOwner": "Dominanter is not the Device Owner, so this operation is not available. Complete Setup first.",
+  "errDpmNotOwner": "Azm is not the Device Owner, so this operation is not available. Complete Setup first.",
   "errDpmFailed": "The system refused or could not verify this change. Nothing was reported as successful.",
   "errPackageNotFound": "That app is not installed on this device.",
   "errPermissionDenied": "A required permission is not granted.",
@@ -123,20 +123,20 @@
   "endSession": "End session",
   "wordYes": "yes",
   "wordNo": "no",
-  "startingDominanter": "Starting Dominanter…",
+  "startingDominanter": "Starting Azm…",
   "unknownStartupError": "Unknown startup error",
   "tabStatus": "Status",
   "tabRestrictions": "Restrictions",
   "tabApps": "Apps",
   "tabConfig": "Config",
-  "lockTitle": "Dominanter is locked",
+  "lockTitle": "Azm is locked",
   "panicButton": "I'm having impulses",
   "accessApp": "Access app",
   "viewLimits": "View limits",
   "lockHelperBiometric": "Use your fingerprint, face or device PIN to open the app.",
   "lockHelperWithPassword": "Use your fingerprint, face or device PIN — or your app password.",
   "usePasswordInstead": "Use password instead",
-  "versionFooter": "Dominanter {version}",
+  "versionFooter": "Azm {version}",
   "@versionFooter": {
     "placeholders": {
       "version": {
@@ -270,7 +270,7 @@
   },
   "noDeviceLockTitle": "No device lock is set up",
   "noDeviceLockBody": "This device has no biometric or screen credential enrolled, so there is nothing to authenticate against. Entry is allowed — exactly as the original app behaves in this case. Consider setting a device PIN.",
-  "unlockReason": "Unlock Dominanter",
+  "unlockReason": "Unlock Azm",
   "authNotCompleted": "Authentication was not completed.",
   "authFailed": "Authentication failed: {message}",
   "@authFailed": {
@@ -302,7 +302,7 @@
   },
   "passwordChecking": "Checking…",
   "appEntrySection": "App entry",
-  "appEntryExplanation": "Set an app password as another way to open Dominanter from the lock screen. The password only opens the app — loosening restrictions or removing Device Owner still needs the recovery code.",
+  "appEntryExplanation": "Set an app password as another way to open Azm from the lock screen. The password only opens the app — loosening restrictions or removing Device Owner still needs the recovery code.",
   "appEntryStatusSet": "An app password is set.",
   "appEntryStatusUnset": "No app password is set.",
   "appEntrySet": "Set password",
@@ -346,11 +346,11 @@
   "finish": "Finish",
   "wizardIntroTitle": "Your recovery code",
   "howItWorks": "How it works",
-  "tipGenerates": "Dominanter generates a 16-letter code",
+  "tipGenerates": "Azm generates a 16-letter code",
   "tipWrite": "Write the code down on a piece of paper",
   "tipTypeBack": "Type it back to make sure it's correct",
   "tipStorePaper": "Store the paper in a safe place",
-  "wizardIntroBody": "The code will be asked for whenever you change Dominanter's settings. Without it, you could be locked out of the blocked features. It is stored only as a salted hash on this device — it cannot be shown again after this wizard, and there is no account or cloud copy.",
+  "wizardIntroBody": "The code will be asked for whenever you change Azm's settings. Without it, you could be locked out of the blocked features. It is stored only as a salted hash on this device — it cannot be shown again after this wizard, and there is no account or cloud copy.",
   "writeTitle": "Write it on paper",
   "writeBody": "Copy the 16 letters exactly as shown. Don't take a screenshot or save it on your phone — a copy within reach is easy to use in a moment of impulse.",
   "generatingCode": "Generating your code…",
@@ -377,10 +377,10 @@
   "storedPaperCheckbox": "I stored the paper in a safe place",
   "codeMismatchStore": "That does not match the code shown. Check your paper copy and try again.",
   "codeNotStored": "The code was not stored. Nothing was changed.",
-  "firstRunTitle": "Dominanter — first run",
+  "firstRunTitle": "Azm — first run",
   "gateChallengesTitle": "Access challenges",
   "gateCodeTitle": "Enter recovery code",
-  "gateIntroText": "Enter your recovery code to open a 10-minute session. Your configured access challenges run only after the code is accepted.",
+  "gateIntroText": "Enter your recovery code to open a 10-minute session.",
   "gateEnterCodeError": "Enter the 16-letter code from your paper copy.",
   "gateWrongCode": "That code does not match. Nothing was unlocked.",
   "preparingGate": "Preparing the gate…",
@@ -442,11 +442,11 @@
   "shizukuNotInstalledTitle": "Shizuku: not installed",
   "shizukuNotInstalledBody": "Install Shizuku (moe.shizuku.privileged.api) from the Play Store or its official site, then return here.",
   "shizukuNotRunningTitle": "Shizuku: not running",
-  "shizukuNotRunningBody": "Shizuku is installed, but its server is not running. Dominanter cannot start it — open the Shizuku app and start the server (via wireless debugging or ADB), then pull to refresh.",
+  "shizukuNotRunningBody": "Shizuku is installed, but its server is not running. Azm cannot start it — open the Shizuku app and start the server (via wireless debugging or ADB), then pull to refresh.",
   "shizukuPreV11Title": "Shizuku: too old (pre-v11)",
   "shizukuPreV11Body": "This Shizuku server predates v11 and cannot run commands. Update Shizuku, restart its server, then refresh.",
   "shizukuNoPermissionTitle": "Shizuku: permission needed",
-  "shizukuNoPermissionBody": "The server is running. Grant Dominanter permission in Shizuku to continue setup.",
+  "shizukuNoPermissionBody": "The server is running. Grant Azm permission in Shizuku to continue setup.",
   "shizukuGrantedTitle": "Shizuku: connected & granted",
   "shizukuGrantedBody": "Setup operations are available. Day-to-day enforcement does not need Shizuku after provisioning.",
   "shizukuUnknownTitle": "Shizuku: unknown state",
@@ -475,11 +475,11 @@
   "requestShizukuPermission": "Request Shizuku permission",
   "waitingShizukuAnswer": "Waiting for Shizuku's answer…",
   "shizukuPermissionGrantedMsg": "Shizuku permission granted — provisioning is unlocked.",
-  "permissionNotGrantedYetMsg": "Permission not granted yet. Approve Dominanter in Shizuku, then tap Request again.",
+  "permissionNotGrantedYetMsg": "Permission not granted yet. Approve Azm in Shizuku, then tap Request again.",
   "noStoreOpenedMsg": "No store or browser could be opened for the Shizuku page.",
   "shizukuDetectedMsg": "Shizuku detected.",
   "deviceOwnerTitle": "Device Owner",
-  "deviceOwnerYes": "Dominanter is the Device Owner of this device.",
+  "deviceOwnerYes": "Azm is the Device Owner of this device.",
   "deviceOwnerNo": "Not provisioned. Most restrictions need Device Owner. Admin active: {admin}.",
   "@deviceOwnerNo": {
     "placeholders": {
@@ -552,7 +552,7 @@
     }
   },
   "blockerOtherOwnerTitle": "Provisioning blocked: another Device Owner",
-  "blockerOtherOwnerBody": "{packageName} is already the Device Owner of this device ({receiver}).\n\nA device can have only one Device Owner. That app must relinquish ownership (or the device must be factory-reset) before Dominanter can be provisioned. This matches the original app, which replaces the provisioning button with this warning.",
+  "blockerOtherOwnerBody": "{packageName} is already the Device Owner of this device ({receiver}).\n\nA device can have only one Device Owner. That app must relinquish ownership (or the device must be factory-reset) before Azm can be provisioned. This matches the original app, which replaces the provisioning button with this warning.",
   "@blockerOtherOwnerBody": {
     "placeholders": {
       "packageName": {
@@ -653,6 +653,18 @@
   "understandRemovesAll": "I understand this removes all protection",
   "removeDeviceOwnerAction": "Remove Device Owner",
   "deviceOwnerRemovedVerified": "Device Owner removed (verified).",
+  "removalCompleteTitle": "Protection fully removed",
+  "removalCompleteBody": "Azm's protection has been completely removed: no restrictions remain, no app is suspended or hidden by Azm, and nothing of Azm is still running. You can now uninstall normally from your system settings.",
+  "removalPartialTitle": "Protection removed, with warnings",
+  "removalPartialBody": "Device Owner was removed, but some cleanup steps did not complete. You can try again, or uninstall normally — Android discards any remaining owner policies when the app is uninstalled.",
+  "removalStepDisarm": "Disarm safeguards",
+  "removalStepFocus": "Stop focus mode",
+  "removalStepUnsuspend": "Unsuspend apps",
+  "removalStepRestrictions": "Clear restrictions",
+  "removalStepUnhide": "Unhide apps",
+  "removalStepUninstallBlocks": "Lift uninstall blocks",
+  "removalStepAppRestrictions": "Clear per-app restrictions",
+  "removalStepClearOwner": "Remove Device Owner",
   "dnsSettingsTitle": "Private DNS settings",
   "dnsCustom": "Custom",
   "dnsHostnameLabel": "DNS hostname",
@@ -795,8 +807,8 @@
       }
     }
   },
-  "accessChallengesTitle": "Access challenges (before a recovery session)",
-  "accessChallengesBody": "The recovery code is asked for first; the selected challenges then run, in order, before the session starts.",
+  "accessChallengesTitle": "Access challenges",
+  "accessChallengesBody": "These challenges belong to Impulse Lock only. The recovery code on its own opens a recovery session — no challenges are asked after it.",
   "challengeUnavailableNote": "Not available in this version — v1.1. It can be selected in stored config but is skipped, never simulated.",
   "shuffledKeypadTitle": "Shuffled keypad for recovery code",
   "shuffledKeypadSub": "So the code cannot be learned from finger positions (F24).",
@@ -913,7 +925,7 @@
   },
   "restrictionsDuringFocus": "Restrictions during focus",
   "noDeviceOwnerPrivileges": "No Device Owner privileges",
-  "noOwnerBody": "System restrictions only work while Dominanter is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.",
+  "noOwnerBody": "System restrictions only work while Azm is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.",
   "openSetup": "Open Setup",
   "restrictionsUpdatedVerified": "Restrictions updated and verified.",
   "searchRestrictions": "Search restrictions",
@@ -1183,7 +1195,7 @@
   "removeItem": "Remove item",
   "addItem": "Add item",
   "brandTagline": "BREAK THE CHAIN",
-  "lockedTitle": "Dominanter is locked",
+  "lockedTitle": "Azm is locked",
   "startFocusAction": "Start focus",
   "skipBreakAction": "Skip break",
   "pauseAction": "Pause",
@@ -1213,7 +1225,7 @@
   },
   "groupsSection": "Groups",
   "appsSection": "Apps",
-  "gateBody": "Enter your recovery code to open a 10-minute session. Your configured access challenges run only after the code is accepted.",
+  "gateBody": "Enter your recovery code to open a 10-minute session.",
   "provisionOutput": "Path used: {path}\n{output}",
   "@provisionOutput": {
     "placeholders": {
@@ -1292,7 +1304,7 @@
       }
     }
   },
-  "accessChallengesSection": "Access challenges (before a recovery session)",
+  "accessChallengesSection": "Access challenges",
   "shuffledKeypad": "Shuffled keypad for recovery code",
   "focusIdleSummary": "{focus} min focus · {breakTime} min break",
   "@focusIdleSummary": {
@@ -1334,7 +1346,7 @@
       }
     }
   },
-  "noOwnerRestrictionsBody": "System restrictions only work while Dominanter is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.",
+  "noOwnerRestrictionsBody": "System restrictions only work while Azm is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.",
   "restrictionsUpdated": "Restrictions updated and verified.",
   "usedToday": "used {time} today",
   "@usedToday": {
@@ -1436,5 +1448,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "generalSettings": "General Settings",
+  "protectionTools": "Protection tools",
+  "preferencesSection": "Preferences"
 }

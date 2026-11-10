@@ -3,8 +3,8 @@
      audit: the native block screens and notifications follow the
      device's language just like the bilingual Flutter UI). -->
 <resources>
-    <string name="app_name">Dominanter</string>
-    <string name="accessibility_description">يراقب دومينانتر استخدام التطبيقات لفرض حدود الوقت والنوافذ الزمنية والكلمات المحظورة التي ضبطتها، ويُفعّل الإغلاق إذا أُوقفت الخدمة.</string>
+    <string name="app_name">عزم</string>
+    <string name="accessibility_description">يراقب عزم استخدام التطبيقات لفرض حدود الوقت والنوافذ الزمنية والكلمات المحظورة التي ضبطتها، ويُفعّل الإغلاق إذا أُوقفت الخدمة.</string>
 
     <!-- Native block screens (accessibility/BlockActivity) -->
     <string name="block_time_up_title">انتهى الوقت</string>
@@ -16,11 +16,11 @@
     <string name="block_reopening_title">خذ استراحة قصيرة</string>
     <string name="block_reopening_body">يمكن إعادة فتح %1$s بعد %2$d ثانية.</string>
     <string name="block_generic_title">محظور</string>
-    <string name="block_generic_body">%1$s محظور بواسطة دومينانتر.</string>
+    <string name="block_generic_body">%1$s محظور بواسطة عزم.</string>
     <string name="block_go_home">الذهاب إلى الشاشة الرئيسية</string>
 
-    <string name="a11y_request_title">حماية دومينانتر متوقفة</string>
-    <string name="a11y_request_body">أُوقفت خدمة إمكانية الوصول الخاصة بدومينانتر، لذا عُلّقت التطبيقات المضبوطة وحُظرت عمليات تثبيت التطبيقات. أعد تفعيل الخدمة من إعدادات أندرويد لاستعادتها.</string>
+    <string name="a11y_request_title">حماية عزم متوقفة</string>
+    <string name="a11y_request_body">أُوقفت خدمة إمكانية الوصول الخاصة بعزم، لذا عُلّقت التطبيقات المضبوطة وحُظرت عمليات تثبيت التطبيقات. أعد تفعيل الخدمة من إعدادات أندرويد لاستعادتها.</string>
     <string name="a11y_request_open_settings">فتح إعدادات إمكانية الوصول</string>
 
     <!-- Usage-warning notifications (notifications/UsageWarningNotifier) -->

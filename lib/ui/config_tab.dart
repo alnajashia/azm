@@ -90,220 +90,285 @@ class _ConfigTabState extends State<ConfigTab> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final forced = _c.forcedRemoval;
+    // v1.0.5 UX (user directive): every group of controls sits in a
+    // titled card, following the Status tab's grouped pattern — no
+    // flat ungrouped lists. Grouping is presentation only: same
+    // controls, same order, same handlers, same gates.
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
       children: [
         if (_error != null)
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(_error is PrivilegedException
-                ? friendlyError(_error! as PrivilegedException, l10n)
-                : _error.toString()),
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              _error is PrivilegedException
+                  ? friendlyError(_error! as PrivilegedException, l10n)
+                  : _error.toString(),
+            ),
           ),
-        ListTile(
-          leading: Icon(_isOwner == true ? Icons.verified_user : Icons.shield_outlined),
-          title: Text(l10n.setupAndOwner),
-          subtitle: Text(_isOwner == null
-              ? l10n.checking
-              : _isOwner!
-                  ? l10n.provisionedAsOwner
-                  : l10n.notOwnerOpenSetup),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: () => _push(Scaffold(
-            appBar: AppBar(title: Text(l10n.setupTitle)),
-            body: SetupScreen(controller: _c),
-          )),
-        ),
-        ListTile(
-          leading: const Icon(Icons.dns_outlined),
-          title: Text(l10n.privateDns),
-          subtitle: Text(_dns == null
-              ? (_isOwner == true ? l10n.dnsCouldNotRead : l10n.dnsRequiresOwner)
-              : _dns!.isSpecifiedHost
-                  ? l10n.dnsForcedHost(_dns!.hostname ?? '')
-                  : l10n.dnsMode(_dns!.mode)),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: _isOwner == true
-              ? _editDns
-              : () => showInfoSnackBar(
-                    context,
-                    l10n.dnsNeedsOwnerMsg,
-                  ),
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.language),
-          title: Text(l10n.browserRestrictions),
-          subtitle: Text(l10n.browserRestrictionsSub),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: () => _push(BrowserRestrictionsScreen(controller: _c)),
-        ),
-        ListTile(
-          leading: const Icon(Icons.text_fields),
-          title: Text(l10n.blockedWords),
-          subtitle: Text(l10n.blockedWordsSub),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: () => _push(BlockedWordsScreen(controller: _c)),
-        ),
-        ListTile(
-          leading: const Icon(Icons.emergency_outlined),
-          title: Text(l10n.impulseLockTitle),
-          subtitle: Text(l10n.impulseLockSub),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: () => _push(ImpulseLockScreen(controller: _c)),
-        ),
-        ListTile(
-          leading: const Icon(Icons.timer_outlined),
-          title: Text(l10n.focusMode),
-          subtitle: Text(l10n.focusModeSub),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: () => _push(FocusModeScreen(controller: _c)),
-        ),
-        ListTile(
-          leading: const Icon(Icons.notifications_outlined),
-          title: Text(l10n.usageWarnings),
-          subtitle: Text(l10n.usageWarningsSub),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: () => _push(UsageWarningsScreen(controller: _c)),
-        ),
-        ListTile(
-          leading: const Icon(Icons.history),
-          title: Text(l10n.suspensionLogs),
-          subtitle: Text(l10n.suspensionLogsSub),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: () => _push(SuspensionLogsScreen(controller: _c)),
-        ),
-        UnavailableTile(
-          icon: Icons.palette_outlined,
-          title: l10n.colourModes,
-          note: l10n.colourModesNote,
-        ),
-        UnavailableTile(
-          icon: Icons.directions_run_outlined,
-          title: l10n.activityBlocker,
-          note: l10n.activityBlockerNote,
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.translate),
-          title: Text(l10n.language),
-          subtitle: Text(
-              _c.language == 'ar' ? l10n.languageArabic : l10n.languageEnglish),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: _pickLanguage,
-        ),
-        ListTile(
-          leading: const Icon(Icons.brightness_6_outlined),
-          title: Text(l10n.theme),
-          subtitle: Text(switch (_c.themeMode) {
-            ThemeMode.system => l10n.themeSystem,
-            ThemeMode.light => l10n.themeLight,
-            ThemeMode.dark => l10n.themeDark,
-          }),
-          trailing: SegmentedButton<ThemeMode>(
-            segments: const [
-              ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.brightness_auto)),
-              ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode)),
-              ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode)),
-            ],
-            selected: {_c.themeMode},
-            onSelectionChanged: (s) => _c.setThemeMode(s.first),
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.password),
-          title: Text(l10n.changeRecoveryCode),
-          subtitle: Text(l10n.changeRecoveryCodeSub),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: () async {
-            if (!await ensureRecoverySession(context, _c)) return;
-            if (!mounted) return;
-            _push(Scaffold(
-              appBar: AppBar(title: Text(l10n.changeRecoveryCode)),
-              body: RecoveryWizard(
-                controller: _c,
-                isRegeneration: true,
-                onDone: () {
-                  Navigator.of(context).pop();
-                  showInfoSnackBar(context, l10n.recoveryCodeChanged);
-                },
+        SectionCard(
+          title: l10n.generalSettings,
+          children: [
+            ListTile(
+              leading: Icon(
+                _isOwner == true ? Icons.verified_user : Icons.shield_outlined,
               ),
-            ));
-          },
+              title: Text(l10n.setupAndOwner),
+              subtitle: Text(
+                _isOwner == null
+                    ? l10n.checking
+                    : _isOwner!
+                    ? l10n.provisionedAsOwner
+                    : l10n.notOwnerOpenSetup,
+              ),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: () => _push(
+                Scaffold(
+                  appBar: AppBar(title: Text(l10n.setupTitle)),
+                  body: SetupScreen(controller: _c),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.dns_outlined),
+              title: Text(l10n.privateDns),
+              subtitle: Text(
+                _dns == null
+                    ? (_isOwner == true
+                          ? l10n.dnsCouldNotRead
+                          : l10n.dnsRequiresOwner)
+                    : _dns!.isSpecifiedHost
+                    ? l10n.dnsForcedHost(_dns!.hostname ?? '')
+                    : l10n.dnsMode(_dns!.mode),
+              ),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: _isOwner == true
+                  ? _editDns
+                  : () => showInfoSnackBar(context, l10n.dnsNeedsOwnerMsg),
+            ),
+          ],
         ),
-        const Divider(),
+        const SizedBox(height: 12),
+        SectionCard(
+          title: l10n.protectionTools,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: Text(l10n.browserRestrictions),
+              subtitle: Text(l10n.browserRestrictionsSub),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: () => _push(BrowserRestrictionsScreen(controller: _c)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: Text(l10n.blockedWords),
+              subtitle: Text(l10n.blockedWordsSub),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: () => _push(BlockedWordsScreen(controller: _c)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.emergency_outlined),
+              title: Text(l10n.impulseLockTitle),
+              subtitle: Text(l10n.impulseLockSub),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: () => _push(ImpulseLockScreen(controller: _c)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.timer_outlined),
+              title: Text(l10n.focusMode),
+              subtitle: Text(l10n.focusModeSub),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: () => _push(FocusModeScreen(controller: _c)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: Text(l10n.usageWarnings),
+              subtitle: Text(l10n.usageWarningsSub),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: () => _push(UsageWarningsScreen(controller: _c)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: Text(l10n.suspensionLogs),
+              subtitle: Text(l10n.suspensionLogsSub),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: () => _push(SuspensionLogsScreen(controller: _c)),
+            ),
+            UnavailableTile(
+              icon: Icons.palette_outlined,
+              title: l10n.colourModes,
+              note: l10n.colourModesNote,
+            ),
+            UnavailableTile(
+              icon: Icons.directions_run_outlined,
+              title: l10n.activityBlocker,
+              note: l10n.activityBlockerNote,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SectionCard(
+          title: l10n.preferencesSection,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.translate),
+              title: Text(l10n.language),
+              subtitle: Text(
+                _c.language == 'ar'
+                    ? l10n.languageArabic
+                    : l10n.languageEnglish,
+              ),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: _pickLanguage,
+            ),
+            ListTile(
+              leading: const Icon(Icons.brightness_6_outlined),
+              title: Text(l10n.theme),
+              subtitle: Text(switch (_c.themeMode) {
+                ThemeMode.system => l10n.themeSystem,
+                ThemeMode.light => l10n.themeLight,
+                ThemeMode.dark => l10n.themeDark,
+              }),
+              trailing: SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: ThemeMode.system,
+                    icon: Icon(Icons.brightness_auto),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.light,
+                    icon: Icon(Icons.light_mode),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.dark,
+                    icon: Icon(Icons.dark_mode),
+                  ),
+                ],
+                selected: {_c.themeMode},
+                onSelectionChanged: (s) => _c.setThemeMode(s.first),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.password),
+              title: Text(l10n.changeRecoveryCode),
+              subtitle: Text(l10n.changeRecoveryCodeSub),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: () async {
+                if (!await ensureRecoverySession(context, _c)) return;
+                if (!mounted) return;
+                _push(
+                  Scaffold(
+                    appBar: AppBar(title: Text(l10n.changeRecoveryCode)),
+                    body: RecoveryWizard(
+                      controller: _c,
+                      isRegeneration: true,
+                      onDone: () {
+                        Navigator.of(context).pop();
+                        showInfoSnackBar(context, l10n.recoveryCodeChanged);
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         // App entry (v1.0.4): the optional entry password section —
         // header, plain-language explanation, status and the gated
         // set/change/remove actions live in entry_password_ui.dart.
+        // It renders as its own titled card since v1.0.5.
         AppEntrySection(controller: _c),
-        const Divider(),
-        // Danger zone (v1.0.4 UX pass): removal actions grouped and
+        const SizedBox(height: 12),
+        // Danger zone: removal actions in their own titled card,
         // labelled plainly, each with its one-line explanation.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text(
-            l10n.dangerZone,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.remove_moderator_outlined),
-          title: Text(l10n.removeOwnerNow),
-          subtitle: Text(l10n.removeOwnerNowSub),
-          onTap: _isOwner == true
-              ? () => runLoosening(context, _c, () async {
-                    final stillOwner = await _c.channel.removeDeviceOwner();
-                    if (stillOwner) {
-                      throw PrivilegedException(
-                          'DPM_FAILED', l10n.ownerStillActiveMsg);
-                    }
-                    // Guarded by context.mounted (not State.mounted): this
-                    // closure runs through runLoosening, where the analyzer
-                    // treats the State check as unrelated to this context.
-                    if (!context.mounted) return;
-                    setState(() => _isOwner = false);
-                    showInfoSnackBar(context, l10n.deviceOwnerRemovedVerified);
-                  })
-              : null,
-        ),
-        ListTile(
-          leading: const Icon(Icons.hourglass_bottom),
-          title: Text(l10n.forcedRemovalTitle),
-          subtitle: Text(!forced.active
-              ? l10n.forcedIdleSub
-              : forced.isComplete
-                  ? l10n.forcedCompleteSub
-                  : l10n.forcedInProgressSub(
-                      formatDuration(forced.remaining, l10n))),
-        ),
-        if (forced.active)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LinearProgressIndicator(value: forced.progress),
-          ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-          child: Wrap(
-            spacing: 8,
+        Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (!forced.active)
-                OutlinedButton(
-                  onPressed: _confirmStartForcedRemoval,
-                  child: Text(l10n.startForcedRemoval),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text(
+                  l10n.dangerZone,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              if (forced.active && !forced.isComplete)
-                OutlinedButton(
-                  onPressed: _confirmCancelForcedRemoval,
-                  child: Text(l10n.cancelForcedRemoval),
+              ),
+              ListTile(
+                leading: const Icon(Icons.remove_moderator_outlined),
+                title: Text(l10n.removeOwnerNow),
+                subtitle: Text(l10n.removeOwnerNowSub),
+                onTap: _isOwner == true
+                    ? () async {
+                        // v1.0.5 fix #6: removal runs the ordered native
+                        // teardown; the outcome dialog reports honestly
+                        // whether every cleanup step completed.
+                        DeviceOwnerRemovalResult? result;
+                        await runLoosening(context, _c, () async {
+                          result = await _c.channel.removeDeviceOwner();
+                          if (result!.isDeviceOwner) {
+                            throw PrivilegedException(
+                              'DPM_FAILED',
+                              l10n.ownerStillActiveMsg,
+                            );
+                          }
+                          // Guarded by context.mounted (not State.mounted): this
+                          // closure runs through runLoosening, where the analyzer
+                          // treats the State check as unrelated to this context.
+                          if (!context.mounted) return;
+                          setState(() => _isOwner = false);
+                        });
+                        if (result != null &&
+                            !result!.isDeviceOwner &&
+                            context.mounted) {
+                          await _showRemovalOutcome(context, result!);
+                        }
+                      }
+                    : null,
+              ),
+              ListTile(
+                leading: const Icon(Icons.hourglass_bottom),
+                title: Text(l10n.forcedRemovalTitle),
+                subtitle: Text(
+                  !forced.active
+                      ? l10n.forcedIdleSub
+                      : forced.isComplete
+                      ? l10n.forcedCompleteSub
+                      : l10n.forcedInProgressSub(
+                          formatDuration(forced.remaining, l10n),
+                        ),
                 ),
-              if (forced.isComplete)
-                FilledButton(
-                  onPressed: _finishForcedRemoval,
-                  child: Text(l10n.finishRemoval),
+              ),
+              if (forced.active)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: LinearProgressIndicator(value: forced.progress),
                 ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    if (!forced.active)
+                      OutlinedButton(
+                        onPressed: _confirmStartForcedRemoval,
+                        child: Text(l10n.startForcedRemoval),
+                      ),
+                    if (forced.active && !forced.isComplete)
+                      OutlinedButton(
+                        onPressed: _confirmCancelForcedRemoval,
+                        child: Text(l10n.cancelForcedRemoval),
+                      ),
+                    if (forced.isComplete)
+                      FilledButton(
+                        onPressed: _finishForcedRemoval,
+                        child: Text(l10n.finishRemoval),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -338,20 +403,16 @@ class _ConfigTabState extends State<ConfigTab> {
             if (mounted) setState(() => _dns = state);
             return (applied: true, error: null);
           } on TimeoutException {
-            return (
-              applied: false,
-              error: l10n.dnsApplyTimeout,
-            );
+            return (applied: false, error: l10n.dnsApplyTimeout);
           } on PrivilegedException catch (e) {
             // Native surfaces the DPM result code as `verifiedState`
             // (2 = PRIVATE_DNS_SET_ERROR_HOST_NOT_SERVING).
-            final notServing = e.details['verifiedState'] == 2 ||
+            final notServing =
+                e.details['verifiedState'] == 2 ||
                 e.message.contains('result code 2');
             return (
               applied: false,
-              error: notServing
-                  ? l10n.dnsNotServing
-                  : l10n.dnsApplyFailed,
+              error: notServing ? l10n.dnsNotServing : l10n.dnsApplyFailed,
             );
           }
         },
@@ -359,7 +420,9 @@ class _ConfigTabState extends State<ConfigTab> {
     );
     if (applied == true && mounted && _dns != null) {
       showInfoSnackBar(
-          context, context.l10n.dnsAppliedMsg(_dns!.hostname ?? ''));
+        context,
+        context.l10n.dnsAppliedMsg(_dns!.hostname ?? ''),
+      );
     }
   }
 
@@ -374,11 +437,13 @@ class _ConfigTabState extends State<ConfigTab> {
         content: Text(dialogContext.l10n.startForcedBody),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(dialogContext.l10n.cancel)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(dialogContext.l10n.cancel),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(dialogContext.l10n.confirm)),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(dialogContext.l10n.confirm),
+          ),
         ],
       ),
     );
@@ -400,11 +465,13 @@ class _ConfigTabState extends State<ConfigTab> {
         content: Text(dialogContext.l10n.cancelForcedBody),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(dialogContext.l10n.close)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(dialogContext.l10n.close),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(dialogContext.l10n.confirm)),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(dialogContext.l10n.confirm),
+          ),
         ],
       ),
     );
@@ -455,8 +522,9 @@ class _ConfigTabState extends State<ConfigTab> {
               child: Text(context.l10n.close),
             ),
             FilledButton(
-              onPressed:
-                  confirmed ? () => Navigator.pop(context, 'remove') : null,
+              onPressed: confirmed
+                  ? () => Navigator.pop(context, 'remove')
+                  : null,
               child: Text(context.l10n.removeDeviceOwnerAction),
             ),
           ],
@@ -470,12 +538,12 @@ class _ConfigTabState extends State<ConfigTab> {
     if (outcome != 'remove' || !mounted) return;
     final l10n = context.l10n;
     try {
-      final stillOwner = await _c.channel.removeDeviceOwner();
-      if (!stillOwner) {
+      final result = await _c.channel.removeDeviceOwner();
+      if (!result.isDeviceOwner) {
         await _cancelForcedRemoval();
         if (mounted) {
           setState(() => _isOwner = false);
-          showInfoSnackBar(context, l10n.deviceOwnerRemovedVerified);
+          await _showRemovalOutcome(context, result);
         }
       } else {
         throw PrivilegedException('DPM_FAILED', l10n.ownerStillActiveMsg);
@@ -485,6 +553,72 @@ class _ConfigTabState extends State<ConfigTab> {
       await showErrorSnackBar(context, e);
     }
   }
+
+  /// The post-removal state (v1.0.5, fix #6): after a verified removal
+  /// the user is told plainly that protection is fully removed and the
+  /// app can now be uninstalled normally — or, when some teardown steps
+  /// did not complete, exactly which ones, instead of a blanket success
+  /// message.
+  Future<void> _showRemovalOutcome(
+    BuildContext context,
+    DeviceOwnerRemovalResult result,
+  ) async {
+    final l10n = context.l10n;
+    final failed = result.failedSteps;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: Icon(
+          failed.isEmpty
+              ? Icons.verified_user_outlined
+              : Icons.warning_amber_outlined,
+        ),
+        title: Text(
+          failed.isEmpty ? l10n.removalCompleteTitle : l10n.removalPartialTitle,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              failed.isEmpty
+                  ? l10n.removalCompleteBody
+                  : l10n.removalPartialBody,
+            ),
+            if (failed.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final s in failed)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '• ${_removalStepLabel(l10n, s.id)} — ${s.detail}',
+                  ),
+                ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.close),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Localized names for the native teardown step ids (fix #6).
+  String _removalStepLabel(AppLocalizations l10n, String id) => switch (id) {
+    'flag' || 'flagClear' => l10n.removalStepDisarm,
+    'focus' => l10n.removalStepFocus,
+    'unsuspend' => l10n.removalStepUnsuspend,
+    'restrictions' => l10n.removalStepRestrictions,
+    'unhide' => l10n.removalStepUnhide,
+    'uninstallBlocks' => l10n.removalStepUninstallBlocks,
+    'appRestrictions' => l10n.removalStepAppRestrictions,
+    'clearOwner' => l10n.removalStepClearOwner,
+    _ => id,
+  };
 
   /// Language picker (v1.0.4, amendment A): Arabic + English only —
   /// the two fully-localized UI languages. The choice persists in the
@@ -560,13 +694,12 @@ class _DnsDialogState extends State<_DnsDialog> {
   bool get _customValid => isValidHostname(_customController.text.trim());
 
   bool get _canApply =>
-      !_loading &&
-      _selected != null &&
-      (_selected != 'custom' || _customValid);
+      !_loading && _selected != null && (_selected != 'custom' || _customValid);
 
   Future<void> _apply() async {
-    final host =
-        _selected == 'custom' ? _customController.text.trim() : _selected!;
+    final host = _selected == 'custom'
+        ? _customController.text.trim()
+        : _selected!;
     setState(() {
       _loading = true;
       _error = null;
@@ -598,50 +731,55 @@ class _DnsDialogState extends State<_DnsDialog> {
                   ? (_) {}
                   : (v) => setState(() => _selected = v),
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final entry in dnsPresets.entries)
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final entry in dnsPresets.entries)
+                    RadioListTile<String>(
+                      value: entry.value,
+                      title: Text(
+                        entry.key,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(entry.value),
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
                   RadioListTile<String>(
-                    value: entry.value,
-                    title: Text(entry.key,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(entry.value),
+                    value: 'custom',
+                    title: Text(
+                      context.l10n.dnsCustom,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                   ),
-                RadioListTile<String>(
-                  value: 'custom',
-                  title: Text(context.l10n.dnsCustom,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                if (_selected == 'custom')
-                  TextField(
-                    controller: _customController,
-                    enabled: !_loading,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.dnsHostnameLabel,
-                      hintText: 'dns.example.com',
-                      border: const OutlineInputBorder(),
-                      errorText: _customController.text.isNotEmpty &&
-                              !_customValid
-                          ? context.l10n.dnsInvalidHostname
-                          : null,
+                  if (_selected == 'custom')
+                    TextField(
+                      controller: _customController,
+                      enabled: !_loading,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.dnsHostnameLabel,
+                        hintText: 'dns.example.com',
+                        border: const OutlineInputBorder(),
+                        errorText:
+                            _customController.text.isNotEmpty && !_customValid
+                            ? context.l10n.dnsInvalidHostname
+                            : null,
+                      ),
+                      onChanged: (_) => setState(() {}),
                     ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      _error!,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error),
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        _error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     ),
-                  ),
-              ],
+                ],
               ),
             ),
           ),

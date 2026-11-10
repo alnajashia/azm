@@ -484,7 +484,7 @@ class _SetupScreenState extends State<SetupScreen> {
             onInstallShizuku: _installShizuku,
           ),
           const SizedBox(height: 12),
-          GradientCard(
+          HeroCard(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
               children: [
@@ -749,7 +749,7 @@ class _ShizukuCard extends StatelessWidget {
         l10n.shizukuUnknownBody,
       ),
     };
-    return GradientCard(
+    return HeroCard(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

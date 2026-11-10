@@ -161,7 +161,7 @@ void main() {
   });
 
   // Redesign v2 (red & black only): no colour in either scheme, the
-  // hero gradients or the shared palette may be blue-dominant (or any
+  // hero surfaces or the shared palette may be blue-dominant (or any
   // other non-red hue family). Neutrals — tints/shades of black — pass
   // because their channels stay close together.
   test('Red/black identity: no blue-dominant colour anywhere', () {
@@ -199,8 +199,8 @@ void main() {
         scheme.onSurface,
         scheme.inversePrimary,
       ],
-      ...heroGradient(Brightness.light).colors,
-      ...heroGradient(Brightness.dark).colors,
+      heroSurface(Brightness.light),
+      heroSurface(Brightness.dark),
     ];
     for (final c in colors) {
       expect(isBlueDominant(c), isFalse, reason: '$c is blue-dominant');
@@ -212,9 +212,8 @@ void main() {
   // v1.0.4 palette law (amendment B): the ONLY hue allowed anywhere is
   // red; every other colour must be true greyscale (R == G == B). This
   // asserts every shared-palette constant, EVERY ColorScheme role of
-  // both themes, and both hero gradients.
-  test('Strict palette: every theme colour is red-dominant or greyscale',
-      () {
+  // both themes, and both flat hero surfaces.
+  test('Strict palette: every theme colour is red-dominant or greyscale', () {
     bool isRedDominant(Color c) => c.r > c.g && c.r > c.b;
     bool isGreyscale(Color c) => c.r == c.g && c.g == c.b;
 
@@ -293,17 +292,16 @@ void main() {
           theme.scaffoldBackgroundColor;
     }
     for (final brightness in Brightness.values) {
-      final gradient = heroGradient(brightness);
-      for (var i = 0; i < gradient.colors.length; i++) {
-        colors['hero.${brightness.name}.$i'] = gradient.colors[i];
-      }
+      // v1.0.5: hero surfaces are single flat colours now.
+      colors['hero.${brightness.name}'] = heroSurface(brightness);
     }
 
     for (final entry in colors.entries) {
       expect(
         isRedDominant(entry.value) || isGreyscale(entry.value),
         isTrue,
-        reason: '${entry.key} = ${entry.value} is neither red-dominant '
+        reason:
+            '${entry.key} = ${entry.value} is neither red-dominant '
             'nor true greyscale (R==G==B)',
       );
     }

@@ -22,7 +22,7 @@ import 'domain/recovery.dart';
 
 /// The app's display version (matches `pubspec.yaml`'s versionName;
 /// shown in the lock-screen footer).
-const String kAppVersion = '1.0.4';
+const String kAppVersion = '1.0.5';
 
 enum StartupState { loading, needsRecoverySetup, locked, unlocked, error }
 

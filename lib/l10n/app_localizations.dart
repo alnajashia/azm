@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Dominanter'**
+  /// **'Azm'**
   String get appTitle;
 
   /// No description provided for @loadingDefault.
@@ -185,7 +185,7 @@ abstract class AppLocalizations {
   /// No description provided for @errShizukuNoPermission.
   ///
   /// In en, this message translates to:
-  /// **'Shizuku permission has not been granted to Dominanter.'**
+  /// **'Shizuku permission has not been granted to Azm.'**
   String get errShizukuNoPermission;
 
   /// No description provided for @errShizukuPreV11.
@@ -221,7 +221,7 @@ abstract class AppLocalizations {
   /// No description provided for @errDpmNotOwner.
   ///
   /// In en, this message translates to:
-  /// **'Dominanter is not the Device Owner, so this operation is not available. Complete Setup first.'**
+  /// **'Azm is not the Device Owner, so this operation is not available. Complete Setup first.'**
   String get errDpmNotOwner;
 
   /// No description provided for @errDpmFailed.
@@ -347,7 +347,7 @@ abstract class AppLocalizations {
   /// No description provided for @startingDominanter.
   ///
   /// In en, this message translates to:
-  /// **'Starting Dominanter…'**
+  /// **'Starting Azm…'**
   String get startingDominanter;
 
   /// No description provided for @unknownStartupError.
@@ -383,7 +383,7 @@ abstract class AppLocalizations {
   /// No description provided for @lockTitle.
   ///
   /// In en, this message translates to:
-  /// **'Dominanter is locked'**
+  /// **'Azm is locked'**
   String get lockTitle;
 
   /// No description provided for @panicButton.
@@ -425,7 +425,7 @@ abstract class AppLocalizations {
   /// No description provided for @versionFooter.
   ///
   /// In en, this message translates to:
-  /// **'Dominanter {version}'**
+  /// **'Azm {version}'**
   String versionFooter(String version);
 
   /// No description provided for @impulseBlockActive.
@@ -611,7 +611,7 @@ abstract class AppLocalizations {
   /// No description provided for @unlockReason.
   ///
   /// In en, this message translates to:
-  /// **'Unlock Dominanter'**
+  /// **'Unlock Azm'**
   String get unlockReason;
 
   /// No description provided for @authNotCompleted.
@@ -677,7 +677,7 @@ abstract class AppLocalizations {
   /// No description provided for @appEntryExplanation.
   ///
   /// In en, this message translates to:
-  /// **'Set an app password as another way to open Dominanter from the lock screen. The password only opens the app — loosening restrictions or removing Device Owner still needs the recovery code.'**
+  /// **'Set an app password as another way to open Azm from the lock screen. The password only opens the app — loosening restrictions or removing Device Owner still needs the recovery code.'**
   String get appEntryExplanation;
 
   /// No description provided for @appEntryStatusSet.
@@ -839,7 +839,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipGenerates.
   ///
   /// In en, this message translates to:
-  /// **'Dominanter generates a 16-letter code'**
+  /// **'Azm generates a 16-letter code'**
   String get tipGenerates;
 
   /// No description provided for @tipWrite.
@@ -863,7 +863,7 @@ abstract class AppLocalizations {
   /// No description provided for @wizardIntroBody.
   ///
   /// In en, this message translates to:
-  /// **'The code will be asked for whenever you change Dominanter\'s settings. Without it, you could be locked out of the blocked features. It is stored only as a salted hash on this device — it cannot be shown again after this wizard, and there is no account or cloud copy.'**
+  /// **'The code will be asked for whenever you change Azm\'s settings. Without it, you could be locked out of the blocked features. It is stored only as a salted hash on this device — it cannot be shown again after this wizard, and there is no account or cloud copy.'**
   String get wizardIntroBody;
 
   /// No description provided for @writeTitle.
@@ -983,7 +983,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunTitle.
   ///
   /// In en, this message translates to:
-  /// **'Dominanter — first run'**
+  /// **'Azm — first run'**
   String get firstRunTitle;
 
   /// No description provided for @gateChallengesTitle.
@@ -1001,7 +1001,7 @@ abstract class AppLocalizations {
   /// No description provided for @gateIntroText.
   ///
   /// In en, this message translates to:
-  /// **'Enter your recovery code to open a 10-minute session. Your configured access challenges run only after the code is accepted.'**
+  /// **'Enter your recovery code to open a 10-minute session.'**
   String get gateIntroText;
 
   /// No description provided for @gateEnterCodeError.
@@ -1193,7 +1193,7 @@ abstract class AppLocalizations {
   /// No description provided for @shizukuNotRunningBody.
   ///
   /// In en, this message translates to:
-  /// **'Shizuku is installed, but its server is not running. Dominanter cannot start it — open the Shizuku app and start the server (via wireless debugging or ADB), then pull to refresh.'**
+  /// **'Shizuku is installed, but its server is not running. Azm cannot start it — open the Shizuku app and start the server (via wireless debugging or ADB), then pull to refresh.'**
   String get shizukuNotRunningBody;
 
   /// No description provided for @shizukuPreV11Title.
@@ -1217,7 +1217,7 @@ abstract class AppLocalizations {
   /// No description provided for @shizukuNoPermissionBody.
   ///
   /// In en, this message translates to:
-  /// **'The server is running. Grant Dominanter permission in Shizuku to continue setup.'**
+  /// **'The server is running. Grant Azm permission in Shizuku to continue setup.'**
   String get shizukuNoPermissionBody;
 
   /// No description provided for @shizukuGrantedTitle.
@@ -1289,7 +1289,7 @@ abstract class AppLocalizations {
   /// No description provided for @permissionNotGrantedYetMsg.
   ///
   /// In en, this message translates to:
-  /// **'Permission not granted yet. Approve Dominanter in Shizuku, then tap Request again.'**
+  /// **'Permission not granted yet. Approve Azm in Shizuku, then tap Request again.'**
   String get permissionNotGrantedYetMsg;
 
   /// No description provided for @noStoreOpenedMsg.
@@ -1313,7 +1313,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceOwnerYes.
   ///
   /// In en, this message translates to:
-  /// **'Dominanter is the Device Owner of this device.'**
+  /// **'Azm is the Device Owner of this device.'**
   String get deviceOwnerYes;
 
   /// No description provided for @deviceOwnerNo.
@@ -1499,7 +1499,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockerOtherOwnerBody.
   ///
   /// In en, this message translates to:
-  /// **'{packageName} is already the Device Owner of this device ({receiver}).\n\nA device can have only one Device Owner. That app must relinquish ownership (or the device must be factory-reset) before Dominanter can be provisioned. This matches the original app, which replaces the provisioning button with this warning.'**
+  /// **'{packageName} is already the Device Owner of this device ({receiver}).\n\nA device can have only one Device Owner. That app must relinquish ownership (or the device must be factory-reset) before Azm can be provisioned. This matches the original app, which replaces the provisioning button with this warning.'**
   String blockerOtherOwnerBody(String packageName, String receiver);
 
   /// No description provided for @userIdSuffix.
@@ -1855,6 +1855,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Device Owner removed (verified).'**
   String get deviceOwnerRemovedVerified;
+
+  /// No description provided for @removalCompleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protection fully removed'**
+  String get removalCompleteTitle;
+
+  /// No description provided for @removalCompleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Azm\'s protection has been completely removed: no restrictions remain, no app is suspended or hidden by Azm, and nothing of Azm is still running. You can now uninstall normally from your system settings.'**
+  String get removalCompleteBody;
+
+  /// No description provided for @removalPartialTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protection removed, with warnings'**
+  String get removalPartialTitle;
+
+  /// No description provided for @removalPartialBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Owner was removed, but some cleanup steps did not complete. You can try again, or uninstall normally — Android discards any remaining owner policies when the app is uninstalled.'**
+  String get removalPartialBody;
+
+  /// No description provided for @removalStepDisarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Disarm safeguards'**
+  String get removalStepDisarm;
+
+  /// No description provided for @removalStepFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop focus mode'**
+  String get removalStepFocus;
+
+  /// No description provided for @removalStepUnsuspend.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsuspend apps'**
+  String get removalStepUnsuspend;
+
+  /// No description provided for @removalStepRestrictions.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear restrictions'**
+  String get removalStepRestrictions;
+
+  /// No description provided for @removalStepUnhide.
+  ///
+  /// In en, this message translates to:
+  /// **'Unhide apps'**
+  String get removalStepUnhide;
+
+  /// No description provided for @removalStepUninstallBlocks.
+  ///
+  /// In en, this message translates to:
+  /// **'Lift uninstall blocks'**
+  String get removalStepUninstallBlocks;
+
+  /// No description provided for @removalStepAppRestrictions.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear per-app restrictions'**
+  String get removalStepAppRestrictions;
+
+  /// No description provided for @removalStepClearOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Device Owner'**
+  String get removalStepClearOwner;
 
   /// No description provided for @dnsSettingsTitle.
   ///
@@ -2249,13 +2321,13 @@ abstract class AppLocalizations {
   /// No description provided for @accessChallengesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Access challenges (before a recovery session)'**
+  /// **'Access challenges'**
   String get accessChallengesTitle;
 
   /// No description provided for @accessChallengesBody.
   ///
   /// In en, this message translates to:
-  /// **'The recovery code is asked for first; the selected challenges then run, in order, before the session starts.'**
+  /// **'These challenges belong to Impulse Lock only. The recovery code on its own opens a recovery session — no challenges are asked after it.'**
   String get accessChallengesBody;
 
   /// No description provided for @challengeUnavailableNote.
@@ -2585,7 +2657,7 @@ abstract class AppLocalizations {
   /// No description provided for @noOwnerBody.
   ///
   /// In en, this message translates to:
-  /// **'System restrictions only work while Dominanter is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.'**
+  /// **'System restrictions only work while Azm is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.'**
   String get noOwnerBody;
 
   /// No description provided for @openSetup.
@@ -3221,7 +3293,7 @@ abstract class AppLocalizations {
   /// No description provided for @lockedTitle.
   ///
   /// In en, this message translates to:
-  /// **'Dominanter is locked'**
+  /// **'Azm is locked'**
   String get lockedTitle;
 
   /// No description provided for @startFocusAction.
@@ -3299,7 +3371,7 @@ abstract class AppLocalizations {
   /// No description provided for @gateBody.
   ///
   /// In en, this message translates to:
-  /// **'Enter your recovery code to open a 10-minute session. Your configured access challenges run only after the code is accepted.'**
+  /// **'Enter your recovery code to open a 10-minute session.'**
   String get gateBody;
 
   /// No description provided for @provisionOutput.
@@ -3461,7 +3533,7 @@ abstract class AppLocalizations {
   /// No description provided for @accessChallengesSection.
   ///
   /// In en, this message translates to:
-  /// **'Access challenges (before a recovery session)'**
+  /// **'Access challenges'**
   String get accessChallengesSection;
 
   /// No description provided for @shuffledKeypad.
@@ -3527,7 +3599,7 @@ abstract class AppLocalizations {
   /// No description provided for @noOwnerRestrictionsBody.
   ///
   /// In en, this message translates to:
-  /// **'System restrictions only work while Dominanter is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.'**
+  /// **'System restrictions only work while Azm is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.'**
   String get noOwnerRestrictionsBody;
 
   /// No description provided for @restrictionsUpdated.
@@ -3679,6 +3751,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restrictions updated for {app}'**
   String restrictionsUpdatedDesc(String app);
+
+  /// No description provided for @generalSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'General Settings'**
+  String get generalSettings;
+
+  /// No description provided for @protectionTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Protection tools'**
+  String get protectionTools;
+
+  /// No description provided for @preferencesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get preferencesSection;
 }
 
 class _AppLocalizationsDelegate

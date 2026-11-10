@@ -225,16 +225,25 @@ class DominanterAccessibilityService : AccessibilityService() {
 
         // Restore after a previous lockdown (original onServiceConnected semantics):
         // un-suspend the controlled packages and lift the install block.
-        val controlled = SettingsStore.controlledPackages()
-        if (controlled.isNotEmpty()) {
-            suspendPackages(controlled.toTypedArray(), suspend = false)
-        }
-        val dpm = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        val admin = ComponentName(this, DominanterDeviceAdminReceiver::class.java)
-        if (dpm.isAdminActive(admin)) {
-            try {
-                dpm.clearUserRestriction(admin, UserManager.DISALLOW_INSTALL_APPS)
-            } catch (_: Exception) { /* not owner — nothing to clear */ }
+        // v1.0.5 fix #6: this privileged work runs OFF the main thread
+        // (it used to block the service's connect callback), and it is
+        // skipped entirely while a removal teardown is in progress —
+        // the teardown performs the release itself, in order.
+        if (!SettingsStore.isRemovalInProgress()) {
+            val appContext = applicationContext
+            Thread {
+                val controlled = SettingsStore.controlledPackages()
+                if (controlled.isNotEmpty()) {
+                    suspendPackages(controlled.toTypedArray(), suspend = false)
+                }
+                val dpm = appContext.getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                val admin = ComponentName(appContext, DominanterDeviceAdminReceiver::class.java)
+                if (dpm.isAdminActive(admin)) {
+                    try {
+                        dpm.clearUserRestriction(admin, UserManager.DISALLOW_INSTALL_APPS)
+                    } catch (_: Exception) { /* not owner — nothing to clear */ }
+                }
+            }.start()
         }
 
         emitState()
@@ -253,7 +262,20 @@ class DominanterAccessibilityService : AccessibilityService() {
         // F28 — fail closed on accessibility loss, unless this disable was
         // intentional (armed via setAccessibilityEnabled(false), the original's
         // prepareServiceDisable() guard).
-        if (!SettingsStore.consumeIntentionalAccessibilityDisable()) {
+        //
+        // v1.0.5 fix #6: NEVER fire while a removal teardown is in
+        // progress. This callback runs on the main thread, and the
+        // lockdown below is heavy synchronous privileged work —
+        // suspending every controlled package and adding
+        // DISALLOW_INSTALL_APPS. When the unbind is caused by the
+        // system tearing the app down (above all: an uninstall in
+        // flight), that work lands inside the package manager's own
+        // removal operation and wedges system_server — the device
+        // froze on uninstall until the watchdog rebooted it. Removal
+        // disarms this path FIRST, before anything stops.
+        if (!SettingsStore.isRemovalInProgress() &&
+            !SettingsStore.consumeIntentionalAccessibilityDisable()
+        ) {
             val controlled = SettingsStore.controlledPackages()
             if (controlled.isNotEmpty()) {
                 suspendPackages(

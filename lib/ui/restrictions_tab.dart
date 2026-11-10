@@ -79,22 +79,31 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
     return list.any((r) => _draft[r.key] != r.active);
   }
 
-  List<UserRestriction> _filter(List<UserRestriction> list, {required bool recommended}) {
+  List<UserRestriction> _filter(
+    List<UserRestriction> list, {
+    required bool recommended,
+  }) {
     final query = _normalizeForSearch(_query);
     return list.where((r) {
       if (r.recommended != recommended) return false;
       if (query.isEmpty) return true;
       // The original matches the normalised query against the normalised
       // label and the normalised key (`RestrictionsTab.kt` accordion).
-      return _normalizeForSearch(_humaniseRestrictionKey(r.key)).contains(query) ||
+      return _normalizeForSearch(
+            _humaniseRestrictionKey(r.key),
+          ).contains(query) ||
           _normalizeForSearch(r.key).contains(query);
     }).toList();
   }
 
   Future<void> _apply() async {
     final list = _restrictions!;
-    final toApply = list.where((r) => _draft[r.key] == true && !r.active).toList();
-    final toClear = list.where((r) => _draft[r.key] == false && r.active).toList();
+    final toApply = list
+        .where((r) => _draft[r.key] == true && !r.active)
+        .toList();
+    final toClear = list
+        .where((r) => _draft[r.key] == false && r.active)
+        .toList();
     // Clearing a restriction is a loosening (F23). APPLYING one is an
     // activation of system-level blocking, which the user's v1.0.4
     // security directive also puts behind the paper recovery code —
@@ -143,12 +152,14 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
           Text(l10n.noOwnerRestrictionsBody),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => Scaffold(
-                appBar: AppBar(title: Text(l10n.setupTitle)),
-                body: SetupScreen(controller: widget.controller),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(title: Text(l10n.setupTitle)),
+                  body: SetupScreen(controller: widget.controller),
+                ),
               ),
-            )),
+            ),
             icon: const Icon(Icons.admin_panel_settings),
             label: Text(l10n.openSetup),
           ),
@@ -174,8 +185,14 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
         Expanded(
           child: ListView(
             children: [
-              _section(l10n.recommendedSection, _filter(list, recommended: true)),
-              _section(l10n.otherRestrictionsSection, _filter(list, recommended: false)),
+              _section(
+                l10n.recommendedSection,
+                _filter(list, recommended: true),
+              ),
+              _section(
+                l10n.otherRestrictionsSection,
+                _filter(list, recommended: false),
+              ),
             ],
           ),
         ),
@@ -200,58 +217,66 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
     // to `isAllDraftsEnabled(filteredKeys)`; toggling it sets every draft
     // in the (filtered) section (`RestrictionsTab.kt` RestrictionAccordion).
     final allEnabled = items.every((r) => _draft[r.key] == true);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(4, 12, 16, 4),
-          child: Row(
-            children: [
-              Checkbox(
-                value: allEnabled,
-                onChanged: _applying
-                    ? null
-                    : (v) => setState(() {
+    // v1.0.5 UX (user directive): each section is a titled card, like
+    // the Status tab's groups — header row and rows inside one Card.
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(4, 8, 16, 0),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: allEnabled,
+                  onChanged: _applying
+                      ? null
+                      : (v) => setState(() {
                           for (final r in items) {
                             _draft[r.key] = v ?? true;
                           }
                         }),
-              ),
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-              ),
-            ],
-          ),
-        ),
-        for (final r in items)
-          SwitchListTile(
-            title: Row(
-              children: [
-                Expanded(child: Text(_humaniseRestrictionKey(r.key))),
-                if (r.active) _activeBadge(),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ],
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  r.key,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontFamily: 'monospace',
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                if (_draft[r.key] != r.active)
-                  Text(context.l10n.changedNotApplied),
-              ],
-            ),
-            value: _draft[r.key] ?? r.active,
-            onChanged: (v) => setState(() => _draft[r.key] = v),
           ),
-      ],
+          for (final r in items)
+            SwitchListTile(
+              title: Row(
+                children: [
+                  Expanded(child: Text(_humaniseRestrictionKey(r.key))),
+                  if (r.active) _activeBadge(),
+                ],
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    r.key,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontFamily: 'monospace',
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (_draft[r.key] != r.active)
+                    Text(context.l10n.changedNotApplied),
+                ],
+              ),
+              value: _draft[r.key] ?? r.active,
+              onChanged: (v) => setState(() => _draft[r.key] = v),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 
@@ -267,10 +292,9 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
       ),
       child: Text(
         context.l10n.activeBadge,
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: scheme.onPrimaryContainer),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: scheme.onPrimaryContainer),
       ),
     );
   }
@@ -279,8 +303,10 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
 /// Humanised form of a restriction key (`no_install_apps` → "No Install
 /// Apps") — the label shown when no richer label exists for the key.
 String _humaniseRestrictionKey(String key) {
-  final words =
-      key.split(RegExp(r'[_\.\-]+')).where((w) => w.isNotEmpty).toList();
+  final words = key
+      .split(RegExp(r'[_\.\-]+'))
+      .where((w) => w.isNotEmpty)
+      .toList();
   if (words.isEmpty) return key;
   return words.map((w) => '${w[0].toUpperCase()}${w.substring(1)}').join(' ');
 }
@@ -302,26 +328,96 @@ String _normalizeForSearch(String text) {
 }
 
 const Map<String, String> _diacriticFold = {
-  'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
-  'ā': 'a', 'ă': 'a', 'ą': 'a', 'æ': 'ae',
-  'ç': 'c', 'ć': 'c', 'ĉ': 'c', 'ċ': 'c', 'č': 'c',
-  'ď': 'd', 'đ': 'd',
-  'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e', 'ē': 'e', 'ĕ': 'e',
-  'ė': 'e', 'ę': 'e', 'ě': 'e',
-  'ĝ': 'g', 'ğ': 'g', 'ġ': 'g', 'ģ': 'g',
-  'ĥ': 'h', 'ħ': 'h',
-  'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i', 'ĩ': 'i', 'ī': 'i',
-  'ĭ': 'i', 'į': 'i', 'ı': 'i',
-  'ĵ': 'j', 'ķ': 'k',
-  'ĺ': 'l', 'ļ': 'l', 'ľ': 'l', 'ŀ': 'l', 'ł': 'l',
-  'ñ': 'n', 'ń': 'n', 'ņ': 'n', 'ň': 'n', 'ŋ': 'n',
-  'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ø': 'o',
-  'ō': 'o', 'ŏ': 'o', 'ő': 'o', 'œ': 'oe',
-  'ŕ': 'r', 'ŗ': 'r', 'ř': 'r',
-  'ś': 's', 'ŝ': 's', 'ş': 's', 'š': 's', 'ș': 's', 'ß': 'ss',
-  'ť': 't', 'ŧ': 't', 'ț': 't',
-  'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u', 'ũ': 'u', 'ū': 'u',
-  'ŭ': 'u', 'ů': 'u', 'ű': 'u', 'ų': 'u',
-  'ý': 'y', 'ÿ': 'y', 'ŷ': 'y',
-  'ź': 'z', 'ż': 'z', 'ž': 'z', 'þ': 'th',
+  'à': 'a',
+  'á': 'a',
+  'â': 'a',
+  'ã': 'a',
+  'ä': 'a',
+  'å': 'a',
+  'ā': 'a',
+  'ă': 'a',
+  'ą': 'a',
+  'æ': 'ae',
+  'ç': 'c',
+  'ć': 'c',
+  'ĉ': 'c',
+  'ċ': 'c',
+  'č': 'c',
+  'ď': 'd',
+  'đ': 'd',
+  'è': 'e',
+  'é': 'e',
+  'ê': 'e',
+  'ë': 'e',
+  'ē': 'e',
+  'ĕ': 'e',
+  'ė': 'e',
+  'ę': 'e',
+  'ě': 'e',
+  'ĝ': 'g',
+  'ğ': 'g',
+  'ġ': 'g',
+  'ģ': 'g',
+  'ĥ': 'h',
+  'ħ': 'h',
+  'ì': 'i',
+  'í': 'i',
+  'î': 'i',
+  'ï': 'i',
+  'ĩ': 'i',
+  'ī': 'i',
+  'ĭ': 'i',
+  'į': 'i',
+  'ı': 'i',
+  'ĵ': 'j',
+  'ķ': 'k',
+  'ĺ': 'l',
+  'ļ': 'l',
+  'ľ': 'l',
+  'ŀ': 'l',
+  'ł': 'l',
+  'ñ': 'n',
+  'ń': 'n',
+  'ņ': 'n',
+  'ň': 'n',
+  'ŋ': 'n',
+  'ò': 'o',
+  'ó': 'o',
+  'ô': 'o',
+  'õ': 'o',
+  'ö': 'o',
+  'ø': 'o',
+  'ō': 'o',
+  'ŏ': 'o',
+  'ő': 'o',
+  'œ': 'oe',
+  'ŕ': 'r',
+  'ŗ': 'r',
+  'ř': 'r',
+  'ś': 's',
+  'ŝ': 's',
+  'ş': 's',
+  'š': 's',
+  'ș': 's',
+  'ß': 'ss',
+  'ť': 't',
+  'ŧ': 't',
+  'ț': 't',
+  'ù': 'u',
+  'ú': 'u',
+  'û': 'u',
+  'ü': 'u',
+  'ũ': 'u',
+  'ū': 'u',
+  'ŭ': 'u',
+  'ů': 'u',
+  'ű': 'u',
+  'ų': 'u',
+  'ý': 'y',
+  'ÿ': 'y',
+  'ŷ': 'y',
+  'ź': 'z',
+  'ż': 'z',
+  'ž': 'z',
+  'þ': 'th',
 };

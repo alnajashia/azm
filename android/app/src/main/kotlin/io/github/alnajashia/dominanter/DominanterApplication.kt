@@ -72,13 +72,22 @@ class DominanterApplication : Application() {
      */
     private fun reapplyHiddenIfNeeded(packageName: String) {
         if (packageName == this.packageName) return
+        // v1.0.5 fix #6: never re-apply policy while a removal teardown
+        // is in progress — removal is dismantling exactly this state.
+        if (SettingsStore.isRemovalInProgress()) return
         if (packageName !in SettingsStore.hiddenPackages()) return
-        try {
-            val hidden = DeviceOwnerManager.setAppHidden(this, packageName, true)
-            Log.d(TAG, "reapplyHiddenIfNeeded: package=$packageName reHidden=$hidden")
-        } catch (e: Exception) {
-            Log.w(TAG, "reapplyHiddenIfNeeded failed for $packageName", e)
-        }
+        // This receiver runs on the main thread inside the package
+        // manager's broadcast; the DPM round-trip moves to a background
+        // thread so package operations are never blocked on it.
+        val appContext = this
+        Thread {
+            try {
+                val hidden = DeviceOwnerManager.setAppHidden(appContext, packageName, true)
+                Log.d(TAG, "reapplyHiddenIfNeeded: package=$packageName reHidden=$hidden")
+            } catch (e: Exception) {
+                Log.w(TAG, "reapplyHiddenIfNeeded failed for $packageName", e)
+            }
+        }.start()
     }
 
     override fun onCreate() {

@@ -156,14 +156,13 @@ class ErrorView extends StatelessWidget {
   }
 }
 
-/// Hero card (redesign v2 identity, premium-minimal finish in v1.0.4):
-/// one refined deep-red → black gradient in dark mode, a flat white
-/// surface in light mode, a hairline border, and a single soft shadow.
-/// The v2 build's glossy top highlight and red under-glow were retired
-/// in the v1.0.4 polish pass — calm, flat surfaces over effects.
-/// Content is unchanged; this only replaces the surface it sits on.
-class GradientCard extends StatelessWidget {
-  const GradientCard({
+/// Hero card: ONE flat colour per brightness (deep red in dark mode,
+/// white in light mode), a hairline border, and a single soft shadow.
+/// v1.0.5 (user directive) retired the last colour wash: there are no
+/// gradients anywhere in the app — every surface is a single flat
+/// colour from the red/black/white palette.
+class HeroCard extends StatelessWidget {
+  const HeroCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
@@ -178,7 +177,7 @@ class GradientCard extends StatelessWidget {
     final dark = brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        gradient: heroGradient(brightness),
+        color: heroSurface(brightness),
         // Deeply rounded, like the reference's floating red planes.
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
@@ -197,6 +196,38 @@ class GradientCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: Padding(padding: padding, child: child),
+      ),
+    );
+  }
+}
+
+/// A titled card grouping one set of related controls (v1.0.5 UX):
+/// every settings group on every screen sits in a card under a clear
+/// section title, following the Status tab's grouped pattern.
+class SectionCard extends StatelessWidget {
+  const SectionCard({super.key, required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+          ...children,
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

@@ -194,13 +194,12 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           if (lock.active && !lock.isComplete)
-            GradientCard(
+            HeroCard(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: ListTile(
                 leading: const Icon(Icons.lock_clock),
                 title: Text(
-                  l10n.impulseActiveLeft(
-                      formatDuration(lock.remaining, l10n)),
+                  l10n.impulseActiveLeft(formatDuration(lock.remaining, l10n)),
                 ),
                 subtitle: Text(l10n.impulseNoEarlyStop),
               ),
@@ -221,7 +220,7 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
             builder: (context, _) {
               final sessionActive = widget.controller.session.isActive;
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!sessionActive)
                     ListTile(
@@ -232,123 +231,145 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                       onTap: () =>
                           ensureRecoverySession(context, widget.controller),
                     ),
-                  Text(
-                    l10n.configurationSection,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  ListTile(
-                    title: Text(l10n.durationLabel),
-                    subtitle: Text(l10n.durationMinutes(config.durationMinutes)),
-                    trailing: SizedBox(
-                      width: 180,
-                      child: Slider(
-                        value: config.durationMinutes.toDouble(),
-                        min: 15,
-                        max: 360,
-                        divisions: 23,
-                        label: l10n.minutesShort(config.durationMinutes),
-                        onChanged: sessionActive
-                            ? (v) => _saveConfig(
-                                  config.copyWith(durationMinutes: v.round()),
-                                )
-                            : null,
+                  // v1.0.5 UX (user directive): titled card groups,
+                  // like the Status tab — no flat ungrouped settings.
+                  SectionCard(
+                    title: l10n.configurationSection,
+                    children: [
+                      ListTile(
+                        title: Text(l10n.durationLabel),
+                        subtitle: Text(
+                          l10n.durationMinutes(config.durationMinutes),
+                        ),
+                        trailing: SizedBox(
+                          width: 180,
+                          child: Slider(
+                            value: config.durationMinutes.toDouble(),
+                            min: 15,
+                            max: 360,
+                            divisions: 23,
+                            label: l10n.minutesShort(config.durationMinutes),
+                            onChanged: sessionActive
+                                ? (v) => _saveConfig(
+                                    config.copyWith(durationMinutes: v.round()),
+                                  )
+                                : null,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  // RadioGroup migration (Flutter 3.32+ deprecates
-                  // RadioListTile.groupValue/onChanged): the group now
-                  // carries the value and the change handler — same values,
-                  // same initial selection. RadioGroup.onChanged is
-                  // non-nullable in the new API, so the session gate moves
-                  // to each tile's `enabled` flag: with no active session
-                  // both tiles are disabled and can never fire the handler,
-                  // exactly as null per-tile handlers behaved before.
-                  RadioGroup<ImpulseAction>(
-                    groupValue: config.action,
-                    onChanged: (v) => _saveConfig(config.copyWith(action: v)),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RadioListTile<ImpulseAction>(
-                          title: Text(l10n.timerOnly),
-                          value: ImpulseAction.timerOnly,
-                          enabled: sessionActive,
+                      // RadioGroup migration (Flutter 3.32+ deprecates
+                      // RadioListTile.groupValue/onChanged): the group now
+                      // carries the value and the change handler — same values,
+                      // same initial selection. RadioGroup.onChanged is
+                      // non-nullable in the new API, so the session gate moves
+                      // to each tile's `enabled` flag: with no active session
+                      // both tiles are disabled and can never fire the handler,
+                      // exactly as null per-tile handlers behaved before.
+                      RadioGroup<ImpulseAction>(
+                        groupValue: config.action,
+                        onChanged: (v) =>
+                            _saveConfig(config.copyWith(action: v)),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RadioListTile<ImpulseAction>(
+                              title: Text(l10n.timerOnly),
+                              value: ImpulseAction.timerOnly,
+                              enabled: sessionActive,
+                            ),
+                            RadioListTile<ImpulseAction>(
+                              title: Text(l10n.timerAndSuspend),
+                              value: ImpulseAction.timerAndSuspend,
+                              enabled: sessionActive,
+                            ),
+                          ],
                         ),
-                        RadioListTile<ImpulseAction>(
-                          title: Text(l10n.timerAndSuspend),
-                          value: ImpulseAction.timerAndSuspend,
-                          enabled: sessionActive,
+                      ),
+                      ListTile(
+                        title: Text(
+                          l10n.appsToSuspendCount(config.suspendApps.length),
                         ),
-                      ],
-                    ),
+                        subtitle: Text(
+                          config.suspendApps.map(_labelFor).take(3).join(', '),
+                        ),
+                        trailing: const Icon(Icons.edit_outlined),
+                        onTap: sessionActive ? _pickSuspendApps : null,
+                      ),
+                    ],
                   ),
-                  ListTile(
-                    title: Text(l10n.appsToSuspendCount(config.suspendApps.length)),
-                    subtitle: Text(
-                      config.suspendApps.map(_labelFor).take(3).join(', '),
-                    ),
-                    trailing: const Icon(Icons.edit_outlined),
-                    onTap: sessionActive ? _pickSuspendApps : null,
-                  ),
-                  const Divider(),
-                  Text(
-                    l10n.accessChallengesSection,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Text(l10n.accessChallengesBody),
-                  for (final t in ChallengeType.values)
-                    CheckboxListTile(
-                      title: Text(challengeTypeLabel(context, t)),
-                      subtitle: t.isAvailableInV1
-                          ? null
-                          : Text(l10n.challengeUnavailableNote),
-                      value: _challenges.contains(t),
-                      onChanged: t.isAvailableInV1 && sessionActive
-                          ? (v) async {
-                              final next = [..._challenges];
-                              if (v == true) {
-                                next.add(t);
-                              } else {
-                                next.remove(t);
-                              }
-                              if (next.isEmpty) next.add(ChallengeType.math);
-                              await widget.controller.config
-                                  .setChallengeSelection(next);
-                              if (mounted) setState(() => _challenges = next);
-                            }
-                          : null,
-                    ),
-                  SwitchListTile(
-                    title: Text(l10n.shuffledKeypad),
-                    subtitle: Text(l10n.shuffledKeypadSub),
-                    value: _shuffle,
-                    onChanged: (v) async {
-                      if (v) {
-                        // Turning the shuffle ON tightens: free, saved
-                        // directly.
-                        await widget.controller.config.setShuffleKeyboard(true);
-                        if (mounted) setState(() => _shuffle = true);
-                      } else {
-                        // Shuffle → normal is a loosening (the
-                        // original's ConfigTab: `loosening =
-                        // shuffleKeyboard && !isShuffle`) and goes
-                        // through the recovery gate.
-                        await runLoosening(context, widget.controller, () async {
-                          await widget.controller.config
-                              .setShuffleKeyboard(false);
-                          if (mounted) setState(() => _shuffle = false);
-                        });
-                      }
-                    },
-                  ),
-                  ListTile(
-                    title: Text(
-                      l10n.customPhrasesCount(_customPhrases.length),
-                    ),
-                    subtitle: Text(l10n.customPhrasesSub),
-                    trailing: const Icon(Icons.edit_outlined),
-                    onTap: sessionActive ? _editPhrases : null,
+                  const SizedBox(height: 12),
+                  SectionCard(
+                    title: l10n.accessChallengesSection,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                        child: Text(l10n.accessChallengesBody),
+                      ),
+                      for (final t in ChallengeType.values)
+                        CheckboxListTile(
+                          title: Text(challengeTypeLabel(context, t)),
+                          subtitle: t.isAvailableInV1
+                              ? null
+                              : Text(l10n.challengeUnavailableNote),
+                          value: _challenges.contains(t),
+                          onChanged: t.isAvailableInV1 && sessionActive
+                              ? (v) async {
+                                  final next = [..._challenges];
+                                  if (v == true) {
+                                    next.add(t);
+                                  } else {
+                                    next.remove(t);
+                                  }
+                                  if (next.isEmpty) {
+                                    next.add(ChallengeType.math);
+                                  }
+                                  await widget.controller.config
+                                      .setChallengeSelection(next);
+                                  if (mounted) {
+                                    setState(() => _challenges = next);
+                                  }
+                                }
+                              : null,
+                        ),
+                      SwitchListTile(
+                        title: Text(l10n.shuffledKeypad),
+                        subtitle: Text(l10n.shuffledKeypadSub),
+                        value: _shuffle,
+                        onChanged: (v) async {
+                          if (v) {
+                            // Turning the shuffle ON tightens: free, saved
+                            // directly.
+                            await widget.controller.config.setShuffleKeyboard(
+                              true,
+                            );
+                            if (mounted) setState(() => _shuffle = true);
+                          } else {
+                            // Shuffle → normal is a loosening (the
+                            // original's ConfigTab: `loosening =
+                            // shuffleKeyboard && !isShuffle`) and goes
+                            // through the recovery gate.
+                            await runLoosening(
+                              context,
+                              widget.controller,
+                              () async {
+                                await widget.controller.config
+                                    .setShuffleKeyboard(false);
+                                if (mounted) setState(() => _shuffle = false);
+                              },
+                            );
+                          }
+                        },
+                      ),
+                      ListTile(
+                        title: Text(
+                          l10n.customPhrasesCount(_customPhrases.length),
+                        ),
+                        subtitle: Text(l10n.customPhrasesSub),
+                        trailing: const Icon(Icons.edit_outlined),
+                        onTap: sessionActive ? _editPhrases : null,
+                      ),
+                    ],
                   ),
                 ],
               );
@@ -516,7 +537,10 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
   /// Saves a config change, routing loosenings through the recovery
   /// gate first — the original's `recoveryGate.change(loosening)`
   /// pattern used for every focus setting.
-  Future<void> _changeConfig(FocusConfig next, {required bool loosening}) async {
+  Future<void> _changeConfig(
+    FocusConfig next, {
+    required bool loosening,
+  }) async {
     if (loosening) {
       await runLoosening(context, widget.controller, () => _saveConfig(next));
     } else {
@@ -667,7 +691,9 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
         session.phase == FocusPhase.longBreak;
     // A break paused mid-way still offers Skip break, as in the
     // original's card: judge by the phase the session is paused from.
-    final effectivePhase = session.isPaused ? session.pausedFrom : session.phase;
+    final effectivePhase = session.isPaused
+        ? session.pausedFrom
+        : session.phase;
     final inBreakPhase =
         effectivePhase == FocusPhase.breakTime ||
         effectivePhase == FocusPhase.longBreak;
@@ -697,7 +723,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          GradientCard(
+          HeroCard(
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
@@ -708,18 +734,20 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
                   isBreak: isBreakPhase,
                   cycleLabel: session.phase == FocusPhase.idle
                       ? l10n.focusIdleSummary(
-                          config.focusMinutes, config.breakMinutes)
+                          config.focusMinutes,
+                          config.breakMinutes,
+                        )
                       : session.phase == FocusPhase.done
                       ? null
                       : session.phase == FocusPhase.waiting
                       ? l10n.waitingNextFocus
                       : l10n.cycleOf(
-                          currentCycle, config.cyclesBeforeLongBreak),
+                          currentCycle,
+                          config.cyclesBeforeLongBreak,
+                        ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  l10n.completedFocusPeriods(session.completedFocusPeriods),
-                ),
+                Text(l10n.completedFocusPeriods(session.completedFocusPeriods)),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 8,
@@ -793,127 +821,134 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Text(l10n.durationsSection, style: Theme.of(context).textTheme.titleMedium),
-          _durationRow(
-            l10n.focusMinutesLabel,
-            config.focusMinutes,
-            min: FocusConfig.focusMinMinutes,
-            max: FocusConfig.focusMaxMinutes,
-            onChanged: (v) => _changeConfig(
-              config.copyWith(focusMinutes: v),
-              // A shorter focus phase loosens (original FocusModeScreen).
-              loosening: v < config.focusMinutes,
-            ),
+          // v1.0.5 UX (user directive): titled card groups throughout.
+          SectionCard(
+            title: l10n.durationsSection,
+            children: [
+              _durationRow(
+                l10n.focusMinutesLabel,
+                config.focusMinutes,
+                min: FocusConfig.focusMinMinutes,
+                max: FocusConfig.focusMaxMinutes,
+                onChanged: (v) => _changeConfig(
+                  config.copyWith(focusMinutes: v),
+                  // A shorter focus phase loosens (original FocusModeScreen).
+                  loosening: v < config.focusMinutes,
+                ),
+              ),
+              _durationRow(
+                l10n.breakMinutesLabel,
+                config.breakMinutes,
+                min: FocusConfig.shortBreakMinMinutes,
+                max: FocusConfig.shortBreakMaxMinutes,
+                onChanged: (v) => _changeConfig(
+                  config.copyWith(breakMinutes: v),
+                  // A longer break loosens.
+                  loosening: v > config.breakMinutes,
+                ),
+              ),
+              _durationRow(
+                l10n.longBreakMinutesLabel,
+                config.longBreakMinutes,
+                min: FocusConfig.longBreakMinMinutes,
+                max: FocusConfig.longBreakMaxMinutes,
+                onChanged: (v) => _changeConfig(
+                  config.copyWith(longBreakMinutes: v),
+                  loosening: v > config.longBreakMinutes,
+                ),
+              ),
+              _durationRow(
+                l10n.cyclesLabel,
+                config.cyclesBeforeLongBreak,
+                min: FocusConfig.cyclesMin,
+                max: FocusConfig.cyclesMax,
+                onChanged: (v) => _changeConfig(
+                  config.copyWith(cyclesBeforeLongBreak: v),
+                  // Fewer cycles before the long break loosens.
+                  loosening: v < config.cyclesBeforeLongBreak,
+                ),
+              ),
+              SwitchListTile(
+                title: Text(l10n.autoStartTitle),
+                subtitle: Text(l10n.autoStartSub),
+                value: config.autoStartFocus,
+                onChanged: (v) => _changeConfig(
+                  config.copyWith(autoStartFocus: v),
+                  loosening: !v,
+                ),
+              ),
+              SwitchListTile(
+                title: Text(l10n.soundTitle),
+                subtitle: Text(l10n.soundSub),
+                value: config.soundEnabled,
+                onChanged: (v) => _saveConfig(config.copyWith(soundEnabled: v)),
+              ),
+              SwitchListTile(
+                title: Text(l10n.vibrationTitle),
+                subtitle: Text(l10n.vibrationSub),
+                value: config.vibrationEnabled,
+                onChanged: (v) =>
+                    _saveConfig(config.copyWith(vibrationEnabled: v)),
+              ),
+            ],
           ),
-          _durationRow(
-            l10n.breakMinutesLabel,
-            config.breakMinutes,
-            min: FocusConfig.shortBreakMinMinutes,
-            max: FocusConfig.shortBreakMaxMinutes,
-            onChanged: (v) => _changeConfig(
-              config.copyWith(breakMinutes: v),
-              // A longer break loosens.
-              loosening: v > config.breakMinutes,
-            ),
-          ),
-          _durationRow(
-            l10n.longBreakMinutesLabel,
-            config.longBreakMinutes,
-            min: FocusConfig.longBreakMinMinutes,
-            max: FocusConfig.longBreakMaxMinutes,
-            onChanged: (v) => _changeConfig(
-              config.copyWith(longBreakMinutes: v),
-              loosening: v > config.longBreakMinutes,
-            ),
-          ),
-          _durationRow(
-            l10n.cyclesLabel,
-            config.cyclesBeforeLongBreak,
-            min: FocusConfig.cyclesMin,
-            max: FocusConfig.cyclesMax,
-            onChanged: (v) => _changeConfig(
-              config.copyWith(cyclesBeforeLongBreak: v),
-              // Fewer cycles before the long break loosens.
-              loosening: v < config.cyclesBeforeLongBreak,
-            ),
-          ),
-          SwitchListTile(
-            title: Text(l10n.autoStartTitle),
-            subtitle: Text(l10n.autoStartSub),
-            value: config.autoStartFocus,
-            onChanged: (v) => _changeConfig(
-              config.copyWith(autoStartFocus: v),
-              loosening: !v,
-            ),
-          ),
-          SwitchListTile(
-            title: Text(l10n.soundTitle),
-            subtitle: Text(l10n.soundSub),
-            value: config.soundEnabled,
-            onChanged: (v) => _saveConfig(config.copyWith(soundEnabled: v)),
-          ),
-          SwitchListTile(
-            title: Text(l10n.vibrationTitle),
-            subtitle: Text(l10n.vibrationSub),
-            value: config.vibrationEnabled,
-            onChanged: (v) =>
-                _saveConfig(config.copyWith(vibrationEnabled: v)),
-          ),
-          const Divider(),
-          Text(
-            l10n.suspendedWhileFocusing,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          ListTile(
-            title: Text(
-              l10n.appsSuspendedWhileFocusing(config.suspendApps.length),
-            ),
-            subtitle: Text(
-              config.suspendApps.map(_labelFor).take(3).join(', '),
-            ),
-            trailing: const Icon(Icons.edit_outlined),
-            onTap: () async {
-              final result = await _pickApps(config.suspendApps);
-              if (result != null) {
-                await _changeConfig(
-                  config.copyWith(suspendApps: result),
-                  // The `loosening` flag here means "session required":
-                  // removals loosen (F23), and ADDING a target ACTIVATES
-                  // focus blocking for it — code-gated by the user's
-                  // v1.0.4 directive (see docs/CODE_AUDIT_v1.0.4.md).
-                  // The same rule applies to the groups/restrictions
-                  // pickers below.
-                  loosening: Loosening.isLooserSet(
-                        oldSet: config.suspendApps.toSet(),
-                        newSet: result.toSet(),
-                      ) ||
-                      result.any((e) => !config.suspendApps.contains(e)),
-                );
-              }
-            },
-          ),
-          ListTile(
-            title: Text(
-              l10n.groupsSuspendedCount(config.suspendGroups.length),
-            ),
-            subtitle: Text(
-              config.suspendGroups.map(_groupNameFor).take(3).join(', '),
-            ),
-            trailing: const Icon(Icons.edit_outlined),
-            onTap: _pickGroups,
-          ),
-          ListTile(
-            title: Text(
-              l10n.restrictionsAppliedCount(config.restrictions.length),
-            ),
-            subtitle: Text(config.restrictions.take(3).join(', ')),
-            trailing: const Icon(Icons.edit_outlined),
-            onTap: _pickRestrictions,
-          ),
-          UnavailableTile(
-            icon: Icons.schedule_send_outlined,
-            title: l10n.focusSchedulesTitle,
-            note: l10n.focusSchedulesNote,
+          const SizedBox(height: 12),
+          SectionCard(
+            title: l10n.suspendedWhileFocusing,
+            children: [
+              ListTile(
+                title: Text(
+                  l10n.appsSuspendedWhileFocusing(config.suspendApps.length),
+                ),
+                subtitle: Text(
+                  config.suspendApps.map(_labelFor).take(3).join(', '),
+                ),
+                trailing: const Icon(Icons.edit_outlined),
+                onTap: () async {
+                  final result = await _pickApps(config.suspendApps);
+                  if (result != null) {
+                    await _changeConfig(
+                      config.copyWith(suspendApps: result),
+                      // The `loosening` flag here means "session required":
+                      // removals loosen (F23), and ADDING a target ACTIVATES
+                      // focus blocking for it — code-gated by the user's
+                      // v1.0.4 directive (see docs/CODE_AUDIT_v1.0.4.md).
+                      // The same rule applies to the groups/restrictions
+                      // pickers below.
+                      loosening:
+                          Loosening.isLooserSet(
+                            oldSet: config.suspendApps.toSet(),
+                            newSet: result.toSet(),
+                          ) ||
+                          result.any((e) => !config.suspendApps.contains(e)),
+                    );
+                  }
+                },
+              ),
+              ListTile(
+                title: Text(
+                  l10n.groupsSuspendedCount(config.suspendGroups.length),
+                ),
+                subtitle: Text(
+                  config.suspendGroups.map(_groupNameFor).take(3).join(', '),
+                ),
+                trailing: const Icon(Icons.edit_outlined),
+                onTap: _pickGroups,
+              ),
+              ListTile(
+                title: Text(
+                  l10n.restrictionsAppliedCount(config.restrictions.length),
+                ),
+                subtitle: Text(config.restrictions.take(3).join(', ')),
+                trailing: const Icon(Icons.edit_outlined),
+                onTap: _pickRestrictions,
+              ),
+              UnavailableTile(
+                icon: Icons.schedule_send_outlined,
+                title: l10n.focusSchedulesTitle,
+                note: l10n.focusSchedulesNote,
+              ),
+            ],
           ),
         ],
       ),
@@ -1022,8 +1057,9 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
                       for (final group in groups)
                         CheckboxListTile(
                           title: Text(group.name),
-                          subtitle:
-                              Text(context.l10n.memberCount(group.packages.length)),
+                          subtitle: Text(
+                            context.l10n.memberCount(group.packages.length),
+                          ),
                           value: selected.contains(group.id),
                           onChanged: (v) => setLocal(() {
                             if (v == true) {
@@ -1052,7 +1088,8 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     if (result == null) return;
     await _changeConfig(
       config.copyWith(suspendGroups: result),
-      loosening: Loosening.isLooserSet(
+      loosening:
+          Loosening.isLooserSet(
             oldSet: config.suspendGroups.toSet(),
             newSet: result.toSet(),
           ) ||
@@ -1143,7 +1180,8 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
     if (result == null) return;
     await _changeConfig(
       config.copyWith(restrictions: result),
-      loosening: Loosening.isLooserSet(
+      loosening:
+          Loosening.isLooserSet(
             oldSet: config.restrictions.toSet(),
             newSet: result.toSet(),
           ) ||

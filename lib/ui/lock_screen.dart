@@ -91,8 +91,9 @@ class _LimitEntry {
   final int usedMinutes;
   final bool isGroup;
 
-  double get fraction =>
-      limitMinutes > 0 ? math.min(1, math.max(0, usedMinutes / limitMinutes)) : 0;
+  double get fraction => limitMinutes > 0
+      ? math.min(1, math.max(0, usedMinutes / limitMinutes))
+      : 0;
   bool get reached => usedMinutes >= limitMinutes;
 }
 
@@ -263,7 +264,11 @@ class _LockScreenState extends State<LockScreen> {
         padding: const EdgeInsets.all(32),
         child: Column(
           children: [
-            Icon(Icons.timer_outlined, size: 48, color: scheme.onErrorContainer),
+            Icon(
+              Icons.timer_outlined,
+              size: 48,
+              color: scheme.onErrorContainer,
+            ),
             const SizedBox(height: 16),
             Text(
               context.l10n.impulseBlockActive,
@@ -274,9 +279,9 @@ class _LockScreenState extends State<LockScreen> {
             Text(
               _formatImpulseCountdown(_impulseRemaining),
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: scheme.onErrorContainer,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: scheme.onErrorContainer,
+              ),
             ),
           ],
         ),
@@ -319,7 +324,8 @@ class _LockScreenState extends State<LockScreen> {
       _focusSession = null;
       return;
     }
-    final unchanged = prev != null &&
+    final unchanged =
+        prev != null &&
         prev.phase == state.phase &&
         prev.phaseStartedElapsedMs == state.phaseStartedElapsedMs &&
         prev.phaseDurationMs == state.phaseDurationMs &&
@@ -352,7 +358,9 @@ class _LockScreenState extends State<LockScreen> {
     final phase = session.isPaused ? session.pausedFrom : session.phase;
     final title = switch (phase) {
       FocusPhase.focus => l10n.focusCycleTitle(
-          math.min(session.completedFocusPeriods + 1, cycles), cycles),
+        math.min(session.completedFocusPeriods + 1, cycles),
+        cycles,
+      ),
       FocusPhase.breakTime => l10n.focusShortBreak,
       FocusPhase.longBreak => l10n.focusLongBreak,
       FocusPhase.waiting => l10n.focusBreakOver,
@@ -376,8 +384,8 @@ class _LockScreenState extends State<LockScreen> {
 
   void _focusStart() {
     _runFocusAction(() async {
-      final config = _focusConfig ??
-          await widget.controller.config.getFocusConfig();
+      final config =
+          _focusConfig ?? await widget.controller.config.getFocusConfig();
       final channel = widget.controller.channel;
       await channel.startFocusSession(
         focusMinutes: config.focusMinutes,
@@ -456,33 +464,40 @@ class _LockScreenState extends State<LockScreen> {
     final phase = session.isPaused ? session.pausedFrom : session.phase;
     if (session.isWaiting) actions.add(start);
     if (session.isPaused) {
-      actions.add(_FocusCardAction(
-        icon: Icons.play_arrow_outlined,
-        label: l10n.resumeAction,
-        onTap: _focusResume,
-      ));
+      actions.add(
+        _FocusCardAction(
+          icon: Icons.play_arrow_outlined,
+          label: l10n.resumeAction,
+          onTap: _focusResume,
+        ),
+      );
     }
     if (phase == FocusPhase.breakTime || phase == FocusPhase.longBreak) {
-      actions.add(_FocusCardAction(
-        icon: Icons.skip_next_outlined,
-        label: l10n.skipBreakAction,
-        onTap: _focusSkipBreak,
-      ));
+      actions.add(
+        _FocusCardAction(
+          icon: Icons.skip_next_outlined,
+          label: l10n.skipBreakAction,
+          onTap: _focusSkipBreak,
+        ),
+      );
     }
     if (!session.isWaiting && !session.isPaused) {
-      actions.add(_FocusCardAction(
-        icon: Icons.pause_outlined,
-        label: l10n.pauseAction,
-        onTap: _focusPausePlain,
-        onLongPress:
-            phase == FocusPhase.focus ? _focusPauseReleasing : null,
-      ));
+      actions.add(
+        _FocusCardAction(
+          icon: Icons.pause_outlined,
+          label: l10n.pauseAction,
+          onTap: _focusPausePlain,
+          onLongPress: phase == FocusPhase.focus ? _focusPauseReleasing : null,
+        ),
+      );
     }
-    actions.add(_FocusCardAction(
-      icon: Icons.stop_outlined,
-      label: l10n.endSession,
-      onTap: session.isWaiting ? _focusEndFree : _focusEndGated,
-    ));
+    actions.add(
+      _FocusCardAction(
+        icon: Icons.stop_outlined,
+        label: l10n.endSession,
+        onTap: session.isWaiting ? _focusEndFree : _focusEndGated,
+      ),
+    );
     return actions;
   }
 
@@ -490,30 +505,37 @@ class _LockScreenState extends State<LockScreen> {
     final theme = Theme.of(context);
     final session =
         (_focusSession != null && _focusSession!.phase != FocusPhase.idle)
-            ? _focusSession
-            : null;
+        ? _focusSession
+        : null;
     final actions = _focusActions(session);
     final showRing = session != null && !session.isWaiting;
-    final remaining =
-        session?.remainingAt(DateTime.now()) ?? Duration.zero;
+    final remaining = session?.remainingAt(DateTime.now()) ?? Duration.zero;
     final fraction = session != null && session.phaseDuration > Duration.zero
-        ? math.min(
-            1,
-            math.max(
-                0, remaining.inMilliseconds / session.phaseDuration.inMilliseconds),
-          ).toDouble()
+        ? math
+              .min(
+                1,
+                math.max(
+                  0,
+                  remaining.inMilliseconds /
+                      session.phaseDuration.inMilliseconds,
+                ),
+              )
+              .toDouble()
         : 0.0;
-    final cycles = session?.config.cyclesBeforeLongBreak ??
+    final cycles =
+        session?.config.cyclesBeforeLongBreak ??
         _focusConfig?.cyclesBeforeLongBreak ??
         0;
     final l10n = context.l10n;
     final title = session == null ? l10n.focusMode : _focusPhaseTitle(session);
     final subtitle = session == null
         ? (_focusConfig == null
-            ? null
-            : l10n.focusSuspendingSummary(_focusConfig!.focusMinutes))
+              ? null
+              : l10n.focusSuspendingSummary(_focusConfig!.focusMinutes))
         : l10n.focusPeriodsCompleted(
-            math.min(session.completedFocusPeriods, cycles), cycles);
+            math.min(session.completedFocusPeriods, cycles),
+            cycles,
+          );
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -533,14 +555,16 @@ class _LockScreenState extends State<LockScreen> {
                         value: fraction,
                         strokeWidth: 5,
                         color: theme.colorScheme.primary,
-                        backgroundColor:
-                            theme.colorScheme.primary.withValues(alpha: 0.15),
+                        backgroundColor: theme.colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
                       ),
                     ),
                     Text(
                       _formatFocusCountdown(remaining),
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -558,8 +582,9 @@ class _LockScreenState extends State<LockScreen> {
                 children: [
                   Text(
                     title,
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   if (subtitle != null)
                     Text(subtitle, style: theme.textTheme.bodySmall),
@@ -623,14 +648,16 @@ class _LockScreenState extends State<LockScreen> {
           for (final p in g.packages)
             if (labels[p] != null) labels[p]!,
         ]..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-        groupEntries.add(_LimitEntry(
-          name: g.name,
-          detail: memberLabels.isEmpty ? null : memberLabels.join(', '),
-          limitMinutes: limit,
-          // The original converts with TimeUnit.MILLISECONDS.toMinutes.
-          usedMinutes: (usage.groups[g.id] ?? 0) ~/ 60000,
-          isGroup: true,
-        ));
+        groupEntries.add(
+          _LimitEntry(
+            name: g.name,
+            detail: memberLabels.isEmpty ? null : memberLabels.join(', '),
+            limitMinutes: limit,
+            // The original converts with TimeUnit.MILLISECONDS.toMinutes.
+            usedMinutes: (usage.groups[g.id] ?? 0) ~/ 60000,
+            isGroup: true,
+          ),
+        );
       }
       groupEntries.sort((a, b) => b.fraction.compareTo(a.fraction));
 
@@ -661,13 +688,15 @@ class _LockScreenState extends State<LockScreen> {
             break;
           }
         }
-        appEntries.add(_LimitEntry(
-          name: labels[pkg] ?? pkg,
-          groupName: group?.name,
-          limitMinutes: limit,
-          usedMinutes: (usage.packages[pkg] ?? 0) ~/ 60000,
-          isGroup: false,
-        ));
+        appEntries.add(
+          _LimitEntry(
+            name: labels[pkg] ?? pkg,
+            groupName: group?.name,
+            limitMinutes: limit,
+            usedMinutes: (usage.packages[pkg] ?? 0) ~/ 60000,
+            isGroup: false,
+          ),
+        );
       }
       appEntries.sort((a, b) => b.fraction.compareTo(a.fraction));
 
@@ -694,8 +723,9 @@ class _LockScreenState extends State<LockScreen> {
 
   Widget _limitCard(BuildContext context, _LimitEntry entry) {
     final theme = Theme.of(context);
-    final accent =
-        entry.reached ? theme.colorScheme.error : theme.colorScheme.primary;
+    final accent = entry.reached
+        ? theme.colorScheme.error
+        : theme.colorScheme.primary;
     return Card(
       color: theme.colorScheme.surfaceContainer,
       child: Padding(
@@ -767,8 +797,11 @@ class _LockScreenState extends State<LockScreen> {
                 Text(
                   entry.reached
                       ? context.l10n.limitReached
-                      : context.l10n.timeLeft(_formatOverviewMinutes(
-                          entry.limitMinutes - entry.usedMinutes)),
+                      : context.l10n.timeLeft(
+                          _formatOverviewMinutes(
+                            entry.limitMinutes - entry.usedMinutes,
+                          ),
+                        ),
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: accent,
                     fontWeight: FontWeight.w600,
@@ -796,43 +829,45 @@ class _LockScreenState extends State<LockScreen> {
       body: data == null
           ? LoadingView(message: context.l10n.loadingUsageLimits)
           : data.isEmpty
-              ? EmptyView(
-                  icon: Icons.hourglass_bottom_outlined,
-                  message: context.l10n.noLimitsSet,
-                )
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  children: [
-                    if (data.groups.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12, bottom: 4),
-                        child: Text(
-                          context.l10n.groupsSection,
-                          style: theme.textTheme.titleSmall
-                              ?.copyWith(color: theme.colorScheme.primary),
-                        ),
+          ? EmptyView(
+              icon: Icons.hourglass_bottom_outlined,
+              message: context.l10n.noLimitsSet,
+            )
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              children: [
+                if (data.groups.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 4),
+                    child: Text(
+                      context.l10n.groupsSection,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.colorScheme.primary,
                       ),
-                      for (final e in data.groups) ...[
-                        _limitCard(context, e),
-                        const SizedBox(height: 8),
-                      ],
-                    ],
-                    if (data.apps.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12, bottom: 4),
-                        child: Text(
-                          context.l10n.appsSection,
-                          style: theme.textTheme.titleSmall
-                              ?.copyWith(color: theme.colorScheme.primary),
-                        ),
-                      ),
-                      for (final e in data.apps) ...[
-                        _limitCard(context, e),
-                        const SizedBox(height: 8),
-                      ],
-                    ],
+                    ),
+                  ),
+                  for (final e in data.groups) ...[
+                    _limitCard(context, e),
+                    const SizedBox(height: 8),
                   ],
-                ),
+                ],
+                if (data.apps.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 4),
+                    child: Text(
+                      context.l10n.appsSection,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  for (final e in data.apps) ...[
+                    _limitCard(context, e),
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              ],
+            ),
     );
   }
 
@@ -928,27 +963,31 @@ class _LockScreenState extends State<LockScreen> {
               body: ListView(
                 padding: const EdgeInsets.all(24),
                 children: [
-                  // Brand header (v1.0.4): the official Broken D mark,
-                  // the wordmark in Cairo Bold, and the brand tagline.
-                  const SizedBox(height: 8),
+                  // Brand header: the official Broken D mark, the app
+                  // name in Cairo Bold, and the brand tagline — centred,
+                  // with a modest mark and generous breathing room
+                  // around the whole block (v1.0.5, user directive: the
+                  // previous header was oversized and cramped).
+                  const SizedBox(height: 48),
                   Center(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: Image.asset(
                         'assets/branding/dominanter_logo.png',
-                        width: 84,
-                        height: 84,
+                        width: 80,
+                        height: 80,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 24),
                   Text(
                     l10n.appTitle,
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(
                     l10n.brandTagline,
                     style: theme.textTheme.labelMedium?.copyWith(
@@ -958,7 +997,7 @@ class _LockScreenState extends State<LockScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 24),
                   Text(
                     l10n.lockedTitle,
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -966,7 +1005,7 @@ class _LockScreenState extends State<LockScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 40),
                   if (_impulseRunning) ...[
                     // While the impulse block runs, the original hides
                     // "Access app": countdown + focus card + quiet

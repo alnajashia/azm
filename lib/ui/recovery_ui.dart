@@ -11,9 +11,11 @@
 /// memory only for the duration of the wizard, exactly long enough to be
 /// written on paper, typed back, and stored.
 ///
-/// The gate mirrors `RecoveryGate.kt`'s order: the recovery **code is
-/// validated first**, the configured access challenges run **only after** a
-/// correct code, and the session starts only when the challenges are done.
+/// The gate's order (v1.0.5, user directive superseding the original
+/// `RecoveryGate.kt` behaviour): the recovery **code is validated**, and
+/// a correct code opens the session immediately — no access challenges
+/// run after the code, anywhere. Challenges belong to Impulse Lock only
+/// (their selection lives on the Impulse Lock screen).
 library;
 
 import 'dart:math';
@@ -22,10 +24,8 @@ import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
 import '../data/privileged_channel.dart';
-import '../domain/challenges.dart';
 import '../domain/recovery.dart';
 import '../l10n/l10n.dart';
-import 'challenges_ui.dart';
 import 'common.dart';
 
 String normalizeCode(String raw) => raw.replaceAll(' ', '').toUpperCase();
@@ -304,12 +304,14 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(24),
-            children: [switch (_step) {
-              _stepIntro => _introStep(context),
-              _stepWrite => _writeStep(context),
-              _stepConfirm => _confirmStep(context),
-              _ => _storeStep(context),
-            }],
+            children: [
+              switch (_step) {
+                _stepIntro => _introStep(context),
+                _stepWrite => _writeStep(context),
+                _stepConfirm => _confirmStep(context),
+                _ => _storeStep(context),
+              },
+            ],
           ),
         ),
         if (_step == _stepIntro)
@@ -330,9 +332,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
             children: [
               if (_step > _stepIntro) ...[
                 OutlinedButton(
-                  onPressed: _saving
-                      ? null
-                      : () => setState(() => _step--),
+                  onPressed: _saving ? null : () => setState(() => _step--),
                   child: Text(l10n.back),
                 ),
                 const SizedBox(width: 12),
@@ -363,37 +363,19 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _StepHeader(
-          icon: Icons.key_outlined,
-          title: l10n.wizardIntroTitle,
-        ),
+        _StepHeader(icon: Icons.key_outlined, title: l10n.wizardIntroTitle),
         const SizedBox(height: 20),
         _InfoCard(
           children: [
             _InfoCardTitle(l10n.howItWorks),
-            _TipRow(
-              icon: Icons.key_outlined,
-              text: l10n.tipGenerates,
-            ),
-            _TipRow(
-              icon: Icons.edit_note_outlined,
-              text: l10n.tipWrite,
-            ),
-            _TipRow(
-              icon: Icons.keyboard_outlined,
-              text: l10n.tipTypeBack,
-            ),
-            _TipRow(
-              icon: Icons.lock_outlined,
-              text: l10n.tipStorePaper,
-            ),
+            _TipRow(icon: Icons.key_outlined, text: l10n.tipGenerates),
+            _TipRow(icon: Icons.edit_note_outlined, text: l10n.tipWrite),
+            _TipRow(icon: Icons.keyboard_outlined, text: l10n.tipTypeBack),
+            _TipRow(icon: Icons.lock_outlined, text: l10n.tipStorePaper),
           ],
         ),
         const SizedBox(height: 16),
-        Text(
-          l10n.wizardIntroBody,
-          textAlign: TextAlign.center,
-        ),
+        Text(l10n.wizardIntroBody, textAlign: TextAlign.center),
       ],
     );
   }
@@ -423,7 +405,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
             ),
           )
         else
-          GradientCard(
+          HeroCard(
             padding: const EdgeInsets.all(20),
             child: Text(
               groupCode(_generated!),
@@ -470,9 +452,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
               const SizedBox(width: 6),
               Text(
                 l10n.codeCorrect,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
             ],
           )
@@ -515,23 +495,14 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
         const SizedBox(height: 24),
         _InfoCard(
           children: [
-            _TipRow(
-              icon: Icons.phonelink_erase_outlined,
-              text: l10n.tipAway,
-            ),
-            _TipRow(
-              icon: Icons.search_outlined,
-              text: l10n.tipEasyFind,
-            ),
+            _TipRow(icon: Icons.phonelink_erase_outlined, text: l10n.tipAway),
+            _TipRow(icon: Icons.search_outlined, text: l10n.tipEasyFind),
             _TipRow(
               icon: Icons.no_photography_outlined,
               text: l10n.tipNoPhotos,
             ),
             if (widget.isRegeneration)
-              _TipRow(
-                icon: Icons.delete_outline,
-                text: l10n.tipThrowOld,
-              ),
+              _TipRow(icon: Icons.delete_outline, text: l10n.tipThrowOld),
           ],
         ),
         const SizedBox(height: 16),
@@ -592,9 +563,7 @@ class _StepIndicator extends StatelessWidget {
               child: Container(
                 height: 2,
                 margin: const EdgeInsets.symmetric(horizontal: 6),
-                color: i < current
-                    ? scheme.primary
-                    : scheme.outlineVariant,
+                color: i < current ? scheme.primary : scheme.outlineVariant,
               ),
             ),
         ],
@@ -626,18 +595,18 @@ class _StepHeader extends StatelessWidget {
         const SizedBox(height: 20),
         Text(
           title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         if (text != null) ...[
           const SizedBox(height: 12),
           Text(
             text!,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ],
@@ -654,9 +623,7 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -681,9 +648,9 @@ class _InfoCardTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 }
@@ -698,17 +665,10 @@ class _TipRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 24,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+        Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
         ),
       ],
     );
@@ -734,11 +694,10 @@ class SetupRecoveryScreen extends StatelessWidget {
 
 // --------------------------------------------------------------------- Gate
 
-/// Opens a recovery session, in the original's order (`RecoveryGate.kt`):
-/// the recovery **code is asked for and validated first**; the configured
-/// access challenges run only after a correct code; the session starts
-/// only when the challenges are done. Returns true when a session is
-/// active afterwards.
+/// Opens a recovery session: the recovery **code is asked for and
+/// validated**, and a correct code starts the session at once — since
+/// v1.0.5 (user directive) no challenges follow the code. Returns true
+/// when a session is active afterwards.
 ///
 /// Pass-throughs, mirroring `RecoveryGate.run()`: an already-active
 /// session skips the gate, and so does the state where no recovery code
@@ -770,14 +729,13 @@ class _RecoveryGateDialog extends StatefulWidget {
   State<_RecoveryGateDialog> createState() => _RecoveryGateDialogState();
 }
 
-/// Gate stages, in the original's order: code first, challenges second.
-enum _GateStage { loading, code, challenges }
+/// Gate stages: a brief load (keypad preference), then the code itself.
+/// There is deliberately no challenges stage (v1.0.5 user directive).
+enum _GateStage { loading, code }
 
 class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
   _GateStage _stage = _GateStage.loading;
   Object? _loadError;
-  List<ChallengeType> _challenges = const [];
-  List<String> _customPhrases = const [];
   final _code = TextEditingController();
   bool _shuffle = false;
   bool _verifying = false;
@@ -801,13 +759,9 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
       _stage = _GateStage.loading;
     });
     try {
-      final challenges = await widget.controller.config.getChallengeSelection();
-      final phrases = await widget.controller.config.getCustomReadingPhrases();
       final shuffle = await widget.controller.config.getShuffleKeyboard();
       if (mounted) {
         setState(() {
-          _challenges = challenges;
-          _customPhrases = phrases;
           _shuffle = shuffle;
           _stage = _GateStage.code;
         });
@@ -822,20 +776,13 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
     }
   }
 
-  /// Challenges that can actually run in this version, mirroring the
-  /// original's `getAccessChallenges(...).isEmpty()` check in
-  /// `RecoveryGate.confirm()`.
-  bool get _hasRunnableChallenges =>
-      _challenges.any((t) => t.isAvailableInV1);
-
-  /// Stage 1 — validate the code. Only a correct code may proceed to the
-  /// challenges; a wrong code means the challenges never run
-  /// (`RecoveryGate.confirm()`).
+  /// Validates the code: a correct code opens the session immediately
+  /// (v1.0.5 user directive — the original ran the configured access
+  /// challenges at this point; they now belong to Impulse Lock only and
+  /// never follow the code).
   Future<void> _verify() async {
     if (!isValidCodeFormat(_code.text)) {
-      setState(
-        () => _verifyError = context.l10n.gateEnterCodeError,
-      );
+      setState(() => _verifyError = context.l10n.gateEnterCodeError);
       return;
     }
     setState(() {
@@ -854,15 +801,9 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
         });
         return;
       }
-      if (_hasRunnableChallenges) {
-        // Code proven — now, and only now, the challenges run.
-        setState(() {
-          _verifying = false;
-          _stage = _GateStage.challenges;
-        });
-      } else {
-        _startSession();
-      }
+      // Code proven — the session opens right away, with no challenge
+      // step of any kind (v1.0.5 user directive).
+      _startSession();
     } catch (e) {
       if (mounted) {
         final l10n = context.l10n;
@@ -876,8 +817,7 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
     }
   }
 
-  /// Final step of both paths (`RecoveryGate.challengesDone()`): start
-  /// the session, then let the guarded action run.
+  /// Final step: start the session, then let the guarded action run.
   void _startSession() {
     widget.controller.session.start();
     Navigator.of(context).pop(true);
@@ -887,11 +827,7 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return AlertDialog(
-      title: Text(
-        _stage == _GateStage.challenges
-            ? l10n.gateChallengesTitle
-            : l10n.gateCodeTitle,
-      ),
+      title: Text(l10n.gateCodeTitle),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -920,27 +856,19 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
                 AnimatedBuilder(
                   animation: _code,
                   builder: (context, _) => FilledButton(
-                    onPressed:
-                        _verifying || !isValidCodeFormat(_code.text)
+                    onPressed: _verifying || !isValidCodeFormat(_code.text)
                         ? null
                         : _verify,
                     child: _verifying
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Text(l10n.confirm),
                   ),
                 ),
               ],
-            ),
-            _GateStage.challenges => ChallengeRunnerView(
-              types: _challenges,
-              customPhrases: _customPhrases,
-              onAllComplete: _startSession,
             ),
           },
         ),
@@ -995,10 +923,7 @@ Future<void> runTighteningWithUndo(
         onPressed: () async {
           final undone = await change.undo();
           if (!undone && context.mounted) {
-            showInfoSnackBar(
-              context,
-              context.l10n.undoWindowPassed,
-            );
+            showInfoSnackBar(context, context.l10n.undoWindowPassed);
           }
         },
       ),

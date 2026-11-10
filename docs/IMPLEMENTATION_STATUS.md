@@ -362,3 +362,103 @@ that remains a separate, separately-approved phase.
   (72 pre-existing + 27 new: entry-password crypto/UI, localization,
   gate coverage).
 - **Device state note.** Not yet device-tested.
+
+## v1.0.5 (2026-11-10) — code-only gate, flat colours, card groups, Azm
+
+Built locally and verified; **not pushed to GitHub and not released** —
+that remains a separate, separately-approved phase. All five changes
+are user directives from the v1.0.4 field report; a sixth fix (the
+removal teardown) was added from a device report before this version
+shipped.
+
+- **The recovery code alone opens the gate (user directive,
+  supersedes the original behaviour).** The gate dialog is a single
+  stage now: a correct 16-character code starts the 10-minute
+  recovery session immediately, and loosening, removal and privileged
+  actions proceed with **no math/typing/reading challenge anywhere in
+  that path**. This supersedes the original app's
+  challenge-after-code behaviour, which this rebuild had kept through
+  v1.0.4. Challenges survive only inside Impulse Lock, where they are
+  selected on the Impulse Lock screen (challenge types, shuffled
+  keypad, custom reading phrases — all still session-gated settings);
+  the gate was the only other place a challenge could be imposed, and
+  that path is closed. Everything else about the gate is unchanged:
+  code-first, 10-minute session, PendingChange countdown/undo
+  semantics, the 48-hour forced-removal escape. A new regression test
+  proves a restriction activates right after code entry with zero
+  challenge involvement (`test/gate_coverage_test.dart`).
+- **Flat single colours — no gradients.** Every gradient is purged
+  from the UI: the hero card is one flat surface (deep red #5C0212 in
+  dark mode, white in light mode). A source-scan test
+  (`test/no_gradients_test.dart`) fails if any gradient API or the
+  retired gradient helpers reappear in `lib/`. The red/black/white
+  palette guard still passes; the pill nav stays always-black.
+- **Titled card groups on every settings screen.** Following the
+  Status tab's grouped pattern, flat ungrouped settings were
+  regrouped into titled cards: Config ("General Settings",
+  "Protection tools", "Preferences", "App entry", plus the existing
+  danger-zone card), Restrictions (each section is now a card
+  carrying its own select-all header), Impulse Lock
+  ("Configuration", "Access challenges"), Focus mode ("Durations",
+  "Suspended while focusing"), Browser restrictions ("Supporting
+  browsers", "Blocklists"), Blocked words ("Active blocking",
+  "Passive blocking") and Usage warnings (a master-switch card; the
+  stages were already cards). Presentation only: no control moved
+  across a gate boundary, and no handler, ordering or behaviour
+  changed. New titles are localized through the ARB tables (612 keys
+  per locale, including the fix-#6 removal-outcome strings).
+- **Lock-screen brand block.** The mark is centred at a modest
+  80 dp with generous whitespace around the block (ample space above
+  it and wider gaps between mark, name, tagline and the locked
+  title), replacing the oversized, cramped v1.0.4 header.
+- **App renamed: "Azm" / "عزم" — user-visible name only.** The
+  launcher label now resolves from the native string resources
+  ("Azm" in `values`, "عزم" in `values-ar`); the accessibility
+  service label uses the same resource. Every in-app visible
+  occurrence goes through the ARB tables, and the native block
+  screens and notifications use the new name from resources.
+  Verified in the compiled APK: `application-label:'Azm'` and
+  `application-label-ar:'عزم'`. The applicationId, package and class
+  names, and asset file names are unchanged; the "BREAK THE CHAIN /
+  اكسر القيد" tagline is unchanged.
+- **Removal teardown — the uninstall freeze (fix #6).** Field
+  symptom: uninstalling the app froze the phone (system UI stuck,
+  fingerprint dead) until the watchdog rebooted it, after which the
+  uninstall succeeded. Mechanism, found in the code: removal was a
+  bare `clearDeviceOwnerApp` with no teardown at all, and when the
+  system tore the app's components down — above all during an
+  uninstall — the accessibility-loss lockdown fired from the
+  accessibility service's main-thread `onUnbind`: synchronously
+  suspending every controlled package and adding
+  `DISALLOW_INSTALL_APPS` inside the package manager's own removal
+  operation. Removal is now an ordered, idempotent,
+  failure-tolerant teardown that runs on the channel's background
+  executor and reports every step: (1) persist a "removal in
+  progress" flag FIRST — it disarms the lockdown and all policy
+  re-application for the whole teardown, and its persisted form
+  expires after 30 minutes so an interrupted teardown can never
+  leave protection disarmed; (2) stop the focus service and session
+  (cancelling its alarm and notification); (3) unsuspend every
+  package actually suspended (authoritative per-package probes,
+  chunked at 50 per call); (4) clear every user restriction in
+  force; (5) unhide every hidden package and drop the local hidden
+  records; (6) lift every uninstall block; (7) clear the per-app
+  restriction bundles this app applied (the browser URL
+  blocklists); (8) only then `clearDeviceOwnerApp`, verified by
+  re-read; (9) clear the flag LAST, so a failed removal re-arms
+  protection and a retry is safe. A failing step never aborts the
+  remaining steps; afterwards the app shows either the localized
+  "protection fully removed — you can now uninstall normally"
+  state or a dialog naming the exact steps that did not complete.
+  The same flag also guards the accessibility service's
+  reconnect-restore and the package receiver's hidden-state
+  re-application, and both of those privileged paths moved off the
+  main thread as well.
+- **Build.** versionName 1.0.5 / versionCode 6; 53,798,215 bytes;
+  sha256 `6d9f2e45717c66e004f417ec3a93b742d317b881c100491a7a70fe4ad70f26d5`.
+  Analyze "No issues found!"; tests **105/105** (99 pre-existing + 2
+  for the five fixes — the gate regression test and the no-gradient
+  scan — + 4 removal-report contract tests for fix #6; the palette,
+  gate-coverage and localization tests were updated for the flat
+  hero surface, the code-only gate and the new name).
+- **Device state note.** Not yet device-tested.

@@ -49,24 +49,27 @@ class PrivilegedException implements Exception {
         details[entry.key.toString()] = entry.value;
       }
     }
-    return PrivilegedException(
-      e.code,
-      e.message ?? 'Platform error',
-      details,
-    );
+    return PrivilegedException(e.code, e.message ?? 'Platform error', details);
   }
 }
 
-enum ShizukuState { notInstalled, notRunning, preV11, noPermission, granted, unknown }
+enum ShizukuState {
+  notInstalled,
+  notRunning,
+  preV11,
+  noPermission,
+  granted,
+  unknown,
+}
 
 ShizukuState parseShizukuState(String? wire) => switch (wire) {
-      'notInstalled' => ShizukuState.notInstalled,
-      'notRunning' => ShizukuState.notRunning,
-      'preV11' => ShizukuState.preV11,
-      'noPermission' => ShizukuState.noPermission,
-      'granted' => ShizukuState.granted,
-      _ => ShizukuState.unknown,
-    };
+  'notInstalled' => ShizukuState.notInstalled,
+  'notRunning' => ShizukuState.notRunning,
+  'preV11' => ShizukuState.preV11,
+  'noPermission' => ShizukuState.noPermission,
+  'granted' => ShizukuState.granted,
+  _ => ShizukuState.unknown,
+};
 
 class ShizukuStatus {
   const ShizukuStatus({
@@ -84,14 +87,14 @@ class ShizukuStatus {
   final String? diagnostic;
 
   factory ShizukuStatus.fromMap(Map<dynamic, dynamic> m) => ShizukuStatus(
-        state: parseShizukuState(m['state'] as String?),
-        serverVersion: (m['serverVersion'] as num?)?.toInt(),
-        serverUid: (m['serverUid'] as num?)?.toInt(),
-        isPreV11: m['isPreV11'] as bool? ?? false,
-        // Kotlin's degraded path puts `diagnostic` at the top level of the
-        // reply map (the doc says details.diagnostic — Kotlin wins).
-        diagnostic: m['diagnostic'] as String?,
-      );
+    state: parseShizukuState(m['state'] as String?),
+    serverVersion: (m['serverVersion'] as num?)?.toInt(),
+    serverUid: (m['serverUid'] as num?)?.toInt(),
+    isPreV11: m['isPreV11'] as bool? ?? false,
+    // Kotlin's degraded path puts `diagnostic` at the top level of the
+    // reply map (the doc says details.diagnostic — Kotlin wins).
+    diagnostic: m['diagnostic'] as String?,
+  );
 }
 
 class InstalledApp {
@@ -114,51 +117,64 @@ class InstalledApp {
   final bool? hasExplicitContentRating;
 
   factory InstalledApp.fromMap(Map<dynamic, dynamic> m) => InstalledApp(
-        packageName: m['packageName'] as String,
-        label: m['label'] as String? ?? (m['packageName'] as String),
-        isSystem: m['isSystem'] as bool? ?? false,
-        isHidden: m['isHidden'] as bool? ?? false,
-        isSuspended: m['isSuspended'] as bool? ?? false,
-        isUninstallBlocked: m['isUninstallBlocked'] as bool? ?? false,
-        hasExplicitContentRating: m['hasExplicitContentRating'] as bool?,
-      );
+    packageName: m['packageName'] as String,
+    label: m['label'] as String? ?? (m['packageName'] as String),
+    isSystem: m['isSystem'] as bool? ?? false,
+    isHidden: m['isHidden'] as bool? ?? false,
+    isSuspended: m['isSuspended'] as bool? ?? false,
+    isUninstallBlocked: m['isUninstallBlocked'] as bool? ?? false,
+    hasExplicitContentRating: m['hasExplicitContentRating'] as bool?,
+  );
 
-  InstalledApp copyWith({bool? isHidden, bool? isSuspended, bool? isUninstallBlocked}) =>
-      InstalledApp(
-        packageName: packageName,
-        label: label,
-        isSystem: isSystem,
-        isHidden: isHidden ?? this.isHidden,
-        isSuspended: isSuspended ?? this.isSuspended,
-        isUninstallBlocked: isUninstallBlocked ?? this.isUninstallBlocked,
-        hasExplicitContentRating: hasExplicitContentRating,
-      );
+  InstalledApp copyWith({
+    bool? isHidden,
+    bool? isSuspended,
+    bool? isUninstallBlocked,
+  }) => InstalledApp(
+    packageName: packageName,
+    label: label,
+    isSystem: isSystem,
+    isHidden: isHidden ?? this.isHidden,
+    isSuspended: isSuspended ?? this.isSuspended,
+    isUninstallBlocked: isUninstallBlocked ?? this.isUninstallBlocked,
+    hasExplicitContentRating: hasExplicitContentRating,
+  );
 }
 
 class UserRestriction {
-  const UserRestriction({required this.key, required this.active, required this.recommended});
+  const UserRestriction({
+    required this.key,
+    required this.active,
+    required this.recommended,
+  });
   final String key;
   final bool active;
   final bool recommended;
 
   factory UserRestriction.fromMap(Map<dynamic, dynamic> m) => UserRestriction(
-        key: m['key'] as String,
-        active: m['active'] as bool? ?? false,
-        recommended: m['recommended'] as bool? ?? false,
-      );
+    key: m['key'] as String,
+    active: m['active'] as bool? ?? false,
+    recommended: m['recommended'] as bool? ?? false,
+  );
 }
 
 class CapableApp {
-  const CapableApp({required this.packageName, required this.label, required this.declaredKeys});
+  const CapableApp({
+    required this.packageName,
+    required this.label,
+    required this.declaredKeys,
+  });
   final String packageName;
   final String label;
   final List<String> declaredKeys;
 
   factory CapableApp.fromMap(Map<dynamic, dynamic> m) => CapableApp(
-        packageName: m['packageName'] as String,
-        label: m['label'] as String? ?? (m['packageName'] as String),
-        declaredKeys: (m['declaredKeys'] as List?)?.map((e) => e.toString()).toList() ?? const [],
-      );
+    packageName: m['packageName'] as String,
+    label: m['label'] as String? ?? (m['packageName'] as String),
+    declaredKeys:
+        (m['declaredKeys'] as List?)?.map((e) => e.toString()).toList() ??
+        const [],
+  );
 }
 
 /// One entry of a target app's own manifest-declared restrictions, as
@@ -200,7 +216,8 @@ class AvailableRestriction {
 
   bool get isManaged => currentValue != null;
 
-  factory AvailableRestriction.fromMap(Map<dynamic, dynamic> m) => AvailableRestriction(
+  factory AvailableRestriction.fromMap(Map<dynamic, dynamic> m) =>
+      AvailableRestriction(
         key: m['key'] as String,
         type: m['type'] as String? ?? 'string',
         titleKey: m['titleKey'] as String? ?? (m['key'] as String),
@@ -208,16 +225,26 @@ class AvailableRestriction {
         currentValue: m['currentValue'],
         description: m['description'] as String?,
         hidden: m['hidden'] as bool? ?? false,
-        choices: (m['choices'] as List?)?.map((e) => e.toString()).toList() ?? const [],
-        children: (m['children'] as List?)
-                ?.map((e) => AvailableRestriction.fromMap(e as Map<dynamic, dynamic>))
+        choices:
+            (m['choices'] as List?)?.map((e) => e.toString()).toList() ??
+            const [],
+        children:
+            (m['children'] as List?)
+                ?.map(
+                  (e) =>
+                      AvailableRestriction.fromMap(e as Map<dynamic, dynamic>),
+                )
                 .toList() ??
             const [],
       );
 }
 
 class ProvisioningDiagnostics {
-  const ProvisioningDiagnostics({required this.accounts, required this.extraUsers, this.currentOwner});
+  const ProvisioningDiagnostics({
+    required this.accounts,
+    required this.extraUsers,
+    this.currentOwner,
+  });
   final List<Map<String, String>> accounts;
   final List<Map<String, dynamic>> extraUsers;
   final Map<String, String>? currentOwner;
@@ -230,9 +257,15 @@ class ProvisioningDiagnostics {
           .map((e) => stringify(e as Map<dynamic, dynamic>))
           .toList(),
       extraUsers: (m['extraUsers'] as List? ?? const [])
-          .map((e) => (e as Map<dynamic, dynamic>).map((k, v) => MapEntry(k.toString(), v)))
+          .map(
+            (e) => (e as Map<dynamic, dynamic>).map(
+              (k, v) => MapEntry(k.toString(), v),
+            ),
+          )
           .toList(),
-      currentOwner: (m['currentOwner'] as Map<dynamic, dynamic>?)?.let(stringify),
+      currentOwner: (m['currentOwner'] as Map<dynamic, dynamic>?)?.let(
+        stringify,
+      ),
     );
   }
 }
@@ -247,13 +280,67 @@ class PrivateDnsState {
   final String? hostname;
   bool get isSpecifiedHost => mode.contains('PROVIDER_HOSTNAME');
   factory PrivateDnsState.fromMap(Map<dynamic, dynamic> m) => PrivateDnsState(
-        mode: m['mode'] as String? ?? 'UNKNOWN',
-        hostname: m['hostname'] as String?,
+    mode: m['mode'] as String? ?? 'UNKNOWN',
+    hostname: m['hostname'] as String?,
+  );
+}
+
+/// One step of the v1.0.5 removal teardown (fix #6), in execution order.
+class RemovalStepResult {
+  const RemovalStepResult({
+    required this.id,
+    required this.ok,
+    required this.detail,
+  });
+  final String id;
+  final bool ok;
+  final String detail;
+  factory RemovalStepResult.fromMap(Map<dynamic, dynamic> m) =>
+      RemovalStepResult(
+        id: m['id'] as String? ?? '',
+        ok: m['ok'] as bool? ?? false,
+        detail: m['detail'] as String? ?? '',
+      );
+}
+
+/// The outcome of `removeDeviceOwner` (v1.0.5, fix #6): the verified
+/// owner state after the ordered native teardown, plus every step's
+/// individual outcome — the UI reports partial cleanup honestly
+/// instead of claiming a clean removal that did not happen.
+class DeviceOwnerRemovalResult {
+  const DeviceOwnerRemovalResult({
+    required this.isDeviceOwner,
+    required this.steps,
+  });
+  final bool isDeviceOwner;
+  final List<RemovalStepResult> steps;
+
+  /// Device Owner is gone (verified natively by re-read).
+  bool get removed => !isDeviceOwner;
+
+  /// Steps that did not complete, in execution order.
+  List<RemovalStepResult> get failedSteps => steps.where((s) => !s.ok).toList();
+
+  /// Fully clean removal: owner gone and every teardown step succeeded.
+  bool get clean => removed && failedSteps.isEmpty;
+
+  factory DeviceOwnerRemovalResult.fromMap(Map<dynamic, dynamic> m) =>
+      DeviceOwnerRemovalResult(
+        // A reply missing the flag is read conservatively: still owner.
+        isDeviceOwner: m['isDeviceOwner'] as bool? ?? true,
+        steps: [
+          for (final e in (m['steps'] as List? ?? const []))
+            RemovalStepResult.fromMap(e as Map<dynamic, dynamic>),
+        ],
       );
 }
 
 class UsageToday {
-  const UsageToday({required this.date, required this.packages, required this.groups});
+  const UsageToday({
+    required this.date,
+    required this.packages,
+    required this.groups,
+  });
   final String date;
   final Map<String, int> packages;
   final Map<String, int> groups;
@@ -286,14 +373,15 @@ class TimeWindowModel {
   factory TimeWindowModel.fromMap(Map<dynamic, dynamic> m) =>
       TimeWindowModel((m['s'] as num).toInt(), (m['e'] as num).toInt());
 
-  String get formatted =>
-      '${_hhmm(startMinute)} – ${_hhmm(endMinute)}';
+  String get formatted => '${_hhmm(startMinute)} – ${_hhmm(endMinute)}';
   static String _hhmm(int minute) =>
       '${(minute ~/ 60).toString().padLeft(2, '0')}:${(minute % 60).toString().padLeft(2, '0')}';
 
   @override
   bool operator ==(Object other) =>
-      other is TimeWindowModel && other.startMinute == startMinute && other.endMinute == endMinute;
+      other is TimeWindowModel &&
+      other.startMinute == startMinute &&
+      other.endMinute == endMinute;
   @override
   int get hashCode => Object.hash(startMinute, endMinute);
 }
@@ -315,9 +403,12 @@ class AppEnforcement {
   final List<TimeWindowModel> dailyWindows;
   final List<List<TimeWindowModel>>? weeklyWindows;
 
-  bool get hasLimit => weeklyMinutes != null ? weeklyMinutes!.any((m) => m > 0) : dailyMinutes > 0;
-  bool get hasWindows =>
-      weeklyWindows != null ? weeklyWindows!.any((d) => d.isNotEmpty) : dailyWindows.isNotEmpty;
+  bool get hasLimit => weeklyMinutes != null
+      ? weeklyMinutes!.any((m) => m > 0)
+      : dailyMinutes > 0;
+  bool get hasWindows => weeklyWindows != null
+      ? weeklyWindows!.any((d) => d.isNotEmpty)
+      : dailyWindows.isNotEmpty;
 
   int get todayLimitMinutes {
     if (weeklyMinutes != null) {
@@ -356,33 +447,37 @@ class AppGroupModel {
   final List<List<TimeWindowModel>>? weeklyWindows;
 
   factory AppGroupModel.fromMap(Map<dynamic, dynamic> m) => AppGroupModel(
-        id: m['id'] as String,
-        name: m['name'] as String? ?? '',
-        packages: (m['packages'] as List?)?.map((e) => e.toString()).toList() ?? const [],
-        dailyMinutes: (m['dailyMinutes'] as num?)?.toInt() ?? 0,
-        reopenSeconds: (m['reopenSeconds'] as num?)?.toInt() ?? 0,
-        weeklyMinutes:
-            (m['weeklyMinutes'] as List?)?.map((e) => (e as num).toInt()).toList(),
-        dailyWindows: _windows(m['dailyWindows']),
-        weeklyWindows: (m['weeklyWindows'] as List?)
-            ?.map((day) => _windows(day))
-            .toList(),
-      );
+    id: m['id'] as String,
+    name: m['name'] as String? ?? '',
+    packages:
+        (m['packages'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+    dailyMinutes: (m['dailyMinutes'] as num?)?.toInt() ?? 0,
+    reopenSeconds: (m['reopenSeconds'] as num?)?.toInt() ?? 0,
+    weeklyMinutes: (m['weeklyMinutes'] as List?)
+        ?.map((e) => (e as num).toInt())
+        .toList(),
+    dailyWindows: _windows(m['dailyWindows']),
+    weeklyWindows: (m['weeklyWindows'] as List?)
+        ?.map((day) => _windows(day))
+        .toList(),
+  );
 
   static List<TimeWindowModel> _windows(Object? v) => (v as List? ?? const [])
       .map((e) => TimeWindowModel.fromMap(e as Map<dynamic, dynamic>))
       .toList();
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'packages': packages,
-        'dailyMinutes': dailyMinutes,
-        'weeklyMinutes': weeklyMinutes,
-        'reopenSeconds': reopenSeconds,
-        'dailyWindows': dailyWindows.map((w) => w.toMap()).toList(),
-        'weeklyWindows': weeklyWindows?.map((d) => d.map((w) => w.toMap()).toList()).toList(),
-      };
+    'id': id,
+    'name': name,
+    'packages': packages,
+    'dailyMinutes': dailyMinutes,
+    'weeklyMinutes': weeklyMinutes,
+    'reopenSeconds': reopenSeconds,
+    'dailyWindows': dailyWindows.map((w) => w.toMap()).toList(),
+    'weeklyWindows': weeklyWindows
+        ?.map((d) => d.map((w) => w.toMap()).toList())
+        .toList(),
+  };
 
   AppGroupModel copyWith({
     String? name,
@@ -394,17 +489,20 @@ class AppGroupModel {
     List<TimeWindowModel>? dailyWindows,
     List<List<TimeWindowModel>>? weeklyWindows,
     bool clearWeeklyWindows = false,
-  }) =>
-      AppGroupModel(
-        id: id,
-        name: name ?? this.name,
-        packages: packages ?? this.packages,
-        dailyMinutes: dailyMinutes ?? this.dailyMinutes,
-        weeklyMinutes: clearWeeklyMinutes ? null : (weeklyMinutes ?? this.weeklyMinutes),
-        reopenSeconds: reopenSeconds ?? this.reopenSeconds,
-        dailyWindows: dailyWindows ?? this.dailyWindows,
-        weeklyWindows: clearWeeklyWindows ? null : (weeklyWindows ?? this.weeklyWindows),
-      );
+  }) => AppGroupModel(
+    id: id,
+    name: name ?? this.name,
+    packages: packages ?? this.packages,
+    dailyMinutes: dailyMinutes ?? this.dailyMinutes,
+    weeklyMinutes: clearWeeklyMinutes
+        ? null
+        : (weeklyMinutes ?? this.weeklyMinutes),
+    reopenSeconds: reopenSeconds ?? this.reopenSeconds,
+    dailyWindows: dailyWindows ?? this.dailyWindows,
+    weeklyWindows: clearWeeklyWindows
+        ? null
+        : (weeklyWindows ?? this.weeklyWindows),
+  );
 }
 
 class BlockedWordsState {
@@ -417,17 +515,18 @@ class BlockedWordsState {
   final List<String> targetPackages;
   final Map<String, List<String>> passiveWords;
 
-  factory BlockedWordsState.fromMap(Map<dynamic, dynamic> m) => BlockedWordsState(
-        words: (m['words'] as List?)?.map((e) => e.toString()).toList() ?? const [],
-        targetPackages:
-            (m['targetPackages'] as List?)?.map((e) => e.toString()).toList() ?? const [],
-        passiveWords: (m['passiveWords'] as Map<dynamic, dynamic>? ?? const {}).map(
-          (k, v) => MapEntry(
-            k.toString(),
-            (v as List).map((e) => e.toString()).toList(),
-          ),
-        ),
-      );
+  factory BlockedWordsState.fromMap(
+    Map<dynamic, dynamic> m,
+  ) => BlockedWordsState(
+    words: (m['words'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+    targetPackages:
+        (m['targetPackages'] as List?)?.map((e) => e.toString()).toList() ??
+        const [],
+    passiveWords: (m['passiveWords'] as Map<dynamic, dynamic>? ?? const {}).map(
+      (k, v) =>
+          MapEntry(k.toString(), (v as List).map((e) => e.toString()).toList()),
+    ),
+  );
 }
 
 class SuspensionLogEntry {
@@ -448,7 +547,8 @@ class SuspensionLogEntry {
 
   DateTime get timestamp => DateTime.fromMillisecondsSinceEpoch(timestampMs);
 
-  factory SuspensionLogEntry.fromMap(Map<dynamic, dynamic> m) => SuspensionLogEntry(
+  factory SuspensionLogEntry.fromMap(Map<dynamic, dynamic> m) =>
+      SuspensionLogEntry(
         id: m['id'] as String? ?? '',
         packageName: m['packageName'] as String? ?? '',
         appName: m['appName'] as String? ?? (m['packageName'] as String? ?? ''),
@@ -508,25 +608,26 @@ class NativeFocusSessionState {
   bool get isWaiting => phase == 'waiting';
   bool get isIdle => phase == 'idle';
 
-  factory NativeFocusSessionState.fromMap(Map<dynamic, dynamic> m) =>
-      NativeFocusSessionState(
-        phase: m['phase'] as String? ?? 'idle',
-        phaseStartedElapsedMs: (m['phaseStartedElapsedMs'] as num?)?.toInt() ?? 0,
-        phaseDurationMs: (m['phaseDurationMs'] as num?)?.toInt() ?? 0,
-        completedFocusInCycle: (m['completedFocusInCycle'] as num?)?.toInt() ?? 0,
-        pausedFrom: m['pausedFrom'] as String?,
-        deadlineElapsedMs: (m['deadlineElapsedMs'] as num?)?.toInt() ?? 0,
-      );
+  factory NativeFocusSessionState.fromMap(
+    Map<dynamic, dynamic> m,
+  ) => NativeFocusSessionState(
+    phase: m['phase'] as String? ?? 'idle',
+    phaseStartedElapsedMs: (m['phaseStartedElapsedMs'] as num?)?.toInt() ?? 0,
+    phaseDurationMs: (m['phaseDurationMs'] as num?)?.toInt() ?? 0,
+    completedFocusInCycle: (m['completedFocusInCycle'] as num?)?.toInt() ?? 0,
+    pausedFrom: m['pausedFrom'] as String?,
+    deadlineElapsedMs: (m['deadlineElapsedMs'] as num?)?.toInt() ?? 0,
+  );
 
   static FocusPhase _phaseFor(String wire) => switch (wire) {
-        'focus' => FocusPhase.focus,
-        'shortBreak' => FocusPhase.breakTime,
-        'longBreak' => FocusPhase.longBreak,
-        'waiting' => FocusPhase.waiting,
-        'paused' => FocusPhase.paused,
-        'done' => FocusPhase.done,
-        _ => FocusPhase.idle,
-      };
+    'focus' => FocusPhase.focus,
+    'shortBreak' => FocusPhase.breakTime,
+    'longBreak' => FocusPhase.longBreak,
+    'waiting' => FocusPhase.waiting,
+    'paused' => FocusPhase.paused,
+    'done' => FocusPhase.done,
+    _ => FocusPhase.idle,
+  };
 
   /// Rebuilds the domain [FocusSession] for [config] from this snapshot.
   ///
@@ -585,8 +686,9 @@ class NativeFocusSessionState {
 /// The single Dart-side caller of `dominanter/privileged`.
 class PrivilegedChannel {
   PrivilegedChannel({MethodChannel? methodChannel, EventChannel? eventChannel})
-      : _methods = methodChannel ?? const MethodChannel('dominanter/privileged'),
-        _events = eventChannel ?? const EventChannel('dominanter/privileged/events');
+    : _methods = methodChannel ?? const MethodChannel('dominanter/privileged'),
+      _events =
+          eventChannel ?? const EventChannel('dominanter/privileged/events');
 
   final MethodChannel _methods;
   final EventChannel _events;
@@ -597,15 +699,19 @@ class PrivilegedChannel {
 
   /// Advisory events (§5.5). Dart re-reads authoritative state on receipt.
   Stream<PrivilegedEvent> get events {
-    return _eventStream ??= _events.receiveBroadcastStream().map((raw) {
-      final m = (raw as Map<dynamic, dynamic>)
-          .map((k, v) => MapEntry(k.toString(), v));
-      final type = m.remove('type')?.toString() ?? 'unknown';
-      return PrivilegedEvent(type, m);
-    }).handleError((Object e) {
-      // Event stream errors are advisory only; the stream must not take the
-      // UI down. Authoritative state is always re-readable via methods.
-    });
+    return _eventStream ??= _events
+        .receiveBroadcastStream()
+        .map((raw) {
+          final m = (raw as Map<dynamic, dynamic>).map(
+            (k, v) => MapEntry(k.toString(), v),
+          );
+          final type = m.remove('type')?.toString() ?? 'unknown';
+          return PrivilegedEvent(type, m);
+        })
+        .handleError((Object e) {
+          // Event stream errors are advisory only; the stream must not take the
+          // UI down. Authoritative state is always re-readable via methods.
+        });
   }
 
   Future<T> _invoke<T>(String method, [Map<String, dynamic>? args]) async {
@@ -623,13 +729,19 @@ class PrivilegedChannel {
     }
   }
 
-  Future<Map<String, dynamic>> _invokeMap(String method, [Map<String, dynamic>? args]) async {
+  Future<Map<String, dynamic>> _invokeMap(
+    String method, [
+    Map<String, dynamic>? args,
+  ]) async {
     final result = await _invoke<dynamic>(method, args);
     if (result is Map) {
       return result.map((k, v) => MapEntry(k.toString(), v));
     }
-    throw PrivilegedException('INTERNAL', 'Malformed reply from native layer for $method',
-        {'cause': 'expected Map, got ${result.runtimeType}'});
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply from native layer for $method',
+      {'cause': 'expected Map, got ${result.runtimeType}'},
+    );
   }
 
   // ---------------------------------------------------------- Shizuku
@@ -638,7 +750,8 @@ class PrivilegedChannel {
       ShizukuStatus.fromMap(await _invokeMap('getShizukuState'));
 
   Future<bool> requestShizukuPermission() async =>
-      (await _invokeMap('requestShizukuPermission'))['requested'] as bool? ?? false;
+      (await _invokeMap('requestShizukuPermission'))['requested'] as bool? ??
+      false;
 
   /// Opens Shizuku's Play Store page (market:// intent, https fallback —
   /// the original's `installShizuku`). Returns whether an intent launched.
@@ -647,10 +760,16 @@ class PrivilegedChannel {
 
   // ---------------------------------------------------------- Device Owner
 
-  Future<Map<String, dynamic>> provisionDeviceOwner() => _invokeMap('provisionDeviceOwner');
+  Future<Map<String, dynamic>> provisionDeviceOwner() =>
+      _invokeMap('provisionDeviceOwner');
 
-  Future<bool> removeDeviceOwner() async =>
-      (await _invokeMap('removeDeviceOwner'))['isDeviceOwner'] as bool? ?? true;
+  /// F2 removal — since v1.0.5 (fix #6) the native side runs an
+  /// ordered teardown (disarm the lockdown, stop focus, unsuspend,
+  /// clear restrictions, unhide, lift uninstall blocks, clear per-app
+  /// bundles, and only then clear the owner) and reports every step's
+  /// outcome; see [DeviceOwnerRemovalResult].
+  Future<DeviceOwnerRemovalResult> removeDeviceOwner() async =>
+      DeviceOwnerRemovalResult.fromMap(await _invokeMap('removeDeviceOwner'));
 
   Future<({bool isDeviceOwner, bool isAdminActive})> isDeviceOwner() async {
     final m = await _invokeMap('isDeviceOwner');
@@ -661,22 +780,34 @@ class PrivilegedChannel {
   }
 
   Future<ProvisioningDiagnostics> getProvisioningDiagnostics() async =>
-      ProvisioningDiagnostics.fromMap(await _invokeMap('getProvisioningDiagnostics'));
+      ProvisioningDiagnostics.fromMap(
+        await _invokeMap('getProvisioningDiagnostics'),
+      );
 
   // ---------------------------------------------------------- Apps
 
-  Future<List<InstalledApp>> listInstalledApps({bool includeSystem = false}) async {
-    final raw = await _invoke<dynamic>('listInstalledApps', {'includeSystem': includeSystem});
+  Future<List<InstalledApp>> listInstalledApps({
+    bool includeSystem = false,
+  }) async {
+    final raw = await _invoke<dynamic>('listInstalledApps', {
+      'includeSystem': includeSystem,
+    });
     if (raw is List) {
       return raw
           .map((e) => InstalledApp.fromMap(e as Map<dynamic, dynamic>))
           .toList();
     }
-    throw PrivilegedException('INTERNAL', 'Malformed reply for listInstalledApps');
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply for listInstalledApps',
+    );
   }
 
   Future<bool> setAppHidden(String packageName, bool hidden) async {
-    final m = await _invokeMap('setAppHidden', {'packageName': packageName, 'hidden': hidden});
+    final m = await _invokeMap('setAppHidden', {
+      'packageName': packageName,
+      'hidden': hidden,
+    });
     return m['isHidden'] as bool? ?? !hidden;
   }
 
@@ -702,8 +833,10 @@ class PrivilegedChannel {
   }
 
   Future<bool> setUninstallBlocked(String packageName, bool blocked) async {
-    final m = await _invokeMap(
-        'setUninstallBlocked', {'packageName': packageName, 'blocked': blocked});
+    final m = await _invokeMap('setUninstallBlocked', {
+      'packageName': packageName,
+      'blocked': blocked,
+    });
     return m['isUninstallBlocked'] as bool? ?? !blocked;
   }
 
@@ -717,23 +850,37 @@ class PrivilegedChannel {
   }
 
   Future<bool> applyUserRestriction(String key) async =>
-      (await _invokeMap('applyUserRestriction', {'key': key}))['active'] as bool? ?? false;
+      (await _invokeMap('applyUserRestriction', {'key': key}))['active']
+          as bool? ??
+      false;
 
   Future<bool> clearUserRestriction(String key) async =>
-      (await _invokeMap('clearUserRestriction', {'key': key}))['active'] as bool? ?? true;
+      (await _invokeMap('clearUserRestriction', {'key': key}))['active']
+          as bool? ??
+      true;
 
-  Future<Map<String, dynamic>> getApplicationRestrictions(String packageName) async {
-    final m = await _invokeMap('getApplicationRestrictions', {'packageName': packageName});
+  Future<Map<String, dynamic>> getApplicationRestrictions(
+    String packageName,
+  ) async {
+    final m = await _invokeMap('getApplicationRestrictions', {
+      'packageName': packageName,
+    });
     final r = m['restrictions'];
-    return r is Map ? r.map((k, v) => MapEntry(k.toString(), v)) : <String, dynamic>{};
+    return r is Map
+        ? r.map((k, v) => MapEntry(k.toString(), v))
+        : <String, dynamic>{};
   }
 
   /// The target app's declared restrictions model (the original's
   /// `getAvailableRestrictions`): every restriction the app declares in its
   /// manifest, with declared defaults and currently applied values. Entries
   /// flagged [AvailableRestriction.hidden] must not be offered for editing.
-  Future<List<AvailableRestriction>> getAvailableRestrictions(String packageName) async {
-    final m = await _invokeMap('getAvailableRestrictions', {'packageName': packageName});
+  Future<List<AvailableRestriction>> getAvailableRestrictions(
+    String packageName,
+  ) async {
+    final m = await _invokeMap('getAvailableRestrictions', {
+      'packageName': packageName,
+    });
     return (m['restrictions'] as List? ?? const [])
         .map((e) => AvailableRestriction.fromMap(e as Map<dynamic, dynamic>))
         .toList();
@@ -750,15 +897,26 @@ class PrivilegedChannel {
       'merge': merge,
     });
     final r = m['restrictions'];
-    return r is Map ? r.map((k, v) => MapEntry(k.toString(), v)) : <String, dynamic>{};
+    return r is Map
+        ? r.map((k, v) => MapEntry(k.toString(), v))
+        : <String, dynamic>{};
   }
 
-  Future<List<CapableApp>> listRestrictionCapableApps({List<String> requiredKeys = const []}) async {
-    final raw = await _invoke<dynamic>('listRestrictionCapableApps', {'requiredKeys': requiredKeys});
+  Future<List<CapableApp>> listRestrictionCapableApps({
+    List<String> requiredKeys = const [],
+  }) async {
+    final raw = await _invoke<dynamic>('listRestrictionCapableApps', {
+      'requiredKeys': requiredKeys,
+    });
     if (raw is List) {
-      return raw.map((e) => CapableApp.fromMap(e as Map<dynamic, dynamic>)).toList();
+      return raw
+          .map((e) => CapableApp.fromMap(e as Map<dynamic, dynamic>))
+          .toList();
     }
-    throw PrivilegedException('INTERNAL', 'Malformed reply for listRestrictionCapableApps');
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply for listRestrictionCapableApps',
+    );
   }
 
   // ---------------------------------------------------------- Private DNS
@@ -767,23 +925,31 @@ class PrivilegedChannel {
       PrivateDnsState.fromMap(await _invokeMap('getPrivateDns'));
 
   Future<PrivateDnsState> setPrivateDns(String hostname) async =>
-      PrivateDnsState.fromMap(await _invokeMap('setPrivateDns', {'hostname': hostname}));
+      PrivateDnsState.fromMap(
+        await _invokeMap('setPrivateDns', {'hostname': hostname}),
+      );
 
   // ---------------------------------------------------------- Grant & Accessibility
 
   Future<bool> grantWriteSecureSettings() async =>
-      (await _invokeMap('grantWriteSecureSettings'))['granted'] as bool? ?? false;
+      (await _invokeMap('grantWriteSecureSettings'))['granted'] as bool? ??
+      false;
 
   /// Read-only check of the WRITE_SECURE_SETTINGS grant: the native
   /// side's verified `checkSelfPermission` re-check, without granting.
   Future<bool> isWriteSecureSettingsGranted() async =>
-      (await _invokeMap('isWriteSecureSettingsGranted'))['granted'] as bool? ?? false;
+      (await _invokeMap('isWriteSecureSettingsGranted'))['granted'] as bool? ??
+      false;
 
   Future<bool> setAccessibilityEnabled(bool enabled) async =>
-      (await _invokeMap('setAccessibilityEnabled', {'enabled': enabled}))['isEnabled'] as bool? ??
+      (await _invokeMap('setAccessibilityEnabled', {
+            'enabled': enabled,
+          }))['isEnabled']
+          as bool? ??
       !enabled;
 
-  Future<({bool isEnabled, bool isServiceRunning})> isAccessibilityEnabled() async {
+  Future<({bool isEnabled, bool isServiceRunning})>
+  isAccessibilityEnabled() async {
     final m = await _invokeMap('isAccessibilityEnabled');
     return (
       isEnabled: m['isEnabled'] as bool? ?? false,
@@ -793,8 +959,12 @@ class PrivilegedChannel {
 
   // ---------------------------------------------------------- Usage
 
-  Future<UsageToday> getUsageToday({String? packageName}) async => UsageToday.fromMap(
-      await _invokeMap('getUsageToday', {if (packageName != null) 'packageName': packageName}));
+  Future<UsageToday> getUsageToday({String? packageName}) async =>
+      UsageToday.fromMap(
+        await _invokeMap('getUsageToday', {
+          if (packageName != null) 'packageName': packageName,
+        }),
+      );
 
   // ---------------------------------------------------------- Focus (native runtime)
 
@@ -812,8 +982,11 @@ class PrivilegedChannel {
     if (result is Map) {
       return NativeFocusSessionState.fromMap(result);
     }
-    throw PrivilegedException('INTERNAL', 'Malformed reply from native layer for $method',
-        {'cause': 'expected Map or null, got ${result.runtimeType}'});
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply from native layer for $method',
+      {'cause': 'expected Map or null, got ${result.runtimeType}'},
+    );
   }
 
   /// Persists the session natively and starts its first focus phase.
@@ -848,27 +1021,35 @@ class PrivilegedChannel {
 
   /// The persisted native session, or null when no session exists. The
   /// native side advances an expired phase before replying.
-  Future<NativeFocusSessionState?> getFocusSession() async =>
-      _parseFocusState(await _invoke<dynamic>('getFocusSession'), 'getFocusSession');
+  Future<NativeFocusSessionState?> getFocusSession() async => _parseFocusState(
+    await _invoke<dynamic>('getFocusSession'),
+    'getFocusSession',
+  );
 
   /// Pauses the native session. With [releaseApps] the suspended apps are
   /// released for the pause (a loosening — callers gate it behind the
   /// recovery session, as in the original); otherwise they stay suspended.
-  Future<NativeFocusSessionState?> pauseFocusSession({bool releaseApps = false}) async =>
-      _parseFocusState(
-        await _invoke<dynamic>('pauseFocusSession', {'releaseApps': releaseApps}),
-        'pauseFocusSession',
-      );
+  Future<NativeFocusSessionState?> pauseFocusSession({
+    bool releaseApps = false,
+  }) async => _parseFocusState(
+    await _invoke<dynamic>('pauseFocusSession', {'releaseApps': releaseApps}),
+    'pauseFocusSession',
+  );
 
   /// Resumes into the phase the session was paused from (never forces
   /// the focus phase — the original's `resume` semantics).
   Future<NativeFocusSessionState?> resumeFocusSession() async =>
-      _parseFocusState(await _invoke<dynamic>('resumeFocusSession'), 'resumeFocusSession');
+      _parseFocusState(
+        await _invoke<dynamic>('resumeFocusSession'),
+        'resumeFocusSession',
+      );
 
   /// Skips the current break, entering the next focus phase (the
   /// original's `FocusMode.skipBreak`); a no-op outside a break phase.
-  Future<NativeFocusSessionState?> skipFocusSession() async =>
-      _parseFocusState(await _invoke<dynamic>('skipFocusSession'), 'skipFocusSession');
+  Future<NativeFocusSessionState?> skipFocusSession() async => _parseFocusState(
+    await _invoke<dynamic>('skipFocusSession'),
+    'skipFocusSession',
+  );
 
   /// Stops the native session: releases its suspensions/restrictions,
   /// cancels the alarm and the status notification.
@@ -880,12 +1061,14 @@ class PrivilegedChannel {
   // ---------------------------------------------------------- Notification permission
 
   Future<bool> hasNotificationPermission() async =>
-      (await _invokeMap('hasNotificationPermission'))['granted'] as bool? ?? false;
+      (await _invokeMap('hasNotificationPermission'))['granted'] as bool? ??
+      false;
 
   /// Resolution order on the native side: already granted → device-owner
   /// policy grant (no UI) → the host Activity's runtime prompt.
   Future<bool> requestNotificationPermission() async =>
-      (await _invokeMap('requestNotificationPermission'))['granted'] as bool? ?? false;
+      (await _invokeMap('requestNotificationPermission'))['granted'] as bool? ??
+      false;
 
   // ---------------------------------------------------------- Recovery code
 
@@ -893,10 +1076,13 @@ class PrivilegedChannel {
       (await _invokeMap('generateRecoveryCode'))['code'] as String;
 
   Future<bool> setRecoveryCode(String code) async =>
-      (await _invokeMap('setRecoveryCode', {'code': code}))['isSet'] as bool? ?? false;
+      (await _invokeMap('setRecoveryCode', {'code': code}))['isSet'] as bool? ??
+      false;
 
   Future<bool> verifyRecoveryCode(String code) async =>
-      (await _invokeMap('verifyRecoveryCode', {'code': code}))['matches'] as bool? ?? false;
+      (await _invokeMap('verifyRecoveryCode', {'code': code}))['matches']
+          as bool? ??
+      false;
 
   Future<bool> isRecoveryCodeSet() async =>
       (await _invokeMap('isRecoveryCodeSet'))['isSet'] as bool? ?? false;
@@ -904,16 +1090,23 @@ class PrivilegedChannel {
   // ------------------------------------- §8 extension: enforcement config
 
   Future<AppEnforcement> getAppEnforcement(String packageName) async {
-    final limit = await _invokeMap('getTimeLimit', {'packageName': packageName});
-    final windows = await _invokeMap('getTimeWindows', {'packageName': packageName});
+    final limit = await _invokeMap('getTimeLimit', {
+      'packageName': packageName,
+    });
+    final windows = await _invokeMap('getTimeWindows', {
+      'packageName': packageName,
+    });
     return AppEnforcement(
       packageName: packageName,
       dailyMinutes: (limit['dailyMinutes'] as num?)?.toInt() ?? 0,
-      weeklyMinutes: (limit['weeklyMinutes'] as List?)?.map((e) => (e as num).toInt()).toList(),
+      weeklyMinutes: (limit['weeklyMinutes'] as List?)
+          ?.map((e) => (e as num).toInt())
+          .toList(),
       reopenSeconds: (limit['reopenSeconds'] as num?)?.toInt() ?? 0,
       dailyWindows: AppGroupModel._windows(windows['dailyWindows']),
-      weeklyWindows:
-          (windows['weeklyWindows'] as List?)?.map((d) => AppGroupModel._windows(d)).toList(),
+      weeklyWindows: (windows['weeklyWindows'] as List?)
+          ?.map((d) => AppGroupModel._windows(d))
+          .toList(),
     );
   }
 
@@ -943,9 +1136,12 @@ class PrivilegedChannel {
     await _invokeMap('setTimeWindows', {
       'packageName': packageName,
       // Dual storage: both components may ride in one call (see setTimeLimit).
-      if (dailyWindows != null) 'dailyWindows': dailyWindows.map((w) => w.toMap()).toList(),
+      if (dailyWindows != null)
+        'dailyWindows': dailyWindows.map((w) => w.toMap()).toList(),
       if (weeklyWindows != null)
-        'weeklyWindows': weeklyWindows.map((d) => d.map((w) => w.toMap()).toList()).toList(),
+        'weeklyWindows': weeklyWindows
+            .map((d) => d.map((w) => w.toMap()).toList())
+            .toList(),
     });
     return getAppEnforcement(packageName);
   }
@@ -958,7 +1154,9 @@ class PrivilegedChannel {
   }
 
   Future<List<AppGroupModel>> setGroups(List<AppGroupModel> groups) async {
-    final m = await _invokeMap('setGroups', {'groups': groups.map((g) => g.toMap()).toList()});
+    final m = await _invokeMap('setGroups', {
+      'groups': groups.map((g) => g.toMap()).toList(),
+    });
     return (m['groups'] as List? ?? const [])
         .map((e) => AppGroupModel.fromMap(e as Map<dynamic, dynamic>))
         .toList();
@@ -967,13 +1165,25 @@ class PrivilegedChannel {
   Future<BlockedWordsState> getBlockedWords() async =>
       BlockedWordsState.fromMap(await _invokeMap('getBlockedWords'));
 
-  Future<BlockedWordsState> setBlockedWords(List<String> words, List<String> targetPackages) async =>
-      BlockedWordsState.fromMap(await _invokeMap(
-          'setBlockedWords', {'words': words, 'targetPackages': targetPackages}));
+  Future<BlockedWordsState> setBlockedWords(
+    List<String> words,
+    List<String> targetPackages,
+  ) async => BlockedWordsState.fromMap(
+    await _invokeMap('setBlockedWords', {
+      'words': words,
+      'targetPackages': targetPackages,
+    }),
+  );
 
-  Future<BlockedWordsState> setPassiveWords(String packageName, List<String> words) async =>
-      BlockedWordsState.fromMap(
-          await _invokeMap('setPassiveWords', {'packageName': packageName, 'words': words}));
+  Future<BlockedWordsState> setPassiveWords(
+    String packageName,
+    List<String> words,
+  ) async => BlockedWordsState.fromMap(
+    await _invokeMap('setPassiveWords', {
+      'packageName': packageName,
+      'words': words,
+    }),
+  );
 
   Future<List<SuspensionLogEntry>> getSuspensionLogs() async {
     final m = await _invokeMap('getSuspensionLogs');
@@ -996,6 +1206,10 @@ class PrivilegedChannel {
       (await _invokeMap('getSetting', {'store': store, 'key': key}))['value'];
 
   Future<void> setSetting(String store, String key, Object? value) async {
-    await _invokeMap('setSetting', {'store': store, 'key': key, 'value': value});
+    await _invokeMap('setSetting', {
+      'store': store,
+      'key': key,
+      'value': value,
+    });
   }
 }

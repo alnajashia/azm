@@ -134,7 +134,9 @@ class _EntryPasswordPromptDialogState
               errorText: _error,
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscured
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                 ),
                 tooltip: _obscured ? l10n.passwordShow : l10n.passwordHide,
                 onPressed: () => setState(() => _obscured = !_obscured),
@@ -155,8 +157,8 @@ class _EntryPasswordPromptDialogState
             _checking
                 ? l10n.passwordChecking
                 : waiting
-                    ? l10n.passwordRetryIn(_waitSeconds)
-                    : l10n.passwordUnlock,
+                ? l10n.passwordRetryIn(_waitSeconds)
+                : l10n.passwordUnlock,
           ),
         ),
       ],
@@ -246,48 +248,54 @@ class _AppEntrySectionState extends State<AppEntrySection> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final isSet = _isSet;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-          child: Text(
-            l10n.appEntrySection,
-            style: Theme.of(context).textTheme.titleMedium,
+    // A titled card group like every other Config section (v1.0.5).
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              l10n.appEntrySection,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-          child: Text(
-            l10n.appEntryExplanation,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: Text(
+              l10n.appEntryExplanation,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.password_outlined),
-          title: Text(
-            isSet == null
-                ? l10n.checking
-                : isSet
-                    ? l10n.appEntryStatusSet
-                    : l10n.appEntryStatusUnset,
-          ),
-          subtitle: Text(
-            isSet == true ? l10n.appEntryChange : l10n.appEntrySet,
-          ),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: isSet == null ? null : _setOrChange,
-        ),
-        if (isSet == true)
           ListTile(
             leading: const Icon(Icons.password_outlined),
-            title: Text(l10n.appEntryRemove),
+            title: Text(
+              isSet == null
+                  ? l10n.checking
+                  : isSet
+                  ? l10n.appEntryStatusSet
+                  : l10n.appEntryStatusUnset,
+            ),
+            subtitle: Text(
+              isSet == true ? l10n.appEntryChange : l10n.appEntrySet,
+            ),
             trailing: const Icon(Icons.navigate_next),
-            onTap: _remove,
+            onTap: isSet == null ? null : _setOrChange,
           ),
-      ],
+          if (isSet == true)
+            ListTile(
+              leading: const Icon(Icons.password_outlined),
+              title: Text(l10n.appEntryRemove),
+              trailing: const Icon(Icons.navigate_next),
+              onTap: _remove,
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 }
@@ -319,9 +327,7 @@ class _EntryPasswordSetDialogState extends State<_EntryPasswordSetDialog> {
     final l10n = context.l10n;
     final password = _first.text;
     if (password.length < entryPasswordMinLength) {
-      setState(
-        () => _error = l10n.passwordMinLength(entryPasswordMinLength),
-      );
+      setState(() => _error = l10n.passwordMinLength(entryPasswordMinLength));
       return;
     }
     if (password != _second.text) {
@@ -357,7 +363,9 @@ class _EntryPasswordSetDialogState extends State<_EntryPasswordSetDialog> {
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscured
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                 ),
                 tooltip: _obscured ? l10n.passwordShow : l10n.passwordHide,
                 onPressed: () => setState(() => _obscured = !_obscured),
@@ -384,10 +392,7 @@ class _EntryPasswordSetDialogState extends State<_EntryPasswordSetDialog> {
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
           child: Text(l10n.cancel),
         ),
-        FilledButton(
-          onPressed: _saving ? null : _save,
-          child: Text(l10n.save),
-        ),
+        FilledButton(onPressed: _saving ? null : _save, child: Text(l10n.save)),
       ],
     );
   }

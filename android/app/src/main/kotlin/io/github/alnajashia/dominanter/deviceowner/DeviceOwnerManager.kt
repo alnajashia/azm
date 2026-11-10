@@ -16,6 +16,9 @@ import io.github.alnajashia.dominanter.channel.ErrorCodes
 import io.github.alnajashia.dominanter.channel.PrivException
 import io.github.alnajashia.dominanter.data.SettingsStore
 import io.github.alnajashia.dominanter.data.SuspensionReason
+import io.github.alnajashia.dominanter.focus.FocusService
+import io.github.alnajashia.dominanter.focus.FocusSessionStore
+import io.github.alnajashia.dominanter.focus.FocusStatusNotifier
 import io.github.alnajashia.dominanter.shizuku.ShizukuGateway
 
 /**
@@ -54,17 +57,250 @@ object DeviceOwnerManager {
         }
     }
 
-    /** F2: immediate removal. Success requires the re-read to say "not owner". */
-    fun removeDeviceOwner(context: Context): Boolean {
+    /** One teardown step's outcome (v1.0.5 fix #6). */
+    data class TeardownStep(val id: String, val ok: Boolean, val detail: String) {
+        fun toMap(): Map<String, Any?> = mapOf("id" to id, "ok" to ok, "detail" to detail)
+    }
+
+    /** The full removal outcome: ordered per-step results + the verified owner state. */
+    data class RemovalReport(val isDeviceOwner: Boolean, val steps: List<TeardownStep>) {
+        fun toMap(): Map<String, Any?> = mapOf(
+            "isDeviceOwner" to isDeviceOwner,
+            "steps" to steps.map { it.toMap() },
+        )
+    }
+
+    /**
+     * F2: immediate removal — since v1.0.5 (fix #6) an ordered,
+     * idempotent, failure-tolerant TEARDOWN, not a bare
+     * `clearDeviceOwnerApp`.
+     *
+     * Why: removal used to clear the owner and nothing else. The live
+     * accessibility service still held its enforcement configuration,
+     * and when the system tore components down — above all during the
+     * uninstall that follows — its accessibility-loss lockdown fired
+     * from the main thread inside the package manager's own removal
+     * operation: synchronously suspending every controlled package and
+     * adding DISALLOW_INSTALL_APPS mid-uninstall. Devices froze
+     * (system UI stuck) until the watchdog rebooted them, after which
+     * the uninstall succeeded.
+     *
+     * Order (each step isolated: a failure is recorded in the report
+     * and never aborts the remaining steps):
+     *  1. `flag` — persist "removal in progress" FIRST: disarms the
+     *     accessibility-loss lockdown and policy re-application for the
+     *     whole teardown (the intentional-disable guard is armed too,
+     *     as a second line of defence).
+     *  2. `focus` — stop the focus service, end any focus session
+     *     (releases its suspensions/restrictions and cancels its
+     *     alarm), cancel the focus notification.
+     *  3. `unsuspend` — release every package that is actually
+     *     suspended (authoritative per-package probes, chunked).
+     *  4. `restrictions` — clear every user restriction currently set.
+     *  5. `unhide` — unhide every hidden package; drop the local
+     *     hidden records so nothing re-hides them later.
+     *  6. `uninstallBlocks` — lift every uninstall block.
+     *  7. `appRestrictions` — clear the per-app restriction bundles
+     *     this app applied (the browser URL blocklists).
+     *  8. `clearOwner` — only now `clearDeviceOwnerApp`, verified by
+     *     re-reading the owner state.
+     *  9. `flagClear` — clear the removal flag LAST, whatever happened
+     *     above: a failed removal must re-arm protection, and every
+     *     step is idempotent, so a retry is safe.
+     *
+     * Threading: the channel handler dispatches on a background
+     * executor, so none of this runs on the main thread; the
+     * per-package work is probe-driven and the suspension calls are
+     * chunked (50 packages per binder call).
+     */
+    fun removeDeviceOwner(context: Context): RemovalReport {
         requireOwner(context)
-        try {
-            dpm(context).clearDeviceOwnerApp(context.packageName)
-        } catch (e: Exception) {
-            throw PrivException.dpmFailed("clearDeviceOwnerApp failed", e)
+        val dpm = dpm(context)
+        val admin = adminComponent(context)
+        val steps = mutableListOf<TeardownStep>()
+
+        fun step(id: String, block: () -> String) {
+            steps += try {
+                TeardownStep(id, true, block())
+            } catch (e: Exception) {
+                TeardownStep(id, false, e.message ?: e.javaClass.simpleName)
+            }
         }
-        val stillOwner = isDeviceOwner(context)
-        if (stillOwner) throw PrivException.dpmFailed("Still Device Owner after clearDeviceOwnerApp")
-        return false
+
+        // (1) Disarm first — before anything stops or changes state.
+        step("flag") {
+            SettingsStore.setRemovalInProgress(true)
+            SettingsStore.armIntentionalAccessibilityDisable()
+            "lockdown and policy re-application disarmed"
+        }
+
+        // (2) Focus service + session + alarm + notification.
+        step("focus") {
+            if (FocusSessionStore.isActive()) {
+                FocusSessionStore.stop(context)
+            }
+            FocusService.stop(context)
+            FocusStatusNotifier.cancel(context)
+            "focus service and session stopped"
+        }
+
+        // Authoritative package census for the probe-driven steps.
+        @Suppress("DEPRECATION")
+        val installedNames = context.packageManager.getInstalledApplications(
+            PackageManager.GET_META_DATA or PackageManager.MATCH_UNINSTALLED_PACKAGES,
+        ).map { it.packageName }.filter { it != context.packageName }
+
+        // (3) Unsuspend everything that is actually suspended.
+        step("unsuspend") {
+            val suspended = installedNames.filter { pkg ->
+                try { dpm.isPackageSuspended(admin, pkg) } catch (_: Exception) { false }
+            }
+            val failed = mutableListOf<String>()
+            for (chunk in suspended.chunked(50)) {
+                try {
+                    dpm.setPackagesSuspended(admin, chunk.toTypedArray(), false)
+                } catch (_: Exception) { /* per-package verification below records the truth */ }
+                chunk.filterTo(failed) { pkg ->
+                    try { dpm.isPackageSuspended(admin, pkg) } catch (_: Exception) { true }
+                }
+            }
+            if (failed.isNotEmpty()) {
+                throw PrivException.dpmFailed(
+                    "${failed.size} package(s) could not be unsuspended: " +
+                        failed.take(5).joinToString(", "),
+                )
+            }
+            "${suspended.size} suspended package(s) released"
+        }
+
+        // (4) Clear every user restriction currently in force.
+        step("restrictions") {
+            val active = dpm.getUserRestrictions(admin).let { bundle ->
+                bundle.keySet().filter { bundle.getBoolean(it, false) }
+            }
+            val failed = mutableListOf<String>()
+            for (key in active) {
+                try {
+                    dpm.clearUserRestriction(admin, key)
+                } catch (_: Exception) { /* verification below records the truth */ }
+                val still = try {
+                    dpm.getUserRestrictions(admin).getBoolean(key, false)
+                } catch (_: Exception) {
+                    true
+                }
+                if (still) failed += key
+            }
+            if (failed.isNotEmpty()) {
+                throw PrivException.dpmFailed(
+                    "Restriction(s) could not be cleared: ${failed.joinToString(", ")}",
+                )
+            }
+            "${active.size} user restriction(s) cleared"
+        }
+
+        // (5) Unhide everything hidden (probes ∪ our persisted records).
+        step("unhide") {
+            val hidden = (installedNames.filter { pkg ->
+                try { dpm.isApplicationHidden(admin, pkg) } catch (_: Exception) { false }
+            } + SettingsStore.hiddenPackages()).distinct()
+            val failed = mutableListOf<String>()
+            for (pkg in hidden) {
+                try {
+                    dpm.setApplicationHidden(admin, pkg, false)
+                } catch (_: Exception) { /* verification below records the truth */ }
+                val still = try {
+                    dpm.isApplicationHidden(admin, pkg)
+                } catch (_: Exception) {
+                    false // package gone entirely — nothing left hidden
+                }
+                if (still) failed += pkg else SettingsStore.setHiddenPackage(pkg, false)
+            }
+            if (failed.isNotEmpty()) {
+                throw PrivException.dpmFailed(
+                    "${failed.size} package(s) could not be unhidden: " +
+                        failed.take(5).joinToString(", "),
+                )
+            }
+            "${hidden.size} hidden package(s) restored"
+        }
+
+        // (6) Lift every uninstall block.
+        step("uninstallBlocks") {
+            val blocked = installedNames.filter { pkg ->
+                try { dpm.isUninstallBlocked(admin, pkg) } catch (_: Exception) { false }
+            }
+            val failed = mutableListOf<String>()
+            for (pkg in blocked) {
+                try {
+                    dpm.setUninstallBlocked(admin, pkg, false)
+                } catch (_: Exception) { /* verification below records the truth */ }
+                val still = try {
+                    dpm.isUninstallBlocked(admin, pkg)
+                } catch (_: Exception) {
+                    true
+                }
+                if (still) failed += pkg
+            }
+            if (failed.isNotEmpty()) {
+                throw PrivException.dpmFailed(
+                    "${failed.size} uninstall block(s) could not be lifted: " +
+                        failed.take(5).joinToString(", "),
+                )
+            }
+            "${blocked.size} uninstall block(s) lifted"
+        }
+
+        // (7) Clear the per-app restriction bundles we applied
+        // (browser URL blocklists live on the URLBlocklist-declaring apps).
+        step("appRestrictions") {
+            val capable = listRestrictionCapableApps(context, listOf("URLBlocklist"))
+                .map { it["packageName"] as String }
+            var cleared = 0
+            val failed = mutableListOf<String>()
+            for (pkg in capable) {
+                val current = try {
+                    dpm.getApplicationRestrictions(admin, pkg)
+                } catch (_: Exception) {
+                    null
+                }
+                if (current == null || current.isEmpty) continue
+                try {
+                    dpm.setApplicationRestrictions(admin, pkg, Bundle())
+                    cleared++
+                } catch (_: Exception) { /* verification below records the truth */ }
+                val still = try {
+                    !dpm.getApplicationRestrictions(admin, pkg).isEmpty
+                } catch (_: Exception) {
+                    true
+                }
+                if (still) failed += pkg
+            }
+            if (failed.isNotEmpty()) {
+                throw PrivException.dpmFailed(
+                    "Restriction bundle(s) could not be cleared: ${failed.joinToString(", ")}",
+                )
+            }
+            "$cleared per-app restriction bundle(s) cleared"
+        }
+
+        // (8) Only now clear the owner itself — verified by re-read.
+        var ownerAfter = true
+        step("clearOwner") {
+            dpm.clearDeviceOwnerApp(context.packageName)
+            ownerAfter = isDeviceOwner(context)
+            if (ownerAfter) {
+                throw PrivException.dpmFailed("Still Device Owner after clearDeviceOwnerApp")
+            }
+            "device owner cleared and verified"
+        }
+
+        // (9) Clear the flag last, whatever happened above.
+        step("flagClear") {
+            SettingsStore.setRemovalInProgress(false)
+            "removal flag cleared"
+        }
+
+        return RemovalReport(ownerAfter, steps)
     }
 
     // ------------------------------------------------------------ app enumeration

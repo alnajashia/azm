@@ -3,6 +3,11 @@
 // exactly like loosening one — the paper code must be entered before any
 // activation is applied. Before the audit fix, applying a restriction
 // (a pure activation) went through with no gate at all.
+//
+// v1.0.5 (user directive): the code ALONE opens the session — the gate
+// has no challenges stage any more. The third test below is the
+// regression pin: a correct code completes a loosening with zero
+// challenge involvement.
 import 'package:dominanter/app_controller.dart';
 import 'package:dominanter/data/privileged_channel.dart';
 import 'package:dominanter/ui/restrictions_tab.dart';
@@ -23,8 +28,11 @@ void main() {
 
   /// One recommended, currently-inactive restriction. Records every
   /// applyUserRestriction call so the tests can prove nothing was
-  /// applied before the gate.
-  ({PrivilegedChannel client, List<String> applied}) harness() {
+  /// applied before the gate. [codeMatches] controls what the native
+  /// code check answers.
+  ({PrivilegedChannel client, List<String> applied}) harness({
+    bool codeMatches = false,
+  }) {
     final applied = <String>[];
     messenger.setMockMethodCallHandler(methodChannel, (call) async {
       switch (call.method) {
@@ -46,7 +54,7 @@ void main() {
         case 'isRecoveryCodeSet':
           return {'isSet': true};
         case 'verifyRecoveryCode':
-          return {'matches': false};
+          return {'matches': codeMatches};
         case 'getSetting':
           return {'value': null};
         default:
@@ -69,64 +77,114 @@ void main() {
   }
 
   testWidgets(
-      'Activating a restriction opens the recovery gate and applies nothing yet',
-      (tester) async {
-    final h = harness();
-    final controller = AppController.test(h.client);
-    addTearDown(controller.dispose);
+    'Activating a restriction opens the recovery gate and applies nothing yet',
+    (tester) async {
+      final h = harness();
+      final controller = AppController.test(h.client);
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(body: RestrictionsTab(controller: controller)),
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(find.byType(Switch), findsOneWidget);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: RestrictionsTab(controller: controller)),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byType(Switch), findsOneWidget);
 
-    await toggleOnAndTapApply(tester);
+      await toggleOnAndTapApply(tester);
 
-    // The code-first gate is showing (the code field with its label),
-    // and the activation has NOT been applied behind it.
-    expect(find.text('Recovery code'), findsOneWidget);
-    expect(h.applied, isEmpty);
-    expect(controller.session.isActive, isFalse);
+      // The code-first gate is showing (the code field with its label),
+      // and the activation has NOT been applied behind it.
+      expect(find.text('Recovery code'), findsOneWidget);
+      expect(h.applied, isEmpty);
+      expect(controller.session.isActive, isFalse);
 
-    // Cancelling the gate applies nothing either.
-    await tester.tap(find.text('Cancel'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(h.applied, isEmpty);
+      // Cancelling the gate applies nothing either.
+      await tester.tap(find.text('Cancel'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(h.applied, isEmpty);
 
-    await tester.pumpWidget(const SizedBox());
-  });
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets(
-      'With a session already open, the same activation applies directly',
-      (tester) async {
-    final h = harness();
-    final controller = AppController.test(h.client);
-    addTearDown(controller.dispose);
-    controller.session.start(); // a code-first session is already active
+    'With a session already open, the same activation applies directly',
+    (tester) async {
+      final h = harness();
+      final controller = AppController.test(h.client);
+      addTearDown(controller.dispose);
+      controller.session.start(); // a code-first session is already active
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(body: RestrictionsTab(controller: controller)),
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: RestrictionsTab(controller: controller)),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-    await toggleOnAndTapApply(tester);
+      await toggleOnAndTapApply(tester);
 
-    // No gate dialog: the active session passes through and the
-    // restriction is applied.
-    expect(find.text('Recovery code'), findsNothing);
-    expect(h.applied, ['disallow_factory_reset']);
+      // No gate dialog: the active session passes through and the
+      // restriction is applied.
+      expect(find.text('Recovery code'), findsNothing);
+      expect(h.applied, ['disallow_factory_reset']);
 
-    // End the session so its 1-second ticker stops before the test
-    // framework's pending-timer check.
-    controller.session.end();
-    await tester.pumpWidget(const SizedBox());
-  });
+      // End the session so its 1-second ticker stops before the test
+      // framework's pending-timer check.
+      controller.session.end();
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  // v1.0.5 regression pin (user directive): entering the correct code
+  // completes the loosening immediately — no math/typing/reading
+  // challenge is presented anywhere in the gate path. Before this fix,
+  // a correct code advanced the dialog to a challenges stage ("solve 5
+  // math problems") and the session started only after them.
+  testWidgets(
+    'Correct code opens the session and applies — no challenges anywhere',
+    (tester) async {
+      final h = harness(codeMatches: true);
+      final controller = AppController.test(h.client);
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: RestrictionsTab(controller: controller)),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byType(Switch), findsOneWidget);
+
+      await toggleOnAndTapApply(tester);
+
+      // The gate is at its code stage; nothing applied yet.
+      expect(find.text('Recovery code'), findsOneWidget);
+      expect(h.applied, isEmpty);
+      expect(controller.session.isActive, isFalse);
+
+      // Type the 16-letter code and confirm.
+      await tester.enterText(find.byType(TextField).last, 'ABCDEFGHIJKLMNOP');
+      await tester.pump();
+      await tester.tap(find.text('Confirm'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // The session opened from the code alone and the activation was
+      // applied. The dialog is gone and no challenge UI ever appeared:
+      // no challenges title, no extra text field, no dialog at all.
+      expect(controller.session.isActive, isTrue);
+      expect(h.applied, ['disallow_factory_reset']);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Access challenges'), findsNothing);
+
+      controller.session.end();
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 }

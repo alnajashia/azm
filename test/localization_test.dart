@@ -34,8 +34,7 @@ void main() {
     }
   });
 
-  test('Both locales resolve key strings through the generated classes',
-      () {
+  test('Both locales resolve key strings through the generated classes', () {
     final en = AppLocalizationsEn();
     final ar = AppLocalizationsAr();
     expect(en.accessApp, 'Access app');
@@ -46,14 +45,21 @@ void main() {
     expect(ar.appEntrySection.trim(), isNotEmpty);
     expect(en.brandTagline, 'BREAK THE CHAIN');
     expect(ar.brandTagline, 'اكسر القيد');
+    // v1.0.5 rename: the user-visible app name is Azm / عزم in both
+    // locales (identifiers and asset names keep the old project name).
+    expect(en.appTitle, 'Azm');
+    expect(ar.appTitle, 'عزم');
+    expect(en.generalSettings, 'General Settings');
+    expect(ar.generalSettings, 'الإعدادات العامة');
     // Parameterised strings format in both locales.
     expect(en.stepOf(2, 4), 'Step 2 of 4');
     expect(ar.stepOf(2, 4), contains('2'));
     expect(ar.stepOf(2, 4), contains('4'));
   });
 
-  testWidgets('Lock screen renders Arabic + RTL under the ar locale',
-      (tester) async {
+  testWidgets('Lock screen renders Arabic + RTL under the ar locale', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -70,9 +76,7 @@ void main() {
       switch (call.method) {
         case 'getSetting':
           final args = (call.arguments as Map).cast<String, Object?>();
-          return {
-            'value': args['key'] == 'entry_password' ? record : null,
-          };
+          return {'value': args['key'] == 'entry_password' ? record : null};
         case 'getUsageToday':
           return {
             'date': '2026-11-10',

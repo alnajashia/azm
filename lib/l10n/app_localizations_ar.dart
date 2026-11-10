@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appTitle => 'Dominanter';
+  String get appTitle => 'عزم';
 
   @override
   String get loadingDefault => 'جارٍ التحميل…';
@@ -58,7 +58,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'تطبيق Shizuku مثبّت لكن خادمه لا يعمل. شغّله من تطبيق Shizuku ثم أعد المحاولة.';
 
   @override
-  String get errShizukuNoPermission => 'لم يُمنح Dominanter إذن Shizuku بعد.';
+  String get errShizukuNoPermission => 'لم يُمنح عزم إذن Shizuku بعد.';
 
   @override
   String get errShizukuPreV11 =>
@@ -82,7 +82,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get errDpmNotOwner =>
-      'تطبيق Dominanter ليس مالك الجهاز، لذا هذه العملية غير متاحة. أكمل الإعداد أولاً.';
+      'تطبيق عزم ليس مالك الجهاز، لذا هذه العملية غير متاحة. أكمل الإعداد أولاً.';
 
   @override
   String get errDpmFailed =>
@@ -160,7 +160,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get wordNo => 'لا';
 
   @override
-  String get startingDominanter => 'جارٍ بدء Dominanter…';
+  String get startingDominanter => 'جارٍ بدء عزم…';
 
   @override
   String get unknownStartupError => 'خطأ غير معروف عند البدء';
@@ -178,7 +178,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tabConfig => 'الإعدادات';
 
   @override
-  String get lockTitle => 'تطبيق Dominanter مقفل';
+  String get lockTitle => 'تطبيق عزم مقفل';
 
   @override
   String get panicButton => 'أشعر بنزوات';
@@ -202,7 +202,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String versionFooter(String version) {
-    return 'Dominanter $version';
+    return 'عزم $version';
   }
 
   @override
@@ -321,7 +321,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا توجد بصمة أو بيانات قفل شاشة مسجّلة على هذا الجهاز، فلا يوجد ما يمكن التحقق مقابله. يُسمح بالدخول — تماماً كما يتصرف التطبيق الأصلي في هذه الحالة. فكّر في تعيين رمز PIN للجهاز.';
 
   @override
-  String get unlockReason => 'فتح Dominanter';
+  String get unlockReason => 'فتح عزم';
 
   @override
   String get authNotCompleted => 'لم تكتمل المصادقة.';
@@ -361,7 +361,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get appEntryExplanation =>
-      'عيّن كلمة مرور للتطبيق كطريقة إضافية لفتح Dominanter من شاشة القفل. كلمة المرور تفتح التطبيق فقط — تخفيف القيود أو إزالة مالك الجهاز ما زال يتطلب رمز الاسترداد.';
+      'عيّن كلمة مرور للتطبيق كطريقة إضافية لفتح عزم من شاشة القفل. كلمة المرور تفتح التطبيق فقط — تخفيف القيود أو إزالة مالك الجهاز ما زال يتطلب رمز الاسترداد.';
 
   @override
   String get appEntryStatusSet => 'كلمة مرور التطبيق معيّنة.';
@@ -447,7 +447,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get howItWorks => 'كيف يعمل';
 
   @override
-  String get tipGenerates => 'يولّد Dominanter رمزاً من 16 حرفاً';
+  String get tipGenerates => 'يولّد عزم رمزاً من 16 حرفاً';
 
   @override
   String get tipWrite => 'اكتب الرمز على ورقة';
@@ -460,7 +460,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get wizardIntroBody =>
-      'سيُطلب الرمز كلما غيّرت إعدادات Dominanter. بدونه قد تُحجب عن الميزات المحظورة. يُحفظ الرمز على هذا الجهاز فقط على صورة تجزئة مملّحة — لا يمكن إظهاره بعد هذا المعالج، ولا توجد نسخة حساب أو سحابة.';
+      'سيُطلب الرمز كلما غيّرت إعدادات عزم. بدونه قد تُحجب عن الميزات المحظورة. يُحفظ الرمز على هذا الجهاز فقط على صورة تجزئة مملّحة — لا يمكن إظهاره بعد هذا المعالج، ولا توجد نسخة حساب أو سحابة.';
 
   @override
   String get writeTitle => 'اكتبه على الورق';
@@ -527,7 +527,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get codeNotStored => 'لم يُحفظ الرمز. لم يتغيّر شيء.';
 
   @override
-  String get firstRunTitle => 'Dominanter — التشغيل الأول';
+  String get firstRunTitle => 'عزم — التشغيل الأول';
 
   @override
   String get gateChallengesTitle => 'تحديات الوصول';
@@ -536,8 +536,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get gateCodeTitle => 'أدخل رمز الاسترداد';
 
   @override
-  String get gateIntroText =>
-      'أدخل رمز الاسترداد لفتح جلسة مدتها 10 دقائق. تحديات الوصول التي ضبطتها تعمل فقط بعد قبول الرمز.';
+  String get gateIntroText => 'أدخل رمز الاسترداد لفتح جلسة مدتها 10 دقائق.';
 
   @override
   String get gateEnterCodeError =>
@@ -643,7 +642,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get shizukuNotRunningBody =>
-      'تطبيق Shizuku مثبّت لكن خادمه لا يعمل. لا يستطيع Dominanter تشغيله — افتح تطبيق Shizuku وشغّل الخادم (عبر التصحيح اللاسلكي أو ADB)، ثم اسحب للتحديث.';
+      'تطبيق Shizuku مثبّت لكن خادمه لا يعمل. لا يستطيع عزم تشغيله — افتح تطبيق Shizuku وشغّل الخادم (عبر التصحيح اللاسلكي أو ADB)، ثم اسحب للتحديث.';
 
   @override
   String get shizukuPreV11Title => 'Shizuku: قديم جداً (قبل v11)';
@@ -657,7 +656,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get shizukuNoPermissionBody =>
-      'الخادم يعمل. امنح Dominanter الإذن في Shizuku لمتابعة الإعداد.';
+      'الخادم يعمل. امنح عزم الإذن في Shizuku لمتابعة الإعداد.';
 
   @override
   String get shizukuGrantedTitle => 'Shizuku: متصل وممنوح';
@@ -700,7 +699,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get permissionNotGrantedYetMsg =>
-      'لم يُمنح الإذن بعد. وافق على Dominanter في Shizuku ثم اضغط طلب مجدداً.';
+      'لم يُمنح الإذن بعد. وافق على عزم في Shizuku ثم اضغط طلب مجدداً.';
 
   @override
   String get noStoreOpenedMsg => 'تعذّر فتح أي متجر أو متصفح لصفحة Shizuku.';
@@ -712,7 +711,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get deviceOwnerTitle => 'مالك الجهاز';
 
   @override
-  String get deviceOwnerYes => 'تطبيق Dominanter هو مالك هذا الجهاز.';
+  String get deviceOwnerYes => 'تطبيق عزم هو مالك هذا الجهاز.';
 
   @override
   String deviceOwnerNo(String admin) {
@@ -823,7 +822,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String blockerOtherOwnerBody(String packageName, String receiver) {
-    return 'تطبيق $packageName هو مالك هذا الجهاز بالفعل ($receiver).\n\nلا يمكن أن يكون للجهاز أكثر من مالك واحد. يجب أن يتنازل ذلك التطبيق عن الملكية (أو إعادة ضبط الجهاز إلى المصنع) قبل أن يمكن تجهيز Dominanter. يطابق هذا التطبيق الأصلي الذي يستبدل زر التجهيز بهذا التحذير.';
+    return 'تطبيق $packageName هو مالك هذا الجهاز بالفعل ($receiver).\n\nلا يمكن أن يكون للجهاز أكثر من مالك واحد. يجب أن يتنازل ذلك التطبيق عن الملكية (أو إعادة ضبط الجهاز إلى المصنع) قبل أن يمكن تجهيز عزم. يطابق هذا التطبيق الأصلي الذي يستبدل زر التجهيز بهذا التحذير.';
   }
 
   @override
@@ -1020,6 +1019,44 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deviceOwnerRemovedVerified => 'تمت إزالة مالك الجهاز (تم التحقق).';
+
+  @override
+  String get removalCompleteTitle => 'أُزيلت الحماية بالكامل';
+
+  @override
+  String get removalCompleteBody =>
+      'أُزيلت حماية عزم بالكامل: لم تبقَ أي قيود، ولا يوجد تطبيق موقوف أو مخفي بواسطة عزم، ولا شيء من عزم ما زال يعمل. يمكنك الآن إلغاء التثبيت بشكل طبيعي من إعدادات النظام.';
+
+  @override
+  String get removalPartialTitle => 'أُزيلت الحماية مع تنبيهات';
+
+  @override
+  String get removalPartialBody =>
+      'أُزيل مالك الجهاز، لكن بعض خطوات التنظيف لم تكتمل. يمكنك إعادة المحاولة، أو إلغاء التثبيت بشكل طبيعي — إذ يتخلّص أندرويد من أي سياسات متبقية لمالك الجهاز عند إلغاء تثبيت التطبيق.';
+
+  @override
+  String get removalStepDisarm => 'تعطيل وسائل الحماية';
+
+  @override
+  String get removalStepFocus => 'إيقاف وضع التركيز';
+
+  @override
+  String get removalStepUnsuspend => 'إلغاء إيقاف التطبيقات';
+
+  @override
+  String get removalStepRestrictions => 'مسح القيود';
+
+  @override
+  String get removalStepUnhide => 'إظهار التطبيقات';
+
+  @override
+  String get removalStepUninstallBlocks => 'رفع حظر إلغاء التثبيت';
+
+  @override
+  String get removalStepAppRestrictions => 'مسح قيود التطبيقات';
+
+  @override
+  String get removalStepClearOwner => 'إزالة مالك الجهاز';
 
   @override
   String get dnsSettingsTitle => 'إعدادات DNS الخاص';
@@ -1249,11 +1286,11 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get accessChallengesTitle => 'تحديات الوصول (قبل جلسة الاسترداد)';
+  String get accessChallengesTitle => 'تحديات الوصول';
 
   @override
   String get accessChallengesBody =>
-      'يُطلب رمز الاسترداد أولاً؛ ثم تعمل التحديات المختارة بالترتيب قبل بدء الجلسة.';
+      'هذه التحديات تخصّ قفل الاندفاع فقط. رمز الاسترداد وحده يفتح جلسة الاسترداد — ولا تُطلب أي تحديات بعده.';
 
   @override
   String get challengeUnavailableNote =>
@@ -1443,7 +1480,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noOwnerBody =>
-      'تعمل قيود النظام فقط بينما Dominanter هو مالك الجهاز. أكمل تدفق الإعداد أولاً — القيود لا تُزيَّف بدونه.';
+      'تعمل قيود النظام فقط بينما عزم هو مالك الجهاز. أكمل تدفق الإعداد أولاً — القيود لا تُزيَّف بدونه.';
 
   @override
   String get openSetup => 'فتح الإعداد';
@@ -1812,7 +1849,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get brandTagline => 'اكسر القيد';
 
   @override
-  String get lockedTitle => 'دومينانتر مقفل';
+  String get lockedTitle => 'عزم مقفل';
 
   @override
   String get startFocusAction => 'بدء التركيز';
@@ -1855,8 +1892,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appsSection => 'التطبيقات';
 
   @override
-  String get gateBody =>
-      'أدخل رمز الاسترداد لفتح جلسة مدتها 10 دقائق. تحديات الوصول التي ضبطتها لا تعمل إلا بعد قبول الرمز.';
+  String get gateBody => 'أدخل رمز الاسترداد لفتح جلسة مدتها 10 دقائق.';
 
   @override
   String provisionOutput(String path, String output) {
@@ -1958,7 +1994,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get accessChallengesSection => 'تحديات الوصول (قبل جلسة الاسترداد)';
+  String get accessChallengesSection => 'تحديات الوصول';
 
   @override
   String get shuffledKeypad => 'لوحة مفاتيح مخلوطة لرمز الاسترداد';
@@ -2003,7 +2039,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noOwnerRestrictionsBody =>
-      'تعمل قيود النظام فقط بينما دومينانتر هو مالك الجهاز. أكمل خطوات الإعداد أولًا — لا تُزيَّف القيود بدونه.';
+      'تعمل قيود النظام فقط بينما عزم هو مالك الجهاز. أكمل خطوات الإعداد أولًا — لا تُزيَّف القيود بدونه.';
 
   @override
   String get restrictionsUpdated => 'تم تحديث القيود والتحقق منها.';
@@ -2102,4 +2138,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String restrictionsUpdatedDesc(String app) {
     return 'تم تحديث قيود $app';
   }
+
+  @override
+  String get generalSettings => 'الإعدادات العامة';
+
+  @override
+  String get protectionTools => 'أدوات الحماية';
+
+  @override
+  String get preferencesSection => 'التفضيلات';
 }

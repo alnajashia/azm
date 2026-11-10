@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Dominanter';
+  String get appTitle => 'Azm';
 
   @override
   String get loadingDefault => 'Loading…';
@@ -59,7 +59,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errShizukuNoPermission =>
-      'Shizuku permission has not been granted to Dominanter.';
+      'Shizuku permission has not been granted to Azm.';
 
   @override
   String get errShizukuPreV11 =>
@@ -83,7 +83,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errDpmNotOwner =>
-      'Dominanter is not the Device Owner, so this operation is not available. Complete Setup first.';
+      'Azm is not the Device Owner, so this operation is not available. Complete Setup first.';
 
   @override
   String get errDpmFailed =>
@@ -163,7 +163,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wordNo => 'no';
 
   @override
-  String get startingDominanter => 'Starting Dominanter…';
+  String get startingDominanter => 'Starting Azm…';
 
   @override
   String get unknownStartupError => 'Unknown startup error';
@@ -181,7 +181,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabConfig => 'Config';
 
   @override
-  String get lockTitle => 'Dominanter is locked';
+  String get lockTitle => 'Azm is locked';
 
   @override
   String get panicButton => 'I\'m having impulses';
@@ -205,7 +205,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String versionFooter(String version) {
-    return 'Dominanter $version';
+    return 'Azm $version';
   }
 
   @override
@@ -324,7 +324,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This device has no biometric or screen credential enrolled, so there is nothing to authenticate against. Entry is allowed — exactly as the original app behaves in this case. Consider setting a device PIN.';
 
   @override
-  String get unlockReason => 'Unlock Dominanter';
+  String get unlockReason => 'Unlock Azm';
 
   @override
   String get authNotCompleted => 'Authentication was not completed.';
@@ -364,7 +364,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appEntryExplanation =>
-      'Set an app password as another way to open Dominanter from the lock screen. The password only opens the app — loosening restrictions or removing Device Owner still needs the recovery code.';
+      'Set an app password as another way to open Azm from the lock screen. The password only opens the app — loosening restrictions or removing Device Owner still needs the recovery code.';
 
   @override
   String get appEntryStatusSet => 'An app password is set.';
@@ -450,7 +450,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get howItWorks => 'How it works';
 
   @override
-  String get tipGenerates => 'Dominanter generates a 16-letter code';
+  String get tipGenerates => 'Azm generates a 16-letter code';
 
   @override
   String get tipWrite => 'Write the code down on a piece of paper';
@@ -463,7 +463,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wizardIntroBody =>
-      'The code will be asked for whenever you change Dominanter\'s settings. Without it, you could be locked out of the blocked features. It is stored only as a salted hash on this device — it cannot be shown again after this wizard, and there is no account or cloud copy.';
+      'The code will be asked for whenever you change Azm\'s settings. Without it, you could be locked out of the blocked features. It is stored only as a salted hash on this device — it cannot be shown again after this wizard, and there is no account or cloud copy.';
 
   @override
   String get writeTitle => 'Write it on paper';
@@ -532,7 +532,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get codeNotStored => 'The code was not stored. Nothing was changed.';
 
   @override
-  String get firstRunTitle => 'Dominanter — first run';
+  String get firstRunTitle => 'Azm — first run';
 
   @override
   String get gateChallengesTitle => 'Access challenges';
@@ -542,7 +542,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gateIntroText =>
-      'Enter your recovery code to open a 10-minute session. Your configured access challenges run only after the code is accepted.';
+      'Enter your recovery code to open a 10-minute session.';
 
   @override
   String get gateEnterCodeError =>
@@ -649,7 +649,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shizukuNotRunningBody =>
-      'Shizuku is installed, but its server is not running. Dominanter cannot start it — open the Shizuku app and start the server (via wireless debugging or ADB), then pull to refresh.';
+      'Shizuku is installed, but its server is not running. Azm cannot start it — open the Shizuku app and start the server (via wireless debugging or ADB), then pull to refresh.';
 
   @override
   String get shizukuPreV11Title => 'Shizuku: too old (pre-v11)';
@@ -663,7 +663,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shizukuNoPermissionBody =>
-      'The server is running. Grant Dominanter permission in Shizuku to continue setup.';
+      'The server is running. Grant Azm permission in Shizuku to continue setup.';
 
   @override
   String get shizukuGrantedTitle => 'Shizuku: connected & granted';
@@ -707,7 +707,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get permissionNotGrantedYetMsg =>
-      'Permission not granted yet. Approve Dominanter in Shizuku, then tap Request again.';
+      'Permission not granted yet. Approve Azm in Shizuku, then tap Request again.';
 
   @override
   String get noStoreOpenedMsg =>
@@ -720,7 +720,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceOwnerTitle => 'Device Owner';
 
   @override
-  String get deviceOwnerYes => 'Dominanter is the Device Owner of this device.';
+  String get deviceOwnerYes => 'Azm is the Device Owner of this device.';
 
   @override
   String deviceOwnerNo(String admin) {
@@ -832,7 +832,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String blockerOtherOwnerBody(String packageName, String receiver) {
-    return '$packageName is already the Device Owner of this device ($receiver).\n\nA device can have only one Device Owner. That app must relinquish ownership (or the device must be factory-reset) before Dominanter can be provisioned. This matches the original app, which replaces the provisioning button with this warning.';
+    return '$packageName is already the Device Owner of this device ($receiver).\n\nA device can have only one Device Owner. That app must relinquish ownership (or the device must be factory-reset) before Azm can be provisioned. This matches the original app, which replaces the provisioning button with this warning.';
   }
 
   @override
@@ -1031,6 +1031,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceOwnerRemovedVerified => 'Device Owner removed (verified).';
+
+  @override
+  String get removalCompleteTitle => 'Protection fully removed';
+
+  @override
+  String get removalCompleteBody =>
+      'Azm\'s protection has been completely removed: no restrictions remain, no app is suspended or hidden by Azm, and nothing of Azm is still running. You can now uninstall normally from your system settings.';
+
+  @override
+  String get removalPartialTitle => 'Protection removed, with warnings';
+
+  @override
+  String get removalPartialBody =>
+      'Device Owner was removed, but some cleanup steps did not complete. You can try again, or uninstall normally — Android discards any remaining owner policies when the app is uninstalled.';
+
+  @override
+  String get removalStepDisarm => 'Disarm safeguards';
+
+  @override
+  String get removalStepFocus => 'Stop focus mode';
+
+  @override
+  String get removalStepUnsuspend => 'Unsuspend apps';
+
+  @override
+  String get removalStepRestrictions => 'Clear restrictions';
+
+  @override
+  String get removalStepUnhide => 'Unhide apps';
+
+  @override
+  String get removalStepUninstallBlocks => 'Lift uninstall blocks';
+
+  @override
+  String get removalStepAppRestrictions => 'Clear per-app restrictions';
+
+  @override
+  String get removalStepClearOwner => 'Remove Device Owner';
 
   @override
   String get dnsSettingsTitle => 'Private DNS settings';
@@ -1261,12 +1299,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get accessChallengesTitle =>
-      'Access challenges (before a recovery session)';
+  String get accessChallengesTitle => 'Access challenges';
 
   @override
   String get accessChallengesBody =>
-      'The recovery code is asked for first; the selected challenges then run, in order, before the session starts.';
+      'These challenges belong to Impulse Lock only. The recovery code on its own opens a recovery session — no challenges are asked after it.';
 
   @override
   String get challengeUnavailableNote =>
@@ -1455,7 +1492,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noOwnerBody =>
-      'System restrictions only work while Dominanter is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.';
+      'System restrictions only work while Azm is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.';
 
   @override
   String get openSetup => 'Open Setup';
@@ -1826,7 +1863,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get brandTagline => 'BREAK THE CHAIN';
 
   @override
-  String get lockedTitle => 'Dominanter is locked';
+  String get lockedTitle => 'Azm is locked';
 
   @override
   String get startFocusAction => 'Start focus';
@@ -1870,7 +1907,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gateBody =>
-      'Enter your recovery code to open a 10-minute session. Your configured access challenges run only after the code is accepted.';
+      'Enter your recovery code to open a 10-minute session.';
 
   @override
   String provisionOutput(String path, String output) {
@@ -1975,8 +2012,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get accessChallengesSection =>
-      'Access challenges (before a recovery session)';
+  String get accessChallengesSection => 'Access challenges';
 
   @override
   String get shuffledKeypad => 'Shuffled keypad for recovery code';
@@ -2021,7 +2057,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noOwnerRestrictionsBody =>
-      'System restrictions only work while Dominanter is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.';
+      'System restrictions only work while Azm is the Device Owner. Complete the Setup flow first — restrictions are not faked without it.';
 
   @override
   String get restrictionsUpdated => 'Restrictions updated and verified.';
@@ -2121,4 +2157,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String restrictionsUpdatedDesc(String app) {
     return 'Restrictions updated for $app';
   }
+
+  @override
+  String get generalSettings => 'General Settings';
+
+  @override
+  String get protectionTools => 'Protection tools';
+
+  @override
+  String get preferencesSection => 'Preferences';
 }

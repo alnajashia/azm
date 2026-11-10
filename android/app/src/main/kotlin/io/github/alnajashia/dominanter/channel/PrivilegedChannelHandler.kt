@@ -123,9 +123,11 @@ class PrivilegedChannelHandler(
             )
         }
         "removeDeviceOwner" -> {
-            val isOwner = DeviceOwnerManager.removeDeviceOwner(appContext)
-            emitEvent("deviceOwnerChanged", mapOf("isDeviceOwner" to isOwner))
-            mapOf("isDeviceOwner" to isOwner)
+            // v1.0.5 fix #6: the ordered teardown report (runs here, on
+            // this handler's background executor — never the main thread).
+            val report = DeviceOwnerManager.removeDeviceOwner(appContext)
+            emitEvent("deviceOwnerChanged", mapOf("isDeviceOwner" to report.isDeviceOwner))
+            report.toMap()
         }
         "isDeviceOwner" -> mapOf(
             "isDeviceOwner" to DeviceOwnerManager.isDeviceOwner(appContext),

@@ -58,26 +58,13 @@ abstract final class DominanterColors {
   static const lightSurface = Color(0xFFFFFFFF);
 }
 
-/// Gradient used by [GradientCard] hero surfaces, per brightness.
-/// Dark: the reference's glossy red plane — saturated deep red at the
-/// top-left, falling through burgundy to near-black at the bottom-right.
-/// Light: a white card washed with red at the top and black-tinted grey
-/// at the bottom (the reference's light-grey backdrop). Red → black in
-/// both modes; no other hue.
-LinearGradient heroGradient(Brightness brightness) =>
-    brightness == Brightness.dark
-    ? const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF9E031E), Color(0xFF5C0212), Color(0xFF12030A)],
-        stops: [0.0, 0.55, 1.0],
-      )
-    : const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFFFFD9DE), Color(0xFFFFFFFF), Color(0xFFECECEC)],
-        stops: [0.0, 0.55, 1.0],
-      );
+/// Flat surface colour for hero cards ([HeroCard] in common.dart),
+/// per brightness — v1.0.5 (user directive): no colour gradients
+/// anywhere in the app; every surface is one flat colour. Dark: the
+/// flat deep red of the identity's red scale. Light: flat white.
+Color heroSurface(Brightness brightness) => brightness == Brightness.dark
+    ? DominanterColors.redDeep
+    : DominanterColors.lightSurface;
 
 TextTheme _textTheme(TextTheme base) => base.copyWith(
   // Stronger hero/timer numerals, per the reference's big ring digits.

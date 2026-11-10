@@ -57,6 +57,10 @@ object SettingsStore {
     private const val KEY_LOGS = "logs"
     private const val KEY_USAGE_DATE = "date"
     private const val KEY_INTENTIONAL_A11Y_DISABLE = "intentional_a11y_disable_at"
+    private const val KEY_REMOVAL_IN_PROGRESS = "removal_in_progress_at"
+
+    /** How long a persisted removal flag stays authoritative (see setRemovalInProgress). */
+    private const val REMOVAL_FLAG_WINDOW_MS = 30 * 60 * 1000L
     private const val MAX_LOGS = 100
     private const val INTENTIONAL_DISABLE_WINDOW_MS = 120_000L
 
@@ -480,6 +484,47 @@ object SettingsStore {
         return System.currentTimeMillis() - armedAt <= INTENTIONAL_DISABLE_WINDOW_MS
     }
 
+    // ------------------------------------------------------------------ removal in progress (v1.0.5 fix #6)
+
+    /**
+     * Sets the persisted "removal in progress" flag. While it is set, the
+     * accessibility-loss lockdown and every policy re-application stay
+     * disarmed: component teardown during an app-initiated removal (and
+     * during the uninstall that follows) is expected, and the lockdown
+     * firing there — synchronous package suspension plus an install block
+     * from the service's main-thread `onUnbind`, inside the package
+     * manager's own removal operation — is what froze devices on
+     * uninstall (system UI stuck, watchdog reboot). The teardown in
+     * [io.github.alnajashia.dominanter.deviceowner.DeviceOwnerManager]
+     * sets this FIRST and clears it LAST, so a failed removal re-arms
+     * protection instead of leaving it silently disarmed.
+     */
+    fun setRemovalInProgress(active: Boolean) {
+        val edit = prefs(PREFS_SECURITY).edit()
+        if (active) {
+            edit.putLong(KEY_REMOVAL_IN_PROGRESS, System.currentTimeMillis())
+        } else {
+            edit.remove(KEY_REMOVAL_IN_PROGRESS)
+        }
+        edit.apply()
+        DominanterState.removalInProgress = active
+    }
+
+    /**
+     * True while a removal teardown is running. The volatile mirror is
+     * authoritative inside this process; the persisted timestamp is the
+     * backstop for a fresh process (e.g. the service restarting during
+     * the uninstall that follows a removal) and expires after
+     * [REMOVAL_FLAG_WINDOW_MS], so a teardown interrupted by a process
+     * death can never leave the lockdown disarmed forever.
+     */
+    fun isRemovalInProgress(): Boolean {
+        if (DominanterState.removalInProgress) return true
+        val startedAt = prefs(PREFS_SECURITY).getLong(KEY_REMOVAL_IN_PROGRESS, 0L)
+        if (startedAt == 0L) return false
+        return System.currentTimeMillis() - startedAt <= REMOVAL_FLAG_WINDOW_MS
+    }
+
     /** Packages the F28 lockdown controls: every package with any enforcement configured. */
     fun controlledPackages(): Set<String> {
         val groupPackages = groups()
@@ -497,6 +542,9 @@ object SettingsStore {
 /** Process-local shared state between the channel handler, the Application and the service. */
 object DominanterState {
     @Volatile var intentionalDisableArmed: Boolean = false
+
+    /** Volatile mirror of the persisted removal-in-progress flag (v1.0.5 fix #6). */
+    @Volatile var removalInProgress: Boolean = false
 
     @Volatile var accessibilityServiceRunning: Boolean = false
 

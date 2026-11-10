@@ -51,7 +51,7 @@ class _DominanterAppState extends State<DominanterApp> {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) => MaterialApp(
-        title: 'Dominanter',
+        title: 'Azm',
         debugShowCheckedModeBanner: false,
         themeMode: _controller.themeMode,
         // Bilingual UI (v1.0.4): Arabic + English. The locale follows
@@ -71,8 +71,8 @@ class _DominanterAppState extends State<DominanterApp> {
           ),
           StartupState.error => Scaffold(
             body: ErrorView(
-              error: _controller.startupError ??
-                  context.l10n.unknownStartupError,
+              error:
+                  _controller.startupError ?? context.l10n.unknownStartupError,
               onRetry: _controller.initialise,
             ),
           ),
