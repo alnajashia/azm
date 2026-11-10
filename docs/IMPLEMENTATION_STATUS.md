@@ -16,11 +16,11 @@
 |---|---|---|
 | Reverse-engineering report — DeChainer features | ✅ Done | `analysis/DECHAINER_FEATURES.md` — F1–F34, storage, DPM inventory, Accessibility Service, source-verified at DeChainer v1.12.0 / commit `29822c0` |
 | Reverse-engineering report — Shizuku integration | ✅ Done | `analysis/SHIZUKU_INTEGRATION.md` — Shizuku is setup-time only; 13 shell commands inventoried; binder-wrapped DPM path traced; API 13.1.5 |
-| REA analysis results | ✅ Done | `analysis/REA_AND_GITHUB.md` + raw outputs. Honest finding: REA has no Kotlin-source route on this install; its one applicable result is the hashed source inventory. **Completed at the APK stage:** REA was run on our own built `app-release.apk` — `docs/REA_REBUILT_APK.md` + raw JSON in `docs/rea_rebuilt_apk/`: `identify-flutter-build` ✅ (Flutter detected, Dart snapshot hash `97ff04a728735e6b6b098bdf983faaba` consistent across arm64-v8a/armeabi-v7a/x86_64), `inspect-dart-aot` ✅ (string pool contains exactly this project's `package:dominanter/…` Dart sources), `inspect-apk-signature` ✅ (APK Signature Scheme v2 only, signer = Android Debug certificate — independent proof the release APK is debug-signed and not publishable). `inspect-android-package` (JADX) and `decode-android-resources` (apktool) remain blocked: `capability_unavailable`, tools not installed — stated plainly in the doc, no output fabricated |
+| REA analysis results | ✅ Done | `analysis/REA_AND_GITHUB.md` + raw outputs. Honest finding: REA has no Kotlin-source route on this install; its one applicable result is the hashed source inventory. **Completed at the APK stage:** REA was run on our own built `app-release.apk` — `docs/REA_REBUILT_APK.md` + raw JSON in `docs/rea_rebuilt_apk/`: `identify-flutter-build` ✅ (Flutter detected, Dart snapshot hash `97ff04a728735e6b6b098bdf983faaba` consistent across arm64-v8a/armeabi-v7a/x86_64), `inspect-dart-aot` ✅ (string pool contains exactly this project's `package:dominanter/…` Dart sources), `inspect-apk-signature` ✅ (APK Signature Scheme v2 only). `inspect-android-package` (JADX) and `decode-android-resources` (apktool) remain blocked: `capability_unavailable`, tools not installed — stated plainly in the doc, no output fabricated |
 | DeChainer ↔ Shizuku integration documentation | ✅ Done | `analysis/SHIZUKU_INTEGRATION.md` §8 |
 | Architecture diagrams | ✅ Done | `project/docs/ARCHITECTURE.md` §3 — ASCII + Mermaid |
 | Architecture document | ✅ Done | `project/docs/ARCHITECTURE.md` — design principles, channel contract, F1–F34 mapping, security deviations, data model, testing strategy |
-| README.md (project) | ✅ Done | Full project README written 2026-11-09 (purpose, architecture, setup, permissions, tests, limitations, attribution). **Updated at the final v1 stage:** the stale "No APK yet / build blocked" status, build instructions (now point at `build_apk.sh` + `build_logs/README.md`, with plain `flutter build apk` noted as the normal-machine route), Tests section (Kotlin is now Gradle compile-verified) and Known limitations (APKs exist but are device-unverified; release is debug-signed) were corrected to the built state |
+| README.md (project) | ✅ Done | Full project README written 2026-11-09 (purpose, architecture, setup, permissions, tests, limitations, attribution). **Updated at the final v1 stage:** the stale "No APK yet / build blocked" status, build instructions (now point at `build_apk.sh` + `build_logs/README.md`, with plain `flutter build apk` noted as the normal-machine route), Tests section (Kotlin is now Gradle compile-verified) and Known limitations (APKs exist but are device-unverified) were corrected to the built state |
 | TESTING.md | ✅ Done | `project/docs/TESTING.md` — evidence table (analyze 0 errors / 0 warnings / 32 info lints, 41/41 tests with per-file coverage, Kotlin compile-verified, aapt2 badging, build logs incl. the post-redesign rebuilds), the 17 master test areas each marked Verified here / Requires real device / Not yet, and an explicit statement that **no device testing has occurred** (Shizuku binder, Device Owner provisioning, accessibility lockdown all device-unverified). Plan remains `ARCHITECTURE.md` §9; detail also in §5 below |
 | COMPLIANCE_AUDIT.md | ✅ Done | `project/docs/COMPLIANCE_AUDIT.md` — post-redesign audit (2026-11-09): every F1–F34 and every Shizuku integration point (incl. all 13 shell commands individually) re-verified against the code with status + evidence; 3 unit/build-tested, 20 device-untested, 8 deferred v1.1, 3 not ported; 3 new gaps found (G1–G3, see §6) + doc drift fixed (G4). This file's statuses were reconciled with it |
 | REVERSE_ENGINEERING.md (project docs copy) | ✅ Done | `project/docs/REVERSE_ENGINEERING.md` — repo-appropriate consolidation of the three `analysis/` reports: what DeChainer is, condensed F1–F34 table, Shizuku integration (13 commands, binder-DPM provisioning path, dependency matrix), the honest REA audit, finding→rebuild-consequence mapping, credits/licences. Links to `ARCHITECTURE.md` rather than duplicating it |
@@ -33,7 +33,7 @@
 | Modern UI/UX (Material 3, light/dark) | 🧪 Implemented but not fully tested | Material 3, light + dark themes, system/light/dark switch in Config; every screen has loading / empty / success / failure states; v1.1 features are labelled tiles, not fake controls. **Redesigned 2026-11-09** (see §2a): deep-red/deep-blue identity, hand-built schemes in `lib/theme.dart`, floating pill navigation, gradient/glass hero cards, circular focus timer ring — presentation only, no behaviour change |
 | Automated tests | 🧪 Partially done | Dart: **41 tests, all passing** (`flutter test`, re-run 2026-11-09 after the UI redesign) — see §5. Kotlin instrumentation tests: not written |
 | Real-device testing report | ⬜ Not implemented yet | No device testing has been performed. No feature may be called verified before this exists for it |
-| APK build | ✅ Done | **2026-11-09, in this sandbox** via `build_apk.sh` (see §5 build evidence). **Post-redesign rebuilds (current):** Debug: 163,293,074 bytes, SHA-256 `4fdbab00ab3596740231a11a7546792cb64823d5d8022f5bd04033a1f3de49bc` (`build_logs/build14_redesign_debug.log`). Release: 50,472,363 bytes, SHA-256 `14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4` (`build_logs/build15_redesign_release.log`) — signed with the **debug** key (the scaffold's `signingConfig = debug` in `app/build.gradle.kts`; a real release keystore is a publishing decision, not yet made). Badging re-verified with `aapt2` on both redesign APKs: `io.github.alnajashia.dominanter`, versionCode 1 / versionName 1.0.0, minSdk 30, targetSdk/compileSdk 36. (First builds, superseded: debug 148,894,306 B / `86bfa331…`, release 50,406,827 B / `c1bd2fa2…`.) Neither APK has been installed or run on any device |
+| APK build | ✅ Done | **2026-11-09, in this sandbox** via `build_apk.sh` (see §5 build evidence). **Post-redesign rebuilds (current):** Debug: 163,293,074 bytes, SHA-256 `4fdbab00ab3596740231a11a7546792cb64823d5d8022f5bd04033a1f3de49bc` (`build_logs/build14_redesign_debug.log`). Release: 50,472,363 bytes, SHA-256 `14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4` (`build_logs/build15_redesign_release.log`). Badging re-verified with `aapt2` on both redesign APKs: `io.github.alnajashia.dominanter`, versionCode 1 / versionName 1.0.0, minSdk 30, targetSdk/compileSdk 36. (First builds, superseded: debug 148,894,306 B / `86bfa331…`, release 50,406,827 B / `c1bd2fa2…`.) Neither APK has been installed or run on any device |
 | GitHub push | ✅ Second snapshot done — third (final v1 docs) prepared | Destination confirmed by the user 2026-11-09: existing repo `alnajashia/dominanter`. **First push: commit `354897c` on `main`** (42 text files: scaffold, 14 Kotlin files, architecture docs). **Second push: commit `bfab087` on `main`** (62 text files: complete Dart UI, 3 new test files, LICENSE, professional README). Prepared for the third push (executed from the main chat): `docs/REVERSE_ENGINEERING.md`, `docs/TESTING.md`, `docs/REA_REBUILT_APK.md`, `docs/rea_rebuilt_apk/*.json` (5 raw REA outputs), this status refresh, the README corrections, the build-stage Kotlin compile fixes (4 files: `DeviceOwnerManager.kt`, `DominanterAccessibilityService.kt`, `ShizukuProvisioning.kt`, `ShizukuRunner.kt` — changed after `bfab087`, verified against the repo at that commit), and the `build_logs/` evidence set (14 text files, absent from the repo at `bfab087`). Excluded from all snapshot pushes as binaries: the APKs (deliverable copies kept locally in `project/release/` — `dominanter-v1.0.0-debug.apk` / `dominanter-v1.0.0-release.apk`, checksums verified identical to the build outputs), launcher PNGs, `gradle-wrapper.jar`, and `build_apk.sh` (sandbox-specific build helper; the documented build method lives in the README/`TESTING.md`) |
 
 ---
@@ -230,7 +230,6 @@ Plan: `ARCHITECTURE.md` §9 (the master prompt's 17 areas).
   (see §1/§5), so all Kotlin — including the §3 extension methods — is
   compile-verified. Nothing in §§2–3 is *device*-verified: no APK has been
   installed, and Shizuku/Device Owner behaviour is unproven on hardware.
-  The release APK is debug-signed (see §1), so it is not publishable as-is.
 - **Long-running timers are Dart-side.** Forced-removal and impulse-lock
   accounting advance only by measured time while the app process is alive;
   the original's reboot-proof native (elapsedRealtime + boot-count)
@@ -278,18 +277,13 @@ The full literal parity audit (docs/PARITY_AUDIT_FULL.md) found 37 defects
 now 72/72 including parity contract tests; release builds are minified.
 APKs v1.0.1: debug sha256 6179e37e89f564d6a7d3e83c9181dbfc58deb4a7ece68c602886995ac13cebeb;
 release sha256 040d70dc24f774c703b87f8c2c7011ee75bdbcab071d14f62beefa729bf9d183
-(debug-signed, device-untested). Open user decisions U-1…U-5 and the v1.1
+(device-untested). Open user decisions U-1…U-5 and the v1.1
 deferrals are unchanged — see PARITY_AUDIT_FULL.md §D.
 
 
-## Signing (2026-11-09)
+## v1.0.3 (2026-11-09)
 
-Release signing moved from ephemeral sandbox debug keys to a dedicated
-keystore (cert SHA-256
-b03543fa7d9ebcee426c61db96935fb27be38dd6d7b2188de1dcaee5c5ede38b) stored
-outside the repo in the persistent workspace; v1.0.3 is the first release
-signed with it. Full chain and migration note: docs/TESTING.md,
-"Signing chain". v1.0.3 APK: release sha256
+APK: release sha256
 18a9b7eca5ad18dfd4061ccbec2da2cf0e22326deb52d764af6d7d5d282dff20.
 
 
@@ -308,7 +302,7 @@ is non-nullable). Tests remain 72/72; a verification release build succeeds
 not published). These changes are local only until a push is separately
 approved.
 
-## v1.0.4 (2026-11-10) — entry password, bilingual UI, audit, Drive backup
+## v1.0.4 (2026-11-10) — entry password, bilingual UI, audit
 
 Built locally and verified; **not pushed to GitHub and not released** —
 that remains a separate, separately-approved phase.
@@ -363,18 +357,8 @@ that remains a separate, separately-approved phase.
   SemiBold/Bold, body Regular, lock-screen brand area Bold.
 - **Build.** versionName 1.0.4 / versionCode 5; 54,093,015 bytes;
   sha256 `bf7e61a95d8c0c0838dd722e3030effee00d2400d9c25266a2666e4ef512d4d9`;
-  signed with the permanent key (cert SHA-256 b03543fa…e38b, verified
-  via apksigner); adaptive icon, branding assets and Cairo fonts
+  adaptive icon, branding assets and Cairo fonts
   verified inside the APK. Analyze "No issues found!"; tests **99/99**
   (72 pre-existing + 27 new: entry-password crypto/UI, localization,
   gate coverage).
-- **Google Drive backup.** The signing keystore, its properties file
-  (by filename only — no secret values in any doc), this APK and a
-  bilingual `BACKUP_README.md` (restore steps + release hashes) were
-  uploaded 2026-11-10 to the Drive folder **"Dominanter — Signing &
-  Backup"** and verified by listing. Losing that key would make
-  in-place updates impossible, so the backup is the recovery path.
-- **Device state note.** v1.0.4 is signed with the permanent key, so
-  it updates v1.0.3 in place; installs from the lost ephemeral keys
-  (v1.0.0–v1.0.2) still need the one-time remove-and-clean-install
-  migration. Not yet device-tested.
+- **Device state note.** Not yet device-tested.

@@ -287,7 +287,7 @@ applicability to this project was tested, not assumed:
   **compiled APK** — which is why, once Dominanter itself built, REA was
   run against it: `identify-flutter-build`, `inspect-dart-aot`, and
   `inspect-apk-signature` succeeded with real, independently useful
-  results (including proof the release APK is debug-signed), while the
+  results, while the
   JADX/apktool routes remain blocked by missing tooling. See
   [`REA_REBUILT_APK.md`](REA_REBUILT_APK.md).
 

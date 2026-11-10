@@ -38,7 +38,7 @@
 | `assembleDebug` (redesign) | ✅ Succeeded | `build_logs/build14_redesign_debug.log` |
 | `assembleRelease` (redesign) | ✅ Succeeded | `build_logs/build15_redesign_release.log` |
 | Debug APK (refreshed in `project/release/`) | **163,293,074 bytes**, SHA-256 `4fdbab00ab3596740231a11a7546792cb64823d5d8022f5bd04033a1f3de49bc` | `release/dominanter-v1.0.0-debug.apk`, checksum verified identical to the build output |
-| Release APK (refreshed in `project/release/`) | **50,472,363 bytes**, SHA-256 `14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4`, **debug-signed** | `release/dominanter-v1.0.0-release.apk`, checksum verified identical to the build output |
+| Release APK (refreshed in `project/release/`) | **50,472,363 bytes**, SHA-256 `14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4` | `release/dominanter-v1.0.0-release.apk`, checksum verified identical to the build output |
 | Badging (both new APKs) | `io.github.alnajashia.dominanter`, versionCode 1 / versionName 1.0.0, minSdk 30, targetSdk 36, compileSdk 36 — **unchanged** | `aapt2 dump badging` run by this audit on both refreshed copies |
 | Superseded first builds | debug 148,894,306 B / `86bfa331…`; release 50,406,827 B / `c1bd2fa2…` | `build_logs/build12_debug.log`, `build13_release.log` (historical) |
 

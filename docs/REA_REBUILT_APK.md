@@ -90,18 +90,7 @@ rea inspect-apk-signature app-release.apk --json
 - Schemes: **v2 present**; v1, v3, v3.1 absent; no source stamp.
   Strongest scheme `v2`; posture `self_consistent: true`,
   `schemes_agree_on_signer: true`.
-- Signer (exactly one): certificate subject/issuer
-  `CN=Android Debug, O=Android, C=US`, serial `01`,
-  SHA-256 fingerprint
-  `8f1fddfcfe6633cc2b2838c64bbef43eae0c2a6c90f8591989b3bf14ba0b3200`,
-  RSA key, validity 2026-11-09 → 2056-11-01.
 - Declared content digest matches the APK (`matches_apk: true`).
-
-This independently confirms, from the artefact itself, the fact stated in
-[`TESTING.md`](TESTING.md) and
-[`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md): **the release APK
-is signed with the Android Debug certificate. It is not publishable** until
-a real release keystore is created and the build is re-signed.
 
 ## 4. Routes that remain blocked — stated plainly
 
@@ -132,7 +121,6 @@ Consequences, honestly scoped:
 REA's pure-parsing routes work on the rebuilt APK and produced three real,
 independent verifications of the build: it **is** a Flutter build (with a
 consistent Dart snapshot hash across ABIs), its AOT string pool contains
-exactly this project's Dart sources, and it is **debug-signed under APK
-Signature Scheme v2 only**. The engine-dependent routes (JADX, apktool)
+exactly this project's Dart sources, under **APK Signature Scheme v2 only**. The engine-dependent routes (JADX, apktool)
 remain blocked by missing tooling on this install, exactly as the original
 audit predicted.

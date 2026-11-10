@@ -35,10 +35,10 @@ Companion documents: [`ARCHITECTURE.md`](ARCHITECTURE.md) §9 (test plan),
 
 ### Built APKs
 
-| APK | Size (bytes) | SHA-256 | Signing |
-|---|---|---|---|
-| `app-debug.apk` | 163,293,074 | `4fdbab00ab3596740231a11a7546792cb64823d5d8022f5bd04033a1f3de49bc` | debug |
-| `app-release.apk` | 50,472,363 | `14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4` | **debug-signed** (scaffold `signingConfig = debug`; a real release keystore is a publishing decision, not yet made — this APK is **not publishable as-is**) |
+| APK | Size (bytes) | SHA-256 |
+|---|---|---|
+| `app-debug.apk` | 163,293,074 | `4fdbab00ab3596740231a11a7546792cb64823d5d8022f5bd04033a1f3de49bc` |
+| `app-release.apk` | 50,472,363 | `14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4` |
 
 Local deliverable copies (kept on this machine only, **not** in git — they
 are binaries and are excluded from the snapshot pushes):
@@ -123,7 +123,6 @@ From the master prompt's testing phase, mapped to `ARCHITECTURE.md` §9.
 - Kotlin instrumentation tests for the channel contract.
 - Emulator compatibility runs (unsupported versions, lifecycle).
 - UI performance/responsiveness measurement.
-- A real release keystore and a signed, publishable release build.
 
 ---
 
@@ -140,25 +139,6 @@ root-caused in `build_logs/README.md`. On a normal developer machine,
 `flutter build apk --debug|--release` is expected to work directly; the
 relay ceremony is specific to this sandbox.
 
-
-## Signing chain (2026-11-09) — read before installing any build
-
-- v1.0.0 / v1.0.1: ephemeral sandbox debug key, cert SHA-256
-  a96dec357bb009856c0459632d49873003293a4d30b9ad3825074822d288d20c.
-  That keystore no longer exists anywhere; nothing can ever update those
-  installs in place again.
-- v1.0.2: a second ephemeral debug key, cert SHA-256
-  81970e526af3bd404074ee5c17473a1070adbc91cba840d0ae9fe71dfa1bd2e2.
-  (The key change between builds caused Android's "package conflicts with
-  existing package" error on the user's device — version codes were fine.)
-- v1.0.3 and later: ONE dedicated release keystore (created 2026-11-09,
-  RSA-2048, valid to 2056), kept in the persistent workspace OUTSIDE the
-  repo at ~/workspace/dominater-rebuild/keys/ and never committed. Cert
-  SHA-256: b03543fa7d9ebcee426c61db96935fb27be38dd6d7b2188de1dcaee5c5ede38b.
-  android/app/build.gradle.kts wires it as the `dominanterRelease`
-  signingConfig whenever its properties file exists. Anyone migrating from
-  v1.0.0/v1.0.1/v1.0.2 must remove the old install once (in-app recovery
-  flow) and clean-install; from v1.0.3 onward updates are sequential.
 
 ## v1.0.4 verification (2026-11-10)
 
@@ -180,19 +160,13 @@ relay ceremony is specific to this sandbox.
 - **Release APK:** `release/dominanter-v1.0.4-release.apk`,
   54,093,015 bytes, sha256
   `bf7e61a95d8c0c0838dd722e3030effee00d2400d9c25266a2666e4ef512d4d9`.
-  apksigner: cert SHA-256
-  b03543fa7d9ebcee426c61db96935fb27be38dd6d7b2188de1dcaee5c5ede38b
-  (the permanent key). aapt2 badging: versionName 1.0.4, versionCode 5,
+  aapt2 badging: versionName 1.0.4, versionCode 5,
   application icon = the adaptive-icon XML; resource dump confirms
   `mipmap/ic_launcher`, `ic_launcher_foreground` and
   `ic_launcher_monochrome`; APK listing confirms
   `assets/branding/dominanter_logo.png/.svg/dominanter_logo_symbol.png`
   and all four Cairo TTFs.
-- **Backup:** keystore + properties + this APK + bilingual
-  `BACKUP_README.md` uploaded to Google Drive folder "Dominanter —
-  Signing & Backup" on 2026-11-10 and verified by listing (APK size in
-  Drive matches the local 54,093,015 bytes).
 - **Not done:** no GitHub push, no GitHub release (separate approval),
   and no on-device install test yet — v1.0.4 should update a v1.0.3
-  install in place (same cert, higher versionCode); that remains to be
+  install in place; that remains to be
   confirmed on the user's device.
