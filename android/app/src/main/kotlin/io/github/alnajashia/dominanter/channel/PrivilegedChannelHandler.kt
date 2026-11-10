@@ -13,7 +13,9 @@ import io.flutter.plugin.common.MethodChannel
 import io.github.alnajashia.dominanter.NotificationPermissionBridge
 import io.github.alnajashia.dominanter.accessibility.DominanterAccessibilityService
 import io.github.alnajashia.dominanter.data.DominanterState
+import io.github.alnajashia.dominanter.data.SealRules
 import io.github.alnajashia.dominanter.data.SettingsStore
+import io.github.alnajashia.dominanter.data.VisualBlockingSettings
 import io.github.alnajashia.dominanter.data.SuspensionReason
 import io.github.alnajashia.dominanter.deviceowner.DeviceOwnerManager
 import io.github.alnajashia.dominanter.focus.FocusSessionStore
@@ -123,6 +125,10 @@ class PrivilegedChannelHandler(
             )
         }
         "removeDeviceOwner" -> {
+            // SEAL refusal (v1.0.6 Phase D): while any user-defined
+            // seal is active, removal refuses — evaluated natively
+            // from live probes at attempt time.
+            SealRules.firstActiveSeal(appContext)?.let { throw PrivException.sealed(it) }
             // v1.0.5 fix #6: the ordered teardown report (runs here, on
             // this handler's background executor — never the main thread).
             val report = DeviceOwnerManager.removeDeviceOwner(appContext)
@@ -132,6 +138,39 @@ class PrivilegedChannelHandler(
         "isDeviceOwner" -> mapOf(
             "isDeviceOwner" to DeviceOwnerManager.isDeviceOwner(appContext),
             "isAdminActive" to DeviceOwnerManager.isAdminActive(appContext),
+            // The forced-removal delay's single source of truth lives
+            // natively (RecoveryStore.FORCED_REMOVAL_DELAY_HOURS); the
+            // Dart side reads it from this state map.
+            "forcedRemovalDelayHours" to RecoveryStore.FORCED_REMOVAL_DELAY_HOURS,
+        )
+        "getVisualBlockingConfig" -> VisualBlockingSettings.load().toMap()
+        "setVisualBlockingConfig" -> {
+            val config = VisualBlockingSettings.configFromMap(call.arguments as? Map<*, *> ?: emptyMap<Any, Any>())
+            VisualBlockingSettings.save(config)
+            VisualBlockingSettings.load().toMap()
+        }
+        "getSealRules" -> mapOf(
+            "rules" to SealRules.loadRules().map { it.toMap() },
+            "activeSeals" to SealRules.activeSeals(appContext).map { it.toMap() },
+            "isDeviceOwner" to DeviceOwnerManager.isDeviceOwner(appContext),
+        )
+        "setSealRules" -> {
+            val raw = (call.arguments as? Map<*, *>)?.get("rules") as? List<*>
+                ?: throw PrivException.invalidArgument("setSealRules needs a rules list")
+            val rules = raw.mapNotNull { (it as? Map<*, *>)?.let { m -> SealRules.Rule.fromMap(m) } }
+            SealRules.saveRules(rules)
+            mapOf(
+                "rules" to SealRules.loadRules().map { it.toMap() },
+                "activeSeals" to SealRules.activeSeals(appContext).map { it.toMap() },
+            )
+        }
+        "getActiveSeals" -> mapOf(
+            "activeSeals" to SealRules.activeSeals(appContext).map { it.toMap() },
+        )
+        "getUserRestrictionResidue" -> mapOf(
+            // No owner required by design: this is the post-removal
+            // residue probe (UserManager read, works unprivileged).
+            "keys" to DeviceOwnerManager.getUserRestrictionResidue(appContext),
         )
         "getProvisioningDiagnostics" -> {
             val d = ShizukuProvisioning.diagnostics(appContext)
@@ -393,6 +432,28 @@ class PrivilegedChannelHandler(
             val store = call.reqString("store")
             requireGenericStore(store)
             val key = call.reqString("key")
+            // SEAL refusal (v1.0.6 Phase D): FILING the delayed forced
+            // removal (activating the countdown in the recovery state
+            // store) refuses while any seal is active — the same
+            // native refusal as immediate removal. A countdown filed
+            // BEFORE a seal engaged is untouched: it still executes at
+            // its mark. Ticks/cancels of an already-active countdown
+            // are not filings and pass through.
+            if (store == SettingsStore.PREFS_RECOVERY_STATE && key == "forced_removal") {
+                val newActive = ((call.argument<Any>("value") as? String)?.let { raw ->
+                    runCatching { org.json.JSONObject(raw).optBoolean("active", false) }
+                        .getOrDefault(false)
+                }) == true
+                val oldActive = ((SettingsStore.genericGet(store, key) as? String)?.let { raw ->
+                    runCatching { org.json.JSONObject(raw).optBoolean("active", false) }
+                        .getOrDefault(false)
+                }) == true
+                if (newActive && !oldActive) {
+                    SealRules.firstActiveSeal(appContext)?.let {
+                        throw PrivException.sealed(it)
+                    }
+                }
+            }
             try {
                 SettingsStore.genericSet(store, key, call.argument<Any>("value"))
             } catch (e: IllegalArgumentException) {

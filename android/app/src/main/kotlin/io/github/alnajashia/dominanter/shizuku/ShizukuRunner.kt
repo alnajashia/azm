@@ -1,5 +1,6 @@
 package io.github.alnajashia.dominanter.shizuku
 
+import android.util.Log
 import io.github.alnajashia.dominanter.channel.ErrorCodes
 import io.github.alnajashia.dominanter.channel.PrivException
 import moe.shizuku.server.IShizukuService
@@ -35,6 +36,8 @@ import java.util.concurrent.TimeoutException
  * into the proper `SHIZUKU_*` channel error via [ShizukuGateway].
  */
 object ShizukuRunner {
+
+    private const val TAG = "ShizukuRunner"
 
     data class ProcessResult(
         val exitCode: Int,
@@ -94,7 +97,11 @@ object ShizukuRunner {
         val service = IShizukuService.Stub.asInterface(binder) ?: return null
         val process = try {
             service.newProcess(cmdArray, null, null) ?: return null
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            // Logged (v1.0.5 audit A-M2): a spawn failure still returns
+            // null — the caller translates it to SHIZUKU_NOT_RUNNING —
+            // but it is no longer invisible.
+            Log.w(TAG, "newProcess failed for: ${cmdArray.joinToString(" ")}", e)
             return null
         }
 
@@ -106,13 +113,22 @@ object ShizukuRunner {
             readFully(process.errorStream?.fileDescriptor)
         })
 
+        var waitError: Exception? = null
         val finished = try {
             process.waitForTimeout(timeoutMs, TimeUnit.MILLISECONDS.toString())
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            waitError = e
             false
         }
         if (!finished) {
             try { process.destroy() } catch (_: Exception) { /* already gone */ }
+            // A wait that ERRORED is not a timeout (v1.0.5 audit A-M2):
+            // report it as could-not-run (null) instead of mislabelling
+            // it TIMEOUT.
+            if (waitError != null) {
+                Log.w(TAG, "waitForTimeout failed for: ${cmdArray.joinToString(" ")}", waitError)
+                return null
+            }
             throw PrivException(
                 ErrorCodes.TIMEOUT,
                 "Shizuku command timed out after ${timeoutMs}ms: ${cmdArray.joinToString(" ")}",
@@ -129,7 +145,8 @@ object ShizukuRunner {
         if (fd == null) return ""
         return try {
             BufferedReader(InputStreamReader(FileInputStream(fd))).use { it.readText() }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "stream read failed", e)
             ""
         }
     }
@@ -137,9 +154,11 @@ object ShizukuRunner {
     private fun awaitStream(future: java.util.concurrent.Future<String>): String =
         try {
             future.get(5, TimeUnit.SECONDS)
-        } catch (_: TimeoutException) {
+        } catch (e: TimeoutException) {
+            Log.w(TAG, "stream drain timed out", e)
             ""
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "stream drain failed", e)
             ""
         }
 }

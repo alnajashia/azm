@@ -50,7 +50,7 @@ class _MathChallengeViewState extends State<MathChallengeView> {
   @override
   Widget build(BuildContext context) {
     if (_challenge.isComplete) {
-      return const Center(child: Icon(Icons.check_circle, size: 48));
+      return const Center(child: Icon(Icons.check_circle_outlined, size: 48));
     }
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -133,7 +133,7 @@ class _WordsChallengeViewState extends State<WordsChallengeView> {
   @override
   Widget build(BuildContext context) {
     if (_challenge.isComplete) {
-      return const Center(child: Icon(Icons.check_circle, size: 48));
+      return const Center(child: Icon(Icons.check_circle_outlined, size: 48));
     }
     final scheme = Theme.of(context).colorScheme;
     final target = _challenge.currentWord;
@@ -276,7 +276,7 @@ class _ReadingChallengeViewState extends State<ReadingChallengeView> {
   @override
   Widget build(BuildContext context) {
     if (_challenge.isComplete) {
-      return const Center(child: Icon(Icons.check_circle, size: 48));
+      return const Center(child: Icon(Icons.check_circle_outlined, size: 48));
     }
     final passage = _challenge.currentPassage;
     final totalMs = _challenge.totalDuration.inMilliseconds;

@@ -116,7 +116,7 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
         );
       }
     } catch (e) {
-      if (mounted) await showErrorSnackBar(context, e);
+      if (mounted) await showErrorCard(context, e);
     }
   }
 
@@ -222,7 +222,7 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
         actions: [
           IconButton(
             onPressed: () => _editList(null),
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add_outlined),
             tooltip: l10n.newBlocklist,
           ),
         ],
@@ -238,7 +238,7 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                     child: Text(
                       _error is PrivilegedException
                           ? friendlyError(_error! as PrivilegedException, l10n)
-                          : _error.toString(),
+                          : l10n.errGeneric,
                     ),
                   ),
                 // v1.0.5 UX (user directive): titled card groups.
@@ -384,7 +384,14 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
     if (loosening) {
       await runLoosening(context, widget.controller, save);
     } else {
-      await save();
+      // Tightening saves surface failures too (v1.0.5 audit C-M3):
+      // runLoosening already snackbars gated saves; the direct path
+      // must not let a channel error escape unhandled.
+      try {
+        await save();
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
     }
   }
 
@@ -506,7 +513,11 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
     if (loosening || creating) {
       await runLoosening(context, widget.controller, save);
     } else {
-      await save();
+      try {
+        await save();
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
     }
   }
 
@@ -590,7 +601,7 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
                     }
                     await _editPassive(candidates.first);
                   },
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add_outlined),
                   label: Text(l10n.addPerAppList),
                 ),
               ),
@@ -653,7 +664,11 @@ class _UsageWarningsScreenState extends State<UsageWarningsScreen> {
     if (loosening) {
       await runLoosening(context, widget.controller, save);
     } else {
-      await save();
+      try {
+        await save();
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
     }
   }
 
@@ -753,7 +768,7 @@ class _UsageWarningsScreenState extends State<UsageWarningsScreen> {
             ),
           TextButton.icon(
             onPressed: enabled ? _addStage : null,
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add_outlined),
             label: Text(l10n.addStage),
           ),
         ],
@@ -989,7 +1004,7 @@ class _SuspensionLogsScreenState extends State<SuspensionLogsScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                   child: TextField(
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: const Icon(Icons.search_outlined),
                       labelText: context.l10n.searchLogs,
                       border: const OutlineInputBorder(),
                     ),
@@ -999,20 +1014,31 @@ class _SuspensionLogsScreenState extends State<SuspensionLogsScreen> {
                 Expanded(
                   child: filtered.isEmpty
                       ? EmptyView(
-                          icon: Icons.history,
+                          icon: Icons.history_outlined,
                           message: context.l10n.noLogsYet,
                         )
-                      : ListView(
-                          children: [
-                            for (final l in filtered)
-                              ListTile(
-                                title: Text(l.appName),
-                                subtitle: Text(
-                                  '${l.reason} · ${l.timestamp}\n${l.packageName}${l.details != null ? ' · ${l.details}' : ''}',
-                                ),
-                                isThreeLine: true,
+                      // v1.0.5 audit C-M4 (fix-#3 completion): the log
+                      // entries sit in one card like the rest of the
+                      // app (the screen's AppBar carries the title).
+                      : Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                          child: Card(
+                            child: ListView(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8,
                               ),
-                          ],
+                              children: [
+                                for (final l in filtered)
+                                  ListTile(
+                                    title: Text(l.appName),
+                                    subtitle: Text(
+                                      '${l.reason} · ${l.timestamp}\n${l.packageName}${l.details != null ? ' · ${l.details}' : ''}',
+                                    ),
+                                    isThreeLine: true,
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
                 ),
               ],

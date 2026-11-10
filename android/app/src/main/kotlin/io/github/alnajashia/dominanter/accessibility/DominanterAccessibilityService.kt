@@ -8,22 +8,31 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.os.UserManager
+import android.util.Log
+import android.view.Display
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import io.github.alnajashia.dominanter.data.DominanterState
+import io.github.alnajashia.dominanter.data.SealRules
 import io.github.alnajashia.dominanter.data.SettingsStore
 import io.github.alnajashia.dominanter.data.SuspensionReason
 import io.github.alnajashia.dominanter.data.TimeWindow
+import io.github.alnajashia.dominanter.data.VisualBlockingSettings
 import io.github.alnajashia.dominanter.deviceowner.DominanterDeviceAdminReceiver
+import io.github.alnajashia.dominanter.focus.FocusSessionStore
 import io.github.alnajashia.dominanter.notifications.UsageAlertStage
 import io.github.alnajashia.dominanter.notifications.UsageWarningNotifier
 import io.github.alnajashia.dominanter.notifications.UsageWarningSettings
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
@@ -52,9 +61,18 @@ import java.util.concurrent.TimeUnit
  *    intentional-disable flag, suspend every controlled package and add
  *    `DISALLOW_INSTALL_APPS`; on connect, restore both.
  *
- * Deliberately NOT in this v1 service (per ARCH §6 scope calls): the NSFW
- * TFLite pipeline (F16/F17, v1.1), reopening cooldown enforcement (F11,
- * v1.1), colour-filter sync (F26, v1.1), install-watcher auto-suspension
+ *  - **visual blocking** (F16/F17, added v1.0.6 at the user's order):
+ *    in user-chosen apps, media regions on screen are classified
+ *    on-device by the bundled MobileNetV2 NSFW model (see
+ *    [NsfwContentDetector]); a detection closes the app, and repeated
+ *    detections escalate to a timed suspension. Settings live in
+ *    [VisualBlockingSettings]; inference runs on a dedicated
+ *    single-thread executor, never on the main thread, and no screen
+ *    content ever leaves the device.
+ *
+ * Deliberately NOT in this service (per ARCH §6 scope calls):
+ * reopening cooldown enforcement (F11, v1.1), colour-filter sync
+ * (F26, v1.1), install-watcher auto-suspension
  * (F6/F19/F20, v1.1 / not ported) and impulse suspension sync (F21 effects).
  * Focus (F25) is likewise not driven from here: its native runtime lives in
  * `focus/FocusSessionStore` + `focus/FocusService`, independent of this
@@ -88,6 +106,30 @@ class DominanterAccessibilityService : AccessibilityService() {
     private val blockRunnable = Runnable { executeBlocking() }
     private val windowEndRunnable = Runnable { executeBlocking(outsideWindow = true) }
     private val warnTickRunnable = Runnable { tickUsageWarning() }
+
+    // Visual blocking (F16/F17, v1.0.6), mirroring the original's
+    // fields (DechainerAccessibilityService.kt:115-156): a settings
+    // snapshot reloaded on every prefs change, a lazily-created
+    // detector living on a single-thread executor (the TFLite
+    // interpreter is not thread-safe and must be created, used and
+    // closed on that one thread), a scan throttle + in-flight flag,
+    // and the pending escalation-release timers.
+    private var visualConfig: VisualBlockingSettings.Config = VisualBlockingSettings.Config(
+        enabled = false,
+        targetPackages = VisualBlockingSettings.DEFAULT_TARGET_PACKAGES,
+        categories = VisualBlockingSettings.DEFAULT_CATEGORIES,
+        threshold = VisualBlockingSettings.DEFAULT_THRESHOLD,
+        suspendEnabled = false,
+        suspendBlockCount = VisualBlockingSettings.DEFAULT_SUSPEND_BLOCK_COUNT,
+        suspendWindowMinutes = VisualBlockingSettings.DEFAULT_SUSPEND_WINDOW_MINUTES,
+        suspendDurationMinutes = VisualBlockingSettings.DEFAULT_SUSPEND_DURATION_MINUTES,
+    )
+    private var visualDetector: NsfwContentDetector? = null
+    private var visualExecutor: ExecutorService? = null
+    @Volatile
+    private var visualScanInFlight = false
+    private var lastVisualScanElapsedMs = 0L
+    private val visualReleases = HashMap<String, Runnable>()
 
     /**
      * Per-store dispatch, mirroring the original's `prefsListener`
@@ -124,6 +166,8 @@ class DominanterAccessibilityService : AccessibilityService() {
                 }
                 currentPackage?.let { startTracking(it) }
             }
+            SettingsStore.prefs(SettingsStore.PREFS_VISUAL_BLOCKING) ->
+                updateVisualBlockingSettings()
             // Activity-blocker changes need no refresh: blocked activities are
             // read live from SettingsStore on every window-state event.
         }
@@ -146,6 +190,7 @@ class DominanterAccessibilityService : AccessibilityService() {
         SettingsStore.PREFS_BLOCKED_WORDS,
         SettingsStore.PREFS_ACTIVITY_BLOCKER,
         SettingsStore.PREFS_USAGE_WARNING,
+        SettingsStore.PREFS_VISUAL_BLOCKING,
     )
 
     private val screenReceiver = object : BroadcastReceiver() {
@@ -179,8 +224,34 @@ class DominanterAccessibilityService : AccessibilityService() {
     companion object {
         const val MAX_SCREEN_TEXT = 64_000
 
+        private const val TAG = "DominanterA11y"
+
         /** The original's warning re-check cadence (DechainerAccessibilityService.kt:403). */
         private const val USAGE_WARNING_TICK_INTERVAL_MS = 2000L
+
+        /** The original's visual-scan throttle (DechainerAccessibilityService.kt:401). */
+        private const val VISUAL_SCAN_INTERVAL_MS = 2000L
+
+        // Media-region heuristics, the original's constants and
+        // signals (DechainerAccessibilityService.kt:405-450): class-name
+        // substrings, PT/EN accessibility vocabulary, Reddit post-card
+        // description patterns, then a geometric fallback (large leaf
+        // node with no text at all and a plausible photo/video aspect).
+        private val VISUAL_MEDIA_CLASS_KEYWORDS = listOf(
+            "Image", "Photo", "Video", "Media", "Player", "Gif", "TextureView", "SurfaceView", "WebView",
+        )
+        private val VISUAL_MEDIA_KEYWORDS = listOf(
+            "imagem", "image", "picture", "foto", "photo", "vídeo", "video", "gif", "media", "mídia",
+        )
+        private val VISUAL_MEDIA_DESCRIPTION_PATTERNS = listOf(
+            Regex("""^\d{1,2}\+,"""),
+            Regex("postado (no|em)", RegexOption.IGNORE_CASE),
+            Regex("posted (in|to)", RegexOption.IGNORE_CASE),
+        )
+        private const val VISUAL_FALLBACK_MIN_ASPECT = 0.4f
+        private const val VISUAL_FALLBACK_MAX_ASPECT = 3.0f
+        private const val VISUAL_FALLBACK_MAX_CANDIDATES = 5
+        private const val VISUAL_MIN_MEDIA_SIZE_DP = 96
 
         data class ActivityLog(
             val packageName: String,
@@ -214,6 +285,8 @@ class DominanterAccessibilityService : AccessibilityService() {
         }
         updateForbiddenPatterns()
         updateUsageWarningSettings()
+        updateVisualBlockingSettings()
+        restoreVisualSuspensions()
 
         val screenFilter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -257,6 +330,23 @@ class DominanterAccessibilityService : AccessibilityService() {
             }
         }
         stopTrackingAndSave()
+        // Visual blocking teardown: pending escalation releases are
+        // cancelled (their deadlines stay persisted, so
+        // restoreVisualSuspensions() picks them up on reconnect), and
+        // the detector is closed on its own executor thread, which is
+        // then shut down — the interpreter is thread-confined.
+        visualReleases.values.forEach { handler.removeCallbacks(it) }
+        visualReleases.clear()
+        val detectorToClose = visualDetector
+        visualDetector = null
+        val executorToStop = visualExecutor
+        visualExecutor = null
+        if (executorToStop != null) {
+            if (detectorToClose != null) {
+                executorToStop.execute { runCatching { detectorToClose.close() } }
+            }
+            executorToStop.shutdown()
+        }
         DominanterState.accessibilityServiceRunning = false
 
         // F28 — fail closed on accessibility loss, unless this disable was
@@ -273,8 +363,19 @@ class DominanterAccessibilityService : AccessibilityService() {
         // removal operation and wedges system_server — the device
         // froze on uninstall until the watchdog rebooted it. Removal
         // disarms this path FIRST, before anything stops.
+        // The admin-active check (v1.0.5 audit FIX-2): once Device Owner
+        // has been removed, the admin component is inactive and every
+        // lockdown effect below is a no-op anyway (suspendPackages is
+        // admin-gated internally; the restriction add is guarded) — the
+        // only live effect would be a stray AccessibilityRequestActivity
+        // launch during the post-removal uninstall. With the admin
+        // inactive there is no enforcement left to protect, so the whole
+        // lockdown is skipped.
+        val dpmForAdminCheck = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val adminComponent = ComponentName(this, DominanterDeviceAdminReceiver::class.java)
         if (!SettingsStore.isRemovalInProgress() &&
-            !SettingsStore.consumeIntentionalAccessibilityDisable()
+            !SettingsStore.consumeIntentionalAccessibilityDisable() &&
+            dpmForAdminCheck.isAdminActive(adminComponent)
         ) {
             val controlled = SettingsStore.controlledPackages()
             if (controlled.isNotEmpty()) {
@@ -284,13 +385,12 @@ class DominanterAccessibilityService : AccessibilityService() {
                     reason = SuspensionReason.ACCESSIBILITY_DISABLED,
                 )
             }
-            val dpm = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
-            val admin = ComponentName(this, DominanterDeviceAdminReceiver::class.java)
-            if (dpm.isAdminActive(admin)) {
-                try {
-                    dpm.addUserRestriction(admin, UserManager.DISALLOW_INSTALL_APPS)
-                } catch (_: Exception) { /* not owner — lockdown is best-effort without it */ }
-            }
+            try {
+                dpmForAdminCheck.addUserRestriction(
+                    adminComponent,
+                    UserManager.DISALLOW_INSTALL_APPS,
+                )
+            } catch (_: Exception) { /* not owner — lockdown is best-effort without it */ }
             DominanterState.eventSink?.invoke(
                 "accessibilityStatus",
                 mapOf("controlledPackagesSuspended" to controlled.isNotEmpty()),
@@ -332,6 +432,15 @@ class DominanterAccessibilityService : AccessibilityService() {
             checkActiveBlocking()
         }
 
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+            // Visual blocking (F16): scan the media on screen of a
+            // target app (throttled + region-gated inside).
+            val pkg = currentPackage
+            if (pkg != null && visualConfig.enabled && pkg in visualConfig.targetPackages) {
+                maybeScanVisualContent(pkg)
+            }
+        }
+
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val newPackage = event.packageName?.toString() ?: return
             val className = event.className?.toString() ?: return
@@ -348,6 +457,10 @@ class DominanterAccessibilityService : AccessibilityService() {
                 startTracking(newPackage)
                 wasTypingActively = false
                 lastActiveTypedText = ""
+
+                if (visualConfig.enabled && newPackage in visualConfig.targetPackages) {
+                    warmUpVisualDetector()
+                }
             }
 
             if (className.contains("Activity", ignoreCase = true)) {
@@ -365,6 +478,9 @@ class DominanterAccessibilityService : AccessibilityService() {
                 if (regex.containsMatchIn(screenText)) {
                     performGlobalAction(GLOBAL_ACTION_BACK)
                     showBlockedWordActivity(word)
+                    // Seal rules (Phase D): a banned-word detection is
+                    // recorded natively at detection time.
+                    SealRules.recordEvent(SealRules.Trigger.BANNED_WORD, pkg)
                     return
                 }
             }
@@ -464,6 +580,8 @@ class DominanterAccessibilityService : AccessibilityService() {
         val forbiddenWord = checkForbiddenWord(text) ?: return
         performGlobalAction(GLOBAL_ACTION_BACK)
         showBlockedWordActivity(forbiddenWord)
+        // Seal rules (Phase D): recorded natively at detection time.
+        SealRules.recordEvent(SealRules.Trigger.BANNED_WORD, pkg)
     }
 
     private fun showBlockedWordActivity(word: String) {
@@ -472,6 +590,316 @@ class DominanterAccessibilityService : AccessibilityService() {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 putExtra(BlockActivity.EXTRA_VARIANT, BlockActivity.VARIANT_BLOCKED_WORD)
                 putExtra(BlockActivity.EXTRA_WORD, word)
+            },
+        )
+    }
+
+    // ---------------------------------------------------------------- visual blocking (F16/F17)
+
+    private fun updateVisualBlockingSettings() {
+        visualConfig = VisualBlockingSettings.load()
+    }
+
+    /** The detector's executor, created lazily and confined to one thread. */
+    private fun visualExecutor(): ExecutorService =
+        visualExecutor ?: Executors.newSingleThreadExecutor { r ->
+            Thread(r, "NsfwDetector")
+        }.also { visualExecutor = it }
+
+    private fun warmUpVisualDetector() {
+        if (visualDetector != null) return
+        val appContext = applicationContext
+        visualExecutor().execute {
+            if (visualDetector == null) {
+                visualDetector = runCatching { NsfwContentDetector(appContext) }
+                    .onFailure { Log.w(TAG, "NSFW detector init failed: ${it.message}") }
+                    .getOrNull()
+            }
+        }
+    }
+
+    /**
+     * Classifies the media currently on screen, throttled to at most
+     * once every [VISUAL_SCAN_INTERVAL_MS] and never overlapping a scan
+     * already in flight — target apps fire content-changed events
+     * continuously while scrolling. A screenshot is only taken when
+     * [findVisualMediaRegions] finds at least one candidate region,
+     * since most content-changed events (text, votes, comments) have
+     * nothing to classify. Mirrors the original's scan
+     * (DechainerAccessibilityService.kt:806-895).
+     */
+    private fun maybeScanVisualContent(pkg: String) {
+        if (SettingsStore.isRemovalInProgress()) return // disarmed during teardown
+        if (visualScanInFlight) return
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastVisualScanElapsedMs < VISUAL_SCAN_INTERVAL_MS) return
+        lastVisualScanElapsedMs = now
+        visualScanInFlight = true
+
+        // The tree walk makes many cross-process node calls — too slow
+        // for the main thread — so the whole scan runs off it; only
+        // the blocking reaction returns to main.
+        Thread {
+            val mediaRegions = findVisualMediaRegions()
+            if (mediaRegions.isEmpty()) {
+                visualScanInFlight = false
+                return@Thread
+            }
+            takeScreenshot(
+                Display.DEFAULT_DISPLAY,
+                mainExecutor,
+                object : TakeScreenshotCallback {
+                    override fun onSuccess(result: ScreenshotResult) {
+                        val hardwareBitmap = Bitmap.wrapHardwareBuffer(
+                            result.hardwareBuffer, result.colorSpace,
+                        )
+                        result.hardwareBuffer.close()
+                        if (hardwareBitmap == null) {
+                            Log.w(TAG, "NSFW scan: failed to wrap screenshot hardware buffer")
+                            visualScanInFlight = false
+                            return
+                        }
+                        val appContext = applicationContext
+                        visualExecutor().execute {
+                            try {
+                                val softwareBitmap = hardwareBitmap.copy(
+                                    Bitmap.Config.ARGB_8888, false,
+                                )
+                                hardwareBitmap.recycle()
+                                val detector = visualDetector
+                                    ?: runCatching { NsfwContentDetector(appContext) }
+                                        .getOrNull()?.also { visualDetector = it }
+                                if (detector == null || softwareBitmap == null) {
+                                    softwareBitmap?.recycle()
+                                    return@execute
+                                }
+                                val config = visualConfig
+                                var maxUnsafeScore = 0f
+                                for (region in mediaRegions) {
+                                    val crop = cropToBitmap(softwareBitmap, region)
+                                        ?: continue
+                                    val scores = detector.predict(crop)
+                                    crop.recycle()
+                                    val unsafe = detector.unsafeScore(
+                                        scores, config.categories,
+                                    )
+                                    if (unsafe > maxUnsafeScore) maxUnsafeScore = unsafe
+                                    if (unsafe > config.threshold) break
+                                }
+                                softwareBitmap.recycle()
+                                if (maxUnsafeScore > config.threshold) {
+                                    handler.post {
+                                        if (currentPackage == pkg &&
+                                            pkg in visualConfig.targetPackages
+                                        ) {
+                                            executeVisualBlocking(pkg)
+                                        }
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "NSFW scan failed: ${e.message}")
+                            } finally {
+                                visualScanInFlight = false
+                            }
+                        }
+                    }
+
+                    override fun onFailure(errorCode: Int) {
+                        Log.w(TAG, "NSFW scan: takeScreenshot failed, errorCode=$errorCode")
+                        visualScanInFlight = false
+                    }
+                },
+            )
+        }.start()
+    }
+
+    /**
+     * Walks the current window's accessibility tree looking for views
+     * likely rendering an image/gif/video, so the classifier only ever
+     * looks at actual media instead of the whole screen (the model
+     * expects its subject to fill the frame). Signals, most specific
+     * first: class name, accessibility text/description vocabulary,
+     * Reddit's post-card pattern — then, only if none found anything,
+     * the geometric fallback. Ported from the original's
+     * findNsfwMediaRegions with its constants.
+     */
+    private fun findVisualMediaRegions(): List<Rect> {
+        val root = rootInActiveWindow ?: return emptyList()
+        val minSizePx = (VISUAL_MIN_MEDIA_SIZE_DP * resources.displayMetrics.density).toInt()
+        val regions = mutableListOf<Rect>()
+        val fallbackCandidates = mutableListOf<Rect>()
+
+        fun traverse(node: AccessibilityNodeInfo?) {
+            node ?: return
+            val className = node.className?.toString().orEmpty()
+            val description = node.contentDescription?.toString().orEmpty()
+            val text = node.text?.toString().orEmpty()
+            val rect = Rect()
+            node.getBoundsInScreen(rect)
+            val bigEnough = rect.width() >= minSizePx && rect.height() >= minSizePx
+
+            val matchesClass = VISUAL_MEDIA_CLASS_KEYWORDS.any {
+                className.contains(it, ignoreCase = true)
+            }
+            val matchesDescription = description.isNotEmpty() && (
+                VISUAL_MEDIA_KEYWORDS.any { description.contains(it, ignoreCase = true) } ||
+                    VISUAL_MEDIA_DESCRIPTION_PATTERNS.any { it.containsMatchIn(description) }
+                )
+            val matchesText = VISUAL_MEDIA_KEYWORDS.any {
+                text.startsWith(it, ignoreCase = true)
+            }
+
+            if ((matchesClass || matchesDescription || matchesText) && bigEnough &&
+                regions.none { it == rect }
+            ) {
+                regions.add(rect)
+            } else if (node.childCount == 0 && description.isEmpty() && text.isEmpty() &&
+                bigEnough
+            ) {
+                val aspect = rect.width().toFloat() / rect.height().toFloat()
+                if (aspect in VISUAL_FALLBACK_MIN_ASPECT..VISUAL_FALLBACK_MAX_ASPECT &&
+                    fallbackCandidates.none { it == rect }
+                ) {
+                    fallbackCandidates.add(rect)
+                }
+            }
+
+            for (i in 0 until node.childCount) {
+                val child = node.getChild(i)
+                traverse(child)
+                child?.recycle()
+            }
+        }
+        traverse(root)
+        root.recycle()
+
+        if (regions.isEmpty() && fallbackCandidates.isNotEmpty()) {
+            regions.addAll(
+                fallbackCandidates
+                    .sortedByDescending { it.width().toLong() * it.height() }
+                    .take(VISUAL_FALLBACK_MAX_CANDIDATES),
+            )
+        }
+        return regions
+    }
+
+    private fun cropToBitmap(source: Bitmap, rect: Rect): Bitmap? {
+        val left = rect.left.coerceIn(0, source.width)
+        val top = rect.top.coerceIn(0, source.height)
+        val right = rect.right.coerceIn(left, source.width)
+        val bottom = rect.bottom.coerceIn(top, source.height)
+        val width = right - left
+        val height = bottom - top
+        if (width <= 0 || height <= 0) return null
+        return try {
+            Bitmap.createBitmap(source, left, top, width, height)
+        } catch (e: Exception) {
+            Log.w(TAG, "NSFW scan: failed to crop region $rect: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Reaction to the classifier flagging [pkg]'s screen (the
+     * original's executeNsfwBlocking). Default: suspend and
+     * immediately un-suspend the package — suspending force-closes
+     * the app, un-suspending right after leaves the user free to
+     * reopen it. With escalation on, once [pkg] has been blocked
+     * `suspendBlockCount` times within `suspendWindowMinutes`, the
+     * suspension is instead held for `suspendDurationMinutes`.
+     */
+    private fun executeVisualBlocking(pkg: String) {
+        if (SettingsStore.isRemovalInProgress()) return // disarmed during teardown
+        // A held escalation suspension swallows repeat detections:
+        // suspending doesn't tear the window down instantly, and each
+        // content-changed event would otherwise count as a fresh
+        // block (and the default path would cut the suspension short).
+        if (VisualBlockingSettings.isSuspended(pkg)) return
+
+        // Seal rules (Phase D): the detection is recorded natively at
+        // detection time, whatever the reaction below does.
+        SealRules.recordEvent(SealRules.Trigger.VISUAL_DETECTION, pkg)
+
+        val config = visualConfig
+        if (config.suspendEnabled) {
+            val shouldSuspend = VisualBlockingSettings.registerBlock(
+                pkg, config.suspendBlockCount, config.suspendWindowMinutes,
+            )
+            if (shouldSuspend) {
+                val until = VisualBlockingSettings.startSuspension(
+                    pkg, config.suspendDurationMinutes,
+                )
+                suspendPackages(
+                    arrayOf(pkg), suspend = true, reason = SuspensionReason.VISUAL_BLOCKING,
+                )
+                scheduleVisualRelease(pkg, until)
+                showContentBlockedActivity(pkg, config.suspendDurationMinutes)
+                return
+            }
+        }
+
+        suspendPackages(arrayOf(pkg), suspend = true, reason = SuspensionReason.VISUAL_BLOCKING)
+        suspendPackages(arrayOf(pkg), suspend = false)
+        showContentBlockedActivity(pkg, 0)
+    }
+
+    /** Queues the automatic release of a held visual suspension. */
+    private fun scheduleVisualRelease(pkg: String, untilMs: Long) {
+        visualReleases.remove(pkg)?.let { handler.removeCallbacks(it) }
+        val release = Runnable {
+            visualReleases.remove(pkg)
+            VisualBlockingSettings.endSuspension(pkg)
+            if (!isHeldByOtherBlock(pkg)) {
+                suspendPackages(arrayOf(pkg), suspend = false)
+            }
+        }
+        visualReleases[pkg] = release
+        handler.postDelayed(
+            release,
+            (untilMs - System.currentTimeMillis()).coerceAtLeast(0L),
+        )
+    }
+
+    /**
+     * Re-applies (or lifts) recorded visual suspensions after the
+     * service is recreated — without this, a suspension whose release
+     * timer died with the previous process would never be lifted.
+     */
+    private fun restoreVisualSuspensions() {
+        if (SettingsStore.isRemovalInProgress()) return
+        val now = System.currentTimeMillis()
+        for ((pkg, until) in VisualBlockingSettings.activeSuspensions()) {
+            if (until <= now) {
+                VisualBlockingSettings.endSuspension(pkg)
+                if (!isHeldByOtherBlock(pkg)) {
+                    suspendPackages(arrayOf(pkg), suspend = false)
+                }
+            } else {
+                suspendPackages(
+                    arrayOf(pkg), suspend = true, reason = SuspensionReason.VISUAL_BLOCKING,
+                )
+                scheduleVisualRelease(pkg, until)
+            }
+        }
+    }
+
+    /**
+     * Whether another native engine currently holds [pkg] suspended.
+     * In this architecture the only other native holder is a focus
+     * session's claim set (impulse suspensions are driven from the
+     * Dart layer, which re-asserts its own recorded state — see
+     * docs/FEATURE_v1.0.6.md for the documented edge).
+     */
+    private fun isHeldByOtherBlock(pkg: String): Boolean =
+        FocusSessionStore.isActive() && pkg in FocusSessionStore.getApps()
+
+    private fun showContentBlockedActivity(pkg: String, suspendedMinutes: Int) {
+        startActivity(
+            Intent(this, BlockActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                putExtra(BlockActivity.EXTRA_VARIANT, BlockActivity.VARIANT_CONTENT)
+                putExtra(BlockActivity.EXTRA_APP_NAME, appLabel(pkg))
+                putExtra(BlockActivity.EXTRA_SUSPENDED_MINUTES, suspendedMinutes)
             },
         )
     }
@@ -504,6 +932,12 @@ class DominanterAccessibilityService : AccessibilityService() {
     }
 
     private fun startTracking(pkg: String) {
+        // Removal disarm (v1.0.5 field-failure fix): while a Device
+        // Owner teardown runs, the tracking/blocking/warning engines
+        // must be fully inert — no re-suspension after the teardown's
+        // unsuspend step and no new warning notifications after its
+        // notification-cancellation step.
+        if (SettingsStore.isRemovalInProgress()) return
         handler.removeCallbacks(warnTickRunnable)
 
         val config = trackingConfigFor(pkg)
@@ -568,6 +1002,7 @@ class DominanterAccessibilityService : AccessibilityService() {
     }
 
     private fun executeBlocking(outsideWindow: Boolean = false) {
+        if (SettingsStore.isRemovalInProgress()) return // disarmed during teardown
         val pkg = currentPackage ?: return
         val config = trackingConfigFor(pkg)
         stopTrackingAndSave()
@@ -673,6 +1108,7 @@ class DominanterAccessibilityService : AccessibilityService() {
     private fun stageMillis(stage: UsageAlertStage): Long = (stage.minutesBefore * 60_000).toLong()
 
     private fun tickUsageWarning() {
+        if (SettingsStore.isRemovalInProgress()) return // disarmed during teardown
         handler.removeCallbacks(warnTickRunnable)
         val pkg = currentPackage ?: return
         val key = currentWarnKey ?: return

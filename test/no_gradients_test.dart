@@ -15,6 +15,14 @@ void main() {
       'SweepGradient',
       'GradientCard',
       'heroGradient',
+      // v1.0.5 audit B-hunt-4 strengthening: the bare token also covers
+      // dart:ui's Gradient.linear/radial/sweep factories and any custom
+      // Gradient subclass, which the class names above would miss; the
+      // shader tokens cover Paint.shader-based gradients. (No file in
+      // lib/ — comments included — currently contains any of these.)
+      'Gradient',
+      'createShader',
+      '.shader',
     ];
     final offenders = <String>[];
     for (final entity in Directory('lib').listSync(recursive: true)) {

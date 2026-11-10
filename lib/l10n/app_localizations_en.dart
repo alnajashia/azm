@@ -36,16 +36,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get undo => 'Undo';
 
   @override
-  String errorCodeLine(String code) {
-    return 'Error code: $code';
-  }
-
-  @override
-  String errorCodeExitLine(String code, int exitCode) {
-    return 'Error code: $code · exit $exitCode';
-  }
-
-  @override
   String get errUnavailable =>
       'The Android service layer is not available here (this happens in tests or off-device). No operation was performed.';
 
@@ -71,11 +61,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errShellFailed => 'A system command failed.';
-
-  @override
-  String errShellFailedExit(int exitCode) {
-    return 'A system command failed (exit code $exitCode).';
-  }
 
   @override
   String get errProvisioningFailed =>
@@ -104,9 +89,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'The operation timed out and was not reported as successful.';
 
   @override
-  String errInvalidArgument(String message) {
-    return 'Invalid input: $message';
-  }
+  String get errInvalidArgument =>
+      'Some of the information entered is not valid. Please check it and try again.';
 
   @override
   String get errNotImplemented => 'This is not implemented in this version.';
@@ -335,9 +319,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String authCouldNotStart(String error) {
-    return 'Authentication could not start: $error';
-  }
+  String get authCouldNotStart =>
+      'Authentication could not start. Please try again.';
 
   @override
   String get passwordPromptTitle => 'Enter app password';
@@ -533,9 +516,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firstRunTitle => 'Azm — first run';
-
-  @override
-  String get gateChallengesTitle => 'Access challenges';
 
   @override
   String get gateCodeTitle => 'Enter recovery code';
@@ -978,11 +958,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Immediate, inside a recovery session — every restriction this app enforces stops at once.';
 
   @override
-  String get forcedRemoval48 => 'Force removal in 48 hours';
-
-  @override
   String get forcedIdleSub =>
-      'The only code-free escape: after 48 hours, Device Owner can be removed without the recovery code.';
+      'The only code-free escape: after 24 hours, Device Owner can be removed without the recovery code.';
 
   @override
   String get forcedCompleteSub =>
@@ -1007,21 +984,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startForcedBody =>
-      'This starts a 48-hour countdown. When it finishes, Device Owner — and with it every restriction this app enforces — can be removed without the recovery code. It is the only code-free escape, and it can be cancelled at any time before it completes.';
+      'This starts a 24-hour countdown. When it finishes, Device Owner — and with it every restriction this app enforces — can be removed without the recovery code. It is the only code-free escape, and it can be cancelled at any time before it completes.';
 
   @override
   String get cancelForcedTitle => 'Cancel forced removal?';
 
   @override
   String get cancelForcedBody =>
-      'The 48-hour countdown will be discarded. Device Owner removal will again require the recovery code.';
+      'The 24-hour countdown will be discarded. Device Owner removal will again require the recovery code.';
 
   @override
   String get finishForcedTitle => 'Finish forced removal?';
 
   @override
   String get finishForcedBody =>
-      'The 48-hour wait is complete. Removing Device Owner now lifts every restriction this app enforces on this device.';
+      'The 24-hour wait is complete. Removing Device Owner now lifts every restriction this app enforces on this device.';
 
   @override
   String get understandRemovesAll => 'I understand this removes all protection';
@@ -1066,6 +1043,521 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removalStepAppRestrictions => 'Clear per-app restrictions';
+
+  @override
+  String get info_disallow_biometric =>
+      'Blocks biometric unlock (fingerprint/face) at the system level (Samsung key). This also affects signing into Azm itself if you rely on fingerprint entry — use with care.';
+
+  @override
+  String get info_disallow_camera_toggle =>
+      'Blocks the camera privacy toggle (quick-settings sensor switch). Keeps the camera state from being changed from the sensor panel.';
+
+  @override
+  String get info_disallow_config_default_apps =>
+      'Blocks changing the default apps (browser, dialer, SMS, assistant). Keeps your chosen safe defaults in place — for example, a filtered default browser stays the default.';
+
+  @override
+  String get info_disallow_config_private_dns =>
+      'Blocks changing the Private DNS setting. Important if your filtering relies on a specific DNS resolver — changing it would silently disable the filter. Side effect: the DNS provider is frozen while it is on.';
+
+  @override
+  String get info_disallow_microphone_toggle =>
+      'Blocks the microphone privacy toggle (Samsung/quick-settings sensor switch). Keeps the microphone state from being changed from the sensor panel.';
+
+  @override
+  String get info_ensure_verify_apps =>
+      'Requires app verification (Play Protect-style scanning of installs) to stay on. Keeps a safety net against harmful apps; turning protections off is a common first step in bypass guides.';
+
+  @override
+  String get info_no_add_clone_profile =>
+      'Blocks creating a clone profile or cloned apps (Samsung). Cloned apps are a second, separate copy that limits may not cover.';
+
+  @override
+  String get info_no_add_managed_profile =>
+      'Blocks creating a work/managed profile. A separate profile can hold its own unfiltered apps.';
+
+  @override
+  String get info_no_add_private_profile =>
+      'Blocks creating a private profile/space. A private space can hide apps from the main view and from casual checks.';
+
+  @override
+  String get info_no_add_user =>
+      'Blocks creating new Android users on the device. A second user is a completely unfiltered space, so this closes a major bypass.';
+
+  @override
+  String get info_no_add_wifi_config =>
+      'Blocks adding new Wi-Fi network configurations while leaving existing ones usable. A softer version of locking Wi-Fi completely.';
+
+  @override
+  String get info_no_adjust_volume =>
+      'Blocks changing the volume. Sometimes used to keep warning sounds audible. Side effect: volume keys stop working for media and calls.';
+
+  @override
+  String get info_no_airplane_mode =>
+      'Blocks turning on airplane mode. Prevents cutting connectivity to escape network filtering — though Wi-Fi can usually be rejoined. Side effect: no airplane mode for flights while it is on.';
+
+  @override
+  String get info_no_ambient_display =>
+      'Blocks the ambient display (always-on glance screen). Minor display behaviour control.';
+
+  @override
+  String get info_no_assist_content =>
+      'Blocks sharing screen content with the assistant. Privacy-oriented; the assistant loses screen context.';
+
+  @override
+  String get info_no_autofill =>
+      'Blocks the autofill framework (password/form autofill). Security-oriented; side effect: no saved-password autofill anywhere.';
+
+  @override
+  String get info_no_bluetooth =>
+      'Blocks using Bluetooth at all. Side effect: headphones, watches, and car connections stop working.';
+
+  @override
+  String get info_no_bluetooth_sharing =>
+      'Blocks sharing files over Bluetooth while leaving Bluetooth audio working. A narrower, gentler option than blocking Bluetooth entirely.';
+
+  @override
+  String get info_no_camera =>
+      'Blocks the camera entirely (Samsung key). Side effect: no app can take photos or video, including Azm-free uses like scanning documents.';
+
+  @override
+  String get info_no_change_wifi_state =>
+      'Blocks turning Wi-Fi on or off. Useful when the connection state itself is part of the routine. Side effect: no quick Wi-Fi toggling from quick settings.';
+
+  @override
+  String get info_no_config_bluetooth =>
+      'Blocks changing Bluetooth settings (pairing new devices). Side effect: new accessories cannot be paired while it is on.';
+
+  @override
+  String get info_no_config_brightness =>
+      'Blocks changing screen brightness settings. Minor; mainly keeps display settings stable.';
+
+  @override
+  String get info_no_config_cell_broadcasts =>
+      'Blocks changing cell broadcast (emergency alert) settings. Leave this off unless you have a specific reason — emergency alerts matter.';
+
+  @override
+  String get info_no_config_credentials =>
+      'Blocks changing stored credentials and installing certificates. Important because a user-installed certificate can enable traffic interception and filter bypass. Side effect: work/school certificate setups are frozen.';
+
+  @override
+  String get info_no_config_date_time =>
+      'Blocks changing the date and time. Protects time-based limits and schedules from being cheated by moving the clock. Side effect: manual time correction is off; automatic time still works.';
+
+  @override
+  String get info_no_config_locale =>
+      'Blocks changing the system language/region settings. Keeps the device configuration stable.';
+
+  @override
+  String get info_no_config_location =>
+      'Blocks changing location settings. Keeps location-based behaviour stable; it does not itself block content.';
+
+  @override
+  String get info_no_config_mobile_networks =>
+      'Blocks changing mobile network settings (APN, network mode, operator). Useful because APN tricks can route around DNS filtering. Side effect: roaming and carrier settings are frozen too.';
+
+  @override
+  String get info_no_config_screen_timeout =>
+      'Blocks changing the screen timeout. Keeps the display-off behaviour you chose; a minor routine protection.';
+
+  @override
+  String get info_no_config_tethering =>
+      'Blocks changing any tethering settings (Wi-Fi, USB, Bluetooth hotspot). Keeps the phone from becoming a side door around network filtering.';
+
+  @override
+  String get info_no_config_vpn =>
+      'Blocks changing VPN settings. Important: a VPN can bypass DNS-based filtering entirely, so locking VPN settings protects the whole setup. Side effect: you cannot add or switch VPNs while it is on.';
+
+  @override
+  String get info_no_config_wifi =>
+      'Blocks changing Wi-Fi settings: joining new networks or forgetting saved ones. Useful against hopping to an unfiltered network. Side effect: you cannot join a new Wi-Fi network while it is on.';
+
+  @override
+  String get info_no_config_wifi_private =>
+      'Blocks changing the private (randomized) MAC address setting for Wi-Fi (Samsung). Keeps network identity stable so network-level filters keep recognizing the device.';
+
+  @override
+  String get info_no_config_wifi_shared =>
+      'Blocks changing shared Wi-Fi configuration options (Samsung). Keeps network settings from being quietly altered.';
+
+  @override
+  String get info_no_content_capture =>
+      'Blocks apps from capturing screen content for features like screenshot-based assistants. A privacy control; may break some smart-selection features.';
+
+  @override
+  String get info_no_content_suggestions =>
+      'Blocks content suggestions (smart replies/suggestions drawn from screen content). Privacy-oriented; minor.';
+
+  @override
+  String get info_no_control_apps =>
+      'Blocks opening app-info screens where apps can be force-stopped, cleared, or have their permissions changed. Stops a common bypass route. Side effect: you also cannot manage app storage or permissions there while it is on.';
+
+  @override
+  String get info_no_create_windows =>
+      'Blocks apps from drawing overlay windows on top of other apps. Increases security against tap-jacking, but breaks legitimate overlays like chat bubbles and some accessibility tools.';
+
+  @override
+  String get info_no_cross_profile_copy_paste =>
+      'Blocks copy/paste between profiles. Stops text and links moving from the controlled profile into another one.';
+
+  @override
+  String get info_no_data_roaming =>
+      'Blocks data roaming. Mostly a cost control; it does not filter content.';
+
+  @override
+  String get info_no_debugging_features =>
+      'Blocks debugging features such as ADB. Prevents changing the device from a computer to bypass protection. Side effect: developers cannot debug this device while it is on.';
+
+  @override
+  String get info_no_factory_reset =>
+      'Blocks factory reset from settings. Protects the whole setup from being wiped in a weak moment. This is a strong setting: recovery through Azm\'s own removal flow remains possible, but the settings route is closed.';
+
+  @override
+  String get info_no_fun =>
+      'Blocks Android\'s fun/easter-egg features. Harmless and mostly cosmetic.';
+
+  @override
+  String get info_no_grant_admin =>
+      'Blocks granting device-admin rights to other apps. Prevents another admin app from interfering with Azm\'s position.';
+
+  @override
+  String get info_no_install_apps =>
+      'Blocks installing new apps entirely. Useful when you want the phone\'s current app set frozen. Side effect: even trusted apps cannot be added until this is off.';
+
+  @override
+  String get info_no_install_unknown_sources =>
+      'Blocks installing apps from outside the Play Store (APK files, browsers, file managers). One of the strongest protections against sideloaded distractions and malware. Side effect: legitimate APK installs are also blocked.';
+
+  @override
+  String get info_no_install_unknown_sources_globally =>
+      'The global version of the unknown-sources block: it applies everywhere on the device, for every user and profile. Stronger than the per-source setting, and it also blocks legitimate APK installs device-wide.';
+
+  @override
+  String get info_no_modify_accounts =>
+      'Blocks adding or removing accounts on the device. A new account can be a fresh start that escapes app-level habits. Side effect: you cannot sign into new services at the system level while it is on.';
+
+  @override
+  String get info_no_network_reset =>
+      'Blocks resetting network settings. A network reset can wipe saved Wi-Fi and DNS-related state in one tap.';
+
+  @override
+  String get info_no_non_market_app_by_knox =>
+      'Blocks apps from outside the official stores at the Samsung Knox level. Knox\'s own sideloading block; may overlap with the unknown-sources restrictions.';
+
+  @override
+  String get info_no_outgoing_beam =>
+      'Blocks Android Beam (NFC tap-to-share). A small side channel for passing links and files between phones.';
+
+  @override
+  String get info_no_outgoing_calls =>
+      'Blocks making outgoing calls. A heavy restriction for communication control; emergency calls are never blocked by Android.';
+
+  @override
+  String get info_no_physical_media =>
+      'Blocks mounting external storage (SD cards, USB drives). Closes a route for bringing in unfiltered content. Side effect: memory cards cannot be used while it is on.';
+
+  @override
+  String get info_no_printing =>
+      'Blocks printing from the device. Minor; closes a route for exporting content to paper or PDF printers.';
+
+  @override
+  String get info_no_remove_managed_profile =>
+      'Blocks removing the managed (work) profile. Keeps an existing managed space intact.';
+
+  @override
+  String get info_no_remove_user =>
+      'Blocks removing existing Android users. Keeps the device\'s user structure unchanged.';
+
+  @override
+  String get info_no_safe_boot =>
+      'Blocks booting into Safe Mode. Important: Safe Mode disables accessibility services and third-party enforcement, so it is a classic bypass. Side effect: Safe Mode troubleshooting is unavailable while it is on.';
+
+  @override
+  String get info_no_set_user_icon =>
+      'Blocks changing the user profile picture. Cosmetic only.';
+
+  @override
+  String get info_no_set_wallpaper =>
+      'Blocks changing the wallpaper. Cosmetic stability; occasionally used to keep a motivational wallpaper in place.';
+
+  @override
+  String get info_no_share_location =>
+      'Blocks sharing the device\'s location with apps. A privacy protection rather than a content filter.';
+
+  @override
+  String get info_no_sharing_into_profile =>
+      'Blocks sharing content from the main profile into another profile. Keeps content from being passed into a less-controlled space.';
+
+  @override
+  String get info_no_sim_globally =>
+      'Blocks using the SIM entirely (calls and mobile data). A very heavy restriction — the phone loses mobile service while it is on.';
+
+  @override
+  String get info_no_sms =>
+      'Blocks sending SMS messages. Communication control; messaging apps are unaffected.';
+
+  @override
+  String get info_no_system_error_dialogs =>
+      'Blocks system error dialogs (app-crash popups). Cosmetic/enterprise behaviour; crashes still happen, just silently.';
+
+  @override
+  String get info_no_thread_network =>
+      'Blocks creating/joining Thread border-router networks (smart-home). Niche; irrelevant for most phones.';
+
+  @override
+  String get info_no_ultra_wideband_radio =>
+      'Blocks the ultra-wideband (UWB) radio used by precision trackers. Niche hardware control.';
+
+  @override
+  String get info_no_unified_password =>
+      'Blocks requiring one unified password across work and personal profiles. Enterprise-oriented; irrelevant on a single-profile phone.';
+
+  @override
+  String get info_no_uninstall_apps =>
+      'Blocks uninstalling apps. Useful to stop a blocked app from simply being deleted to escape its limits — and to protect Azm\'s companion setup. Side effect: you cannot remove any app while this is on.';
+
+  @override
+  String get info_no_unmute_microphone =>
+      'Blocks unmuting the microphone during calls. A managed-device privacy control; rarely relevant for personal use.';
+
+  @override
+  String get info_no_usb_file_transfer =>
+      'Blocks transferring files over USB. Prevents moving content on or off the phone by cable. Side effect: USB photo/file import stops too; charging still works.';
+
+  @override
+  String get info_no_user_switch =>
+      'Blocks switching between Android users. Companions the no-new-users rule: even existing extra users cannot be entered.';
+
+  @override
+  String get info_no_wallpaper =>
+      'Blocks wallpaper changes (Samsung key). Cosmetic stability, like the standard wallpaper restriction.';
+
+  @override
+  String get info_no_wifi_direct =>
+      'Blocks Wi-Fi Direct connections (device-to-device sharing without a router). Closes a side channel for sharing files and content. Side effect: some printers and sharing features stop working.';
+
+  @override
+  String get info_no_wifi_tethering =>
+      'Blocks Wi-Fi hotspot tethering settings. Prevents sharing the phone\'s connection to bypass filters on other devices.';
+
+  @override
+  String get restrictionInfoGeneric =>
+      'This setting restricts part of the system. Turning it on tightens the device; turning it off loosens it. If you are not sure, leave it off and ask later.';
+
+  @override
+  String get errGeneric =>
+      'Something went wrong. Please try again. If it keeps happening, restart the app.';
+
+  @override
+  String get errSealed =>
+      'Removal is currently sealed by one of your seal rules.';
+
+  @override
+  String get errorCardTitle => 'Something went wrong';
+
+  @override
+  String get okButton => 'OK';
+
+  @override
+  String get entryGraceTitle => 'App lock timing';
+
+  @override
+  String get entryGraceSub =>
+      'How long Azm stays open after you enter, before it asks for your fingerprint or password again';
+
+  @override
+  String get entryGraceImmediately => 'Immediately';
+
+  @override
+  String get entryGraceOneMinute => 'After 1 minute';
+
+  @override
+  String get entryGraceFifteenMinutes => 'After 15 minutes';
+
+  @override
+  String get entryGraceOneHour => 'After 1 hour';
+
+  @override
+  String get visualBlockingTitle => 'Content inspection';
+
+  @override
+  String get visualBlockingSub =>
+      'On-device checking of images inside chosen apps';
+
+  @override
+  String get visualExplanation =>
+      'Azm checks images on screen inside the apps you choose, using a model that runs entirely on this device. Nothing is uploaded. When inappropriate content is detected, the app is closed; repeated detections can suspend it. Text checking is separate: it is the blocked-words feature, which also works per app.';
+
+  @override
+  String get visualEnable => 'Inspect images in chosen apps';
+
+  @override
+  String get visualRequiresAccessibility =>
+      'Requires the accessibility service to be on.';
+
+  @override
+  String get visualAppsSection => 'Apps to inspect';
+
+  @override
+  String visualAppsSelected(int count) {
+    return '$count app(s) chosen';
+  }
+
+  @override
+  String get visualSelectApps => 'Choose apps';
+
+  @override
+  String get visualCategoriesSection => 'Block when detected';
+
+  @override
+  String get visualCategoriesDesc =>
+      'The kinds of content that close the app when the model finds them on screen.';
+
+  @override
+  String get visualCategoryDrawings => 'Drawings';
+
+  @override
+  String get visualCategoryHentai => 'Hentai';
+
+  @override
+  String get visualCategoryPorn => 'Pornography';
+
+  @override
+  String get visualCategorySexy => 'Sexy / suggestive';
+
+  @override
+  String get visualThresholdSection => 'Sensitivity';
+
+  @override
+  String get visualThresholdDesc =>
+      'Higher means Azm blocks only when it is more certain. Lower blocks more, with more mistakes.';
+
+  @override
+  String get visualSuspend => 'Suspend app after repeated detections';
+
+  @override
+  String get visualSuspendDesc =>
+      'After several detections in a short time, the app is suspended for a while instead of just being closed.';
+
+  @override
+  String get visualSuspendCount => 'Detections before suspending';
+
+  @override
+  String get visualSuspendWindow => 'Within (minutes)';
+
+  @override
+  String get visualSuspendDuration => 'Suspend for (minutes)';
+
+  @override
+  String get visualSaved => 'Content inspection settings saved.';
+
+  @override
+  String get sealRulesTitle => 'Seal rules';
+
+  @override
+  String get sealRulesSub => 'Conditions under which Azm refuses to be removed';
+
+  @override
+  String get sealIntro =>
+      'While any seal rule is active, Azm refuses to remove Device Owner — immediately or by filing the delayed forced removal. A seal cannot be cancelled while it is active; it ends only when its time runs out or its condition clears. The paper recovery code does NOT break an active seal. A forced removal filed BEFORE a seal engaged still completes at its 24-hour mark. Seals have force only while Azm is Device Owner: without Device Owner, Android lets any app be uninstalled and no rule can prevent it.';
+
+  @override
+  String get sealNoRules => 'No seal rules yet.';
+
+  @override
+  String get sealAddRule => 'Add a seal rule';
+
+  @override
+  String get sealEditRule => 'Edit seal rule';
+
+  @override
+  String get sealDeleteRule => 'Delete rule';
+
+  @override
+  String get sealTrigger => 'Seal while / when';
+
+  @override
+  String get sealTriggerAppBlocked => 'A chosen app is blocked by Azm';
+
+  @override
+  String get sealTriggerAppSuspended => 'A chosen app is suspended by Azm';
+
+  @override
+  String get sealTriggerFocusRunning => 'A focus session is running';
+
+  @override
+  String get sealTriggerVisual =>
+      'Inappropriate content is detected in a chosen app';
+
+  @override
+  String get sealTriggerWord => 'A banned word is detected in a chosen app';
+
+  @override
+  String get sealApp => 'App';
+
+  @override
+  String get sealChooseApp => 'Choose an app';
+
+  @override
+  String get sealDuration => 'Seal lasts';
+
+  @override
+  String get sealDuration30m => '30 minutes';
+
+  @override
+  String get sealDuration1h => '1 hour';
+
+  @override
+  String get sealDuration6h => '6 hours';
+
+  @override
+  String get sealDuration24h => '24 hours';
+
+  @override
+  String get sealDuration7d => '7 days';
+
+  @override
+  String get sealRuleEnabled => 'Rule enabled';
+
+  @override
+  String get sealActiveTitle => 'Seal active';
+
+  @override
+  String sealActiveCondition(String rule) {
+    return 'A seal rule is holding: $rule. Removal is refused while it holds.';
+  }
+
+  @override
+  String sealActiveTimed(String rule, String remaining) {
+    return 'A seal rule is holding: $rule. About $remaining left.';
+  }
+
+  @override
+  String sealStatusActive(String rule) {
+    return 'Sealed: $rule';
+  }
+
+  @override
+  String get sealNotEnforceable => 'Not enforceable: Azm is not Device Owner.';
+
+  @override
+  String get removalStepPolicies => 'Reset device policies';
+
+  @override
+  String get removalStepPrivateDns => 'Reset private DNS';
+
+  @override
+  String get removalStepNotifications => 'Cancel notifications';
+
+  @override
+  String get removalStepVerify => 'Post-removal verification';
+
+  @override
+  String get residueTitle => 'Leftover restrictions detected';
+
+  @override
+  String get residueBody =>
+      'Some restrictions set by Azm are still in force on this device. Azm no longer has the rights to remove them. To clean up, provision Azm as Device Owner again from the Status tab, then run Remove Device Owner once more.';
 
   @override
   String get removalStepClearOwner => 'Remove Device Owner';
@@ -1929,7 +2421,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Private DNS requires Device Owner — finish Setup first.';
 
   @override
-  String get forcedRemovalTitle => '48-hour forced removal';
+  String get forcedRemovalTitle => '24-hour forced removal';
 
   @override
   String forcedInProgressSub(String remaining) {
@@ -1987,7 +2479,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get impulseNoEarlyStop =>
-      'Like the original, the lock has no early stop: it ends on its own when the timer runs out, and the apps it suspended are released then.';
+      'The lock ends when its timer runs out — or early, if you complete the challenges you selected for Impulse Lock. The apps it suspended are released when it ends.';
 
   @override
   String startImpulseLock(int minutes) {
@@ -2166,4 +2658,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get preferencesSection => 'Preferences';
+
+  @override
+  String get passwordVerifyError =>
+      'The password could not be verified. Nothing was changed — try again.';
+
+  @override
+  String get passwordRecordCorrupt =>
+      'The stored app password is damaged and cannot be used. Set a new password to replace it.';
+
+  @override
+  String get impulseUnlockEarly => 'End early with challenges';
+
+  @override
+  String get impulseUnlockTitle => 'End impulse lock early';
+
+  @override
+  String get impulseUnlockBody =>
+      'Complete the challenges you selected for Impulse Lock to end this lock now and release the apps it suspended.';
+
+  @override
+  String get impulseLockEndedEarly =>
+      'Impulse lock ended — the apps it suspended were released.';
+
+  @override
+  String get appsBrowseSection => 'App list options';
+
+  @override
+  String get appProtectionSection => 'Protection';
+
+  @override
+  String get appLimitsSection => 'Limits & windows';
+
+  @override
+  String get setupServicesSection => 'Services & permissions';
+
+  @override
+  String get storeCardTitle => 'Keep it safe';
 }

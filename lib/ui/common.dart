@@ -1,18 +1,42 @@
 /// Shared UI building blocks: honest loading / empty / error states and the
 /// §5.4 error-code → user copy mapping. No screen in this app shows a fake
-/// success or a dead button: unavailable features are labelled, failures are
-/// shown with their real code and (for shell failures) the real exit code.
+/// success or a dead button: unavailable features are labelled.
+///
+/// PLAIN-LANGUAGE ERROR RULE (v1.0.6, Phase E — user order): nothing
+/// user-visible may carry exception names, error codes, exit codes,
+/// stack fragments, or raw technical strings. Native failures cross
+/// the channel as TYPED codes; [friendlyError] is the single mapper
+/// from code to localized plain language (with a next-step hint where
+/// one exists). Unmapped/unexpected failures fall back to one generic
+/// friendly message. The technical detail (code, message, cause) goes
+/// ONLY to the local debug log via [logTechnicalError] — never the UI.
 library;
 
 import 'package:flutter/material.dart';
 
 import '../data/privileged_channel.dart';
+import '../domain/seal_rules.dart';
 import '../l10n/l10n.dart';
 import '../theme.dart';
 
-/// Human-readable copy for a channel failure. The raw code is always kept
-/// visible in [ErrorView] so nothing is hidden behind vague wording.
+/// The local debug log for technical error detail (Phase E): code,
+/// message and cause are recorded here and NEVER shown in the UI.
+void logTechnicalError(Object error) {
+  if (error is PrivilegedException) {
+    debugPrint(
+      'AzmError code=${error.code} message=${error.message} '
+      'details=${error.details}',
+    );
+  } else {
+    debugPrint('AzmError $error');
+  }
+}
+
+/// Plain-language copy for a channel failure, by typed code. Every
+/// code the native layer can produce has a localized message here;
+/// anything else gets the generic friendly fallback.
 String friendlyError(PrivilegedException e, AppLocalizations l10n) {
+  logTechnicalError(e);
   switch (e.code) {
     case 'UNAVAILABLE':
       return l10n.errUnavailable;
@@ -27,9 +51,7 @@ String friendlyError(PrivilegedException e, AppLocalizations l10n) {
     case 'SHIZUKU_BINDER_DEAD':
       return l10n.errShizukuBinderDead;
     case 'SHELL_FAILED':
-      return e.exitCode != null
-          ? l10n.errShellFailedExit(e.exitCode!)
-          : l10n.errShellFailed;
+      return l10n.errShellFailed;
     case 'PROVISIONING_FAILED':
       return l10n.errProvisioningFailed;
     case 'DPM_NOT_OWNER':
@@ -45,11 +67,13 @@ String friendlyError(PrivilegedException e, AppLocalizations l10n) {
     case 'TIMEOUT':
       return l10n.errTimeout;
     case 'INVALID_ARGUMENT':
-      return l10n.errInvalidArgument(e.message);
+      return l10n.errInvalidArgument;
     case 'NOT_IMPLEMENTED':
       return l10n.errNotImplemented;
+    case 'SEALED':
+      return l10n.errSealed;
     default:
-      return e.message;
+      return l10n.errGeneric;
   }
 }
 
@@ -118,30 +142,9 @@ class ErrorView extends StatelessWidget {
             Text(
               priv != null
                   ? friendlyError(priv, context.l10n)
-                  : error.toString(),
+                  : context.l10n.errGeneric,
               textAlign: TextAlign.center,
             ),
-            if (priv != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                priv.exitCode != null
-                    ? context.l10n.errorCodeExitLine(priv.code, priv.exitCode!)
-                    : context.l10n.errorCodeLine(priv.code),
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-              if (priv.stderr != null && priv.stderr!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    priv.stderr!,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-            ],
             if (onRetry != null) ...[
               const SizedBox(height: 16),
               FilledButton.tonal(
@@ -179,7 +182,7 @@ class HeroCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: heroSurface(brightness),
         // Deeply rounded, like the reference's floating red planes.
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(DominanterRadius.large),
         border: Border.all(
           color: dark
               ? DominanterColors.red.withValues(alpha: 0.28)
@@ -194,7 +197,7 @@ class HeroCard extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(DominanterRadius.large),
         child: Padding(padding: padding, child: child),
       ),
     );
@@ -365,23 +368,105 @@ class UnavailableTile extends StatelessWidget {
   );
 }
 
-Future<void> showErrorSnackBar(BuildContext context, Object error) async {
+/// Presents an error as a CENTERED modal Card over a dimmed scrim
+/// (v1.0.6 Phase E addendum — user order, replacing the bottom
+/// snackbar): plain-language message only, an explicit OK button,
+/// and no auto-dismiss — an error never vanishes before it is read.
+/// High-contrast pairing in both themes: a white card with near-black
+/// text in light mode, a near-black card with white text in dark
+/// mode, and the palette red reserved for the title/icon accent.
+/// The plain-language description of the seal that refused a removal
+/// (Phase D): trigger + app + remaining time, worded identically on
+/// every surface that renders a SEALED refusal.
+String describeSealFromDetails(
+  AppLocalizations l10n,
+  Map<String, dynamic> seal,
+) {
+  final trigger = SealTrigger.fromNative(seal['trigger'] as String? ?? '');
+  final triggerText = switch (trigger) {
+    SealTrigger.appBlocked => l10n.sealTriggerAppBlocked,
+    SealTrigger.appSuspended => l10n.sealTriggerAppSuspended,
+    SealTrigger.focusRunning => l10n.sealTriggerFocusRunning,
+    SealTrigger.visualDetection => l10n.sealTriggerVisual,
+    SealTrigger.bannedWord => l10n.sealTriggerWord,
+    null => l10n.errSealed,
+  };
+  final app = seal['packageName'] as String?;
+  final rule = app == null ? triggerText : '$triggerText — $app';
+  final remainingMs = (seal['remainingMs'] as num?)?.toInt();
+  if (remainingMs == null) {
+    return l10n.sealActiveCondition(rule);
+  }
+  return l10n.sealActiveTimed(
+    rule,
+    formatDuration(Duration(milliseconds: remainingMs), l10n),
+  );
+}
+
+Future<void> showErrorCard(BuildContext context, Object error) async {
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        error is PrivilegedException
-            ? friendlyError(error, context.l10n)
-            : error.toString(),
+  logTechnicalError(error);
+  final l10n = context.l10n;
+  final seal = error is PrivilegedException && error.isSealed
+      ? error.sealDetails
+      : null;
+  final message = seal != null
+      ? describeSealFromDetails(l10n, seal)
+      : error is PrivilegedException
+      ? friendlyError(error, l10n)
+      : l10n.errGeneric;
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: dark ? const Color(0xFF17171A) : Colors.white,
+      icon: const Icon(
+        Icons.error_outline,
+        color: Color(0xFFD90429),
+        size: 40,
       ),
-      backgroundColor: Theme.of(context).colorScheme.errorContainer,
-      duration: const Duration(seconds: 5),
+      title: Text(
+        seal != null ? l10n.sealActiveTitle : l10n.errorCardTitle,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: dark ? Colors.white : const Color(0xFF0B0B0C),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      content: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: dark ? Colors.white : const Color(0xFF0B0B0C),
+          fontSize: 16,
+          height: 1.45,
+        ),
+      ),
+      actionsAlignment: MainAxisAlignment.center,
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: Text(l10n.okButton),
+        ),
+      ],
     ),
   );
 }
 
 void showInfoSnackBar(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  // Same mounted guard as showErrorCard (v1.0.5 audit C-L3):
+  // callers invoke this after awaits, when the context may be gone.
+  // Short confirmations stay lightweight, but at the same contrast
+  // bar (Phase E addendum): near-black background, white text, in
+  // both themes.
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message, style: const TextStyle(color: Colors.white)),
+      backgroundColor: const Color(0xFF101013),
+    ),
+  );
 }
 
 String formatMinutes(int minutes, AppLocalizations l10n) {

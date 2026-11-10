@@ -266,7 +266,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
           _saving = false;
           _saveError = e is PrivilegedException
               ? friendlyError(e, l10n)
-              : e.toString();
+              : l10n.errGeneric;
         });
       }
     }
@@ -445,7 +445,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.check_circle,
+                Icons.check_circle_outlined,
                 size: 18,
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -495,6 +495,8 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
         const SizedBox(height: 24),
         _InfoCard(
           children: [
+            // Title row, matching the Intro step's card (v1.0.5 audit C-C3).
+            _InfoCardTitle(l10n.storeCardTitle),
             _TipRow(icon: Icons.phonelink_erase_outlined, text: l10n.tipAway),
             _TipRow(icon: Icons.search_outlined, text: l10n.tipEasyFind),
             _TipRow(
@@ -547,7 +549,7 @@ class _StepIndicator extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: i < current
-                ? Icon(Icons.check, size: 18, color: scheme.onPrimary)
+                ? Icon(Icons.check_outlined, size: 18, color: scheme.onPrimary)
                 : Text(
                     '${i + 1}',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -811,7 +813,7 @@ class _RecoveryGateDialogState extends State<_RecoveryGateDialog> {
           _verifying = false;
           _verifyError = e is PrivilegedException
               ? friendlyError(e, l10n)
-              : e.toString();
+              : l10n.errGeneric;
         });
       }
     }
@@ -895,7 +897,7 @@ Future<bool> runLoosening(
     return true;
   } catch (e) {
     if (!context.mounted) return false;
-    await showErrorSnackBar(context, e);
+    await showErrorCard(context, e);
     return false;
   }
 }
@@ -910,7 +912,7 @@ Future<void> runTighteningWithUndo(
     await change.run();
   } catch (e) {
     if (!context.mounted) return;
-    await showErrorSnackBar(context, e);
+    await showErrorCard(context, e);
     return;
   }
   if (!context.mounted) return;
@@ -929,45 +931,4 @@ Future<void> runTighteningWithUndo(
       ),
     ),
   );
-}
-
-/// Session countdown chip for the app bar (mirrors the original's top-bar
-/// session countdown with renew / end actions).
-class SessionChip extends StatelessWidget {
-  const SessionChip({super.key, required this.controller});
-  final AppController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller.session,
-      builder: (context, _) {
-        if (!controller.session.isActive) return const SizedBox.shrink();
-        final l10n = context.l10n;
-        return Padding(
-          padding: const EdgeInsetsDirectional.only(end: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Chip(
-                avatar: const Icon(Icons.lock_open, size: 18),
-                label: Text(
-                  '${l10n.sessionRemaining}: '
-                  '${formatDuration(controller.session.remaining, l10n)}',
-                ),
-              ),
-              TextButton(
-                onPressed: controller.session.renew,
-                child: Text(l10n.renewSession),
-              ),
-              TextButton(
-                onPressed: controller.session.end,
-                child: Text(l10n.endSession),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 }

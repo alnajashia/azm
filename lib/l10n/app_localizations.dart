@@ -152,18 +152,6 @@ abstract class AppLocalizations {
   /// **'Undo'**
   String get undo;
 
-  /// No description provided for @errorCodeLine.
-  ///
-  /// In en, this message translates to:
-  /// **'Error code: {code}'**
-  String errorCodeLine(String code);
-
-  /// No description provided for @errorCodeExitLine.
-  ///
-  /// In en, this message translates to:
-  /// **'Error code: {code} · exit {exitCode}'**
-  String errorCodeExitLine(String code, int exitCode);
-
   /// No description provided for @errUnavailable.
   ///
   /// In en, this message translates to:
@@ -205,12 +193,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A system command failed.'**
   String get errShellFailed;
-
-  /// No description provided for @errShellFailedExit.
-  ///
-  /// In en, this message translates to:
-  /// **'A system command failed (exit code {exitCode}).'**
-  String errShellFailedExit(int exitCode);
 
   /// No description provided for @errProvisioningFailed.
   ///
@@ -257,8 +239,8 @@ abstract class AppLocalizations {
   /// No description provided for @errInvalidArgument.
   ///
   /// In en, this message translates to:
-  /// **'Invalid input: {message}'**
-  String errInvalidArgument(String message);
+  /// **'Some of the information entered is not valid. Please check it and try again.'**
+  String get errInvalidArgument;
 
   /// No description provided for @errNotImplemented.
   ///
@@ -629,8 +611,8 @@ abstract class AppLocalizations {
   /// No description provided for @authCouldNotStart.
   ///
   /// In en, this message translates to:
-  /// **'Authentication could not start: {error}'**
-  String authCouldNotStart(String error);
+  /// **'Authentication could not start. Please try again.'**
+  String get authCouldNotStart;
 
   /// No description provided for @passwordPromptTitle.
   ///
@@ -985,12 +967,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Azm — first run'**
   String get firstRunTitle;
-
-  /// No description provided for @gateChallengesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Access challenges'**
-  String get gateChallengesTitle;
 
   /// No description provided for @gateCodeTitle.
   ///
@@ -1760,16 +1736,10 @@ abstract class AppLocalizations {
   /// **'Immediate, inside a recovery session — every restriction this app enforces stops at once.'**
   String get removeOwnerNowSub;
 
-  /// No description provided for @forcedRemoval48.
-  ///
-  /// In en, this message translates to:
-  /// **'Force removal in 48 hours'**
-  String get forcedRemoval48;
-
   /// No description provided for @forcedIdleSub.
   ///
   /// In en, this message translates to:
-  /// **'The only code-free escape: after 48 hours, Device Owner can be removed without the recovery code.'**
+  /// **'The only code-free escape: after 24 hours, Device Owner can be removed without the recovery code.'**
   String get forcedIdleSub;
 
   /// No description provided for @forcedCompleteSub.
@@ -1811,7 +1781,7 @@ abstract class AppLocalizations {
   /// No description provided for @startForcedBody.
   ///
   /// In en, this message translates to:
-  /// **'This starts a 48-hour countdown. When it finishes, Device Owner — and with it every restriction this app enforces — can be removed without the recovery code. It is the only code-free escape, and it can be cancelled at any time before it completes.'**
+  /// **'This starts a 24-hour countdown. When it finishes, Device Owner — and with it every restriction this app enforces — can be removed without the recovery code. It is the only code-free escape, and it can be cancelled at any time before it completes.'**
   String get startForcedBody;
 
   /// No description provided for @cancelForcedTitle.
@@ -1823,7 +1793,7 @@ abstract class AppLocalizations {
   /// No description provided for @cancelForcedBody.
   ///
   /// In en, this message translates to:
-  /// **'The 48-hour countdown will be discarded. Device Owner removal will again require the recovery code.'**
+  /// **'The 24-hour countdown will be discarded. Device Owner removal will again require the recovery code.'**
   String get cancelForcedBody;
 
   /// No description provided for @finishForcedTitle.
@@ -1835,7 +1805,7 @@ abstract class AppLocalizations {
   /// No description provided for @finishForcedBody.
   ///
   /// In en, this message translates to:
-  /// **'The 48-hour wait is complete. Removing Device Owner now lifts every restriction this app enforces on this device.'**
+  /// **'The 24-hour wait is complete. Removing Device Owner now lifts every restriction this app enforces on this device.'**
   String get finishForcedBody;
 
   /// No description provided for @understandRemovesAll.
@@ -1921,6 +1891,846 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear per-app restrictions'**
   String get removalStepAppRestrictions;
+
+  /// No description provided for @info_disallow_biometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks biometric unlock (fingerprint/face) at the system level (Samsung key). This also affects signing into Azm itself if you rely on fingerprint entry — use with care.'**
+  String get info_disallow_biometric;
+
+  /// No description provided for @info_disallow_camera_toggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks the camera privacy toggle (quick-settings sensor switch). Keeps the camera state from being changed from the sensor panel.'**
+  String get info_disallow_camera_toggle;
+
+  /// No description provided for @info_disallow_config_default_apps.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing the default apps (browser, dialer, SMS, assistant). Keeps your chosen safe defaults in place — for example, a filtered default browser stays the default.'**
+  String get info_disallow_config_default_apps;
+
+  /// No description provided for @info_disallow_config_private_dns.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing the Private DNS setting. Important if your filtering relies on a specific DNS resolver — changing it would silently disable the filter. Side effect: the DNS provider is frozen while it is on.'**
+  String get info_disallow_config_private_dns;
+
+  /// No description provided for @info_disallow_microphone_toggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks the microphone privacy toggle (Samsung/quick-settings sensor switch). Keeps the microphone state from being changed from the sensor panel.'**
+  String get info_disallow_microphone_toggle;
+
+  /// No description provided for @info_ensure_verify_apps.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires app verification (Play Protect-style scanning of installs) to stay on. Keeps a safety net against harmful apps; turning protections off is a common first step in bypass guides.'**
+  String get info_ensure_verify_apps;
+
+  /// No description provided for @info_no_add_clone_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks creating a clone profile or cloned apps (Samsung). Cloned apps are a second, separate copy that limits may not cover.'**
+  String get info_no_add_clone_profile;
+
+  /// No description provided for @info_no_add_managed_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks creating a work/managed profile. A separate profile can hold its own unfiltered apps.'**
+  String get info_no_add_managed_profile;
+
+  /// No description provided for @info_no_add_private_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks creating a private profile/space. A private space can hide apps from the main view and from casual checks.'**
+  String get info_no_add_private_profile;
+
+  /// No description provided for @info_no_add_user.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks creating new Android users on the device. A second user is a completely unfiltered space, so this closes a major bypass.'**
+  String get info_no_add_user;
+
+  /// No description provided for @info_no_add_wifi_config.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks adding new Wi-Fi network configurations while leaving existing ones usable. A softer version of locking Wi-Fi completely.'**
+  String get info_no_add_wifi_config;
+
+  /// No description provided for @info_no_adjust_volume.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing the volume. Sometimes used to keep warning sounds audible. Side effect: volume keys stop working for media and calls.'**
+  String get info_no_adjust_volume;
+
+  /// No description provided for @info_no_airplane_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks turning on airplane mode. Prevents cutting connectivity to escape network filtering — though Wi-Fi can usually be rejoined. Side effect: no airplane mode for flights while it is on.'**
+  String get info_no_airplane_mode;
+
+  /// No description provided for @info_no_ambient_display.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks the ambient display (always-on glance screen). Minor display behaviour control.'**
+  String get info_no_ambient_display;
+
+  /// No description provided for @info_no_assist_content.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks sharing screen content with the assistant. Privacy-oriented; the assistant loses screen context.'**
+  String get info_no_assist_content;
+
+  /// No description provided for @info_no_autofill.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks the autofill framework (password/form autofill). Security-oriented; side effect: no saved-password autofill anywhere.'**
+  String get info_no_autofill;
+
+  /// No description provided for @info_no_bluetooth.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks using Bluetooth at all. Side effect: headphones, watches, and car connections stop working.'**
+  String get info_no_bluetooth;
+
+  /// No description provided for @info_no_bluetooth_sharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks sharing files over Bluetooth while leaving Bluetooth audio working. A narrower, gentler option than blocking Bluetooth entirely.'**
+  String get info_no_bluetooth_sharing;
+
+  /// No description provided for @info_no_camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks the camera entirely (Samsung key). Side effect: no app can take photos or video, including Azm-free uses like scanning documents.'**
+  String get info_no_camera;
+
+  /// No description provided for @info_no_change_wifi_state.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks turning Wi-Fi on or off. Useful when the connection state itself is part of the routine. Side effect: no quick Wi-Fi toggling from quick settings.'**
+  String get info_no_change_wifi_state;
+
+  /// No description provided for @info_no_config_bluetooth.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing Bluetooth settings (pairing new devices). Side effect: new accessories cannot be paired while it is on.'**
+  String get info_no_config_bluetooth;
+
+  /// No description provided for @info_no_config_brightness.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing screen brightness settings. Minor; mainly keeps display settings stable.'**
+  String get info_no_config_brightness;
+
+  /// No description provided for @info_no_config_cell_broadcasts.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing cell broadcast (emergency alert) settings. Leave this off unless you have a specific reason — emergency alerts matter.'**
+  String get info_no_config_cell_broadcasts;
+
+  /// No description provided for @info_no_config_credentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing stored credentials and installing certificates. Important because a user-installed certificate can enable traffic interception and filter bypass. Side effect: work/school certificate setups are frozen.'**
+  String get info_no_config_credentials;
+
+  /// No description provided for @info_no_config_date_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing the date and time. Protects time-based limits and schedules from being cheated by moving the clock. Side effect: manual time correction is off; automatic time still works.'**
+  String get info_no_config_date_time;
+
+  /// No description provided for @info_no_config_locale.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing the system language/region settings. Keeps the device configuration stable.'**
+  String get info_no_config_locale;
+
+  /// No description provided for @info_no_config_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing location settings. Keeps location-based behaviour stable; it does not itself block content.'**
+  String get info_no_config_location;
+
+  /// No description provided for @info_no_config_mobile_networks.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing mobile network settings (APN, network mode, operator). Useful because APN tricks can route around DNS filtering. Side effect: roaming and carrier settings are frozen too.'**
+  String get info_no_config_mobile_networks;
+
+  /// No description provided for @info_no_config_screen_timeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing the screen timeout. Keeps the display-off behaviour you chose; a minor routine protection.'**
+  String get info_no_config_screen_timeout;
+
+  /// No description provided for @info_no_config_tethering.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing any tethering settings (Wi-Fi, USB, Bluetooth hotspot). Keeps the phone from becoming a side door around network filtering.'**
+  String get info_no_config_tethering;
+
+  /// No description provided for @info_no_config_vpn.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing VPN settings. Important: a VPN can bypass DNS-based filtering entirely, so locking VPN settings protects the whole setup. Side effect: you cannot add or switch VPNs while it is on.'**
+  String get info_no_config_vpn;
+
+  /// No description provided for @info_no_config_wifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing Wi-Fi settings: joining new networks or forgetting saved ones. Useful against hopping to an unfiltered network. Side effect: you cannot join a new Wi-Fi network while it is on.'**
+  String get info_no_config_wifi;
+
+  /// No description provided for @info_no_config_wifi_private.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing the private (randomized) MAC address setting for Wi-Fi (Samsung). Keeps network identity stable so network-level filters keep recognizing the device.'**
+  String get info_no_config_wifi_private;
+
+  /// No description provided for @info_no_config_wifi_shared.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing shared Wi-Fi configuration options (Samsung). Keeps network settings from being quietly altered.'**
+  String get info_no_config_wifi_shared;
+
+  /// No description provided for @info_no_content_capture.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks apps from capturing screen content for features like screenshot-based assistants. A privacy control; may break some smart-selection features.'**
+  String get info_no_content_capture;
+
+  /// No description provided for @info_no_content_suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks content suggestions (smart replies/suggestions drawn from screen content). Privacy-oriented; minor.'**
+  String get info_no_content_suggestions;
+
+  /// No description provided for @info_no_control_apps.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks opening app-info screens where apps can be force-stopped, cleared, or have their permissions changed. Stops a common bypass route. Side effect: you also cannot manage app storage or permissions there while it is on.'**
+  String get info_no_control_apps;
+
+  /// No description provided for @info_no_create_windows.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks apps from drawing overlay windows on top of other apps. Increases security against tap-jacking, but breaks legitimate overlays like chat bubbles and some accessibility tools.'**
+  String get info_no_create_windows;
+
+  /// No description provided for @info_no_cross_profile_copy_paste.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks copy/paste between profiles. Stops text and links moving from the controlled profile into another one.'**
+  String get info_no_cross_profile_copy_paste;
+
+  /// No description provided for @info_no_data_roaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks data roaming. Mostly a cost control; it does not filter content.'**
+  String get info_no_data_roaming;
+
+  /// No description provided for @info_no_debugging_features.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks debugging features such as ADB. Prevents changing the device from a computer to bypass protection. Side effect: developers cannot debug this device while it is on.'**
+  String get info_no_debugging_features;
+
+  /// No description provided for @info_no_factory_reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks factory reset from settings. Protects the whole setup from being wiped in a weak moment. This is a strong setting: recovery through Azm\'s own removal flow remains possible, but the settings route is closed.'**
+  String get info_no_factory_reset;
+
+  /// No description provided for @info_no_fun.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks Android\'s fun/easter-egg features. Harmless and mostly cosmetic.'**
+  String get info_no_fun;
+
+  /// No description provided for @info_no_grant_admin.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks granting device-admin rights to other apps. Prevents another admin app from interfering with Azm\'s position.'**
+  String get info_no_grant_admin;
+
+  /// No description provided for @info_no_install_apps.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks installing new apps entirely. Useful when you want the phone\'s current app set frozen. Side effect: even trusted apps cannot be added until this is off.'**
+  String get info_no_install_apps;
+
+  /// No description provided for @info_no_install_unknown_sources.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks installing apps from outside the Play Store (APK files, browsers, file managers). One of the strongest protections against sideloaded distractions and malware. Side effect: legitimate APK installs are also blocked.'**
+  String get info_no_install_unknown_sources;
+
+  /// No description provided for @info_no_install_unknown_sources_globally.
+  ///
+  /// In en, this message translates to:
+  /// **'The global version of the unknown-sources block: it applies everywhere on the device, for every user and profile. Stronger than the per-source setting, and it also blocks legitimate APK installs device-wide.'**
+  String get info_no_install_unknown_sources_globally;
+
+  /// No description provided for @info_no_modify_accounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks adding or removing accounts on the device. A new account can be a fresh start that escapes app-level habits. Side effect: you cannot sign into new services at the system level while it is on.'**
+  String get info_no_modify_accounts;
+
+  /// No description provided for @info_no_network_reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks resetting network settings. A network reset can wipe saved Wi-Fi and DNS-related state in one tap.'**
+  String get info_no_network_reset;
+
+  /// No description provided for @info_no_non_market_app_by_knox.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks apps from outside the official stores at the Samsung Knox level. Knox\'s own sideloading block; may overlap with the unknown-sources restrictions.'**
+  String get info_no_non_market_app_by_knox;
+
+  /// No description provided for @info_no_outgoing_beam.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks Android Beam (NFC tap-to-share). A small side channel for passing links and files between phones.'**
+  String get info_no_outgoing_beam;
+
+  /// No description provided for @info_no_outgoing_calls.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks making outgoing calls. A heavy restriction for communication control; emergency calls are never blocked by Android.'**
+  String get info_no_outgoing_calls;
+
+  /// No description provided for @info_no_physical_media.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks mounting external storage (SD cards, USB drives). Closes a route for bringing in unfiltered content. Side effect: memory cards cannot be used while it is on.'**
+  String get info_no_physical_media;
+
+  /// No description provided for @info_no_printing.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks printing from the device. Minor; closes a route for exporting content to paper or PDF printers.'**
+  String get info_no_printing;
+
+  /// No description provided for @info_no_remove_managed_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks removing the managed (work) profile. Keeps an existing managed space intact.'**
+  String get info_no_remove_managed_profile;
+
+  /// No description provided for @info_no_remove_user.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks removing existing Android users. Keeps the device\'s user structure unchanged.'**
+  String get info_no_remove_user;
+
+  /// No description provided for @info_no_safe_boot.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks booting into Safe Mode. Important: Safe Mode disables accessibility services and third-party enforcement, so it is a classic bypass. Side effect: Safe Mode troubleshooting is unavailable while it is on.'**
+  String get info_no_safe_boot;
+
+  /// No description provided for @info_no_set_user_icon.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing the user profile picture. Cosmetic only.'**
+  String get info_no_set_user_icon;
+
+  /// No description provided for @info_no_set_wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks changing the wallpaper. Cosmetic stability; occasionally used to keep a motivational wallpaper in place.'**
+  String get info_no_set_wallpaper;
+
+  /// No description provided for @info_no_share_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks sharing the device\'s location with apps. A privacy protection rather than a content filter.'**
+  String get info_no_share_location;
+
+  /// No description provided for @info_no_sharing_into_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks sharing content from the main profile into another profile. Keeps content from being passed into a less-controlled space.'**
+  String get info_no_sharing_into_profile;
+
+  /// No description provided for @info_no_sim_globally.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks using the SIM entirely (calls and mobile data). A very heavy restriction — the phone loses mobile service while it is on.'**
+  String get info_no_sim_globally;
+
+  /// No description provided for @info_no_sms.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks sending SMS messages. Communication control; messaging apps are unaffected.'**
+  String get info_no_sms;
+
+  /// No description provided for @info_no_system_error_dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks system error dialogs (app-crash popups). Cosmetic/enterprise behaviour; crashes still happen, just silently.'**
+  String get info_no_system_error_dialogs;
+
+  /// No description provided for @info_no_thread_network.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks creating/joining Thread border-router networks (smart-home). Niche; irrelevant for most phones.'**
+  String get info_no_thread_network;
+
+  /// No description provided for @info_no_ultra_wideband_radio.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks the ultra-wideband (UWB) radio used by precision trackers. Niche hardware control.'**
+  String get info_no_ultra_wideband_radio;
+
+  /// No description provided for @info_no_unified_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks requiring one unified password across work and personal profiles. Enterprise-oriented; irrelevant on a single-profile phone.'**
+  String get info_no_unified_password;
+
+  /// No description provided for @info_no_uninstall_apps.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks uninstalling apps. Useful to stop a blocked app from simply being deleted to escape its limits — and to protect Azm\'s companion setup. Side effect: you cannot remove any app while this is on.'**
+  String get info_no_uninstall_apps;
+
+  /// No description provided for @info_no_unmute_microphone.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks unmuting the microphone during calls. A managed-device privacy control; rarely relevant for personal use.'**
+  String get info_no_unmute_microphone;
+
+  /// No description provided for @info_no_usb_file_transfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks transferring files over USB. Prevents moving content on or off the phone by cable. Side effect: USB photo/file import stops too; charging still works.'**
+  String get info_no_usb_file_transfer;
+
+  /// No description provided for @info_no_user_switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks switching between Android users. Companions the no-new-users rule: even existing extra users cannot be entered.'**
+  String get info_no_user_switch;
+
+  /// No description provided for @info_no_wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks wallpaper changes (Samsung key). Cosmetic stability, like the standard wallpaper restriction.'**
+  String get info_no_wallpaper;
+
+  /// No description provided for @info_no_wifi_direct.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks Wi-Fi Direct connections (device-to-device sharing without a router). Closes a side channel for sharing files and content. Side effect: some printers and sharing features stop working.'**
+  String get info_no_wifi_direct;
+
+  /// No description provided for @info_no_wifi_tethering.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks Wi-Fi hotspot tethering settings. Prevents sharing the phone\'s connection to bypass filters on other devices.'**
+  String get info_no_wifi_tethering;
+
+  /// No description provided for @restrictionInfoGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting restricts part of the system. Turning it on tightens the device; turning it off loosens it. If you are not sure, leave it off and ask later.'**
+  String get restrictionInfoGeneric;
+
+  /// No description provided for @errGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again. If it keeps happening, restart the app.'**
+  String get errGeneric;
+
+  /// No description provided for @errSealed.
+  ///
+  /// In en, this message translates to:
+  /// **'Removal is currently sealed by one of your seal rules.'**
+  String get errSealed;
+
+  /// No description provided for @errorCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get errorCardTitle;
+
+  /// No description provided for @okButton.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get okButton;
+
+  /// No description provided for @entryGraceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App lock timing'**
+  String get entryGraceTitle;
+
+  /// No description provided for @entryGraceSub.
+  ///
+  /// In en, this message translates to:
+  /// **'How long Azm stays open after you enter, before it asks for your fingerprint or password again'**
+  String get entryGraceSub;
+
+  /// No description provided for @entryGraceImmediately.
+  ///
+  /// In en, this message translates to:
+  /// **'Immediately'**
+  String get entryGraceImmediately;
+
+  /// No description provided for @entryGraceOneMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'After 1 minute'**
+  String get entryGraceOneMinute;
+
+  /// No description provided for @entryGraceFifteenMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'After 15 minutes'**
+  String get entryGraceFifteenMinutes;
+
+  /// No description provided for @entryGraceOneHour.
+  ///
+  /// In en, this message translates to:
+  /// **'After 1 hour'**
+  String get entryGraceOneHour;
+
+  /// No description provided for @visualBlockingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Content inspection'**
+  String get visualBlockingTitle;
+
+  /// No description provided for @visualBlockingSub.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device checking of images inside chosen apps'**
+  String get visualBlockingSub;
+
+  /// No description provided for @visualExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Azm checks images on screen inside the apps you choose, using a model that runs entirely on this device. Nothing is uploaded. When inappropriate content is detected, the app is closed; repeated detections can suspend it. Text checking is separate: it is the blocked-words feature, which also works per app.'**
+  String get visualExplanation;
+
+  /// No description provided for @visualEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect images in chosen apps'**
+  String get visualEnable;
+
+  /// No description provided for @visualRequiresAccessibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires the accessibility service to be on.'**
+  String get visualRequiresAccessibility;
+
+  /// No description provided for @visualAppsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps to inspect'**
+  String get visualAppsSection;
+
+  /// No description provided for @visualAppsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} app(s) chosen'**
+  String visualAppsSelected(int count);
+
+  /// No description provided for @visualSelectApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose apps'**
+  String get visualSelectApps;
+
+  /// No description provided for @visualCategoriesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Block when detected'**
+  String get visualCategoriesSection;
+
+  /// No description provided for @visualCategoriesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The kinds of content that close the app when the model finds them on screen.'**
+  String get visualCategoriesDesc;
+
+  /// No description provided for @visualCategoryDrawings.
+  ///
+  /// In en, this message translates to:
+  /// **'Drawings'**
+  String get visualCategoryDrawings;
+
+  /// No description provided for @visualCategoryHentai.
+  ///
+  /// In en, this message translates to:
+  /// **'Hentai'**
+  String get visualCategoryHentai;
+
+  /// No description provided for @visualCategoryPorn.
+  ///
+  /// In en, this message translates to:
+  /// **'Pornography'**
+  String get visualCategoryPorn;
+
+  /// No description provided for @visualCategorySexy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sexy / suggestive'**
+  String get visualCategorySexy;
+
+  /// No description provided for @visualThresholdSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensitivity'**
+  String get visualThresholdSection;
+
+  /// No description provided for @visualThresholdDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher means Azm blocks only when it is more certain. Lower blocks more, with more mistakes.'**
+  String get visualThresholdDesc;
+
+  /// No description provided for @visualSuspend.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspend app after repeated detections'**
+  String get visualSuspend;
+
+  /// No description provided for @visualSuspendDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'After several detections in a short time, the app is suspended for a while instead of just being closed.'**
+  String get visualSuspendDesc;
+
+  /// No description provided for @visualSuspendCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Detections before suspending'**
+  String get visualSuspendCount;
+
+  /// No description provided for @visualSuspendWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Within (minutes)'**
+  String get visualSuspendWindow;
+
+  /// No description provided for @visualSuspendDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspend for (minutes)'**
+  String get visualSuspendDuration;
+
+  /// No description provided for @visualSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Content inspection settings saved.'**
+  String get visualSaved;
+
+  /// No description provided for @sealRulesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seal rules'**
+  String get sealRulesTitle;
+
+  /// No description provided for @sealRulesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions under which Azm refuses to be removed'**
+  String get sealRulesSub;
+
+  /// No description provided for @sealIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'While any seal rule is active, Azm refuses to remove Device Owner — immediately or by filing the delayed forced removal. A seal cannot be cancelled while it is active; it ends only when its time runs out or its condition clears. The paper recovery code does NOT break an active seal. A forced removal filed BEFORE a seal engaged still completes at its 24-hour mark. Seals have force only while Azm is Device Owner: without Device Owner, Android lets any app be uninstalled and no rule can prevent it.'**
+  String get sealIntro;
+
+  /// No description provided for @sealNoRules.
+  ///
+  /// In en, this message translates to:
+  /// **'No seal rules yet.'**
+  String get sealNoRules;
+
+  /// No description provided for @sealAddRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a seal rule'**
+  String get sealAddRule;
+
+  /// No description provided for @sealEditRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit seal rule'**
+  String get sealEditRule;
+
+  /// No description provided for @sealDeleteRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete rule'**
+  String get sealDeleteRule;
+
+  /// No description provided for @sealTrigger.
+  ///
+  /// In en, this message translates to:
+  /// **'Seal while / when'**
+  String get sealTrigger;
+
+  /// No description provided for @sealTriggerAppBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'A chosen app is blocked by Azm'**
+  String get sealTriggerAppBlocked;
+
+  /// No description provided for @sealTriggerAppSuspended.
+  ///
+  /// In en, this message translates to:
+  /// **'A chosen app is suspended by Azm'**
+  String get sealTriggerAppSuspended;
+
+  /// No description provided for @sealTriggerFocusRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'A focus session is running'**
+  String get sealTriggerFocusRunning;
+
+  /// No description provided for @sealTriggerVisual.
+  ///
+  /// In en, this message translates to:
+  /// **'Inappropriate content is detected in a chosen app'**
+  String get sealTriggerVisual;
+
+  /// No description provided for @sealTriggerWord.
+  ///
+  /// In en, this message translates to:
+  /// **'A banned word is detected in a chosen app'**
+  String get sealTriggerWord;
+
+  /// No description provided for @sealApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get sealApp;
+
+  /// No description provided for @sealChooseApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an app'**
+  String get sealChooseApp;
+
+  /// No description provided for @sealDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Seal lasts'**
+  String get sealDuration;
+
+  /// No description provided for @sealDuration30m.
+  ///
+  /// In en, this message translates to:
+  /// **'30 minutes'**
+  String get sealDuration30m;
+
+  /// No description provided for @sealDuration1h.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour'**
+  String get sealDuration1h;
+
+  /// No description provided for @sealDuration6h.
+  ///
+  /// In en, this message translates to:
+  /// **'6 hours'**
+  String get sealDuration6h;
+
+  /// No description provided for @sealDuration24h.
+  ///
+  /// In en, this message translates to:
+  /// **'24 hours'**
+  String get sealDuration24h;
+
+  /// No description provided for @sealDuration7d.
+  ///
+  /// In en, this message translates to:
+  /// **'7 days'**
+  String get sealDuration7d;
+
+  /// No description provided for @sealRuleEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule enabled'**
+  String get sealRuleEnabled;
+
+  /// No description provided for @sealActiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seal active'**
+  String get sealActiveTitle;
+
+  /// No description provided for @sealActiveCondition.
+  ///
+  /// In en, this message translates to:
+  /// **'A seal rule is holding: {rule}. Removal is refused while it holds.'**
+  String sealActiveCondition(String rule);
+
+  /// No description provided for @sealActiveTimed.
+  ///
+  /// In en, this message translates to:
+  /// **'A seal rule is holding: {rule}. About {remaining} left.'**
+  String sealActiveTimed(String rule, String remaining);
+
+  /// No description provided for @sealStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Sealed: {rule}'**
+  String sealStatusActive(String rule);
+
+  /// No description provided for @sealNotEnforceable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enforceable: Azm is not Device Owner.'**
+  String get sealNotEnforceable;
+
+  /// No description provided for @removalStepPolicies.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset device policies'**
+  String get removalStepPolicies;
+
+  /// No description provided for @removalStepPrivateDns.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset private DNS'**
+  String get removalStepPrivateDns;
+
+  /// No description provided for @removalStepNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel notifications'**
+  String get removalStepNotifications;
+
+  /// No description provided for @removalStepVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-removal verification'**
+  String get removalStepVerify;
+
+  /// No description provided for @residueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leftover restrictions detected'**
+  String get residueTitle;
+
+  /// No description provided for @residueBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some restrictions set by Azm are still in force on this device. Azm no longer has the rights to remove them. To clean up, provision Azm as Device Owner again from the Status tab, then run Remove Device Owner once more.'**
+  String get residueBody;
 
   /// No description provided for @removalStepClearOwner.
   ///
@@ -3407,7 +4217,7 @@ abstract class AppLocalizations {
   /// No description provided for @forcedRemovalTitle.
   ///
   /// In en, this message translates to:
-  /// **'48-hour forced removal'**
+  /// **'24-hour forced removal'**
   String get forcedRemovalTitle;
 
   /// No description provided for @forcedInProgressSub.
@@ -3497,7 +4307,7 @@ abstract class AppLocalizations {
   /// No description provided for @impulseNoEarlyStop.
   ///
   /// In en, this message translates to:
-  /// **'Like the original, the lock has no early stop: it ends on its own when the timer runs out, and the apps it suspended are released then.'**
+  /// **'The lock ends when its timer runs out — or early, if you complete the challenges you selected for Impulse Lock. The apps it suspended are released when it ends.'**
   String get impulseNoEarlyStop;
 
   /// No description provided for @startImpulseLock.
@@ -3769,6 +4579,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Preferences'**
   String get preferencesSection;
+
+  /// No description provided for @passwordVerifyError.
+  ///
+  /// In en, this message translates to:
+  /// **'The password could not be verified. Nothing was changed — try again.'**
+  String get passwordVerifyError;
+
+  /// No description provided for @passwordRecordCorrupt.
+  ///
+  /// In en, this message translates to:
+  /// **'The stored app password is damaged and cannot be used. Set a new password to replace it.'**
+  String get passwordRecordCorrupt;
+
+  /// No description provided for @impulseUnlockEarly.
+  ///
+  /// In en, this message translates to:
+  /// **'End early with challenges'**
+  String get impulseUnlockEarly;
+
+  /// No description provided for @impulseUnlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'End impulse lock early'**
+  String get impulseUnlockTitle;
+
+  /// No description provided for @impulseUnlockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the challenges you selected for Impulse Lock to end this lock now and release the apps it suspended.'**
+  String get impulseUnlockBody;
+
+  /// No description provided for @impulseLockEndedEarly.
+  ///
+  /// In en, this message translates to:
+  /// **'Impulse lock ended — the apps it suspended were released.'**
+  String get impulseLockEndedEarly;
+
+  /// No description provided for @appsBrowseSection.
+  ///
+  /// In en, this message translates to:
+  /// **'App list options'**
+  String get appsBrowseSection;
+
+  /// No description provided for @appProtectionSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Protection'**
+  String get appProtectionSection;
+
+  /// No description provided for @appLimitsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits & windows'**
+  String get appLimitsSection;
+
+  /// No description provided for @setupServicesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Services & permissions'**
+  String get setupServicesSection;
+
+  /// No description provided for @storeCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it safe'**
+  String get storeCardTitle;
 }
 
 class _AppLocalizationsDelegate

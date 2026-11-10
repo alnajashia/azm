@@ -35,9 +35,14 @@
         </intent>
     </queries>
 
+    <!-- allowBackup=false (v1.0.5 audit A-L9): this app's state is
+         device-bound by design (Device Owner does not transfer), and an
+         adb/cloud backup must not carry its settings or verification
+         records off the device. -->
     <application
         android:label="@string/app_name"
         android:name=".DominanterApplication"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -63,6 +68,7 @@
              excludeFromRecents / noHistory, as in the original. -->
         <activity
             android:name=".accessibility.BlockActivity"
+            android:exported="false"
             android:showOnLockScreen="true"
             android:theme="@style/BlockTheme"
             android:excludeFromRecents="true"
@@ -71,6 +77,7 @@
             android:taskAffinity="" />
         <activity
             android:name=".accessibility.AccessibilityRequestActivity"
+            android:exported="false"
             android:theme="@style/BlockTheme"
             android:excludeFromRecents="true"
             android:noHistory="true"

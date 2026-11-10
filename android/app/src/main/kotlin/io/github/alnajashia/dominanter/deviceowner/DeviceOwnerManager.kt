@@ -1,5 +1,7 @@
 package io.github.alnajashia.dominanter.deviceowner
 
+import android.Manifest
+import android.app.NotificationManager
 import android.app.admin.DevicePolicyManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
@@ -10,6 +12,7 @@ import android.content.RestrictionsManager
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.UserManager
 import io.github.alnajashia.dominanter.channel.ErrorCodes
@@ -19,6 +22,7 @@ import io.github.alnajashia.dominanter.data.SuspensionReason
 import io.github.alnajashia.dominanter.focus.FocusService
 import io.github.alnajashia.dominanter.focus.FocusSessionStore
 import io.github.alnajashia.dominanter.focus.FocusStatusNotifier
+import io.github.alnajashia.dominanter.notifications.UsageWarningNotifier
 import io.github.alnajashia.dominanter.shizuku.ShizukuGateway
 
 /**
@@ -55,6 +59,25 @@ object DeviceOwnerManager {
         if (!isDeviceOwner(context)) {
             throw PrivException(ErrorCodes.DPM_NOT_OWNER, "App is not Device Owner")
         }
+    }
+
+    /**
+     * Residue detection (v1.0.5 field-failure follow-up): the app's own
+     * restriction keys that are STILL in force for the calling user,
+     * read from [UserManager] — a read that needs no admin rights and
+     * therefore works after ownership was surrendered. Used by the
+     * Config tab to warn honestly that leftover restrictions can only
+     * be cleared by an administrator: cleanup requires re-provisioning
+     * as Device Owner first. Keys set by the system or another admin
+     * that our code never applies are not in [SystemRestrictions]'s
+     * list and are never reported here.
+     */
+    fun getUserRestrictionResidue(context: Context): List<String> {
+        val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
+        val bundle = runCatching { userManager.userRestrictions }.getOrNull()
+            ?: return emptyList()
+        return allRestrictionKeys()
+            .filter { key -> bundle.getBoolean(key, false) }
     }
 
     /** One teardown step's outcome (v1.0.5 fix #6). */
@@ -94,25 +117,62 @@ object DeviceOwnerManager {
      *  2. `focus` — stop the focus service, end any focus session
      *     (releases its suspensions/restrictions and cancels its
      *     alarm), cancel the focus notification.
-     *  3. `unsuspend` — release every package that is actually
+     *  3. `policies` — zero the dedicated DPM device policies (screen
+     *     capture, camera, status bar, keyguard features) and the
+     *     notification-permission grant state, each verified by its
+     *     getter (v1.0.5 field-failure fix: these surfaces are NOT in
+     *     the user-restriction bundle, so the shipped teardown — which
+     *     only cleared bundle state — never touched them).
+     *  4. `privateDns` — if a specified-host global private DNS was
+     *     set by this app, reset it to the platform default
+     *     (opportunistic) and verify.
+     *  5. `unsuspend` — release every package that is actually
      *     suspended (authoritative per-package probes, chunked).
-     *  4. `restrictions` — clear every user restriction currently set.
-     *  5. `unhide` — unhide every hidden package; drop the local
+     *  6. `restrictions` — clear every user restriction in the app's
+     *     complete key list (NOT only the keys the live bundle happens
+     *     to read back as true — the shipped read-back-only step is
+     *     the field failure's second root cause), then verify the
+     *     admin bundle holds no true key at all. The set that was in
+     *     force is remembered for the post-removal residue check.
+     *  7. `unhide` — unhide every hidden package; drop the local
      *     hidden records so nothing re-hides them later.
-     *  6. `uninstallBlocks` — lift every uninstall block.
-     *  7. `appRestrictions` — clear the per-app restriction bundles
+     *  8. `uninstallBlocks` — lift every uninstall block.
+     *  9. `appRestrictions` — clear the per-app restriction bundles
      *     this app applied (the browser URL blocklists).
-     *  8. `clearOwner` — only now `clearDeviceOwnerApp`, verified by
+     *  10. `notifications` — cancel ALL of this app's notifications
+     *     (focus, usage warnings, any channel) and reset the
+     *     usage-warning notifier's shown/dismissed state. The shipped
+     *     teardown never did this: a 5-minute usage-warning
+     *     notification survived a "complete" removal in the shade.
+     *  11. `clearOwner` — only now `clearDeviceOwnerApp`, verified by
      *     re-reading the owner state.
-     *  9. `flagClear` — clear the removal flag LAST, whatever happened
-     *     above: a failed removal must re-arm protection, and every
-     *     step is idempotent, so a retry is safe.
+     *  12. `verify` — POST-removal verification with reads that work
+     *     without admin rights: owner still gone, none of the
+     *     restriction keys that were in force at teardown start still
+     *     true in the CALLING USER's effective restriction bundle
+     *     (UserManager, no admin needed), and no app notification
+     *     still posted. Any residue fails this step, so the result
+     *     dialog can never print a clean success while a surface
+     *     persists. (Once ownership is surrendered the app can no
+     *     longer clear residue itself — the dialog says so, and the
+     *     Config tab's residue check says re-provisioning is the
+     *     route back to clearing power.)
+     *  13. `flagClear` — clear the removal flag LAST, whatever
+     *     happened above: a failed removal must re-arm protection,
+     *     and every step is idempotent, so a retry is safe.
      *
      * Threading: the channel handler dispatches on a background
      * executor, so none of this runs on the main thread; the
      * per-package work is probe-driven and the suspension calls are
      * chunked (50 packages per binder call).
      */
+    // @Synchronized (v1.0.5 audit FIX-1): two overlapping teardowns
+    // (e.g. a double-invoked removal) could otherwise interleave — one
+    // run's final flag-clear could drop the removal flag while the
+    // other run is still mid-teardown, re-arming the accessibility
+    // lockdown inside it. Serialised, each run is atomic start-to-end;
+    // a second invocation simply re-runs the (idempotent) teardown.
+    @Synchronized
     fun removeDeviceOwner(context: Context): RemovalReport {
         requireOwner(context)
         val dpm = dpm(context)
@@ -144,13 +204,85 @@ object DeviceOwnerManager {
             "focus service and session stopped"
         }
 
+        // (3) Dedicated DPM device policies — the surfaces that do NOT
+        // live in the user-restriction bundle (field-failure fix).
+        // Zeroed explicitly and verified by their getters while we
+        // still have owner power; after clearDeviceOwnerApp they could
+        // no longer be changed from inside the app at all.
+        step("policies") {
+            val failed = mutableListOf<String>()
+            runCatching { dpm.setScreenCaptureDisabled(admin, false) }
+            if (runCatching { dpm.getScreenCaptureDisabled(admin) }.getOrDefault(true)) {
+                failed += "screenCapture"
+            }
+            runCatching { dpm.setCameraDisabled(admin, false) }
+            if (runCatching { dpm.getCameraDisabled(admin) }.getOrDefault(true)) {
+                failed += "camera"
+            }
+            runCatching { dpm.setStatusBarDisabled(admin, false) }
+            if (runCatching { dpm.isStatusBarDisabled() }.getOrDefault(true)) {
+                failed += "statusBar"
+            }
+            runCatching {
+                dpm.setKeyguardDisabledFeatures(
+                    admin,
+                    DevicePolicyManager.KEYGUARD_DISABLE_FEATURES_NONE,
+                )
+            }
+            if (runCatching {
+                    dpm.getKeyguardDisabledFeatures(admin)
+                }.getOrDefault(-1) != DevicePolicyManager.KEYGUARD_DISABLE_FEATURES_NONE
+            ) {
+                failed += "keyguardFeatures"
+            }
+            // The focus engine's POST_NOTIFICATIONS grant ends in the
+            // DEFAULT grant state by construction; set it explicitly so
+            // no policy grant state outlives the removal.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                runCatching {
+                    dpm.setPermissionGrantState(
+                        admin,
+                        context.packageName,
+                        Manifest.permission.POST_NOTIFICATIONS,
+                        DevicePolicyManager.PERMISSION_GRANT_STATE_DEFAULT,
+                    )
+                }
+            }
+            if (failed.isNotEmpty()) {
+                throw PrivException.dpmFailed(
+                    "Device polic(ies) could not be reset: ${failed.joinToString(", ")}",
+                )
+            }
+            "dedicated device policies reset and verified"
+        }
+
+        // (4) Global private DNS (F7): a specified host set by this app
+        // is written to global settings and is NOT rescinded by
+        // clearing the owner — reset it to the platform default while
+        // we still can.
+        step("privateDns") {
+            val mode = runCatching { dpm.getGlobalPrivateDnsMode(admin) }.getOrNull()
+            if (mode == DevicePolicyManager.PRIVATE_DNS_MODE_PROVIDER_HOSTNAME) {
+                runCatching { dpm.setGlobalPrivateDnsModeOpportunistic(admin) }
+                val after = runCatching { dpm.getGlobalPrivateDnsMode(admin) }.getOrNull()
+                if (after == DevicePolicyManager.PRIVATE_DNS_MODE_PROVIDER_HOSTNAME) {
+                    throw PrivException.dpmFailed(
+                        "Private DNS is still in specified-host mode after reset",
+                    )
+                }
+                "private DNS reset to platform default"
+            } else {
+                "no app-set private DNS to reset"
+            }
+        }
+
         // Authoritative package census for the probe-driven steps.
         @Suppress("DEPRECATION")
         val installedNames = context.packageManager.getInstalledApplications(
             PackageManager.GET_META_DATA or PackageManager.MATCH_UNINSTALLED_PACKAGES,
         ).map { it.packageName }.filter { it != context.packageName }
 
-        // (3) Unsuspend everything that is actually suspended.
+        // (5) Unsuspend everything that is actually suspended.
         step("unsuspend") {
             val suspended = installedNames.filter { pkg ->
                 try { dpm.isPackageSuspended(admin, pkg) } catch (_: Exception) { false }
@@ -173,32 +305,47 @@ object DeviceOwnerManager {
             "${suspended.size} suspended package(s) released"
         }
 
-        // (4) Clear every user restriction currently in force.
+        // (6) Clear every user restriction. The set in force here is
+        // remembered for the post-removal residue check (step 12), and
+        // the sweep covers the app's COMPLETE key list — not only the
+        // keys this read-back reports as true (the shipped teardown
+        // trusted the read-back alone; a key it missed was never
+        // cleared). Clearing a key that is not set is a harmless
+        // no-op, and every actually-set key is then verified gone.
+        var residueKeys = emptyList<String>()
         step("restrictions") {
             val active = dpm.getUserRestrictions(admin).let { bundle ->
                 bundle.keySet().filter { bundle.getBoolean(it, false) }
             }
-            val failed = mutableListOf<String>()
-            for (key in active) {
+            residueKeys = active
+            val toClear = (allRestrictionKeys() + active).distinct()
+            for (key in toClear) {
                 try {
                     dpm.clearUserRestriction(admin, key)
                 } catch (_: Exception) { /* verification below records the truth */ }
-                val still = try {
-                    dpm.getUserRestrictions(admin).getBoolean(key, false)
-                } catch (_: Exception) {
-                    true
+            }
+            val failed = mutableListOf<String>()
+            val afterBundle = try {
+                dpm.getUserRestrictions(admin)
+            } catch (_: Exception) {
+                null
+            }
+            if (afterBundle == null) {
+                failed += "(could not re-read restrictions after clearing)"
+            } else {
+                for (key in afterBundle.keySet()) {
+                    if (afterBundle.getBoolean(key, false)) failed += key
                 }
-                if (still) failed += key
             }
             if (failed.isNotEmpty()) {
                 throw PrivException.dpmFailed(
                     "Restriction(s) could not be cleared: ${failed.joinToString(", ")}",
                 )
             }
-            "${active.size} user restriction(s) cleared"
+            "${active.size} user restriction(s) cleared (full key list swept)"
         }
 
-        // (5) Unhide everything hidden (probes ∪ our persisted records).
+        // (7) Unhide everything hidden (probes ∪ our persisted records).
         step("unhide") {
             val hidden = (installedNames.filter { pkg ->
                 try { dpm.isApplicationHidden(admin, pkg) } catch (_: Exception) { false }
@@ -224,7 +371,7 @@ object DeviceOwnerManager {
             "${hidden.size} hidden package(s) restored"
         }
 
-        // (6) Lift every uninstall block.
+        // (8) Lift every uninstall block.
         step("uninstallBlocks") {
             val blocked = installedNames.filter { pkg ->
                 try { dpm.isUninstallBlocked(admin, pkg) } catch (_: Exception) { false }
@@ -250,7 +397,7 @@ object DeviceOwnerManager {
             "${blocked.size} uninstall block(s) lifted"
         }
 
-        // (7) Clear the per-app restriction bundles we applied
+        // (9) Clear the per-app restriction bundles we applied
         // (browser URL blocklists live on the URLBlocklist-declaring apps).
         step("appRestrictions") {
             val capable = listRestrictionCapableApps(context, listOf("URLBlocklist"))
@@ -283,7 +430,29 @@ object DeviceOwnerManager {
             "$cleared per-app restriction bundle(s) cleared"
         }
 
-        // (8) Only now clear the owner itself — verified by re-read.
+        // (10) Cancel EVERY notification this app posted and reset the
+        // usage-warning notifier's state (field-failure fix: the
+        // shipped teardown cancelled only the focus notification, so
+        // a usage-warning notification survived a "complete" removal).
+        step("notifications") {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE)
+                as NotificationManager
+            nm.cancelAll()
+            UsageWarningNotifier.resetAll(context)
+            val still = try {
+                nm.activeNotifications.size
+            } catch (_: Exception) {
+                0
+            }
+            if (still > 0) {
+                throw PrivException.dpmFailed(
+                    "$still notification(s) still posted after cancelAll",
+                )
+            }
+            "all notifications cancelled; usage-warning state reset"
+        }
+
+        // (11) Only now clear the owner itself — verified by re-read.
         var ownerAfter = true
         step("clearOwner") {
             dpm.clearDeviceOwnerApp(context.packageName)
@@ -294,7 +463,55 @@ object DeviceOwnerManager {
             "device owner cleared and verified"
         }
 
-        // (9) Clear the flag last, whatever happened above.
+        // (12) POST-removal verification using ONLY reads that work
+        // without admin rights — the app is no longer owner here, so
+        // this is the last chance to catch residue before the result
+        // is shown. Any residue fails the step and the dialog reports
+        // a partial removal, never a clean success.
+        step("verify") {
+            val residue = mutableListOf<String>()
+            if (isDeviceOwner(context)) residue += "deviceOwner still active"
+            // The calling user's EFFECTIVE restrictions (UserManager
+            // needs no admin): none of the keys that were in force at
+            // teardown start may still be true. Keys the system or
+            // another administrator set that we never applied are not
+            // ours to report.
+            val userManager = context.getSystemService(Context.USER_SERVICE)
+                as UserManager
+            val userBundle = runCatching { userManager.userRestrictions }.getOrNull()
+            if (userBundle == null) {
+                residue += "could not re-read the user's restrictions"
+            } else {
+                for (key in residueKeys) {
+                    if (userBundle.getBoolean(key, false)) {
+                        residue += "restriction still in force: $key"
+                    }
+                }
+            }
+            // Screen capture policy: readable post-removal on many
+            // builds; if it reads back as still disabled, that is
+            // residue. An unreadable probe is not treated as failure.
+            val captureStillDisabled = runCatching {
+                dpm.getScreenCaptureDisabled(admin)
+            }.getOrNull()
+            if (captureStillDisabled == true) {
+                residue += "screen capture still disabled"
+            }
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE)
+                as NotificationManager
+            val activeNotifs = runCatching { nm.activeNotifications.size }.getOrDefault(0)
+            if (activeNotifs > 0) {
+                residue += "$activeNotifs notification(s) still posted"
+            }
+            if (residue.isNotEmpty()) {
+                throw PrivException.dpmFailed(
+                    "Post-removal residue: ${residue.joinToString("; ")}",
+                )
+            }
+            "post-removal verification clean"
+        }
+
+        // (13) Clear the flag last, whatever happened above.
         step("flagClear") {
             SettingsStore.setRemovalInProgress(false)
             "removal flag cleared"

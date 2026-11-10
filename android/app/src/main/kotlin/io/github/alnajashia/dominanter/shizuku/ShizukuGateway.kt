@@ -66,10 +66,14 @@ object ShizukuGateway {
     @Synchronized
     fun registerListeners() {
         if (listenersRegistered) return
+        // The flag is set FIRST (v1.0.5 audit A-L2): if one of the three
+        // registrations throws midway, a retry must not double-register
+        // the ones that already succeeded (Shizuku de-duplicates by
+        // listener instance, but the flag now matches that reality).
+        listenersRegistered = true
         Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
         Shizuku.addBinderDeadListener(binderDeadListener)
         Shizuku.addRequestPermissionResultListener(permissionResultListener)
-        listenersRegistered = true
     }
 
     /** Removes all listeners (fix vs original, which never removed its listener). */
@@ -86,6 +90,11 @@ object ShizukuGateway {
         try {
             context.packageManager.getPackageInfo(SHIZUKU_PACKAGE, 0) != null
         } catch (_: PackageManager.NameNotFoundException) {
+            false
+        } catch (_: Exception) {
+            // Any other PackageManager failure (v1.0.5 audit A-L2) reads
+            // as "not usable" too — state() calls this OUTSIDE its
+            // try/catch and must never throw.
             false
         }
 

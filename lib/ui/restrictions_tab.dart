@@ -23,7 +23,7 @@ import '../data/privileged_channel.dart';
 import '../l10n/l10n.dart';
 import 'common.dart';
 import 'recovery_ui.dart';
-import 'setup_screen.dart';
+import 'restriction_info.dart';
 
 class RestrictionsTab extends StatefulWidget {
   const RestrictionsTab({super.key, required this.controller});
@@ -126,7 +126,7 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
       }
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
     } finally {
       if (mounted) {
         setState(() => _applying = false);
@@ -152,15 +152,13 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
           Text(l10n.noOwnerRestrictionsBody),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => Scaffold(
-                  appBar: AppBar(title: Text(l10n.setupTitle)),
-                  body: SetupScreen(controller: widget.controller),
-                ),
-              ),
-            ),
-            icon: const Icon(Icons.admin_panel_settings),
+            // v1.0.6 (user item 13): this card SWITCHES TO THE CONFIG
+            // TAB — that is where provisioning lives — instead of
+            // opening the setup as a pop-up page. Navigation is free;
+            // no gate is involved.
+            onPressed: () =>
+                widget.controller.requestTab(AppController.tabConfig),
+            icon: const Icon(Icons.admin_panel_settings_outlined),
             label: Text(l10n.openSetup),
           ),
         ],
@@ -175,7 +173,7 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: TextField(
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search_outlined),
               labelText: l10n.searchRestrictions,
               border: const OutlineInputBorder(),
             ),
@@ -202,7 +200,7 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
               padding: const EdgeInsets.all(16),
               child: FilledButton.icon(
                 onPressed: _applying ? null : _apply,
-                icon: const Icon(Icons.check),
+                icon: const Icon(Icons.check_outlined),
                 label: Text(_applying ? l10n.applying : l10n.applyChanges),
               ),
             ),
@@ -251,6 +249,19 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
           ),
           for (final r in items)
             SwitchListTile(
+              // Item 12 (v1.0.6): every restriction carries a
+              // plain-language explanation behind this info button —
+              // free help, no gate. The button consumes its own tap;
+              // the switch keeps toggling exactly as before.
+              secondary: IconButton(
+                icon: const Icon(Icons.info_outlined),
+                tooltip: _humaniseRestrictionKey(r.key),
+                onPressed: () => showRestrictionInfo(
+                  context,
+                  label: _humaniseRestrictionKey(r.key),
+                  key: r.key,
+                ),
+              ),
               title: Row(
                 children: [
                   Expanded(child: Text(_humaniseRestrictionKey(r.key))),
@@ -288,7 +299,7 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         context.l10n.activeBadge,

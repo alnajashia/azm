@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
+import io.github.alnajashia.dominanter.data.SettingsStore
 import io.github.alnajashia.dominanter.focus.FocusSessionStore
 
 /**
@@ -17,6 +18,13 @@ import io.github.alnajashia.dominanter.focus.FocusSessionStore
 /** Phase-end alarm target and the status notification's action buttons. */
 class FocusReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // Removal teardown disarm (v1.0.5 audit A-H2): while a Device
+        // Owner removal is in progress, NO focus sync may run — the
+        // teardown stops the session itself, and a mid-teardown sync
+        // could re-apply focus claims the teardown is busy releasing.
+        // (The Application and accessibility paths already checked the
+        // flag; these receivers did not.)
+        if (SettingsStore.isRemovalInProgress()) return
         when (intent.action) {
             ACTION_PHASE_END -> {
                 // Keeps the process alive long enough for the alert sound to finish playing.
@@ -77,6 +85,8 @@ class FocusReceiver : BroadcastReceiver() {
  */
 class FocusSystemReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // Same removal-teardown disarm as FocusReceiver above (audit A-H2).
+        if (SettingsStore.isRemovalInProgress()) return
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,

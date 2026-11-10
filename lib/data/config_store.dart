@@ -13,6 +13,7 @@ library;
 import 'dart:convert';
 
 import '../domain/challenges.dart';
+import '../domain/entry_grace.dart';
 import '../domain/entry_password.dart';
 import '../domain/focus.dart';
 import '../domain/recovery.dart';
@@ -397,6 +398,41 @@ class ConfigStore {
   Future<void> setForcedRemoval(ForcedRemoval value) =>
       _setJson(recoveryState, 'forced_removal', value.toJson());
 
+  // ------------------------------------------------------ entry lock timing (Phase C)
+
+  /// App-lock timing state (v1.0.6 Phase C): the chosen grace period
+  /// and the persisted wall-clock moment of the last successful entry.
+  /// Persisting the timestamp means process death and reboots cannot
+  /// extend the grace; a future timestamp is clamped to expired by
+  /// the decision function (`entryShouldRelock`).
+  Future<({EntryGracePeriod period, DateTime? lastUnlockAt})>
+  getEntryLockState() async {
+    final j = await _getJson(security, 'entry_lock');
+    final ms = (j?['lastUnlockMs'] as num?)?.toInt();
+    return (
+      period: EntryGracePeriod.fromName(j?['period'] as String?),
+      lastUnlockAt: ms == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(ms),
+    );
+  }
+
+  Future<void> setEntryGracePeriod(EntryGracePeriod period) async {
+    final current = await getEntryLockState();
+    await _setJson(security, 'entry_lock', {
+      'period': period.name,
+      'lastUnlockMs': current.lastUnlockAt?.millisecondsSinceEpoch,
+    });
+  }
+
+  Future<void> setEntryLastUnlock(DateTime at) async {
+    final current = await getEntryLockState();
+    await _setJson(security, 'entry_lock', {
+      'period': current.period.name,
+      'lastUnlockMs': at.millisecondsSinceEpoch,
+    });
+  }
+
   // ------------------------------------------------------ entry password
 
   /// The stored entry-password record (salted PBKDF2 hash only), or null
@@ -408,14 +444,81 @@ class ConfigStore {
     try {
       return EntryPasswordHash.fromJson(j);
     } catch (_) {
-      // A corrupt record must behave as "no password set" rather than
-      // crashing the lock screen; setting a new password overwrites it.
+      // Verification treats a corrupt record as "no password" rather
+      // than crashing the lock screen — but it is NOT silently the same
+      // as unset: [getEntryPasswordRecordState] reports it as corrupt
+      // so the Config UI can surface it (v1.0.5 audit B-9). Setting a
+      // new password overwrites the corrupt record.
       return null;
+    }
+  }
+
+  /// Whether an entry-password record exists and parses, exists but is
+  /// corrupt, or does not exist at all (v1.0.5 audit B-9).
+  Future<EntryPasswordRecordState> getEntryPasswordRecordState() async {
+    final j = await _getJson(security, 'entry_password');
+    if (j == null) return EntryPasswordRecordState.unset;
+    try {
+      EntryPasswordHash.fromJson(j);
+      return EntryPasswordRecordState.set;
+    } catch (_) {
+      return EntryPasswordRecordState.corrupt;
     }
   }
 
   Future<bool> isEntryPasswordSet() async =>
       (await getEntryPassword()) != null;
+
+  // ------------------------------------------------- anti-guess throttle
+
+  /// The persisted entry-password failure count and the wall-clock time
+  /// of the most recent failure (v1.0.5 audit B-3). Persisting both is
+  /// what makes the anti-guess delay cumulative: dismissing the prompt
+  /// or killing the app no longer resets it, and a prompt opened inside
+  /// the delay window waits out the remainder.
+  Future<({int failures, DateTime? lastFailure})>
+      getEntryPasswordThrottle() async {
+    final j = await _getJson(security, 'entry_password_throttle');
+    if (j == null) return (failures: 0, lastFailure: null);
+    final failures = (j['failures'] as num?)?.toInt() ?? 0;
+    final lastMs = (j['lastFailureMs'] as num?)?.toInt();
+    return (
+      failures: failures < 0 ? 0 : failures,
+      lastFailure:
+          lastMs == null ? null : DateTime.fromMillisecondsSinceEpoch(lastMs),
+    );
+  }
+
+  /// Records one more consecutive wrong attempt and returns the new
+  /// count. Called only for genuine wrong-password results — never for
+  /// verification errors (v1.0.5 audit C-M2).
+  Future<int> recordEntryPasswordFailure() async {
+    final current = await getEntryPasswordThrottle();
+    final next = current.failures + 1;
+    await _setJson(security, 'entry_password_throttle', {
+      'failures': next,
+      'lastFailureMs': DateTime.now().millisecondsSinceEpoch,
+    });
+    return next;
+  }
+
+  /// Clears the failure count after a successful verification, or when
+  /// the password is set/changed/removed.
+  Future<void> resetEntryPasswordThrottle() =>
+      _setJson(security, 'entry_password_throttle', null);
+
+  /// The anti-guess wait still owed right now: the delay for the
+  /// persisted failure count minus the time already waited since the
+  /// last failure (zero when no wait is owed).
+  Future<Duration> entryPasswordWaitRemaining() async {
+    final throttle = await getEntryPasswordThrottle();
+    final delay = entryPasswordDelaySeconds(throttle.failures);
+    final last = throttle.lastFailure;
+    if (delay == 0 || last == null) return Duration.zero;
+    final elapsed = DateTime.now().difference(last);
+    final remaining = Duration(seconds: delay) - elapsed;
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
 
   /// Sets (or replaces) the entry password, storing only its salted
   /// hash. Enforces the minimum length; callers surface the
@@ -434,6 +537,8 @@ class ConfigStore {
     }
     final hash = EntryPasswordHash.create(password, iterations: iterations);
     await _setJson(security, 'entry_password', hash.toJson());
+    // A fresh password starts with a clean throttle slate.
+    await resetEntryPasswordThrottle();
   }
 
   /// Verifies [password] against the stored hash. False when no
@@ -444,8 +549,10 @@ class ConfigStore {
     return stored.verify(password);
   }
 
-  Future<void> removeEntryPassword() =>
-      _channel.setSetting(security, 'entry_password', null);
+  Future<void> removeEntryPassword() async {
+    await _channel.setSetting(security, 'entry_password', null);
+    await resetEntryPasswordThrottle();
+  }
 
   // ------------------------------------------------------------ language & theme
 

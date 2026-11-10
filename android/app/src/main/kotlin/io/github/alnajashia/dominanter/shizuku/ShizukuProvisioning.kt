@@ -59,7 +59,21 @@ object ShizukuProvisioning {
 
     /** #3: restores user_setup_complete to 1. Called in a finally after provisioning. */
     fun restoreUserSetupComplete(context: Context, userId: Int = userId()) {
-        ShizukuRunner.exec("settings", "--user", "$userId", "put", "secure", "user_setup_complete", "1")
+        // The result is CHECKED (v1.0.5 audit A-H1): this restore used to
+        // be the one provisioning shell call whose outcome was discarded
+        // entirely — a failed restore leaves user_setup_complete at 0
+        // (device stuck "not set up"), so a failure must at least be
+        // visible in the log; the cold-start repair retries it.
+        val result = ShizukuRunner.exec(
+            "settings", "--user", "$userId", "put", "secure", "user_setup_complete", "1",
+        )
+        if (result == null || result.exitCode != 0) {
+            Log.w(
+                TAG,
+                "restore user_setup_complete failed: " +
+                    (result?.let { "exit ${it.exitCode}: ${it.error}" } ?: "command could not run"),
+            )
+        }
         refreshUserSetupComplete(context, userId)
     }
 
@@ -114,8 +128,11 @@ object ShizukuProvisioning {
             } finally {
                 try {
                     field.set(manager, originalService)
-                } catch (_: Throwable) {
-                    // Best effort, as in the original.
+                } catch (e: Throwable) {
+                    // Best effort, as in the original — but logged
+                    // (v1.0.5 audit A-L3): a failed restore would leave
+                    // the wrapped service in place.
+                    Log.w(TAG, "failed to restore DevicePolicyManager.mService", e)
                 }
             }
         }
@@ -166,6 +183,11 @@ object ShizukuProvisioning {
         }
     }
 
+    // A null reflective result reads as FAILURE, never success
+    // (v1.0.5 audit A-H3): reading it as success used to suppress the
+    // `dpm` shell fallback on exactly the devices where the reflective
+    // path silently did nothing. The caller still re-verifies with
+    // isDeviceOwner afterwards.
     @SuppressLint("PrivateApi")
     private fun DevicePolicyManager.setDeviceOwnerCompat(who: ComponentName, ownerName: String?, userId: Int): Boolean {
         val clazz = this::class.java
@@ -180,7 +202,7 @@ object ShizukuProvisioning {
         }
         if (method2 != null) {
             method2.isAccessible = true
-            return (method2.invoke(this, who, userId) as? Boolean) ?: true
+            return (method2.invoke(this, who, userId) as? Boolean) ?: false
         }
         val method3 = clazz.methods.firstOrNull {
             it.name == "setDeviceOwner" && it.parameterTypes.size == 3 &&
@@ -195,7 +217,7 @@ object ShizukuProvisioning {
         }
         if (method3 != null) {
             method3.isAccessible = true
-            return (method3.invoke(this, who, ownerName, userId) as? Boolean) ?: true
+            return (method3.invoke(this, who, ownerName, userId) as? Boolean) ?: false
         }
         val methodLegacy = clazz.methods.firstOrNull {
             it.name == "setDeviceOwner" && it.parameterTypes.size == 2 &&
@@ -208,7 +230,7 @@ object ShizukuProvisioning {
         }
         if (methodLegacy != null) {
             methodLegacy.isAccessible = true
-            return (methodLegacy.invoke(this, who.packageName, ownerName) as? Boolean) ?: true
+            return (methodLegacy.invoke(this, who.packageName, ownerName) as? Boolean) ?: false
         }
         return false
     }
@@ -374,8 +396,19 @@ object ShizukuProvisioning {
         ShizukuRunner.execShellChecked("settings put secure enabled_accessibility_services $newValue")
         ShizukuRunner.execShellChecked("settings put secure accessibility_enabled 1")
 
-        // Verified by re-read, never assumed.
-        val verified = isAccessibilityServiceListed(context)
+        // Verified by re-read, never assumed. The verification read is
+        // STRICT (v1.0.5 audit A-M6): if the settings read itself fails,
+        // the toggle is reported as failed — the lenient
+        // isAccessibilityServiceListed (catch-all → false) could
+        // otherwise "verify" a disable that never happened.
+        val verified = try {
+            getEnabledAccessibilityServices().contains(".DominanterAccessibilityService")
+        } catch (e: Exception) {
+            throw PrivException.dpmFailed(
+                "Could not verify the accessibility toggle state",
+                cause = e,
+            )
+        }
         if (verified != enabled) {
             throw PrivException.dpmFailed(
                 "Accessibility toggle did not take effect",
@@ -385,6 +418,9 @@ object ShizukuProvisioning {
         if (enabled) {
             // The original also granted WRITE_SECURE_SETTINGS on accessibility enable.
             runCatching { grantWriteSecureSettings(context) }
+                .onFailure {
+                    Log.w(TAG, "WRITE_SECURE_SETTINGS grant on accessibility enable failed", it)
+                }
         }
         return verified
     }

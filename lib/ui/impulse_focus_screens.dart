@@ -3,10 +3,14 @@
 ///
 /// Impulse settings mirror the original `ImpulseLockScreen`: every
 /// settings control is enabled only while a recovery session is active
-/// (starting the lock itself is not a setting and stays free), and —
-/// exactly as in the original — an active impulse lock has **no early
-/// stop**: it ends when its timer runs out, and natural expiry releases
-/// the apps it suspended (see `AppController`).
+/// (starting the lock itself is not a setting and stays free). An
+/// active impulse lock ends when its timer runs out — or early, when
+/// the user completes the challenges they selected for Impulse Lock
+/// (the challenge selection below IS the lock's unlock method, per the
+/// user's directive that challenges live only inside Impulse Lock;
+/// v1.0.5 audit H-1 wired the runner, which previously was dead code).
+/// Both end paths release the apps the lock suspended through the same
+/// `AppController` release (see `AppController.completeImpulseLockEarly`).
 ///
 /// Focus mode is driven by the native focus runtime: this screen
 /// starts, pauses, resumes and stops the persisted native session
@@ -28,6 +32,7 @@ import '../domain/challenges.dart';
 import '../domain/focus.dart';
 import '../domain/recovery.dart';
 import '../l10n/l10n.dart';
+import 'challenges_ui.dart';
 import 'common.dart';
 import 'recovery_ui.dart';
 
@@ -101,8 +106,71 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
       _apps?.where((a) => a.packageName == pkg).firstOrNull?.label ?? pkg;
 
   Future<void> _saveConfig(ImpulseConfig c) async {
-    await widget.controller.config.setImpulseConfig(c);
-    if (mounted) setState(() => _config = c);
+    // Save failures surface here (v1.0.5 audit C-M3): most callers are
+    // fire-and-forget control callbacks, so the error must not escape
+    // as an unhandled async error.
+    try {
+      await widget.controller.config.setImpulseConfig(c);
+      if (mounted) setState(() => _config = c);
+    } catch (e) {
+      if (mounted) await showErrorCard(context, e);
+    }
+  }
+
+  /// The challenge early-end (v1.0.5 audit H-1): runs the challenges
+  /// the user selected for Impulse Lock — and ONLY those — and, when
+  /// all complete, ends the lock through the controller's shared
+  /// release path. This is the challenge runner's only call site in
+  /// the app; the recovery gate never runs challenges.
+  Future<void> _showChallengeUnlock() async {
+    final available =
+        _challenges.where((t) => t.isAvailableInV1).toList();
+    if (available.isEmpty) {
+      // A selection of only unavailable (v1.1) types must not end the
+      // lock by "completing" zero challenges.
+      await showErrorCard(
+        context,
+        PrivilegedException('UNAVAILABLE', context.l10n.challengeUnavailableNote),
+      );
+      return;
+    }
+    final done = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.impulseUnlockTitle),
+        content: SizedBox(
+          width: 360,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(dialogContext.l10n.impulseUnlockBody),
+                const SizedBox(height: 16),
+                ChallengeRunnerView(
+                  types: available,
+                  customPhrases: _customPhrases,
+                  onAllComplete: () => Navigator.pop(dialogContext, true),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(dialogContext.l10n.cancel),
+          ),
+        ],
+      ),
+    );
+    if (done != true) return;
+    await widget.controller.completeImpulseLockEarly();
+    if (mounted) {
+      showInfoSnackBar(context, context.l10n.impulseLockEndedEarly);
+      setState(() {});
+    }
   }
 
   Future<void> _startLock() async {
@@ -120,7 +188,7 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
         );
       } catch (e) {
         if (!mounted) return;
-        await showErrorSnackBar(context, e);
+        await showErrorCard(context, e);
       }
     }
     if (mounted) setState(() {});
@@ -196,12 +264,27 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
           if (lock.active && !lock.isComplete)
             HeroCard(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: ListTile(
-                leading: const Icon(Icons.lock_clock),
-                title: Text(
-                  l10n.impulseActiveLeft(formatDuration(lock.remaining, l10n)),
-                ),
-                subtitle: Text(l10n.impulseNoEarlyStop),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.lock_clock_outlined),
+                    title: Text(
+                      l10n.impulseActiveLeft(
+                        formatDuration(lock.remaining, l10n),
+                      ),
+                    ),
+                    subtitle: Text(l10n.impulseNoEarlyStop),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: OutlinedButton.icon(
+                      onPressed: _showChallengeUnlock,
+                      icon: const Icon(Icons.extension_outlined),
+                      label: Text(l10n.impulseUnlockEarly),
+                    ),
+                  ),
+                ],
               ),
             )
           else
@@ -324,10 +407,16 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                                   if (next.isEmpty) {
                                     next.add(ChallengeType.math);
                                   }
-                                  await widget.controller.config
-                                      .setChallengeSelection(next);
-                                  if (mounted) {
-                                    setState(() => _challenges = next);
+                                  try {
+                                    await widget.controller.config
+                                        .setChallengeSelection(next);
+                                    if (mounted) {
+                                      setState(() => _challenges = next);
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      await showErrorCard(context, e);
+                                    }
                                   }
                                 }
                               : null,
@@ -336,14 +425,27 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                         title: Text(l10n.shuffledKeypad),
                         subtitle: Text(l10n.shuffledKeypadSub),
                         value: _shuffle,
-                        onChanged: (v) async {
+                        // Disabled without a session, like every sibling
+                        // setting on this screen (v1.0.5 audit C-L2);
+                        // the "settings locked" tile above opens the
+                        // gate. (Its loosening direction still routes
+                        // through runLoosening when a session is active
+                        // but the change itself loosens — defence in
+                        // depth, unchanged.)
+                        onChanged: sessionActive
+                            ? (v) async {
                           if (v) {
                             // Turning the shuffle ON tightens: free, saved
-                            // directly.
-                            await widget.controller.config.setShuffleKeyboard(
-                              true,
-                            );
-                            if (mounted) setState(() => _shuffle = true);
+                            // directly (errors surfaced, audit C-M3).
+                            try {
+                              await widget.controller.config
+                                  .setShuffleKeyboard(true);
+                              if (mounted) setState(() => _shuffle = true);
+                            } catch (e) {
+                              if (context.mounted) {
+                                await showErrorCard(context, e);
+                              }
+                            }
                           } else {
                             // Shuffle → normal is a loosening (the
                             // original's ConfigTab: `loosening =
@@ -359,7 +461,8 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                               },
                             );
                           }
-                        },
+                            }
+                            : null,
                       ),
                       ListTile(
                         title: Text(
@@ -416,8 +519,12 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
       ),
     );
     if (saved == null) return;
-    await widget.controller.config.setCustomReadingPhrases(saved);
-    if (mounted) setState(() => _customPhrases = saved);
+    try {
+      await widget.controller.config.setCustomReadingPhrases(saved);
+      if (mounted) setState(() => _customPhrases = saved);
+    } catch (e) {
+      if (mounted) await showErrorCard(context, e);
+    }
   }
 }
 
@@ -518,7 +625,15 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       _groups?.where((g) => g.id == id).firstOrNull?.name ?? id;
 
   Future<void> _saveConfig(FocusConfig c) async {
-    await widget.controller.config.setFocusConfig(c);
+    // Direct callers (sound/vibration switches, tightening changes)
+    // are fire-and-forget: surface failures here instead of letting
+    // them escape unhandled (v1.0.5 audit C-M3).
+    try {
+      await widget.controller.config.setFocusConfig(c);
+    } catch (e) {
+      if (mounted) await showErrorCard(context, e);
+      return;
+    }
     if (mounted) {
       setState(() {
         _config = c;
@@ -566,7 +681,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       await _ensureNotificationPermission();
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
     }
   }
 
@@ -595,7 +710,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       if (mounted) setState(() => _applyNative(state));
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
     }
   }
 
@@ -605,7 +720,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       if (mounted) setState(() => _applyNative(state));
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
     }
   }
 
@@ -617,7 +732,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       if (mounted) setState(() => _applyNative(state));
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
     }
   }
 
@@ -627,7 +742,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       if (mounted) setState(() => _applyNative(null));
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
     }
   }
 
@@ -755,13 +870,13 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
                     if (idleLike)
                       FilledButton.icon(
                         onPressed: _startFocus,
-                        icon: const Icon(Icons.play_arrow),
+                        icon: const Icon(Icons.play_arrow_outlined),
                         label: Text(l10n.startAction),
                       ),
                     if (session.phase == FocusPhase.waiting) ...[
                       FilledButton.icon(
                         onPressed: _startFocus,
-                        icon: const Icon(Icons.play_arrow),
+                        icon: const Icon(Icons.play_arrow_outlined),
                         label: Text(l10n.startFocusAction),
                       ),
                       OutlinedButton(
@@ -803,7 +918,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
                     if (inBreakPhase)
                       OutlinedButton.icon(
                         onPressed: _skipBreak,
-                        icon: const Icon(Icons.skip_next),
+                        icon: const Icon(Icons.skip_next_outlined),
                         label: Text(l10n.skipBreakAction),
                       ),
                   ],
@@ -1036,7 +1151,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       groups = await widget.controller.channel.getGroups();
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
       return;
     }
     if (!mounted) return;
@@ -1109,7 +1224,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       all = await widget.controller.channel.listUserRestrictions();
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
       return;
     }
     if (!mounted) return;
@@ -1135,7 +1250,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
                 children: [
                   TextField(
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: const Icon(Icons.search_outlined),
                       labelText: context.l10n.searchRestrictions,
                       border: const OutlineInputBorder(),
                     ),

@@ -3,10 +3,12 @@
 /// user's explicit request).
 ///
 /// Taken from the user's two reference images:
-/// * Image 1 — glossy deep-red gradient planes and cards floating over a
+/// * Image 1 — glossy deep-red planes and cards floating over a
 ///   light-grey backdrop, pill-shaped red list rows, circular white/red
 ///   icon badges, and a chunky 3D red timer ring with big white numerals
-///   («05») on a dark-red disc.
+///   («05») on a dark-red disc. (The reference's colour washes are NOT
+///   reproduced: per the user's v1.0.5 no-gradient directive every
+///   surface here is a single flat colour.)
 /// * Image 2 — floating pill bottom bars; this design fuses its red-bar
 ///   and black-bar variants: an ALWAYS-BLACK capsule with a filled red
 ///   swept active indicator, a white dot under the active label, and
@@ -155,6 +157,23 @@ ThemeData dominanterDarkTheme() {
   return _baseTheme(scheme, DominanterColors.blackBackground);
 }
 
+/// The single shape language (v1.0.6, user item 10): soft, generous
+/// rounded corners everywhere — cards, fields, buttons, dialogs,
+/// chips, sheets. Every interactive surface in the app takes its
+/// radius from this scale (directly or through the theme); no
+/// sharp-cornered interactive surface remains.
+///
+///  - [small]  (16): inset surfaces, nested cards, menus, snackbars.
+///  - [medium] (20): cards, buttons, text/search fields.
+///  - [large]  (28): dialogs, bottom sheets, hero surfaces.
+///  - [pill]   (999): the Apps search field, chips, badges.
+abstract final class DominanterRadius {
+  static const small = 16.0;
+  static const medium = 20.0;
+  static const large = 28.0;
+  static const pill = 999.0;
+}
+
 ThemeData _baseTheme(ColorScheme scheme, Color scaffoldBackground) {
   // Cairo app-wide (v1.0.4 typography directive): one bundled family
   // for both locales — Arabic and Latin — so the bilingual UI speaks
@@ -179,8 +198,56 @@ ThemeData _baseTheme(ColorScheme scheme, Color scaffoldBackground) {
       style: FilledButton.styleFrom(
         backgroundColor: DominanterColors.red,
         foregroundColor: Colors.white,
-        // Pill-leaning buttons, echoing the reference's pill rows.
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        // Soft generous corners (DominanterRadius.medium).
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DominanterRadius.medium),
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DominanterRadius.medium),
+        ),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DominanterRadius.medium),
+        ),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      // All text/search fields share the soft field shape; the Apps
+      // search field goes further and is a full pill (its own
+      // decoration, per user item 10).
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(DominanterRadius.medium),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(DominanterRadius.medium),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(DominanterRadius.medium),
+      ),
+    ),
+    bottomSheetTheme: const BottomSheetThemeData(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DominanterRadius.large),
+        ),
+      ),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DominanterRadius.small),
+      ),
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DominanterRadius.small),
       ),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
@@ -195,16 +262,21 @@ ThemeData _baseTheme(ColorScheme scheme, Color scaffoldBackground) {
       ),
     ),
     chipTheme: base.chipTheme.copyWith(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      // Chips are pills in the shape language.
+      shape: const StadiumBorder(),
     ),
-    // Larger corner radius, matching the reference's deeply rounded
-    // floating cards (was 16 in the previous identity).
+    // Cards at DominanterRadius.medium, matching the reference's
+    // deeply rounded floating cards.
     cardTheme: CardThemeData(
       elevation: scheme.brightness == Brightness.dark ? 0 : 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DominanterRadius.medium),
+      ),
     ),
     dialogTheme: DialogThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DominanterRadius.large),
+      ),
     ),
   );
 }

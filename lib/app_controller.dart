@@ -4,11 +4,17 @@
 ///
 /// Timer accounting note (honest limitation): the original accumulates
 /// forced-removal / impulse time natively across reboots with
-/// elapsedRealtime. This Dart model advances the timers only by *measured*
-/// elapsed time while the app process is alive (a 30 s ticker). Time never
-/// advances while the app is dead, so a timer can take longer than
-/// wall-clock — never shorter — which fails safe for this product's threat
-/// model. Full reboot-proof native accounting is future Kotlin work.
+/// elapsedRealtime. This Dart model advances the timers only by
+/// *measured* elapsed time while the app process is alive (a 30 s
+/// ticker). The deltas are measured on the process **monotonic** clock
+/// (a Stopwatch, via [MonotonicDelta]) — never on the wall clock — so
+/// changing the device clock can neither shorten nor stretch a timer
+/// (v1.0.5 audit B-1: previously the delta came from `DateTime.now()`,
+/// and a +48 h clock jump would have completed forced removal at the
+/// next tick). Time never advances while the app is dead, so a timer
+/// can take longer than wall-clock — never shorter — which fails safe
+/// for this product's threat model. Full reboot-proof native accounting
+/// is future Kotlin work.
 library;
 
 import 'dart:async';
@@ -18,11 +24,13 @@ import 'package:flutter/material.dart';
 
 import 'data/config_store.dart';
 import 'data/privileged_channel.dart';
+import 'domain/entry_grace.dart';
+import 'domain/focus.dart';
 import 'domain/recovery.dart';
 
 /// The app's display version (matches `pubspec.yaml`'s versionName;
 /// shown in the lock-screen footer).
-const String kAppVersion = '1.0.5';
+const String kAppVersion = '1.0.6';
 
 enum StartupState { loading, needsRecoverySetup, locked, unlocked, error }
 
@@ -49,9 +57,23 @@ class AppController extends ChangeNotifier {
   PrivilegedEvent? lastEvent;
   StreamSubscription<PrivilegedEvent>? _eventSub;
   Timer? _ticker;
-  DateTime? _lastTick;
+  final MonotonicDelta _tickDelta = MonotonicDelta();
+  bool _tickRunning = false;
   ImpulseLock impulseLock = const ImpulseLock();
   ForcedRemoval forcedRemoval = const ForcedRemoval();
+
+  /// The forced-removal delay in force. The authoritative value is
+  /// native (RecoveryStore.FORCED_REMOVAL_DELAY_HOURS) and arrives via
+  /// the channel's owner state during [initialise]; until then the
+  /// Dart bootstrap mirror (24 h) applies.
+  Duration forcedRemovalDelay = ForcedRemoval.defaultTotal;
+
+  /// App-lock timing (Phase C): the user's chosen entry grace period
+  /// and the persisted moment of the last successful entry. Default
+  /// is [EntryGracePeriod.immediately] — the pre-v1.0.6 strict
+  /// behaviour — so existing users are never silently weakened.
+  EntryGracePeriod entryGracePeriod = EntryGracePeriod.immediately;
+  DateTime? entryLastUnlockAt;
 
   /// The exact set of packages suspended when the current impulse lock
   /// started. The original records this as the "active impulse
@@ -89,6 +111,22 @@ class AppController extends ChangeNotifier {
         }
       }
       forcedRemoval = await config.getForcedRemoval();
+      // App-lock timing state (Phase C).
+      final entryLock = await config.getEntryLockState();
+      entryGracePeriod = entryLock.period;
+      entryLastUnlockAt = entryLock.lastUnlockAt;
+      // The forced-removal delay's native value, via the owner state.
+      try {
+        final owner = await channel.isDeviceOwner();
+        final hours = owner.forcedRemovalDelayHours;
+        if (hours != null && hours > 0) {
+          forcedRemovalDelay = Duration(hours: hours);
+          forcedRemoval = forcedRemoval.withTotal(forcedRemovalDelay);
+        }
+      } catch (_) {
+        // Channel unavailable (widget tests, non-Android hosts): the
+        // bootstrap mirror stays in force.
+      }
       final isSet = await channel.isRecoveryCodeSet();
       startup = isSet ? StartupState.locked : StartupState.needsRecoverySetup;
       // Re-initialisation (the startup error screen's Retry) must not
@@ -108,33 +146,61 @@ class AppController extends ChangeNotifier {
 
   void _startTicker() {
     _ticker?.cancel();
-    _lastTick = DateTime.now();
+    _tickDelta.reset(FocusSession.monotonicNow);
     _ticker = Timer.periodic(const Duration(seconds: 30), (_) => _tick());
   }
 
   Future<void> _tick() async {
-    final now = DateTime.now();
-    final delta = now.difference(_lastTick ?? now);
-    _lastTick = now;
-    var changed = false;
-    if (impulseLock.active && !impulseLock.isComplete) {
-      impulseLock = impulseLock.tick(delta);
-      await config.setImpulseLock(impulseLock);
-      changed = true;
-      if (impulseLock.isComplete) {
-        // Natural expiry: release exactly the apps this lock suspended
-        // (the original releases its recorded impulse suspension when
-        // the block ends — there is no other release path, and no
-        // early stop).
-        await _releaseImpulseSuspension();
+    // Re-entrancy + error containment (v1.0.5 audit B-12): a tick slower
+    // than the 30 s period must not overlap the next one (both would
+    // read/update the same timer state), and a channel/config failure
+    // inside a tick must not surface as an unhandled async error. On
+    // failure the in-memory advance is simply not persisted; the next
+    // tick re-measures from the monotonic anchor, so time is lost —
+    // never gained.
+    if (_tickRunning) return;
+    _tickRunning = true;
+    try {
+      final delta = _tickDelta.take(FocusSession.monotonicNow);
+      var changed = false;
+      if (impulseLock.active && !impulseLock.isComplete) {
+        impulseLock = impulseLock.tick(delta);
+        await config.setImpulseLock(impulseLock);
+        changed = true;
+        if (impulseLock.isComplete) {
+          // Natural expiry: release exactly the apps this lock
+          // suspended (the original releases its recorded impulse
+          // suspension when the block ends).
+          await _releaseImpulseSuspension();
+        }
       }
+      if (forcedRemoval.active && !forcedRemoval.isComplete) {
+        forcedRemoval = forcedRemoval.advance(delta);
+        await config.setForcedRemoval(forcedRemoval);
+        changed = true;
+      }
+      if (changed) notifyListeners();
+    } catch (_) {
+      // Contained by design: see the note above.
+    } finally {
+      _tickRunning = false;
     }
-    if (forcedRemoval.active && !forcedRemoval.isComplete) {
-      forcedRemoval = forcedRemoval.advance(delta);
-      await config.setForcedRemoval(forcedRemoval);
-      changed = true;
-    }
-    if (changed) notifyListeners();
+  }
+
+  /// Ends the active impulse lock early because the user completed the
+  /// challenges they selected for Impulse Lock (v1.0.5 audit H-1 — the
+  /// ONLY early-end path, reachable solely from the Impulse Lock
+  /// screen's challenge runner; the recovery gate never runs
+  /// challenges). Releases exactly the recorded impulse suspension,
+  /// through the same [_releaseImpulseSuspension] the natural-expiry
+  /// path uses, and persists the completed lock. No-op when no lock is
+  /// running.
+  Future<void> completeImpulseLockEarly() async {
+    if (!impulseLock.active || impulseLock.isComplete) return;
+    impulseLock = impulseLock.tick(impulseLock.remaining);
+    await config.setImpulseLock(impulseLock);
+    await _releaseImpulseSuspension();
+    notifyListeners();
   }
 
   void onRecoverySetupComplete() {
@@ -145,8 +211,59 @@ class AppController extends ChangeNotifier {
   void unlock() {
     if (startup == StartupState.locked) {
       startup = StartupState.unlocked;
+      // Phase C: EVERY successful entry (fingerprint, app password,
+      // device credential, no-credential fallback) funnels through
+      // here, so this is the single place the grace period starts.
+      // Failed attempts never reach this method — they start no
+      // grace. Persistence is best-effort: the in-memory timestamp
+      // still governs this process if the write fails.
+      entryLastUnlockAt = DateTime.now();
+      unawaited(
+        config.setEntryLastUnlock(entryLastUnlockAt!).catchError((_) {}),
+      );
       notifyListeners();
     }
+  }
+
+  /// Re-locks the app (Phase C): back to the entry gate. Called by
+  /// the shell's lifecycle observer when the grace decision says the
+  /// return needs a fresh entry. The recovery session is NOT touched
+  /// — entry state and the paper-code gate are independent.
+  void relock() {
+    if (startup == StartupState.unlocked) {
+      startup = StartupState.locked;
+      notifyListeners();
+    }
+  }
+
+  // --- Cross-tab navigation (v1.0.6, user item 13) ---
+
+  /// Tab indices in shell order.
+  static const int tabStatus = 0;
+  static const int tabRestrictions = 1;
+  static const int tabApps = 2;
+  static const int tabConfig = 3;
+
+  int? _requestedTab;
+
+  /// A pending request to switch tabs (e.g. the Restrictions
+  /// not-owner card sending the user to the Config tab, where
+  /// provisioning lives). The shell consumes and clears it.
+  int? get requestedTab => _requestedTab;
+
+  void requestTab(int index) {
+    _requestedTab = index;
+    notifyListeners();
+  }
+
+  void clearTabRequest() {
+    _requestedTab = null;
+  }
+
+  Future<void> setEntryGracePeriod(EntryGracePeriod period) async {
+    entryGracePeriod = period;
+    await config.setEntryGracePeriod(period);
+    notifyListeners();
   }
 
   Future<void> setLanguage(String value) async {
@@ -180,8 +297,9 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Releases the recorded impulse suspension. Called only from the
-  /// natural-expiry path in [_tick].
+  /// Releases the recorded impulse suspension. Called from the two lock
+  /// end paths only: natural expiry in [_tick] and
+  /// [completeImpulseLockEarly].
   Future<void> _releaseImpulseSuspension() async {
     final apps = _impulseSuspendedApps;
     _impulseSuspendedApps = const [];

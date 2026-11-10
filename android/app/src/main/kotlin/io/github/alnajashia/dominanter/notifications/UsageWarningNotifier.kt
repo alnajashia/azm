@@ -11,7 +11,6 @@ import android.content.SharedPreferences
 import android.util.Log
 import io.github.alnajashia.dominanter.MainActivity
 import io.github.alnajashia.dominanter.R
-import io.github.alnajashia.dominanter.data.SettingsStore
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -24,7 +23,7 @@ import kotlin.math.roundToInt
  * `notifications/UsageWarningDismissReceiver.kt` from DeChainer
  * (Apache-2.0, warleysr/dechainer).
  *
- * Settings live in the `usage_warning_prefs` store owned by [SettingsStore]
+ * Settings live in the `usage_warning_prefs` store owned by SettingsStore
  * under the original's keys (`enabled`, `stages` as a JSON string) — the
  * exact schema the Dart `ConfigStore` reads and writes, so the
  * Accessibility Service (which schedules and fires the warnings), the Dart
@@ -81,16 +80,26 @@ object UsageWarningSettings {
                 val obj = array.getJSONObject(i)
                 UsageAlertStage(
                     id = obj.getString("id"),
-                    minutesBefore = obj.getDouble("minutes").toFloat(),
+                    // Bounds enforced on decode (v1.0.5 audit A-L4): the
+                    // MIN/MAX constants were defined but never applied,
+                    // so a hand-edited store could schedule warnings at
+                    // absurd times. The Dart decoder clamps identically.
+                    minutesBefore = obj.getDouble("minutes").toFloat()
+                        .coerceIn(MIN_MINUTES_BEFORE, MAX_MINUTES_BEFORE),
                     type = try {
                         UsageAlertType.valueOf(obj.getString("type"))
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        Log.w("UsageWarningSettings", "Unknown stage type, using SOUND", e)
                         UsageAlertType.SOUND
                     },
-                    vibrationCount = obj.optInt("vibrationCount", 1),
+                    vibrationCount = obj.optInt("vibrationCount", 1)
+                        .coerceIn(0, MAX_VIBRATION_COUNT),
                 )
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            // Logged, not silent (audit A-L4): falling back to the
+            // default stages changes user-visible behaviour.
+            Log.w("UsageWarningSettings", "Malformed stages JSON, using defaults", e)
             defaultStages()
         }
     }

@@ -17,6 +17,9 @@
     <string name="block_reopening_body">يمكن إعادة فتح %1$s بعد %2$d ثانية.</string>
     <string name="block_generic_title">محظور</string>
     <string name="block_generic_body">%1$s محظور بواسطة عزم.</string>
+    <string name="block_content_title">تم اكتشاف محتوى غير لائق</string>
+    <string name="block_content_body">أُغلق %1$s لأنه تم اكتشاف محتوى بصري غير لائق على الشاشة.</string>
+    <string name="block_content_body_suspended">عُلّق %1$s لمدة %2$d دقيقة لأنه تم اكتشاف محتوى بصري غير لائق على الشاشة بشكل متكرر.</string>
     <string name="block_go_home">الذهاب إلى الشاشة الرئيسية</string>
 
     <string name="a11y_request_title">حماية عزم متوقفة</string>

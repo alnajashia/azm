@@ -237,7 +237,7 @@ class _LockScreenState extends State<LockScreen> {
           );
         }
       } catch (e) {
-        if (mounted) await showErrorSnackBar(context, e);
+        if (mounted) await showErrorCard(context, e);
       }
     } else if (mounted) {
       showInfoSnackBar(context, l10n.impulseStarted(config.durationMinutes));
@@ -375,7 +375,7 @@ class _LockScreenState extends State<LockScreen> {
     try {
       await action();
     } catch (e) {
-      if (mounted) await showErrorSnackBar(context, e);
+      if (mounted) await showErrorCard(context, e);
     } finally {
       if (mounted) setState(() => _focusBusy = false);
     }
@@ -704,9 +704,12 @@ class _LockScreenState extends State<LockScreen> {
         setState(() => _limits = _LimitsData(groupEntries, appEntries));
       }
     } catch (_) {
-      // Best-effort, like the focus card: an empty overview, never a
-      // blocked lock screen.
-      if (mounted) setState(() => _limits = const _LimitsData([], []));
+      // Best-effort, like the focus card: never a blocked lock screen —
+      // but a total load failure must not render as an EMPTY overview
+      // (which would read as "no limits are set"). _limits stays null,
+      // the overview's loading state, until a load actually succeeds
+      // (v1.0.5 audit C-L6).
+      if (mounted) setState(() => _limits = null);
     }
   }
 
@@ -743,7 +746,7 @@ class _LockScreenState extends State<LockScreen> {
                     color: theme.colorScheme.secondaryContainer,
                   ),
                   child: Icon(
-                    entry.isGroup ? Icons.group : Icons.apps,
+                    entry.isGroup ? Icons.group_outlined : Icons.apps_outlined,
                     color: theme.colorScheme.onSecondaryContainer,
                   ),
                 ),
@@ -775,7 +778,7 @@ class _LockScreenState extends State<LockScreen> {
             ),
             const SizedBox(height: 12),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
                 value: entry.fraction,
                 color: accent,
@@ -821,7 +824,7 @@ class _LockScreenState extends State<LockScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_outlined),
           onPressed: () => setState(() => _showingLimits = false),
         ),
         title: Text(context.l10n.todaysUsage),
@@ -873,30 +876,39 @@ class _LockScreenState extends State<LockScreen> {
 
   // --------------------------------------------------------- Access
 
+  /// The original's F32 no-credential fallback, shared by every path
+  /// that reaches it (v1.0.5 audit C-M1): when the device has NO
+  /// biometric and NO device credential enrolled, entry is allowed —
+  /// and it is always surfaced with the same explanatory dialog first,
+  /// never silent. (Previously the PlatformException codes below
+  /// unlocked silently while the unsupported-device path showed the
+  /// dialog.)
+  Future<void> _unlockWithoutDeviceCredential() async {
+    final l10n = context.l10n;
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.noDeviceLockTitle),
+        content: Text(l10n.noDeviceLockBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.continueAction),
+          ),
+        ],
+      ),
+    );
+    widget.controller.unlock();
+  }
+
   Future<void> _access() async {
     final l10n = context.l10n;
     setState(() => _authBusy = true);
     try {
       final supported = await _auth.isDeviceSupported();
       if (!supported) {
-        // Original F32 fallback: no biometric and no device credential
-        // enrolled => entry is allowed. Surfaced, not silent.
-        if (mounted) {
-          await showDialog<void>(
-            context: context,
-            builder: (dialogContext) => AlertDialog(
-              title: Text(l10n.noDeviceLockTitle),
-              content: Text(l10n.noDeviceLockBody),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: Text(l10n.continueAction),
-                ),
-              ],
-            ),
-          );
-          widget.controller.unlock();
-        }
+        await _unlockWithoutDeviceCredential();
         return;
       }
       final ok = await _auth.authenticate(
@@ -910,13 +922,14 @@ class _LockScreenState extends State<LockScreen> {
         showInfoSnackBar(context, l10n.authNotCompleted);
       }
     } on PlatformException catch (e) {
-      // Not enrolled / no passcode set: same documented fallback as above.
+      // Not enrolled / no passcode set: the same documented, surfaced
+      // fallback as the unsupported-device path (shared helper above).
       if (e.code == 'NotEnrolled' ||
           e.code == 'NotAvailable' ||
           e.code == 'PasscodeNotSet') {
-        widget.controller.unlock();
+        await _unlockWithoutDeviceCredential();
       } else if (mounted) {
-        await showErrorSnackBar(
+        await showErrorCard(
           context,
           PrivilegedException(
             'PERMISSION_DENIED',
@@ -930,11 +943,11 @@ class _LockScreenState extends State<LockScreen> {
       // user. Reported by the user 2026-11-09: tapping "Access app"
       // previously showed nothing at all when the prompt could not start.
       if (mounted) {
-        await showErrorSnackBar(
+        await showErrorCard(
           context,
           PrivilegedException(
             'PERMISSION_DENIED',
-            l10n.authCouldNotStart('$e'),
+            l10n.authCouldNotStart,
           ),
         );
       }
@@ -964,22 +977,24 @@ class _LockScreenState extends State<LockScreen> {
                 padding: const EdgeInsets.all(24),
                 children: [
                   // Brand header: the official Broken D mark, the app
-                  // name in Cairo Bold, and the brand tagline — centred,
-                  // with a modest mark and generous breathing room
-                  // around the whole block (v1.0.5, user directive: the
-                  // previous header was oversized and cramped).
-                  const SizedBox(height: 48),
+                  // name in Cairo Bold, and the brand tagline — centred.
+                  // v1.0.6 (user item 8): the mark is HALF its v1.0.5
+                  // size (80 → 40 dp) with more empty space around the
+                  // block, so the header breathes instead of crowding
+                  // the entry controls. (The launcher/adaptive icon is
+                  // a system asset and is not affected.)
+                  const SizedBox(height: 64),
                   Center(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(10),
                       child: Image.asset(
                         'assets/branding/dominanter_logo.png',
-                        width: 80,
-                        height: 80,
+                        width: 40,
+                        height: 40,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   Text(
                     l10n.appTitle,
                     style: theme.textTheme.headlineSmall?.copyWith(
@@ -1044,14 +1059,14 @@ class _LockScreenState extends State<LockScreen> {
                         minimumSize: const Size.fromHeight(56),
                       ),
                       onPressed: _authBusy ? null : _access,
-                      icon: const Icon(Icons.fingerprint),
+                      icon: const Icon(Icons.fingerprint_outlined),
                       label: Text(l10n.accessApp),
                     ),
                     if (_passwordSet) ...[
                       const SizedBox(height: 4),
                       TextButton.icon(
                         onPressed: _authBusy ? null : _accessWithPassword,
-                        icon: const Icon(Icons.password, size: 20),
+                        icon: const Icon(Icons.password_outlined, size: 20),
                         label: Text(l10n.usePasswordInstead),
                       ),
                     ],

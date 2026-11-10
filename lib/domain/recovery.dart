@@ -8,7 +8,8 @@
 ///   5-second undo window; undoing inside the window means the change is
 ///   never applied at all (the original's `PendingChange.schedule()`).
 ///   **Loosening** requires an active session.
-/// * The 48-hour forced removal is the only code-free escape (F2); its
+/// * The delayed forced removal (24 hours since v1.0.6, user directive;
+///   the original used 48) is the only code-free escape (F2); its
 ///   accounting uses elapsed-realtime-style monotonic accumulation so wall
 ///   clock changes cannot shorten it.
 library;
@@ -283,33 +284,88 @@ class PendingChange {
   }
 
   /// Cancels the window timer without settling the change. A pending change
-  /// that is disposed is simply never applied.
+  /// that is disposed is simply never applied. Disposal is itself a settle
+  /// path for [done]: the future completes (without applying) so a caller
+  /// awaiting it can never hang on a disposed change (v1.0.5 audit B-13).
   void dispose() {
     _timer?.cancel();
     _timer = null;
+    if (!_done.isCompleted) _done.complete();
+  }
+}
+
+/// Measures elapsed time between successive readings of a monotonic
+/// clock (v1.0.5 audit B-1). The forced-removal and impulse-lock timers
+/// advance ONLY by deltas produced here from
+/// `FocusSession.monotonicNow`-style readings, never by wall-clock
+/// differences: setting the device clock forward can no longer finish
+/// the delayed forced removal (or end an impulse lock) early, and a
+/// backward jump can no longer stretch them. The first [take] after
+/// construction or [reset] yields zero — time is only ever counted
+/// between two readings taken while the process is alive.
+class MonotonicDelta {
+  Duration? _last;
+
+  /// (Re)anchors the tracker at [now]; the next [take] measures from here.
+  void reset(Duration now) => _last = now;
+
+  /// The elapsed monotonic time since the previous reading (zero when
+  /// there is none, or if a reading ever went backwards — a monotonic
+  /// clock cannot, but the delta fails safe rather than negative).
+  Duration take(Duration now) {
+    final last = _last;
+    _last = now;
+    if (last == null) return Duration.zero;
+    final delta = now - last;
+    return delta.isNegative ? Duration.zero : delta;
   }
 }
 
 /// The 10-minute recovery session (F23). In-memory only, by design.
+///
+/// Expiry is **dual-clock** (v1.0.5 audit B-2): the session ends when
+/// EITHER the wall-clock deadline passes OR [duration] of monotonic
+/// (process Stopwatch) time has elapsed since [start]/[renew]. A
+/// backward wall-clock jump — which would push a wall-clock-only
+/// deadline arbitrarily far into the future — can therefore never
+/// extend the session past its real duration; a forward jump still
+/// ends it early, which is the fail-safe direction for a gate session.
 class RecoverySession extends ChangeNotifier {
-  RecoverySession({DateTime Function()? now, this.duration = const Duration(minutes: 10)})
-      : _now = now ?? DateTime.now;
+  RecoverySession({
+    DateTime Function()? now,
+    Duration Function()? monotonicNow,
+    this.duration = const Duration(minutes: 10),
+  })  : _now = now ?? DateTime.now,
+        _monotonicNow = monotonicNow ?? _defaultMonotonicNow;
+
+  /// Process-wide monotonic clock for the default [monotonicNow] —
+  /// the same discipline as `FocusSession.monotonicNow`.
+  static final Stopwatch _monotonic = Stopwatch()..start();
+  static Duration _defaultMonotonicNow() => _monotonic.elapsed;
 
   final Duration duration;
   final DateTime Function() _now;
+  final Duration Function() _monotonicNow;
   DateTime? _endsAt;
+  Duration? _monotonicEndsAt;
   Timer? _ticker;
 
-  bool get isActive => _endsAt != null && _now().isBefore(_endsAt!);
+  bool get isActive =>
+      _endsAt != null &&
+      _now().isBefore(_endsAt!) &&
+      _monotonicNow() < _monotonicEndsAt!;
 
   Duration get remaining {
     if (!isActive) return Duration.zero;
-    final r = _endsAt!.difference(_now());
+    final wall = _endsAt!.difference(_now());
+    final mono = _monotonicEndsAt! - _monotonicNow();
+    final r = wall < mono ? wall : mono;
     return r.isNegative ? Duration.zero : r;
   }
 
   void start() {
     _endsAt = _now().add(duration);
+    _monotonicEndsAt = _monotonicNow() + duration;
     _armTicker();
     notifyListeners();
   }
@@ -317,11 +373,13 @@ class RecoverySession extends ChangeNotifier {
   void renew() {
     if (!isActive) return;
     _endsAt = _now().add(duration);
+    _monotonicEndsAt = _monotonicNow() + duration;
     notifyListeners();
   }
 
   void end() {
     _endsAt = null;
+    _monotonicEndsAt = null;
     _ticker?.cancel();
     _ticker = null;
     notifyListeners();
@@ -332,6 +390,7 @@ class RecoverySession extends ChangeNotifier {
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!isActive) {
         _endsAt = null;
+        _monotonicEndsAt = null;
         _ticker?.cancel();
         _ticker = null;
       }
@@ -346,29 +405,46 @@ class RecoverySession extends ChangeNotifier {
   }
 }
 
-/// 48-hour forced-removal accounting (F2). The original accumulates elapsed
+/// Delayed forced-removal accounting (F2). The original accumulates elapsed
 /// time across reboots using both wall clock and elapsedRealtime; here the
 /// persisted state is (accumulated, lastTickEpoch) and progress advances by
 /// **monotonic deltas supplied by the caller** — a backwards wall-clock jump
 /// never adds negative time and a forwards jump only counts real elapsed
 /// deltas the caller measured, mirroring the original's distrust of RTC.
+///
+/// The delay itself is defined ONCE, natively
+/// (`RecoveryStore.FORCED_REMOVAL_DELAY_HOURS` = 24 hours since v1.0.6 — a
+/// deliberate user-directed deviation from the original's 48 hours) and
+/// reaches Dart through the channel's owner state; [defaultTotal] is only
+/// the bootstrap mirror used until the first native state arrives, and the
+/// controller rebinds the live value with [withTotal] at initialise.
 class ForcedRemoval {
-  const ForcedRemoval({this.active = false, this.accumulated = Duration.zero});
+  const ForcedRemoval({
+    this.active = false,
+    this.accumulated = Duration.zero,
+    this.total = defaultTotal,
+  });
 
-  static const total = Duration(hours: 48);
+  /// Bootstrap mirror of the native delay constant (see class doc).
+  static const defaultTotal = Duration(hours: 24);
 
   final bool active;
   final Duration accumulated;
+  final Duration total;
 
   Duration get remaining => total - accumulated;
   bool get isComplete => active && accumulated >= total;
   double get progress => (accumulated.inMilliseconds / total.inMilliseconds).clamp(0, 1);
 
-  ForcedRemoval start() => const ForcedRemoval(active: true);
-  ForcedRemoval cancel() => const ForcedRemoval();
+  /// The same accounting bound to a different delay (the native value).
+  ForcedRemoval withTotal(Duration value) =>
+      ForcedRemoval(active: active, accumulated: accumulated, total: value);
+
+  ForcedRemoval start() => ForcedRemoval(active: true, total: total);
+  ForcedRemoval cancel() => ForcedRemoval(total: total);
   ForcedRemoval advance(Duration delta) {
     if (!active || delta.isNegative) return this;
-    return ForcedRemoval(active: true, accumulated: accumulated + delta);
+    return ForcedRemoval(active: true, accumulated: accumulated + delta, total: total);
   }
 
   Map<String, dynamic> toJson() => {

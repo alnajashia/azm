@@ -152,8 +152,8 @@ class _PillNavItem extends StatelessWidget {
                   ? ClipPath(
                       clipper: const _SweptIndicatorClipper(),
                       child: DecoratedBox(
-                        // Flat red fill (v1.0.4 polish retired the
-                        // three-stop gradient; the swept shape stays).
+                        // Flat red fill (single flat colour, per the
+                        // no-gradient directive; the swept shape stays).
                         decoration: const BoxDecoration(
                           color: DominanterColors.red,
                         ),

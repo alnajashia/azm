@@ -16,7 +16,9 @@ import 'config_screens.dart';
 import 'entry_password_ui.dart';
 import 'impulse_focus_screens.dart';
 import 'recovery_ui.dart';
+import 'seal_rules_screen.dart';
 import 'setup_screen.dart';
+import 'visual_blocking_screen.dart';
 
 /// The original's preset hosts, verbatim (`ConfigTab.kt:522-524`).
 const dnsPresets = <String, String>{
@@ -43,6 +45,10 @@ class _ConfigTabState extends State<ConfigTab> {
   Object? _error;
   Timer? _ticker;
 
+  /// Leftover restriction keys detected while NOT owner (residue
+  /// probe in [_load]); empty when none were found.
+  List<String> _residue = const [];
+
   AppController get _c => widget.controller;
 
   @override
@@ -64,17 +70,28 @@ class _ConfigTabState extends State<ConfigTab> {
     try {
       final owner = await _c.channel.isDeviceOwner();
       PrivateDnsState? dns;
+      var residue = const <String>[];
       if (owner.isDeviceOwner) {
         try {
           dns = await _c.channel.getPrivateDns();
         } catch (_) {
           dns = null;
         }
+      } else {
+        // Not owner: probe for leftover restrictions from an earlier
+        // removal (field-failure follow-up). The probe needs no admin
+        // rights; a failed probe simply shows no warning.
+        try {
+          residue = await _c.channel.getUserRestrictionResidue();
+        } catch (_) {
+          residue = const <String>[];
+        }
       }
       if (mounted) {
         setState(() {
           _isOwner = owner.isDeviceOwner;
           _dns = dns;
+          _residue = residue;
         });
       }
     } catch (e) {
@@ -103,7 +120,21 @@ class _ConfigTabState extends State<ConfigTab> {
             child: Text(
               _error is PrivilegedException
                   ? friendlyError(_error! as PrivilegedException, l10n)
-                  : _error.toString(),
+                  : l10n.errGeneric,
+            ),
+          ),
+        if (_isOwner == false && _residue.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: SectionCard(
+              title: l10n.residueTitle,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.warning_amber_outlined),
+                  title: Text(l10n.residueBody),
+                  subtitle: Text(_residue.join(', ')),
+                ),
+              ],
             ),
           ),
         SectionCard(
@@ -111,7 +142,7 @@ class _ConfigTabState extends State<ConfigTab> {
           children: [
             ListTile(
               leading: Icon(
-                _isOwner == true ? Icons.verified_user : Icons.shield_outlined,
+                _isOwner == true ? Icons.verified_user_outlined : Icons.shield_outlined,
               ),
               title: Text(l10n.setupAndOwner),
               subtitle: Text(
@@ -121,7 +152,7 @@ class _ConfigTabState extends State<ConfigTab> {
                     ? l10n.provisionedAsOwner
                     : l10n.notOwnerOpenSetup,
               ),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: () => _push(
                 Scaffold(
                   appBar: AppBar(title: Text(l10n.setupTitle)),
@@ -141,7 +172,7 @@ class _ConfigTabState extends State<ConfigTab> {
                     ? l10n.dnsForcedHost(_dns!.hostname ?? '')
                     : l10n.dnsMode(_dns!.mode),
               ),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: _isOwner == true
                   ? _editDns
                   : () => showInfoSnackBar(context, l10n.dnsNeedsOwnerMsg),
@@ -153,45 +184,59 @@ class _ConfigTabState extends State<ConfigTab> {
           title: l10n.protectionTools,
           children: [
             ListTile(
-              leading: const Icon(Icons.language),
+              leading: const Icon(Icons.language_outlined),
               title: Text(l10n.browserRestrictions),
               subtitle: Text(l10n.browserRestrictionsSub),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: () => _push(BrowserRestrictionsScreen(controller: _c)),
             ),
             ListTile(
-              leading: const Icon(Icons.text_fields),
+              leading: const Icon(Icons.text_fields_outlined),
               title: Text(l10n.blockedWords),
               subtitle: Text(l10n.blockedWordsSub),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: () => _push(BlockedWordsScreen(controller: _c)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.image_search_outlined),
+              title: Text(l10n.visualBlockingTitle),
+              subtitle: Text(l10n.visualBlockingSub),
+              trailing: const Icon(Icons.navigate_next_outlined),
+              onTap: () => _push(VisualBlockingScreen(controller: _c)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.lock_outlined),
+              title: Text(l10n.sealRulesTitle),
+              subtitle: Text(l10n.sealRulesSub),
+              trailing: const Icon(Icons.navigate_next_outlined),
+              onTap: () => _push(SealRulesScreen(controller: _c)),
             ),
             ListTile(
               leading: const Icon(Icons.emergency_outlined),
               title: Text(l10n.impulseLockTitle),
               subtitle: Text(l10n.impulseLockSub),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: () => _push(ImpulseLockScreen(controller: _c)),
             ),
             ListTile(
               leading: const Icon(Icons.timer_outlined),
               title: Text(l10n.focusMode),
               subtitle: Text(l10n.focusModeSub),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: () => _push(FocusModeScreen(controller: _c)),
             ),
             ListTile(
               leading: const Icon(Icons.notifications_outlined),
               title: Text(l10n.usageWarnings),
               subtitle: Text(l10n.usageWarningsSub),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: () => _push(UsageWarningsScreen(controller: _c)),
             ),
             ListTile(
-              leading: const Icon(Icons.history),
+              leading: const Icon(Icons.history_outlined),
               title: Text(l10n.suspensionLogs),
               subtitle: Text(l10n.suspensionLogsSub),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: () => _push(SuspensionLogsScreen(controller: _c)),
             ),
             UnavailableTile(
@@ -211,14 +256,14 @@ class _ConfigTabState extends State<ConfigTab> {
           title: l10n.preferencesSection,
           children: [
             ListTile(
-              leading: const Icon(Icons.translate),
+              leading: const Icon(Icons.translate_outlined),
               title: Text(l10n.language),
               subtitle: Text(
                 _c.language == 'ar'
                     ? l10n.languageArabic
                     : l10n.languageEnglish,
               ),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: _pickLanguage,
             ),
             ListTile(
@@ -233,15 +278,15 @@ class _ConfigTabState extends State<ConfigTab> {
                 segments: const [
                   ButtonSegment(
                     value: ThemeMode.system,
-                    icon: Icon(Icons.brightness_auto),
+                    icon: Icon(Icons.brightness_auto_outlined),
                   ),
                   ButtonSegment(
                     value: ThemeMode.light,
-                    icon: Icon(Icons.light_mode),
+                    icon: Icon(Icons.light_mode_outlined),
                   ),
                   ButtonSegment(
                     value: ThemeMode.dark,
-                    icon: Icon(Icons.dark_mode),
+                    icon: Icon(Icons.dark_mode_outlined),
                   ),
                 ],
                 selected: {_c.themeMode},
@@ -249,10 +294,10 @@ class _ConfigTabState extends State<ConfigTab> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.password),
+              leading: const Icon(Icons.password_outlined),
               title: Text(l10n.changeRecoveryCode),
               subtitle: Text(l10n.changeRecoveryCodeSub),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: () async {
                 if (!await ensureRecoverySession(context, _c)) return;
                 if (!mounted) return;
@@ -329,7 +374,7 @@ class _ConfigTabState extends State<ConfigTab> {
                     : null,
               ),
               ListTile(
-                leading: const Icon(Icons.hourglass_bottom),
+                leading: const Icon(Icons.hourglass_bottom_outlined),
                 title: Text(l10n.forcedRemovalTitle),
                 subtitle: Text(
                   !forced.active
@@ -451,7 +496,15 @@ class _ConfigTabState extends State<ConfigTab> {
     // One instant, persisted and mirrored — the previous code called
     // `forced.start()` twice and stored two different start times.
     final started = forced.start();
-    await _c.config.setForcedRemoval(started);
+    try {
+      await _c.config.setForcedRemoval(started);
+    } catch (e) {
+      // A SEALED refusal lands here (Phase D): filing the delayed
+      // forced removal is refused natively while a seal is active,
+      // and the error card explains the responsible rule.
+      if (mounted) await showErrorCard(context, e);
+      return;
+    }
     _c.forcedRemoval = started;
     if (mounted) setState(() {});
   }
@@ -550,7 +603,7 @@ class _ConfigTabState extends State<ConfigTab> {
       }
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
     }
   }
 
@@ -611,12 +664,16 @@ class _ConfigTabState extends State<ConfigTab> {
   String _removalStepLabel(AppLocalizations l10n, String id) => switch (id) {
     'flag' || 'flagClear' => l10n.removalStepDisarm,
     'focus' => l10n.removalStepFocus,
+    'policies' => l10n.removalStepPolicies,
+    'privateDns' => l10n.removalStepPrivateDns,
     'unsuspend' => l10n.removalStepUnsuspend,
     'restrictions' => l10n.removalStepRestrictions,
     'unhide' => l10n.removalStepUnhide,
     'uninstallBlocks' => l10n.removalStepUninstallBlocks,
     'appRestrictions' => l10n.removalStepAppRestrictions,
+    'notifications' => l10n.removalStepNotifications,
     'clearOwner' => l10n.removalStepClearOwner,
+    'verify' => l10n.removalStepVerify,
     _ => id,
   };
 

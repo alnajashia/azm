@@ -22,6 +22,7 @@ object ErrorCodes {
     const val PROVISIONING_FAILED = "PROVISIONING_FAILED"
     const val DPM_NOT_OWNER = "DPM_NOT_OWNER"
     const val DPM_FAILED = "DPM_FAILED"
+    const val SEALED = "SEALED"
     const val PACKAGE_NOT_FOUND = "PACKAGE_NOT_FOUND"
     const val PERMISSION_DENIED = "PERMISSION_DENIED"
     const val UNSUPPORTED_ANDROID = "UNSUPPORTED_ANDROID"
@@ -50,6 +51,20 @@ class PrivException(
                 ErrorCodes.INTERNAL,
                 cause.message ?: "Internal error",
                 mapOf("cause" to "${cause.javaClass.name}: ${cause.message}"),
+            )
+
+        /**
+         * A removal operation refused because a user-defined SEAL rule
+         * is active (v1.0.6 Phase D). The details carry the responsible
+         * seal so the UI can render it with its remaining time. An
+         * active seal is never cancellable from the UI — it ends only
+         * by expiry or by its condition clearing.
+         */
+        fun sealed(seal: io.github.alnajashia.dominanter.data.SealRules.ActiveSeal): PrivException =
+            PrivException(
+                ErrorCodes.SEALED,
+                "Removal is sealed by an active seal rule",
+                mapOf("seal" to seal.toMap()),
             )
 
         fun dpmFailed(message: String, cause: Throwable? = null, verifiedState: Any? = null): PrivException {
@@ -82,6 +97,3 @@ class PrivException(
         private const val MAX_OUTPUT = 2048
     }
 }
-
-/** Caps free-text (shell output / exception text) before it crosses the channel. */
-fun String.capped(max: Int = 2048): String = if (length <= max) this else take(max)

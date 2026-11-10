@@ -36,16 +36,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get undo => 'تراجع';
 
   @override
-  String errorCodeLine(String code) {
-    return 'رمز الخطأ: $code';
-  }
-
-  @override
-  String errorCodeExitLine(String code, int exitCode) {
-    return 'رمز الخطأ: $code · الخروج $exitCode';
-  }
-
-  @override
   String get errUnavailable =>
       'طبقة خدمات أندرويد غير متاحة هنا (يحدث هذا في الاختبارات أو خارج الجهاز). لم تُنفَّذ أي عملية.';
 
@@ -72,11 +62,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errShellFailed => 'فشل أحد أوامر النظام.';
 
   @override
-  String errShellFailedExit(int exitCode) {
-    return 'فشل أحد أوامر النظام (رمز الخروج $exitCode).';
-  }
-
-  @override
   String get errProvisioningFailed =>
       'فشل تجهيز مالك الجهاز في المسار المباشر والاحتياطي معاً. راجع التشخيصات في شاشة الإعداد.';
 
@@ -101,9 +86,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errTimeout => 'انتهت مهلة العملية ولم يُبلَّغ عن نجاحها.';
 
   @override
-  String errInvalidArgument(String message) {
-    return 'إدخال غير صالح: $message';
-  }
+  String get errInvalidArgument =>
+      'بعض المعلومات المُدخلة غير صحيحة. تحقق منها وحاول مرة أخرى.';
 
   @override
   String get errNotImplemented => 'هذا غير منفّذ في هذا الإصدار.';
@@ -332,9 +316,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String authCouldNotStart(String error) {
-    return 'تعذّر بدء المصادقة: $error';
-  }
+  String get authCouldNotStart => 'تعذّر بدء المصادقة. حاول مرة أخرى.';
 
   @override
   String get passwordPromptTitle => 'أدخل كلمة مرور التطبيق';
@@ -528,9 +510,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get firstRunTitle => 'عزم — التشغيل الأول';
-
-  @override
-  String get gateChallengesTitle => 'تحديات الوصول';
 
   @override
   String get gateCodeTitle => 'أدخل رمز الاسترداد';
@@ -967,11 +946,8 @@ class AppLocalizationsAr extends AppLocalizations {
       'إزالة فورية، داخل جلسة استرداد — كل قيد يفرضه هذا التطبيق يتوقف فوراً.';
 
   @override
-  String get forcedRemoval48 => 'الإزالة القسرية بعد 48 ساعة';
-
-  @override
   String get forcedIdleSub =>
-      'المخرج الوحيد بلا رمز: بعد 48 ساعة يمكن إزالة مالك الجهاز دون رمز الاسترداد.';
+      'المخرج الوحيد بلا رمز: بعد 24 ساعة يمكن إزالة مالك الجهاز دون رمز الاسترداد.';
 
   @override
   String get forcedCompleteSub => 'اكتمل — يمكن إنهاء الإزالة الآن دون رمز.';
@@ -995,21 +971,21 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get startForcedBody =>
-      'يبدأ هذا عدًّا تنازليًا مدته 48 ساعة. عند انتهائه يمكن إزالة مالك الجهاز — ومعه كل قيد يفرضه هذا التطبيق — دون رمز الاسترداد. إنه المهرب الوحيد دون رمز، ويمكن إلغاؤه في أي وقت قبل اكتماله.';
+      'يبدأ هذا عدًّا تنازليًا مدته 24 ساعة. عند انتهائه يمكن إزالة مالك الجهاز — ومعه كل قيد يفرضه هذا التطبيق — دون رمز الاسترداد. إنه المهرب الوحيد دون رمز، ويمكن إلغاؤه في أي وقت قبل اكتماله.';
 
   @override
   String get cancelForcedTitle => 'إلغاء الإزالة القسرية؟';
 
   @override
   String get cancelForcedBody =>
-      'سيتم التخلص من العد التنازلي لـ 48 ساعة. ستتطلب إزالة مالك الجهاز رمز الاسترداد من جديد.';
+      'سيتم التخلص من العد التنازلي لـ 24 ساعة. ستتطلب إزالة مالك الجهاز رمز الاسترداد من جديد.';
 
   @override
   String get finishForcedTitle => 'إنهاء الإزالة القسرية؟';
 
   @override
   String get finishForcedBody =>
-      'اكتمل انتظار 48 ساعة. إزالة مالك الجهاز الآن ترفع كل قيد يفرضه هذا التطبيق على هذا الجهاز.';
+      'اكتمل انتظار 24 ساعة. إزالة مالك الجهاز الآن ترفع كل قيد يفرضه هذا التطبيق على هذا الجهاز.';
 
   @override
   String get understandRemovesAll => 'أفهم أن هذا يزيل كل الحماية';
@@ -1054,6 +1030,518 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get removalStepAppRestrictions => 'مسح قيود التطبيقات';
+
+  @override
+  String get info_disallow_biometric =>
+      'يمنع إلغاء القفل البيومتري (البصمة/الوجه) على مستوى النظام (مفتاح سامسونج). يؤثر أيضًا على الدخول إلى عزم نفسه إن اعتمدت على دخول البصمة — استخدمه بحذر.';
+
+  @override
+  String get info_disallow_camera_toggle =>
+      'يمنع مفتاح خصوصية الكاميرا (مفتاح المستشعرات في الإعدادات السريعة). يمنع تغيير حالة الكاميرا من لوحة المستشعرات.';
+
+  @override
+  String get info_disallow_config_default_apps =>
+      'يمنع تغيير التطبيقات الافتراضية (المتصفح والهاتف والرسائل والمساعد). يبقي افتراضياتك الآمنة المختارة — فمثلًا يبقى متصفح مفلتر هو الافتراضي.';
+
+  @override
+  String get info_disallow_config_private_dns =>
+      'يمنع تغيير إعداد DNS الخاص. مهم إذا كان ترشيحك يعتمد على محلّل DNS محدد — تغييره يعطّل المرشح بصمت. أثر جانبي: يتجمد مزوّد DNS أثناء تفعيله.';
+
+  @override
+  String get info_disallow_microphone_toggle =>
+      'يمنع مفتاح خصوصية الميكروفون (مفتاح المستشعرات في سامسونج/الإعدادات السريعة). يمنع تغيير حالة الميكروفون من لوحة المستشعرات.';
+
+  @override
+  String get info_ensure_verify_apps =>
+      'يفرض بقاء التحقق من التطبيقات (فحص التثبيتات بأسلوب Play Protect) مفعّلًا. يبقي شبكة أمان ضد التطبيقات الضارة؛ إيقاف الحمايات خطوة أولى شائعة في أدلة التجاوز.';
+
+  @override
+  String get info_no_add_clone_profile =>
+      'يمنع إنشاء ملف مستنسخ أو تطبيقات مستنسخة (سامسونج). التطبيقات المستنسخة نسخة ثانية منفصلة قد لا تغطيها الحدود.';
+
+  @override
+  String get info_no_add_managed_profile =>
+      'يمنع إنشاء ملف عمل/مُدار. قد يحمل ملف منفصل تطبيقاته غير المفلترة.';
+
+  @override
+  String get info_no_add_private_profile =>
+      'يمنع إنشاء ملف/مساحة خاصة. قد تخفي المساحة الخاصة التطبيقات عن العرض الرئيسي وعن الفحوص العابرة.';
+
+  @override
+  String get info_no_add_user =>
+      'يمنع إنشاء مستخدمي أندرويد جدد على الجهاز. المستخدم الثاني مساحة غير مفلترة تمامًا، لذا يغلق هذا تجاوزًا كبيرًا.';
+
+  @override
+  String get info_no_add_wifi_config =>
+      'يمنع إضافة إعدادات شبكات Wi-Fi جديدة مع إبقاء الحالية قابلة للاستخدام. نسخة أخف من قفل Wi-Fi بالكامل.';
+
+  @override
+  String get info_no_adjust_volume =>
+      'يمنع تغيير مستوى الصوت. يُستخدم أحيانًا لإبقاء أصوات التحذير مسموعة. أثر جانبي: تتوقف أزرار الصوت للوسائط والمكالمات.';
+
+  @override
+  String get info_no_airplane_mode =>
+      'يمنع تشغيل وضع الطيران. يمنع قطع الاتصال للهروب من ترشيح الشبكة — رغم إمكانية إعادة الانضمام إلى Wi-Fi عادة. أثر جانبي: لا وضع طيران للرحلات أثناء تفعيله.';
+
+  @override
+  String get info_no_ambient_display =>
+      'يمنع العرض المحيطي (شاشة اللمحة دائمة التشغيل). تحكم بسيط في سلوك العرض.';
+
+  @override
+  String get info_no_assist_content =>
+      'يمنع مشاركة محتوى الشاشة مع المساعد. موجّه للخصوصية؛ يفقد المساعد سياق الشاشة.';
+
+  @override
+  String get info_no_autofill =>
+      'يمنع إطار الملء التلقائي (ملء كلمات المرور/النماذج). موجّه للأمان؛ أثر جانبي: لا ملء تلقائي لكلمات المرور المحفوظة في أي مكان.';
+
+  @override
+  String get info_no_bluetooth =>
+      'يمنع استخدام البلوتوث كليًا. أثر جانبي: تتوقف السماعات والساعات واتصالات السيارة.';
+
+  @override
+  String get info_no_bluetooth_sharing =>
+      'يمنع مشاركة الملفات عبر البلوتوث مع إبقاء صوت البلوتوث يعمل. خيار أضيق وألطف من حظر البلوتوث بالكامل.';
+
+  @override
+  String get info_no_camera =>
+      'يمنع الكاميرا بالكامل (مفتاح سامسونج). أثر جانبي: لا يمكن لأي تطبيق التقاط صور أو فيديو، بما في ذلك استخدامات بريئة مثل مسح المستندات.';
+
+  @override
+  String get info_no_change_wifi_state =>
+      'يمنع تشغيل Wi-Fi أو إيقافه. مفيد عندما تكون حالة الاتصال نفسها جزءًا من الروتين. أثر جانبي: لا تبديل سريع لـ Wi-Fi من الإعدادات السريعة.';
+
+  @override
+  String get info_no_config_bluetooth =>
+      'يمنع تغيير إعدادات البلوتوث (إقران أجهزة جديدة). أثر جانبي: لا يمكن إقران إكسسوارات جديدة أثناء تفعيله.';
+
+  @override
+  String get info_no_config_brightness =>
+      'يمنع تغيير إعدادات سطوع الشاشة. بسيط؛ يبقي إعدادات العرض مستقرة أساسًا.';
+
+  @override
+  String get info_no_config_cell_broadcasts =>
+      'يمنع تغيير إعدادات بث الخلية (تنبيهات الطوارئ). اتركه متوقفًا ما لم يكن لديك سبب محدد — تنبيهات الطوارئ مهمة.';
+
+  @override
+  String get info_no_config_credentials =>
+      'يمنع تغيير بيانات الاعتماد المخزنة وتثبيت الشهادات. مهم لأن شهادة يثبّتها المستخدم قد تتيح اعتراض الحركة وتجاوز المرشح. أثر جانبي: تتجمد إعدادات شهادات العمل/المدرسة.';
+
+  @override
+  String get info_no_config_date_time =>
+      'يمنع تغيير التاريخ والوقت. يحمي الحدود والجداول الزمنية من الغش بتحريك الساعة. أثر جانبي: تصحيح الوقت يدويًا متوقف؛ والوقت التلقائي يعمل.';
+
+  @override
+  String get info_no_config_locale =>
+      'يمنع تغيير إعدادات لغة النظام/المنطقة. يبقي إعداد الجهاز مستقرًا.';
+
+  @override
+  String get info_no_config_location =>
+      'يمنع تغيير إعدادات الموقع. يبقي السلوك المعتمد على الموقع مستقرًا؛ لا يحظر المحتوى بحد ذاته.';
+
+  @override
+  String get info_no_config_mobile_networks =>
+      'يمنع تغيير إعدادات شبكة الجوال (APN ووضع الشبكة والمشغّل). مفيد لأن حيل APN قد تلتف حول ترشيح DNS. أثر جانبي: تتجمد أيضًا إعدادات التجوال والمشغّل.';
+
+  @override
+  String get info_no_config_screen_timeout =>
+      'يمنع تغيير مهلة الشاشة. يبقي سلوك إطفاء الشاشة الذي اخترته؛ حماية روتينية بسيطة.';
+
+  @override
+  String get info_no_config_tethering =>
+      'يمنع تغيير أي إعدادات ربط (نقطة اتصال Wi-Fi وUSB وبلوتوث). يمنع الهاتف من أن يصبح بابًا جانبيًا حول ترشيح الشبكة.';
+
+  @override
+  String get info_no_config_vpn =>
+      'يمنع تغيير إعدادات VPN. مهم: قد يتجاوز VPN ترشيح DNS بالكامل، لذا قفل إعدادات VPN يحمي الإعداد كله. أثر جانبي: لا يمكنك إضافة VPN أو تبديله أثناء تفعيله.';
+
+  @override
+  String get info_no_config_wifi =>
+      'يمنع تغيير إعدادات Wi-Fi: الانضمام إلى شبكات جديدة أو نسيان المحفوظة. مفيد ضد الانتقال إلى شبكة غير مفلترة. أثر جانبي: لا يمكنك الانضمام إلى شبكة Wi-Fi جديدة أثناء تفعيله.';
+
+  @override
+  String get info_no_config_wifi_private =>
+      'يمنع تغيير إعداد عنوان MAC الخاص (العشوائي) لشبكة Wi-Fi (سامسونج). يبقي هوية الشبكة ثابتة لتواصل مرشحات الشبكة التعرف على الجهاز.';
+
+  @override
+  String get info_no_config_wifi_shared =>
+      'يمنع تغيير خيارات إعداد Wi-Fi المشتركة (سامسونج). يمنع تعديل إعدادات الشبكة بهدوء.';
+
+  @override
+  String get info_no_content_capture =>
+      'يمنع التطبيقات من التقاط محتوى الشاشة لميزات مثل المساعدات المعتمدة على اللقطات. تحكم خصوصية؛ قد يكسر بعض ميزات التحديد الذكي.';
+
+  @override
+  String get info_no_content_suggestions =>
+      'يمنع اقتراحات المحتوى (الردود/الاقتراحات الذكية المستمدة من محتوى الشاشة). موجّه للخصوصية؛ بسيط.';
+
+  @override
+  String get info_no_control_apps =>
+      'يمنع فتح شاشات معلومات التطبيقات حيث يمكن إيقاف التطبيقات قسرًا أو مسح بياناتها أو تغيير أذوناتها. يوقف طريق تجاوز شائعًا. أثر جانبي: لا يمكنك أيضًا إدارة تخزين التطبيقات أو أذوناتها من هناك أثناء تفعيله.';
+
+  @override
+  String get info_no_create_windows =>
+      'يمنع التطبيقات من رسم نوافذ متراكبة فوق تطبيقات أخرى. يزيد الأمان ضد اختطاف اللمس، لكنه يكسر تراكبات مشروعة مثل فقاعات الدردشة وبعض أدوات إمكانية الوصول.';
+
+  @override
+  String get info_no_cross_profile_copy_paste =>
+      'يمنع النسخ/اللصق بين الملفات. يوقف انتقال النصوص والروابط من الملف المضبوط إلى آخر.';
+
+  @override
+  String get info_no_data_roaming =>
+      'يمنع تجوال البيانات. للتحكم في التكلفة أساسًا؛ لا يرشّح المحتوى.';
+
+  @override
+  String get info_no_debugging_features =>
+      'يمنع ميزات التصحيح مثل ADB. يمنع تغيير الجهاز من كمبيوتر لتجاوز الحماية. أثر جانبي: لا يمكن للمطورين تصحيح هذا الجهاز أثناء تفعيله.';
+
+  @override
+  String get info_no_factory_reset =>
+      'يمنع إعادة ضبط المصنع من الإعدادات. يحمي الإعداد كله من المسح في لحظة ضعف. هذا إعداد قوي: تبقى الاستعادة عبر مسار إزالة عزم نفسه ممكنة، لكن طريق الإعدادات مغلق.';
+
+  @override
+  String get info_no_fun =>
+      'يمنع ميزات أندرويد الممتعة/بيض عيد الفصح. غير ضار وشكلي غالبًا.';
+
+  @override
+  String get info_no_grant_admin =>
+      'يمنع منح حقوق مسؤول الجهاز لتطبيقات أخرى. يمنع تطبيق مسؤول آخر من التدخل في موقع عزم.';
+
+  @override
+  String get info_no_install_apps =>
+      'يمنع تثبيت أي تطبيقات جديدة كليًا. مفيد عندما تريد تجميد مجموعة التطبيقات الحالية في الهاتف. أثر جانبي: حتى التطبيقات الموثوقة لا يمكن إضافتها حتى إيقاف هذا.';
+
+  @override
+  String get info_no_install_unknown_sources =>
+      'يمنع تثبيت التطبيقات من خارج متجر Play (ملفات APK والمتصفحات ومديري الملفات). من أقوى وسائل الحماية ضد التطبيقات المشتتة والضارة المحمّلة جانبيًا. أثر جانبي: تُحظر أيضًا عمليات تثبيت APK المشروعة.';
+
+  @override
+  String get info_no_install_unknown_sources_globally =>
+      'النسخة الشاملة من حظر المصادر غير المعروفة: تسري في كل مكان على الجهاز ولكل المستخدمين والملفات. أقوى من الإعداد لكل مصدر، وتحظر أيضًا تثبيتات APK المشروعة على مستوى الجهاز.';
+
+  @override
+  String get info_no_modify_accounts =>
+      'يمنع إضافة حسابات على الجهاز أو إزالتها. قد يكون الحساب الجديد بداية جديدة تهرب من عادات مستوى التطبيق. أثر جانبي: لا يمكنك تسجيل الدخول إلى خدمات جديدة على مستوى النظام أثناء تفعيله.';
+
+  @override
+  String get info_no_network_reset =>
+      'يمنع إعادة تعيين إعدادات الشبكة. قد تمسح إعادة التعيين شبكات Wi-Fi المحفوظة وحالة DNS بلمسة واحدة.';
+
+  @override
+  String get info_no_non_market_app_by_knox =>
+      'يمنع التطبيقات من خارج المتاجر الرسمية على مستوى Samsung Knox. حظر Knox الخاص للتحميل الجانبي؛ قد يتداخل مع قيود المصادر غير المعروفة.';
+
+  @override
+  String get info_no_outgoing_beam =>
+      'يمنع Android Beam (المشاركة بلمس NFC). قناة جانبية صغيرة لتمرير الروابط والملفات بين الهواتف.';
+
+  @override
+  String get info_no_outgoing_calls =>
+      'يمنع إجراء المكالمات الصادرة. قيد ثقيل للتحكم في الاتصال؛ مكالمات الطوارئ لا يحظرها أندرويد أبدًا.';
+
+  @override
+  String get info_no_physical_media =>
+      'يمنع تركيب التخزين الخارجي (بطاقات SD وأقراص USB). يغلق طريقًا لجلب محتوى غير مفلتر. أثر جانبي: لا يمكن استخدام بطاقات الذاكرة أثناء تفعيله.';
+
+  @override
+  String get info_no_printing =>
+      'يمنع الطباعة من الجهاز. بسيط؛ يغلق طريقًا لتصدير المحتوى إلى ورق أو طابعات PDF.';
+
+  @override
+  String get info_no_remove_managed_profile =>
+      'يمنع إزالة الملف المُدار (العمل). يبقي مساحة مُدارة حالية سليمة.';
+
+  @override
+  String get info_no_remove_user =>
+      'يمنع إزالة مستخدمي أندرويد الحاليين. يبقي بنية مستخدمي الجهاز دون تغيير.';
+
+  @override
+  String get info_no_safe_boot =>
+      'يمنع الإقلاع إلى الوضع الآمن. مهم: الوضع الآمن يعطّل خدمات إمكانية الوصول وإنفاذ الطرف الثالث، فهو تجاوز كلاسيكي. أثر جانبي: استكشاف الأخطاء عبر الوضع الآمن غير متاح أثناء تفعيله.';
+
+  @override
+  String get info_no_set_user_icon =>
+      'يمنع تغيير صورة ملف المستخدم. قيد شكلي فقط، بلا أثر وظيفي.';
+
+  @override
+  String get info_no_set_wallpaper =>
+      'يمنع تغيير الخلفية. ثبات شكلي؛ يُستخدم أحيانًا لإبقاء خلفية محفّزة في مكانها.';
+
+  @override
+  String get info_no_share_location =>
+      'يمنع مشاركة موقع الجهاز مع التطبيقات. حماية للخصوصية أكثر منها مرشح محتوى.';
+
+  @override
+  String get info_no_sharing_into_profile =>
+      'يمنع مشاركة المحتوى من الملف الرئيسي إلى ملف آخر. يمنع تمرير المحتوى إلى مساحة أقل ضبطًا.';
+
+  @override
+  String get info_no_sim_globally =>
+      'يمنع استخدام شريحة SIM بالكامل (المكالمات وبيانات الجوال). قيد ثقيل جدًا — يفقد الهاتف خدمة الجوال أثناء تفعيله.';
+
+  @override
+  String get info_no_sms =>
+      'يمنع إرسال رسائل SMS. تحكم في الاتصال؛ تطبيقات المراسلة لا تتأثر.';
+
+  @override
+  String get info_no_system_error_dialogs =>
+      'يمنع مربعات أخطاء النظام (نوافذ تعطل التطبيقات). سلوك شكلي/مؤسسي؛ الأعطال تحدث، بصمت فقط.';
+
+  @override
+  String get info_no_thread_network =>
+      'يمنع إنشاء شبكات Thread الحدودية أو الانضمام إليها (المنزل الذكي). متخصص؛ غير ذي صلة بمعظم الهواتف.';
+
+  @override
+  String get info_no_ultra_wideband_radio =>
+      'يمنع راديو النطاق فائق الاتساع (UWB) المستخدم في أجهزة التتبع الدقيقة. تحكم متخصص في العتاد.';
+
+  @override
+  String get info_no_unified_password =>
+      'يمنع فرض كلمة مرور موحدة عبر ملفي العمل والشخصي. موجّه للمؤسسات؛ غير ذي صلة بهاتف بملف واحد.';
+
+  @override
+  String get info_no_uninstall_apps =>
+      'يمنع إلغاء تثبيت التطبيقات. مفيد لمنع حذف تطبيق محظور للهروب من حدوده — ولحماية إعداد عزم المرافق. أثر جانبي: لا يمكنك إزالة أي تطبيق أثناء تفعيله.';
+
+  @override
+  String get info_no_unmute_microphone =>
+      'يمنع إلغاء كتم الميكروفون أثناء المكالمات. تحكم خصوصية للأجهزة المُدارة؛ نادر الصلة بالاستخدام الشخصي.';
+
+  @override
+  String get info_no_usb_file_transfer =>
+      'يمنع نقل الملفات عبر USB. يمنع نقل المحتوى إلى الهاتف أو منه بالكابل. أثر جانبي: يتوقف أيضًا استيراد الصور والملفات عبر USB؛ والشحن يعمل.';
+
+  @override
+  String get info_no_user_switch =>
+      'يمنع التبديل بين مستخدمي أندرويد. يرافق قاعدة منع المستخدمين الجدد: حتى المستخدمون الإضافيون الحاليون لا يمكن الدخول إليهم.';
+
+  @override
+  String get info_no_wallpaper =>
+      'يمنع تغييرات الخلفية (مفتاح سامسونج). ثبات شكلي، مثل قيد الخلفية القياسي.';
+
+  @override
+  String get info_no_wifi_direct =>
+      'يمنع اتصالات Wi-Fi Direct (المشاركة من جهاز لجهاز دون راوتر). يغلق قناة جانبية لمشاركة الملفات والمحتوى. أثر جانبي: تتوقف بعض الطابعات وميزات المشاركة.';
+
+  @override
+  String get info_no_wifi_tethering =>
+      'يمنع إعدادات نقطة اتصال Wi-Fi. يمنع مشاركة اتصال الهاتف لتجاوز المرشحات على أجهزة أخرى.';
+
+  @override
+  String get restrictionInfoGeneric =>
+      'هذا الإعداد يقيّد جزءًا من النظام. تفعيله يشدّد الجهاز؛ وإيقافه يرخيه. إذا لم تكن متأكدًا، اتركه متوقفًا واسأل لاحقًا.';
+
+  @override
+  String get errGeneric =>
+      'حدث خطأ ما. حاول مرة أخرى. إذا تكرر الخطأ، أعد تشغيل التطبيق.';
+
+  @override
+  String get errSealed => 'الإزالة مختومة حاليًا بإحدى قواعد الختم الخاصة بك.';
+
+  @override
+  String get errorCardTitle => 'حدث خطأ ما';
+
+  @override
+  String get okButton => 'حسنًا';
+
+  @override
+  String get entryGraceTitle => 'توقيت قفل التطبيق';
+
+  @override
+  String get entryGraceSub =>
+      'كم يبقى عزم مفتوحًا بعد دخولك، قبل أن يطلب بصمتك أو كلمة المرور مجددًا';
+
+  @override
+  String get entryGraceImmediately => 'فورًا';
+
+  @override
+  String get entryGraceOneMinute => 'بعد دقيقة واحدة';
+
+  @override
+  String get entryGraceFifteenMinutes => 'بعد 15 دقيقة';
+
+  @override
+  String get entryGraceOneHour => 'بعد ساعة واحدة';
+
+  @override
+  String get visualBlockingTitle => 'فحص المحتوى';
+
+  @override
+  String get visualBlockingSub =>
+      'فحص الصور داخل التطبيقات المختارة على الجهاز نفسه';
+
+  @override
+  String get visualExplanation =>
+      'يفحص عزم الصور الظاهرة على الشاشة داخل التطبيقات التي تختارها، باستخدام نموذج يعمل بالكامل على هذا الجهاز. لا يُرفع أي شيء. عند اكتشاف محتوى غير لائق يُغلق التطبيق؛ والتكرار قد يؤدي إلى تعليقه. أما فحص النصوص فهو منفصل: إنه ميزة الكلمات المحظورة، وتعمل أيضًا لكل تطبيق.';
+
+  @override
+  String get visualEnable => 'فحص الصور في التطبيقات المختارة';
+
+  @override
+  String get visualRequiresAccessibility => 'يتطلب تفعيل خدمة إمكانية الوصول.';
+
+  @override
+  String get visualAppsSection => 'التطبيقات المراد فحصها';
+
+  @override
+  String visualAppsSelected(int count) {
+    return 'تم اختيار $count تطبيق';
+  }
+
+  @override
+  String get visualSelectApps => 'اختيار التطبيقات';
+
+  @override
+  String get visualCategoriesSection => 'الحظر عند الاكتشاف';
+
+  @override
+  String get visualCategoriesDesc =>
+      'أنواع المحتوى التي تُغلق التطبيق عند عثور النموذج عليها على الشاشة.';
+
+  @override
+  String get visualCategoryDrawings => 'رسوم';
+
+  @override
+  String get visualCategoryHentai => 'هنتاي';
+
+  @override
+  String get visualCategoryPorn => 'إباحي';
+
+  @override
+  String get visualCategorySexy => 'مثير / إيحائي';
+
+  @override
+  String get visualThresholdSection => 'الحساسية';
+
+  @override
+  String get visualThresholdDesc =>
+      'الأعلى يعني أن عزم لا يحظر إلا عند تأكد أكبر. والأدنى يحظر أكثر، مع أخطاء أكثر.';
+
+  @override
+  String get visualSuspend => 'تعليق التطبيق بعد اكتشافات متكررة';
+
+  @override
+  String get visualSuspendDesc =>
+      'بعد عدة اكتشافات في وقت قصير، يُعلّق التطبيق لفترة بدلًا من إغلاقه فقط.';
+
+  @override
+  String get visualSuspendCount => 'الاكتشافات قبل التعليق';
+
+  @override
+  String get visualSuspendWindow => 'خلال (دقائق)';
+
+  @override
+  String get visualSuspendDuration => 'التعليق لمدة (دقائق)';
+
+  @override
+  String get visualSaved => 'تم حفظ إعدادات فحص المحتوى.';
+
+  @override
+  String get sealRulesTitle => 'قواعد الختم';
+
+  @override
+  String get sealRulesSub => 'شروط يرفض فيها عزم إزالة نفسه';
+
+  @override
+  String get sealIntro =>
+      'بينما أي قاعدة ختم نشطة، يرفض عزم إزالة مالك الجهاز — فورًا أو عبر بدء الإزالة القسرية المؤجلة. لا يمكن إلغاء ختم نشط؛ ينتهي فقط بانتهاء وقته أو زوال شرطه. ورمز الاسترداد الورقي لا يكسر ختمًا نشطًا. والإزالة القسرية التي بدأت قبل نشوء الختم تكتمل في موعدها بعد 24 ساعة. للختم قوة فقط بينما عزم مالك للجهاز: بدون مالك الجهاز يتيح أندرويد إلغاء تثبيت أي تطبيق ولا تستطيع أي قاعدة منع ذلك.';
+
+  @override
+  String get sealNoRules => 'لا توجد قواعد ختم بعد.';
+
+  @override
+  String get sealAddRule => 'إضافة قاعدة ختم';
+
+  @override
+  String get sealEditRule => 'تعديل قاعدة الختم';
+
+  @override
+  String get sealDeleteRule => 'حذف القاعدة';
+
+  @override
+  String get sealTrigger => 'الختم أثناء / عند';
+
+  @override
+  String get sealTriggerAppBlocked => 'تطبيق مختار محظور بواسطة عزم';
+
+  @override
+  String get sealTriggerAppSuspended => 'تطبيق مختار معلّق بواسطة عزم';
+
+  @override
+  String get sealTriggerFocusRunning => 'جلسة تركيز جارية';
+
+  @override
+  String get sealTriggerVisual => 'اكتشاف محتوى غير لائق في تطبيق مختار';
+
+  @override
+  String get sealTriggerWord => 'اكتشاف كلمة محظورة في تطبيق مختار';
+
+  @override
+  String get sealApp => 'التطبيق';
+
+  @override
+  String get sealChooseApp => 'اختر تطبيقًا';
+
+  @override
+  String get sealDuration => 'يستمر الختم';
+
+  @override
+  String get sealDuration30m => '30 دقيقة';
+
+  @override
+  String get sealDuration1h => 'ساعة واحدة';
+
+  @override
+  String get sealDuration6h => '6 ساعات';
+
+  @override
+  String get sealDuration24h => '24 ساعة';
+
+  @override
+  String get sealDuration7d => '7 أيام';
+
+  @override
+  String get sealRuleEnabled => 'القاعدة مفعّلة';
+
+  @override
+  String get sealActiveTitle => 'الختم نشط';
+
+  @override
+  String sealActiveCondition(String rule) {
+    return 'قاعدة ختم سارية: $rule. تُرفض الإزالة أثناء سريانها.';
+  }
+
+  @override
+  String sealActiveTimed(String rule, String remaining) {
+    return 'قاعدة ختم سارية: $rule. تبقّى نحو $remaining.';
+  }
+
+  @override
+  String sealStatusActive(String rule) {
+    return 'مختوم: $rule';
+  }
+
+  @override
+  String get sealNotEnforceable => 'غير قابل للتنفيذ: عزم ليس مالك الجهاز.';
+
+  @override
+  String get removalStepPolicies => 'إعادة تعيين سياسات الجهاز';
+
+  @override
+  String get removalStepPrivateDns => 'إعادة تعيين DNS الخاص';
+
+  @override
+  String get removalStepNotifications => 'إلغاء الإشعارات';
+
+  @override
+  String get removalStepVerify => 'التحقق بعد الإزالة';
+
+  @override
+  String get residueTitle => 'تم اكتشاف قيود متبقية';
+
+  @override
+  String get residueBody =>
+      'لا تزال بعض القيود التي وضعها عزم سارية على هذا الجهاز، ولم يعد لدى عزم الصلاحية لإزالتها. للتنظيف، أعد تجهيز عزم كمالك للجهاز من تبويب الحالة، ثم شغّل إزالة مالك الجهاز مرة أخرى.';
 
   @override
   String get removalStepClearOwner => 'إزالة مالك الجهاز';
@@ -1913,7 +2401,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'يتطلب DNS الخاص مالك الجهاز — أكمل الإعداد أولًا.';
 
   @override
-  String get forcedRemovalTitle => 'الإزالة القسرية بعد 48 ساعة';
+  String get forcedRemovalTitle => 'الإزالة القسرية بعد 24 ساعة';
 
   @override
   String forcedInProgressSub(String remaining) {
@@ -1969,7 +2457,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get impulseNoEarlyStop =>
-      'كما في الأصل، لا إيقاف مبكرًا للقفل: ينتهي من تلقاء نفسه عند انتهاء المؤقّت، وتُحرَّر حينها التطبيقات التي علّقها.';
+      'ينتهي القفل عند انتهاء مؤقّته — أو مبكرًا إذا أكملت التحديات التي اخترتها لقفل الاندفاع. وتُحرَّر التطبيقات التي علّقها عند انتهائه.';
 
   @override
   String startImpulseLock(int minutes) {
@@ -2147,4 +2635,41 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get preferencesSection => 'التفضيلات';
+
+  @override
+  String get passwordVerifyError =>
+      'تعذّر التحقق من كلمة المرور. لم يتغيّر شيء — حاول مرة أخرى.';
+
+  @override
+  String get passwordRecordCorrupt =>
+      'كلمة مرور التطبيق المخزّنة تالفة ولا يمكن استخدامها. عيّن كلمة مرور جديدة لاستبدالها.';
+
+  @override
+  String get impulseUnlockEarly => 'الإنهاء المبكر بالتحديات';
+
+  @override
+  String get impulseUnlockTitle => 'إنهاء قفل الاندفاع مبكرًا';
+
+  @override
+  String get impulseUnlockBody =>
+      'أكمل التحديات التي اخترتها لقفل الاندفاع لإنهاء هذا القفل الآن وتحرير التطبيقات التي علّقها.';
+
+  @override
+  String get impulseLockEndedEarly =>
+      'انتهى قفل الاندفاع — حُرّرت التطبيقات التي علّقها.';
+
+  @override
+  String get appsBrowseSection => 'خيارات قائمة التطبيقات';
+
+  @override
+  String get appProtectionSection => 'الحماية';
+
+  @override
+  String get appLimitsSection => 'الحدود والنوافذ';
+
+  @override
+  String get setupServicesSection => 'الخدمات والأذونات';
+
+  @override
+  String get storeCardTitle => 'احفظها بأمان';
 }

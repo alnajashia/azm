@@ -1,0 +1,76 @@
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+Resolving dependencies...
+Downloading packages...
+  characters 1.4.0 (1.4.1 available)
+  clock 1.1.2 (1.1.3 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  flutter_lints 5.0.0 (6.0.0 available)
+  flutter_plugin_android_lifecycle 2.0.34 (2.0.35 available)
+  intl 0.20.2 (0.20.3 available)
+  lints 5.1.1 (6.1.0 available)
+  local_auth 3.0.1 (3.0.2 available)
+  local_auth_android 2.0.8 (2.3.0 available)
+  local_auth_darwin 2.0.1 (2.0.5 available)
+  local_auth_windows 2.0.1 (2.0.2 available)
+  matcher 0.12.17 (0.12.20 available)
+  material_color_utilities 0.11.1 (0.13.1 available)
+  meta 1.16.0 (1.19.0 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  test_api 0.7.6 (0.7.15 available)
+  vector_math 2.2.0 (2.4.4 available)
+Got dependencies!
+17 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Running Gradle task 'assembleRelease'...                        
+Picked up JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/home/hatch/workspace/tmp_build/mitm/truststore.jks -Djavax.net.ssl.trustStorePassword=changeit
+   Woah! You appear to be trying to run flutter as root.
+   We strongly recommend running the flutter tool without superuser privileges.
+  /
+📎
+Font asset "MaterialIcons-Regular.otf" was tree-shaken, reducing it from 1645184 to 13124 bytes (99.2% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+e: file:///home/hatch/workspace/tmp_build/gradle_home/caches/8.12/transforms/df256ad3aceb544015835053471b01f8/transformed/jetified-litert-api-2.2.0-api.jar!/META-INF/third_party.odml.litert.litert.kotlin_litert_api_for_maven.kotlin_module Module was compiled with an incompatible version of Kotlin. The binary version of its metadata is 2.3.0, expected version is 2.1.0.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:79:16 Unresolved reference 'SystemRestrictions'.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:80:23 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:223:17 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:223:35 Unresolved reference 'getStatusBarDisabled'.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:321:28 Unresolved reference 'SystemRestrictions'.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:321:78 Unresolved reference 'distinct'.
+e: file:///home/hatch/workspace/dominater-rebuild/project/android/app/src/main/kotlin/io/github/alnajashia/dominanter/deviceowner/DeviceOwnerManager.kt:322:25 Method 'iterator()' is ambiguous for this expression. Applicable candidates:
+fun <T> Enumeration<T>.iterator(): Iterator<T>
+fun <T> Iterator<T>.iterator(): Iterator<T>
+fun <K, V> Map<out K, V>.iterator(): Iterator<Map.Entry<K, V>>
+fun <K, V> MutableMap<K, V>.iterator(): MutableIterator<MutableMap.MutableEntry<K, V>>
+fun CharSequence.iterator(): CharIterator
+fun BufferedInputStream.iterator(): ByteIterator
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileReleaseKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 3m 50s
+Running Gradle task 'assembleRelease'...                          231.0s
+
+┌─ Flutter Fix ────────────────────────────────────────────────────────────────────────────────┐
+│ [!] Your project requires a newer version of the Kotlin Gradle plugin.                       │
+│ Find the latest version on https://kotlinlang.org/docs/releases.html#release-details, then   │
+│ update the                                                                                   │
+│ version number of the plugin with id "org.jetbrains.kotlin.android" in the plugins block of  │
+│ /home/hatch/workspace/dominater-rebuild/project/android/settings.gradle.                     │
+│                                                                                              │
+│ Alternatively (if your project was created before Flutter 3.19), update                      │
+│ /home/hatch/workspace/dominater-rebuild/project/android/build.gradle.kts                     │
+│ ext.kotlin_version = '<latest-version>'                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────────────┘
+Gradle task assembleRelease failed with exit code 1

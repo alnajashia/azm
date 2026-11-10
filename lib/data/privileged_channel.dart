@@ -33,6 +33,14 @@ class PrivilegedException implements Exception {
 
   bool get isUnavailable => code == 'UNAVAILABLE';
   bool get isNotOwner => code == 'DPM_NOT_OWNER';
+
+  /// A removal refused by an active SEAL rule (v1.0.6 Phase D); the
+  /// responsible seal rides in [details] under 'seal'.
+  bool get isSealed => code == 'SEALED';
+  Map<String, dynamic>? get sealDetails {
+    final s = details['seal'];
+    return s is Map ? s.cast<String, dynamic>() : null;
+  }
   bool get isShizukuUnavailable =>
       code.startsWith('SHIZUKU_') || code == 'SHELL_FAILED';
 
@@ -744,6 +752,27 @@ class PrivilegedChannel {
     );
   }
 
+  /// Reads a native-verified boolean state field (v1.0.5 audit B-5/B-6).
+  /// A success reply that OMITS the field — or carries a non-bool — is a
+  /// broken native contract, not a state: it throws [PrivilegedException]
+  /// instead of fabricating a value. (Setters used to fall back to the
+  /// negation of the request and [isRecoveryCodeSet] to `false`, which
+  /// routed startup toward the setup wizard; both invented state the
+  /// native side never confirmed.)
+  bool _verifiedBool(
+    Map<String, dynamic> reply,
+    String field,
+    String method,
+  ) {
+    final value = reply[field];
+    if (value is bool) return value;
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply from native layer for $method',
+      {'cause': 'missing verified field "$field"'},
+    );
+  }
+
   // ---------------------------------------------------------- Shizuku
 
   Future<ShizukuStatus> getShizukuState() async =>
@@ -771,12 +800,60 @@ class PrivilegedChannel {
   Future<DeviceOwnerRemovalResult> removeDeviceOwner() async =>
       DeviceOwnerRemovalResult.fromMap(await _invokeMap('removeDeviceOwner'));
 
-  Future<({bool isDeviceOwner, bool isAdminActive})> isDeviceOwner() async {
+  /// The app's own user-restriction keys still in force for the user,
+  /// read natively WITHOUT owner rights (v1.0.5 field-failure
+  /// follow-up): after a removal that left residue, this is how the
+  /// app detects it — and the UI states plainly that clearing it
+  /// requires re-provisioning as Device Owner first.
+  Future<List<String>> getUserRestrictionResidue() async {
+    final m = await _invokeMap('getUserRestrictionResidue');
+    return [for (final e in (m['keys'] as List? ?? const [])) e as String];
+  }
+
+  Future<
+    ({bool isDeviceOwner, bool isAdminActive, int? forcedRemovalDelayHours})
+  >
+  isDeviceOwner() async {
     final m = await _invokeMap('isDeviceOwner');
     return (
       isDeviceOwner: m['isDeviceOwner'] as bool? ?? false,
       isAdminActive: m['isAdminActive'] as bool? ?? false,
+      // The forced-removal delay's native source of truth, riding the
+      // existing owner state (v1.0.6 directive) — null on older native
+      // sides, in which case the caller keeps its bootstrap mirror.
+      forcedRemovalDelayHours: (m['forcedRemovalDelayHours'] as num?)
+          ?.toInt(),
     );
+  }
+
+  // ---------------------------------------------------------- Visual blocking (F16/F17)
+
+  Future<Map<String, dynamic>> getVisualBlockingConfig() async =>
+      (await _invokeMap('getVisualBlockingConfig')).cast<String, dynamic>();
+
+  Future<Map<String, dynamic>> setVisualBlockingConfig(
+    Map<String, dynamic> config,
+  ) async => (await _invokeMap(
+    'setVisualBlockingConfig',
+    config,
+  )).cast<String, dynamic>();
+
+  // ---------------------------------------------------------- Seal rules (Phase D)
+
+  Future<Map<String, dynamic>> getSealRules() async =>
+      (await _invokeMap('getSealRules')).cast<String, dynamic>();
+
+  Future<Map<String, dynamic>> setSealRules(List<Object?> rules) async =>
+      (await _invokeMap('setSealRules', {
+        'rules': rules,
+      })).cast<String, dynamic>();
+
+  Future<List<Map<String, dynamic>>> getActiveSeals() async {
+    final m = await _invokeMap('getActiveSeals');
+    return [
+      for (final e in (m['activeSeals'] as List? ?? const []))
+        (e as Map).cast<String, dynamic>(),
+    ];
   }
 
   Future<ProvisioningDiagnostics> getProvisioningDiagnostics() async =>
@@ -808,7 +885,7 @@ class PrivilegedChannel {
       'packageName': packageName,
       'hidden': hidden,
     });
-    return m['isHidden'] as bool? ?? !hidden;
+    return _verifiedBool(m, 'isHidden', 'setAppHidden');
   }
 
   /// Returns per-package verified results. Partial failure throws
@@ -837,7 +914,7 @@ class PrivilegedChannel {
       'packageName': packageName,
       'blocked': blocked,
     });
-    return m['isUninstallBlocked'] as bool? ?? !blocked;
+    return _verifiedBool(m, 'isUninstallBlocked', 'setUninstallBlocked');
   }
 
   // ---------------------------------------------------------- Restrictions
@@ -866,9 +943,14 @@ class PrivilegedChannel {
       'packageName': packageName,
     });
     final r = m['restrictions'];
-    return r is Map
-        ? r.map((k, v) => MapEntry(k.toString(), v))
-        : <String, dynamic>{};
+    if (r is Map) return r.map((k, v) => MapEntry(k.toString(), v));
+    // A malformed reply must never masquerade as "no restrictions"
+    // (v1.0.5 audit B-7).
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply from native layer for getApplicationRestrictions',
+      {'cause': 'restrictions is not a Map'},
+    );
   }
 
   /// The target app's declared restrictions model (the original's
@@ -897,9 +979,12 @@ class PrivilegedChannel {
       'merge': merge,
     });
     final r = m['restrictions'];
-    return r is Map
-        ? r.map((k, v) => MapEntry(k.toString(), v))
-        : <String, dynamic>{};
+    if (r is Map) return r.map((k, v) => MapEntry(k.toString(), v));
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply from native layer for setApplicationRestrictions',
+      {'cause': 'restrictions is not a Map'},
+    );
   }
 
   Future<List<CapableApp>> listRestrictionCapableApps({
@@ -941,12 +1026,11 @@ class PrivilegedChannel {
       (await _invokeMap('isWriteSecureSettingsGranted'))['granted'] as bool? ??
       false;
 
-  Future<bool> setAccessibilityEnabled(bool enabled) async =>
-      (await _invokeMap('setAccessibilityEnabled', {
-            'enabled': enabled,
-          }))['isEnabled']
-          as bool? ??
-      !enabled;
+  Future<bool> setAccessibilityEnabled(bool enabled) async => _verifiedBool(
+        await _invokeMap('setAccessibilityEnabled', {'enabled': enabled}),
+        'isEnabled',
+        'setAccessibilityEnabled',
+      );
 
   Future<({bool isEnabled, bool isServiceRunning})>
   isAccessibilityEnabled() async {
@@ -1084,8 +1168,11 @@ class PrivilegedChannel {
           as bool? ??
       false;
 
-  Future<bool> isRecoveryCodeSet() async =>
-      (await _invokeMap('isRecoveryCodeSet'))['isSet'] as bool? ?? false;
+  Future<bool> isRecoveryCodeSet() async => _verifiedBool(
+        await _invokeMap('isRecoveryCodeSet'),
+        'isSet',
+        'isRecoveryCodeSet',
+      );
 
   // ------------------------------------- §8 extension: enforcement config
 

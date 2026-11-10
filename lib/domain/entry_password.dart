@@ -30,6 +30,22 @@ import 'dart:typed_data';
 /// The minimum entry-password length, in characters.
 const int entryPasswordMinLength = 6;
 
+/// Anti-guess delay after [failures] consecutive wrong entry-password
+/// attempts: 2 s × failures, capped at 30 s. The failure count is
+/// persisted (see `ConfigStore`), so the delay survives dialog
+/// dismissal and process death — it is not a UI-only counter
+/// (v1.0.5 audit B-3).
+int entryPasswordDelaySeconds(int failures) {
+  if (failures <= 0) return 0;
+  final seconds = 2 * failures;
+  return seconds > 30 ? 30 : seconds;
+}
+
+/// Whether a stored entry-password record exists and parses
+/// (v1.0.5 audit B-9): a corrupt record is reported as [corrupt],
+/// never silently treated as "no password set".
+enum EntryPasswordRecordState { unset, set, corrupt }
+
 // ------------------------------------------------------------------ SHA-256
 
 const List<int> _sha256K = [
@@ -254,14 +270,30 @@ class EntryPasswordHash {
     );
   }
 
+  /// The weakest stored record verification will honour (v1.0.5 audit
+  /// B-8). Production records are always created at
+  /// [standardIterations]; the floor exists so a tampered record — a
+  /// truncated hash (which would shrink the derived-key space and make
+  /// false accepts likely) or a stripped iteration count — can never
+  /// verify at reduced strength.
+  static const int minVerifyIterations = 100;
+  static const int maxVerifyIterations = 1000000;
+
   /// Recomputes the derivation for [password] and compares it against
   /// the stored key in constant time. A malformed stored record simply
-  /// fails verification.
+  /// fails verification, as does one whose KDF parameters fall outside
+  /// the honoured bounds (exact salt/key sizes, iteration floor).
   bool verify(String password) {
     try {
       final salt = base64.decode(saltBase64);
       final expected = base64.decode(hashBase64);
-      if (expected.isEmpty || iterations <= 0) return false;
+      if (salt.length != saltBytes || expected.length != keyBytes) {
+        return false;
+      }
+      if (iterations < minVerifyIterations ||
+          iterations > maxVerifyIterations) {
+        return false;
+      }
       final actual = pbkdf2HmacSha256(
         password: utf8.encode(password),
         salt: salt,

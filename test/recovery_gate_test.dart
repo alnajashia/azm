@@ -228,7 +228,11 @@ void main() {
   group('RecoverySession', () {
     test('10-minute in-memory session: start, expiry by clock, renew, end', () {
       var now = DateTime(2026, 1, 1, 12);
-      final session = RecoverySession(now: () => now);
+      var mono = Duration.zero;
+      final session = RecoverySession(
+        now: () => now,
+        monotonicNow: () => mono,
+      );
       addTearDown(session.dispose);
 
       expect(session.isActive, isFalse);
@@ -237,6 +241,7 @@ void main() {
       expect(session.remaining, const Duration(minutes: 10));
 
       now = now.add(const Duration(minutes: 9));
+      mono += const Duration(minutes: 9);
       expect(session.isActive, isTrue);
       expect(session.remaining, const Duration(minutes: 1));
 
@@ -244,6 +249,7 @@ void main() {
       expect(session.remaining, const Duration(minutes: 10));
 
       now = now.add(const Duration(minutes: 11));
+      mono += const Duration(minutes: 11);
       expect(session.isActive, isFalse);
       expect(session.remaining, Duration.zero);
 
@@ -251,18 +257,47 @@ void main() {
       session.end();
       expect(session.isActive, isFalse);
     });
+
+    test('a backward wall-clock jump cannot extend the session (audit B-2)',
+        () {
+      var now = DateTime(2026, 1, 1, 12);
+      var mono = Duration.zero;
+      final session = RecoverySession(
+        now: () => now,
+        monotonicNow: () => mono,
+      );
+      addTearDown(session.dispose);
+
+      session.start();
+      // The wall clock jumps BACK an hour (its deadline is now an hour
+      // further away), while 10 real (monotonic) minutes elapse.
+      now = now.subtract(const Duration(hours: 1));
+      mono += const Duration(minutes: 10);
+      expect(session.isActive, isFalse);
+      expect(session.remaining, Duration.zero);
+    });
   });
 
   group('ForcedRemoval', () {
-    test('48 h total; negative deltas never rewind it', () {
+    test('24 h total (v1.0.6 user directive); negative deltas never '
+        'rewind it', () {
       var fr = const ForcedRemoval().start();
-      fr = fr.advance(const Duration(hours: 47));
+      expect(fr.total, const Duration(hours: 24));
+      fr = fr.advance(const Duration(hours: 23));
       expect(fr.isComplete, isFalse);
       fr = fr.advance(const Duration(hours: -5));
-      expect(fr.accumulated, const Duration(hours: 47));
+      expect(fr.accumulated, const Duration(hours: 23));
       fr = fr.advance(const Duration(hours: 1));
       expect(fr.isComplete, isTrue);
       expect(fr.remaining, Duration.zero);
+    });
+
+    test('withTotal rebinds the delay (the native value wins)', () {
+      var fr = const ForcedRemoval().start();
+      fr = fr.advance(const Duration(hours: 20));
+      expect(fr.isComplete, isFalse);
+      fr = fr.withTotal(const Duration(hours: 12));
+      expect(fr.isComplete, isTrue);
     });
 
     test('json round-trip', () {

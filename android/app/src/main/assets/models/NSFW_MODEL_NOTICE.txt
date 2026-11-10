@@ -1,0 +1,44 @@
+NSFW IMAGE CLASSIFIER — MODEL NOTICE AND ATTRIBUTION
+=====================================================
+
+The file `nsfw_model.tflite` bundled with Azm is the MobileNetV2
+(224x224) NSFW detection model from the nsfw_model project by
+Gant Laborde and contributors:
+
+  Source:  https://github.com/GantMan/nsfw_model
+  Release: v1.2.0 (`mobilenet_v2_140_224`, file `saved_model.tflite`)
+  Classes: drawings, hentai, neutral, porn, sexy (in this order)
+
+The model runs fully on-device inside Azm's accessibility service.
+No image, screenshot, or classification result ever leaves the device.
+
+License: MIT License (the nsfw_model project's LICENSE.md states the
+project — including its distributed models — is MIT-licensed "except
+where otherwise explicitly stated"; the README adds: "Please feel
+free to use this model to help your products!").
+
+----------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2020 The nsfw_model Developers
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

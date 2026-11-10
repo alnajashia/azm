@@ -145,7 +145,12 @@ class WordsChallenge {
   List<String> get sequence => List.unmodifiable(_sequence);
   int get index => _index;
   bool get isComplete => _index >= requiredWords;
-  String get currentWord => _sequence[_index];
+
+  /// The word currently being typed. Empty before [start] has populated
+  /// the sequence (and after completion): reading it early is a display
+  /// no-op, never a range error (v1.0.5 audit B-14).
+  String get currentWord =>
+      _index < _sequence.length ? _sequence[_index] : '';
 
   /// What has been typed toward [currentWord] so far (lowercased, at most
   /// the word's length). The UI mirrors its text field to this value: after

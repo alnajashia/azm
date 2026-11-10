@@ -1,5 +1,5 @@
 name: dominanter
-description: "A new Flutter project."
+description: "Azm — a self-control app that breaks the chain: Device Owner app blocking, time limits, focus mode and a paper recovery code. (Internal package name; the user-visible app name is Azm / عزم.)"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.5+6
+version: 1.0.6+7
 
 environment:
   sdk: ^3.9.0

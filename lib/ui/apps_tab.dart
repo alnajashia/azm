@@ -41,6 +41,7 @@ class _AppsTabState extends State<AppsTab> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() {
       _apps = null;
       _error = null;
@@ -81,37 +82,72 @@ class _AppsTabState extends State<AppsTab> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: TextField(
+            // v1.0.6 (user item 10): the search field is a full PILL,
+            // and the "include system apps" filter lives INSIDE it as
+            // the trailing icon button. That toggle is the user's own
+            // explicit exception to the outlined-icon rule (item 9):
+            // outlined while the filter is off, FILLED while it is on.
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search_outlined),
+              suffixIcon: IconButton(
+                tooltip: l10n.includeSystemApps,
+                icon: Icon(
+                  _includeSystem
+                      ? Icons.filter_alt
+                      : Icons.filter_alt_outlined,
+                  color: _includeSystem
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                ),
+                onPressed: () {
+                  setState(() => _includeSystem = !_includeSystem);
+                  _load();
+                },
+              ),
               labelText: l10n.searchApps,
-              border: const OutlineInputBorder(),
+              filled: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(999),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(999),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(999),
+                borderSide: BorderSide.none,
+              ),
             ),
             onChanged: (v) => setState(() => _query = v),
           ),
         ),
-        SwitchListTile(
-          title: Text(l10n.includeSystemApps),
-          value: _includeSystem,
-          onChanged: (v) {
-            setState(() => _includeSystem = v);
-            _load();
-          },
+        // v1.0.5 audit C-M4 (fix-#3 completion): the header controls sit
+        // in a titled card like every other tab's groups. The search
+        // field above stays flat chrome (it is a filter, not a setting
+        // group), as does the app list below.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: SectionCard(
+            title: l10n.appsBrowseSection,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.group_work_outlined),
+                title: Text(l10n.appGroups),
+                subtitle: Text(l10n.appGroupsSub),
+                trailing: const Icon(Icons.navigate_next_outlined),
+                onTap: _apps == null
+                    ? null
+                    : () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => GroupsScreen(
+                            controller: widget.controller,
+                            apps: _apps!,
+                          ),
+                        )),
+              ),
+            ],
+          ),
         ),
-        ListTile(
-          leading: const Icon(Icons.group_work_outlined),
-          title: Text(l10n.appGroups),
-          subtitle: Text(l10n.appGroupsSub),
-          trailing: const Icon(Icons.navigate_next),
-          onTap: _apps == null
-              ? null
-              : () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => GroupsScreen(
-                      controller: widget.controller,
-                      apps: _apps!,
-                    ),
-                  )),
-        ),
-        const Divider(height: 1),
         Expanded(child: _body()),
       ],
     );
@@ -135,7 +171,7 @@ class _AppsTabState extends State<AppsTab> {
           final app = _filtered[i];
           final usedMs = _usage?.packages[app.packageName];
           return ListTile(
-            leading: const Icon(Icons.android),
+            leading: const Icon(Icons.android_outlined),
             title: Text(app.label),
             subtitle: Text([
               app.packageName,
@@ -147,7 +183,7 @@ class _AppsTabState extends State<AppsTab> {
                 l10n.usedToday(formatDuration(
                     Duration(milliseconds: usedMs), l10n)),
             ].join(' · ')),
-            trailing: const Icon(Icons.navigate_next),
+            trailing: const Icon(Icons.navigate_next_outlined),
             onTap: () => _openApp(app),
           );
         },
@@ -177,9 +213,10 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
   late InstalledApp _app;
   AppEnforcement? _enforcement;
   Object? _enforcementError;
-  // Never reassigned in this sheet (read-only busy flag for its controls);
-  // the analyzer's prefer_final_fields is correct, so it is final.
-  final bool _busy = false;
+  // Real busy state (v1.0.5 audit C-L1): true while a gated protection
+  // toggle is being applied and verified, so a second toggle cannot
+  // race the first through the recovery gate.
+  bool _busy = false;
 
   PrivilegedChannel get _channel => widget.controller.channel;
 
@@ -218,7 +255,13 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
     // immediately once the session is open, like every gated action;
     // this sheet's state changes only inside doApply, after the native
     // side verifies.
-    await runLoosening(context, widget.controller, doApply);
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await runLoosening(context, widget.controller, doApply);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -234,6 +277,14 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
           Text(_app.label, style: Theme.of(context).textTheme.titleLarge),
           Text(_app.packageName, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
+          // v1.0.5 audit C-M4 (fix-#3 completion): the sheet's controls
+          // are grouped into titled cards like the rest of the app —
+          // protection toggles, then limits/windows/restrictions. The
+          // grouping is presentation only; every handler (and its gate)
+          // is unchanged.
+          SectionCard(
+            title: l10n.appProtectionSection,
+            children: [
           SwitchListTile(
             title: Text(l10n.suspendedTitle),
             subtitle: Text(l10n.suspendedSub),
@@ -276,7 +327,12 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
                           _app = _app.copyWith(isUninstallBlocked: verified),
                     ),
           ),
-          const Divider(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SectionCard(
+            title: l10n.appLimitsSection,
+            children: [
           ListTile(
             leading: const Icon(Icons.timer_outlined),
             title: Text(l10n.timeLimitTile),
@@ -304,7 +360,7 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
             leading: const Icon(Icons.policy_outlined),
             title: Text(l10n.managedRestrictions),
             subtitle: Text(l10n.managedRestrictionsSub),
-            trailing: const Icon(Icons.navigate_next),
+            trailing: const Icon(Icons.navigate_next_outlined),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => AppRestrictionsScreen(
                 controller: widget.controller,
@@ -313,6 +369,8 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
               ),
             )),
           ),
+            ],
+          ),
           if (_enforcementError != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -320,7 +378,7 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
                 _enforcementError is PrivilegedException
                     ? friendlyError(
                         _enforcementError! as PrivilegedException, l10n)
-                    : _enforcementError.toString(),
+                    : l10n.errGeneric,
               ),
             ),
         ],
@@ -365,7 +423,7 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
         );
         if (mounted) setState(() => _enforcement = updated);
       } catch (e) {
-        if (mounted) await showErrorSnackBar(context, e);
+        if (mounted) await showErrorCard(context, e);
       }
     }
 
@@ -423,7 +481,7 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
         final updated = await _channel.setTimeWindows(_app.packageName, dailyWindows: result);
         if (mounted) setState(() => _enforcement = updated);
       } catch (e) {
-        if (mounted) await showErrorSnackBar(context, e);
+        if (mounted) await showErrorCard(context, e);
       }
     }
 
@@ -625,7 +683,7 @@ class _TimeWindowsEditorState extends State<TimeWindowsEditor> {
       initialTime: const TimeOfDay(hour: 21, minute: 0),
       helpText: context.l10n.windowEndHelp,
     );
-    if (end == null) return;
+    if (end == null || !mounted) return;
     setState(() => _windows.add(TimeWindowModel(
           start.hour * 60 + start.minute,
           end.hour * 60 + end.minute == start.hour * 60 + start.minute
@@ -660,7 +718,7 @@ class _TimeWindowsEditorState extends State<TimeWindowsEditor> {
                 ),
             TextButton.icon(
               onPressed: _add,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_outlined),
               label: Text(l10n.addWindow),
             ),
           ],
@@ -714,7 +772,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       if (mounted) setState(() => _groups = saved);
     } catch (e) {
       if (!mounted) return;
-      await showErrorSnackBar(context, e);
+      await showErrorCard(context, e);
     }
   }
 
@@ -935,7 +993,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         actions: [
           IconButton(
               onPressed: _create,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_outlined),
               tooltip: l10n.newGroup),
         ],
       ),
@@ -1445,7 +1503,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
           });
         }
       } catch (e) {
-        if (mounted) await showErrorSnackBar(context, e);
+        if (mounted) await showErrorCard(context, e);
       } finally {
         if (mounted) setState(() => _busy = false);
       }
@@ -1570,13 +1628,13 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search_outlined),
               labelText: l10n.searchRestrictions,
               border: const OutlineInputBorder(),
               suffixIcon: _query.isEmpty
                   ? null
                   : IconButton(
-                      icon: const Icon(Icons.clear),
+                      icon: const Icon(Icons.clear_outlined),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _query = '');
@@ -1667,7 +1725,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
     final scheme = Theme.of(context).colorScheme;
     return Card(
       color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
@@ -1718,7 +1776,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
             IconButton(
               tooltip: context.l10n.clearAllRestrictions,
               onPressed: _busy ? null : _confirmClearAll,
-              icon: Icon(Icons.refresh, color: scheme.error, size: 18),
+              icon: Icon(Icons.refresh_outlined, color: scheme.error, size: 18),
             ),
           ],
         ),
@@ -1758,7 +1816,7 @@ class _RestrictionCardView extends StatelessWidget {
           ? scheme.surface
           : scheme.surfaceContainerHighest.withValues(alpha: 0.25),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: scheme.outlineVariant),
       ),
       child: Padding(
@@ -1859,8 +1917,8 @@ class _RestrictionCardView extends StatelessWidget {
                     ),
                     Icon(
                       draft.descExpanded
-                          ? Icons.expand_less
-                          : Icons.expand_more,
+                          ? Icons.expand_less_outlined
+                          : Icons.expand_more_outlined,
                       size: 16,
                       color: scheme.primary,
                     ),
@@ -2035,7 +2093,7 @@ class _RestrictionCardView extends StatelessWidget {
             IconButton(
               tooltip: context.l10n.addValueTooltip,
               onPressed: busy ? null : _addFreeValue,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_outlined),
             ),
           ],
         ),
@@ -2060,7 +2118,7 @@ class _RestrictionCardView extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -2090,7 +2148,7 @@ class _RestrictionCardView extends StatelessWidget {
           Card(
             margin: const EdgeInsets.symmetric(vertical: 4),
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -2138,12 +2196,11 @@ class _RestrictionCardView extends StatelessWidget {
                   draft.addBundleArrayItem();
                   onChanged();
                 },
-          icon: const Icon(Icons.add, size: 16),
+          icon: const Icon(Icons.add_outlined, size: 16),
           label: Text(context.l10n.addItem),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(40),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            // Shape from the theme's outlined-button language.
           ),
         ),
       ],

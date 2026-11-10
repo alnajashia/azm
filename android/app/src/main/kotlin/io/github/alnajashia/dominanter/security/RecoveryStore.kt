@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Base64
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.Locale
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
@@ -31,9 +32,22 @@ object RecoveryStore {
     private const val KEY_HASH = "recovery_code_hash"
     private const val KEY_ITERATIONS = "recovery_code_kdf_iterations"
     private const val ITERATIONS = 210_000
+
+    /** Sanity bound for a STORED iteration count at verify time (audit A-L7b). */
+    private const val MAX_VERIFY_ITERATIONS = 1_000_000
     private const val SALT_BYTES = 16
     private const val KEY_BITS = 256
     private const val CODE_LENGTH = 16
+
+    /**
+     * The delayed forced-removal delay (F2) — THE single named source
+     * of truth for the whole product (v1.0.6 user directive: 24 hours,
+     * a deliberate deviation from the original's 48). The Dart side
+     * reads this value through the channel's owner state
+     * (`forcedRemovalDelayHours`) and never hard-codes its own for
+     * live accounting.
+     */
+    const val FORCED_REMOVAL_DELAY_HOURS = 24
 
     // Same alphabet as the original generator (A–Z), so the user-facing format
     // (16 upper-case letters, written on paper) is unchanged.
@@ -74,14 +88,24 @@ object RecoveryStore {
         val saltB64 = p.getString(KEY_SALT, null) ?: return false
         val hashB64 = p.getString(KEY_HASH, null) ?: return false
         val iterations = p.getInt(KEY_ITERATIONS, ITERATIONS)
+        // A tampered iteration count must fail verification, not crash
+        // or weaken it (v1.0.5 audit A-L7b): derive() with 0/negative
+        // iterations throws out of PBEKeySpec.
+        if (iterations !in 1..MAX_VERIFY_ITERATIONS) return false
         val salt = try { Base64.decode(saltB64, Base64.NO_WRAP) } catch (_: Exception) { return false }
         val expected = try { Base64.decode(hashB64, Base64.NO_WRAP) } catch (_: Exception) { return false }
+        if (salt.size != SALT_BYTES || expected.size != KEY_BITS / 8) return false
         val actual = derive(normalize(code), salt, iterations)
         return MessageDigest.isEqual(expected, actual)
     }
 
-    /** Codes are compared without spaces and case-insensitively, as typed from paper. */
-    fun normalize(code: String): String = code.replace(" ", "").uppercase()
+    /**
+     * Codes are compared without spaces and case-insensitively, as typed
+     * from paper. [Locale.ROOT] is load-bearing (v1.0.5 audit A-L7): in
+     * Turkish/Azeri locales a locale-sensitive uppercase maps 'i' to
+     * 'İ', which would reject valid codes containing I on such devices.
+     */
+    fun normalize(code: String): String = code.replace(" ", "").uppercase(Locale.ROOT)
 
     fun isValidFormat(code: String): Boolean {
         val n = normalize(code)

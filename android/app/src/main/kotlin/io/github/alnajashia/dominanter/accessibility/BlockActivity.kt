@@ -15,7 +15,7 @@ import io.github.alnajashia.dominanter.R
  *
  * Flutter UI cannot be reliably presented from a background service (the
  * engine may not even be running), so — as in the original, which used one
- * native Activity per variant — this is a small native Activity with four
+ * native Activity per variant — this is a small native Activity with six
  * variants selected by [EXTRA_VARIANT]:
  *
  *  - `timeUp`        (extra: appName, limit minutes)
@@ -23,6 +23,9 @@ import io.github.alnajashia.dominanter.R
  *  - `blockedWord`   (extra: word)
  *  - `reopening`     (extra: appName, limit = remaining seconds)
  *  - `generic`       (extra: appName)
+ *  - `contentBlocked` (extra: appName, suspendedMinutes — the original's
+ *    dedicated NSFW blocked screen, folded in as a sixth variant in
+ *    v1.0.6 instead of a separate native Activity)
  *
  * The only action offered is "go home" — there is deliberately no way to
  * dismiss the block into the blocked app.
@@ -46,6 +49,15 @@ class BlockActivity : Activity() {
                 getString(R.string.block_word_body, intent.getStringExtra(EXTRA_WORD) ?: "")
             VARIANT_REOPENING -> getString(R.string.block_reopening_title) to
                 getString(R.string.block_reopening_body, appName, intent.getIntExtra(EXTRA_LIMIT, 0))
+            VARIANT_CONTENT -> {
+                val minutes = intent.getIntExtra(EXTRA_SUSPENDED_MINUTES, 0)
+                getString(R.string.block_content_title) to
+                    if (minutes > 0) {
+                        getString(R.string.block_content_body_suspended, appName, minutes)
+                    } else {
+                        getString(R.string.block_content_body, appName)
+                    }
+            }
             else -> getString(R.string.block_generic_title) to
                 getString(R.string.block_generic_body, appName)
         }
@@ -98,12 +110,14 @@ class BlockActivity : Activity() {
         const val EXTRA_LIMIT = "limit"
         const val EXTRA_WORD = "word"
         const val EXTRA_WINDOWS = "windows"
+        const val EXTRA_SUSPENDED_MINUTES = "suspendedMinutes"
 
         const val VARIANT_TIME_UP = "timeUp"
         const val VARIANT_OUTSIDE_WINDOW = "outsideWindow"
         const val VARIANT_BLOCKED_WORD = "blockedWord"
         const val VARIANT_REOPENING = "reopening"
         const val VARIANT_GENERIC = "generic"
+        const val VARIANT_CONTENT = "contentBlocked"
     }
 }
 

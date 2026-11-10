@@ -27,6 +27,7 @@ import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
 import '../data/privileged_channel.dart';
+import '../domain/seal_rules.dart';
 import '../l10n/l10n.dart';
 import 'common.dart';
 import 'recovery_ui.dart';
@@ -53,6 +54,9 @@ class _SetupScreenState extends State<SetupScreen> {
   String? _provisionOutput;
   ProvisioningDiagnostics? _diagnostics;
   Object? _diagnosticsError;
+
+  /// Currently-holding SEAL rules (Phase D), refreshed with the tab.
+  List<ActiveSeal> _activeSeals = const [];
 
   StreamSubscription<PrivilegedEvent>? _sub;
 
@@ -163,7 +167,7 @@ class _SetupScreenState extends State<SetupScreen> {
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        icon: const Icon(Icons.block),
+        icon: const Icon(Icons.block_outlined),
         title: Text(blocker.title),
         content: Text(blocker.body),
         actions: [
@@ -207,6 +211,18 @@ class _SetupScreenState extends State<SetupScreen> {
       } catch (_) {
         // Keep the last verified state.
       }
+      // Active SEAL rules ride along with every refresh (Phase D):
+      // the Status tab surfaces a holding seal with its remaining
+      // time. A failed probe keeps the last known state.
+      var activeSeals = _activeSeals;
+      try {
+        activeSeals = [
+          for (final m in await _channel.getActiveSeals())
+            if (ActiveSeal.fromMap(m) case final s?) s,
+        ];
+      } catch (_) {
+        // Keep the last known state.
+      }
       if (mounted) {
         setState(() {
           _shizuku = shizuku;
@@ -215,6 +231,7 @@ class _SetupScreenState extends State<SetupScreen> {
           _a11y = a11y;
           _diagnostics = diagnostics;
           _wssGranted = wssGranted;
+          _activeSeals = activeSeals;
           if (diagnosticsError != null) _diagnosticsError = diagnosticsError;
           _loading = false;
         });
@@ -235,7 +252,7 @@ class _SetupScreenState extends State<SetupScreen> {
     try {
       await action();
     } catch (e) {
-      if (mounted) await showErrorSnackBar(context, e);
+      if (mounted) await showErrorCard(context, e);
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -305,7 +322,7 @@ class _SetupScreenState extends State<SetupScreen> {
     try {
       await _channel.requestShizukuPermission();
     } catch (e) {
-      if (mounted) await showErrorSnackBar(context, e);
+      if (mounted) await showErrorCard(context, e);
       return;
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -347,7 +364,7 @@ class _SetupScreenState extends State<SetupScreen> {
         );
       }
     } catch (e) {
-      if (mounted) await showErrorSnackBar(context, e);
+      if (mounted) await showErrorCard(context, e);
       return;
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -401,7 +418,7 @@ class _SetupScreenState extends State<SetupScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _wssBusy = false);
-        await showErrorSnackBar(context, e);
+        await showErrorCard(context, e);
       }
       return;
     }
@@ -484,13 +501,31 @@ class _SetupScreenState extends State<SetupScreen> {
             onInstallShizuku: _installShizuku,
           ),
           const SizedBox(height: 12),
+          if (_activeSeals.isNotEmpty) ...[
+            SectionCard(
+              title: context.l10n.sealActiveTitle,
+              children: [
+                for (final seal in _activeSeals)
+                  ListTile(
+                    leading: const Icon(Icons.lock_outlined),
+                    title: Text(
+                      describeSealFromDetails(
+                        context.l10n,
+                        seal.toDetails(),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
           HeroCard(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
               children: [
                 ListTile(
                   leading: Icon(
-                    _isOwner ? Icons.verified_user : Icons.shield_outlined,
+                    _isOwner ? Icons.verified_user_outlined : Icons.shield_outlined,
                   ),
                   title: Text(context.l10n.deviceOwnerTitle),
                   subtitle: Text(
@@ -504,7 +539,7 @@ class _SetupScreenState extends State<SetupScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: Row(
                       children: [
-                        const Icon(Icons.block, size: 20),
+                        const Icon(Icons.block_outlined, size: 20),
                         const SizedBox(width: 8),
                         Expanded(child: Text(blocker.title)),
                         TextButton(
@@ -559,7 +594,7 @@ class _SetupScreenState extends State<SetupScreen> {
                               }
                               });
                             },
-                      icon: const Icon(Icons.admin_panel_settings),
+                      icon: const Icon(Icons.admin_panel_settings_outlined),
                       label: Text(context.l10n.becomeDeviceOwner),
                     ),
                   ),
@@ -579,11 +614,13 @@ class _SetupScreenState extends State<SetupScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Card(
-            child: Column(
-              children: [
+          // v1.0.5 audit C-M4 (fix-#3 completion): titled card, like
+          // every other group in the app.
+          SectionCard(
+            title: context.l10n.setupServicesSection,
+            children: [
                 SwitchListTile(
-                  secondary: const Icon(Icons.accessibility_new),
+                  secondary: const Icon(Icons.accessibility_new_outlined),
                   title: Text(context.l10n.accessibilityService),
                   subtitle: Text(
                     _a11y == null
@@ -638,18 +675,17 @@ class _SetupScreenState extends State<SetupScreen> {
                           ),
                         ),
                 ),
-              ],
-            ),
+            ],
           ),
           const SizedBox(height: 12),
-          Card(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.medical_information_outlined),
-                  title: Text(context.l10n.diagnosticsTitle),
-                  subtitle: Text(context.l10n.diagnosticsSubtitle),
+          // Titled card (audit C-M4): the section title moves into the
+          // card header; the subtitle stays as body text.
+          SectionCard(
+            title: context.l10n.diagnosticsTitle,
+            children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Text(context.l10n.diagnosticsSubtitle),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -689,8 +725,7 @@ class _SetupScreenState extends State<SetupScreen> {
                     ),
                   ),
                 if (_diagnostics != null) _DiagnosticsView(d: _diagnostics!),
-              ],
-            ),
+            ],
           ),
         ],
       ),
@@ -719,17 +754,17 @@ class _ShizukuCard extends StatelessWidget {
     final l10n = context.l10n;
     final (icon, title, body) = switch (status.state) {
       ShizukuState.notInstalled => (
-        Icons.block,
+        Icons.block_outlined,
         l10n.shizukuNotInstalledTitle,
         l10n.shizukuNotInstalledBody,
       ),
       ShizukuState.notRunning => (
-        Icons.power_off,
+        Icons.power_off_outlined,
         l10n.shizukuNotRunningTitle,
         l10n.shizukuNotRunningBody,
       ),
       ShizukuState.preV11 => (
-        Icons.update,
+        Icons.update_outlined,
         l10n.shizukuPreV11Title,
         l10n.shizukuPreV11Body,
       ),
@@ -739,7 +774,7 @@ class _ShizukuCard extends StatelessWidget {
         l10n.shizukuNoPermissionBody,
       ),
       ShizukuState.granted => (
-        Icons.check_circle,
+        Icons.check_circle_outlined,
         l10n.shizukuGrantedTitle,
         l10n.shizukuGrantedBody,
       ),
@@ -785,7 +820,7 @@ class _ShizukuCard extends StatelessWidget {
                 onPressed: (busy || awaitingInstall)
                     ? null
                     : onInstallShizuku,
-                icon: const Icon(Icons.install_mobile),
+                icon: const Icon(Icons.install_mobile_outlined),
                 label: Text(
                   awaitingInstall
                       ? l10n.waitingShizukuAppear
@@ -800,7 +835,7 @@ class _ShizukuCard extends StatelessWidget {
                 onPressed: (busy || awaitingPermission)
                     ? null
                     : onRequestPermission,
-                icon: const Icon(Icons.key),
+                icon: const Icon(Icons.key_outlined),
                 label: Text(
                   awaitingPermission
                       ? l10n.waitingShizukuAnswer

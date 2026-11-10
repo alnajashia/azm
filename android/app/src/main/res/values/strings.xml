@@ -14,6 +14,9 @@
     <string name="block_reopening_body">%1$s can be reopened in %2$d seconds.</string>
     <string name="block_generic_title">Blocked</string>
     <string name="block_generic_body">%1$s is blocked by Azm.</string>
+    <string name="block_content_title">Inappropriate content detected</string>
+    <string name="block_content_body">%1$s was closed because inappropriate visual content was detected on screen.</string>
+    <string name="block_content_body_suspended">%1$s was suspended for %2$d minutes because inappropriate visual content was detected on screen repeatedly.</string>
     <string name="block_go_home">Go to home screen</string>
 
     <string name="a11y_request_title">Azm protection is off</string>

@@ -51,6 +51,8 @@ object SettingsStore {
     const val PREFS_FOCUS_SCHEDULES = "focus_schedules_prefs"
     const val PREFS_USAGE_WARNING = "usage_warning_prefs"
     const val PREFS_RECOVERY_STATE = "recovery_prefs"
+    const val PREFS_VISUAL_BLOCKING = "visual_blocking_prefs"
+    const val PREFS_SEAL_RULES = "seal_rules_prefs"
 
     private const val KEY_GROUPS = "groups"
     private const val KEY_HIDDEN_PACKAGES = "hidden_packages"
@@ -105,8 +107,15 @@ object SettingsStore {
 
     private fun decodeWeeklyLimit(value: String?): List<Int>? {
         if (value.isNullOrEmpty()) return null
-        val minutes = value.split(",").map { it.trim().toIntOrNull() ?: return null }
-        return minutes.takeIf { it.size == DayOfWeek.entries.size }
+        val minutes = value.split(",").map { it.trim().toIntOrNull() }
+        // Corruption is logged, never silent (v1.0.5 audit A-M3 — the
+        // sibling decoders already logged; this one dropped the value
+        // without a trace, against this file's header contract).
+        if (minutes.size != DayOfWeek.entries.size || minutes.any { it == null }) {
+            Log.w(TAG, "Corrupt weekly limit value, treating as unset: $value")
+            return null
+        }
+        return minutes.filterNotNull()
     }
 
     // ------------------------------------------------------------------ windows
@@ -466,17 +475,24 @@ object SettingsStore {
 
     /** Arms the guard that suppresses the accessibility-loss lockdown for an intentional disable. */
     fun armIntentionalAccessibilityDisable() {
+        val now = System.currentTimeMillis()
         prefs(PREFS_SECURITY).edit()
-            .putLong(KEY_INTENTIONAL_A11Y_DISABLE, System.currentTimeMillis()).apply()
-        DominanterState.intentionalDisableArmed = true
+            .putLong(KEY_INTENTIONAL_A11Y_DISABLE, now).apply()
+        DominanterState.intentionalDisableArmedAt = now
     }
 
     /** Consumed by the service's onUnbind: true (once) if the disable was intentional and recent. */
     fun consumeIntentionalAccessibilityDisable(): Boolean {
-        if (DominanterState.intentionalDisableArmed) {
-            DominanterState.intentionalDisableArmed = false
+        // The volatile fast path enforces the SAME 120 s window as the
+        // persisted path (v1.0.5 audit A-M5): previously a stale in-process
+        // arm was honoured forever, so one intentional disable could have
+        // suppressed a much later, genuine accessibility-loss lockdown in
+        // the same process.
+        val volatileArmedAt = DominanterState.intentionalDisableArmedAt
+        if (volatileArmedAt != 0L) {
+            DominanterState.intentionalDisableArmedAt = 0L
             prefs(PREFS_SECURITY).edit().remove(KEY_INTENTIONAL_A11Y_DISABLE).apply()
-            return true
+            return System.currentTimeMillis() - volatileArmedAt <= INTENTIONAL_DISABLE_WINDOW_MS
         }
         val armedAt = prefs(PREFS_SECURITY).getLong(KEY_INTENTIONAL_A11Y_DISABLE, 0L)
         if (armedAt == 0L) return false
@@ -506,7 +522,13 @@ object SettingsStore {
         } else {
             edit.remove(KEY_REMOVAL_IN_PROGRESS)
         }
-        edit.apply()
+        // commit(), not apply() (v1.0.5 audit A-M4): this flag is the
+        // teardown's first line of defence, and apply()'s async disk
+        // write could be lost if the process dies mid-teardown — the
+        // disarm must be durable before anything else happens. All call
+        // sites are background threads (channel executor / teardown),
+        // so the synchronous write costs nothing on the UI thread.
+        edit.commit()
         DominanterState.removalInProgress = active
     }
 
@@ -541,7 +563,8 @@ object SettingsStore {
 
 /** Process-local shared state between the channel handler, the Application and the service. */
 object DominanterState {
-    @Volatile var intentionalDisableArmed: Boolean = false
+    /** Wall-clock time the intentional-disable guard was armed in this process (0 = not armed). */
+    @Volatile var intentionalDisableArmedAt: Long = 0L
 
     /** Volatile mirror of the persisted removal-in-progress flag (v1.0.5 fix #6). */
     @Volatile var removalInProgress: Boolean = false

@@ -5,9 +5,12 @@
 /// * the prompt verifies against the stored PBKDF2 hash only — a correct
 ///   password calls the same app-entry unlock as a successful biometric
 ///   prompt, and deliberately does NOT open a recovery session;
-/// * wrong attempts are visibly rejected and throttled by an in-memory
-///   anti-guess delay (2 s × consecutive failures, capped at 30 s) —
-///   in-memory only, like the recovery session itself;
+/// * wrong attempts are visibly rejected and throttled by an anti-guess
+///   delay (2 s × consecutive failures, capped at 30 s) whose failure
+///   count is PERSISTED in the config store — dismissing the prompt or
+///   killing the app does not reset it (v1.0.5 audit B-3). A
+///   verification ERROR (as opposed to a wrong password) is surfaced
+///   distinctly and never counts as a failed attempt (audit C-M2);
 /// * setting, changing or removing the password are loosening-class
 ///   changes to the entry posture, so the Config section routes them
 ///   through the recovery gate (`runLoosening`) — the paper recovery
@@ -15,11 +18,11 @@
 library;
 
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
+import '../domain/entry_grace.dart';
 import '../domain/entry_password.dart';
 import '../l10n/l10n.dart';
 import 'common.dart';
@@ -53,9 +56,14 @@ class _EntryPasswordPromptDialogState
   bool _obscured = true;
   bool _checking = false;
   String? _error;
-  int _failures = 0;
   int _waitSeconds = 0;
   Timer? _waitTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _resumePersistedWait();
+  }
 
   @override
   void dispose() {
@@ -64,13 +72,24 @@ class _EntryPasswordPromptDialogState
     super.dispose();
   }
 
-  /// Anti-guess delay after the [_failures]-th consecutive wrong
-  /// attempt: 2 s × failures, capped at 30 s.
-  int get _delaySeconds => math.min(2 * _failures, 30);
+  /// A prompt (re)opened inside the persisted anti-guess window waits
+  /// out the remainder of the delay — the throttle lives in the config
+  /// store, not in this State (v1.0.5 audit B-3).
+  Future<void> _resumePersistedWait() async {
+    try {
+      final remaining =
+          await widget.controller.config.entryPasswordWaitRemaining();
+      if (!mounted || remaining <= Duration.zero) return;
+      _startWait(remaining.inSeconds + (remaining.inMilliseconds % 1000 == 0 ? 0 : 1));
+    } catch (_) {
+      // A throttle read failure must not block entry attempts; the KDF
+      // cost per guess still applies.
+    }
+  }
 
-  void _startWait() {
+  void _startWait(int seconds) {
     _waitTimer?.cancel();
-    setState(() => _waitSeconds = _delaySeconds);
+    setState(() => _waitSeconds = seconds);
     _waitTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
@@ -95,20 +114,44 @@ class _EntryPasswordPromptDialogState
     try {
       ok = await widget.controller.config.verifyEntryPassword(_input.text);
     } catch (_) {
-      ok = false;
+      // Verification ERROR, not a wrong password (v1.0.5 audit C-M2):
+      // surface it distinctly and do NOT count it as a failed attempt —
+      // the user is not throttled for an infrastructure failure.
+      if (!mounted) return;
+      setState(() {
+        _checking = false;
+        _error = l10n.passwordVerifyError;
+      });
+      return;
     }
     if (!mounted) return;
     if (ok) {
+      // Success clears the persisted failure count.
+      try {
+        await widget.controller.config.resetEntryPasswordThrottle();
+      } catch (_) {
+        // Clearing the throttle is bookkeeping; entry itself succeeded.
+      }
+      if (!mounted) return;
       Navigator.of(context).pop(true);
       return;
     }
+    // A genuine wrong password: persist the failure FIRST (the returned
+    // count includes this attempt), then wait out its delay.
+    var failures = 1;
+    try {
+      failures =
+          await widget.controller.config.recordEntryPasswordFailure();
+    } catch (_) {
+      // If persistence itself fails, still throttle this dialog.
+    }
+    if (!mounted) return;
     setState(() {
       _checking = false;
-      _failures++;
       _error = l10n.passwordWrong;
       _input.clear();
     });
-    _startWait();
+    _startWait(entryPasswordDelaySeconds(failures));
   }
 
   @override
@@ -180,6 +223,8 @@ class AppEntrySection extends StatefulWidget {
 
 class _AppEntrySectionState extends State<AppEntrySection> {
   bool? _isSet;
+  bool _corrupt = false;
+  bool _loadFailed = false;
 
   AppController get _c => widget.controller;
 
@@ -190,11 +235,73 @@ class _AppEntrySectionState extends State<AppEntrySection> {
   }
 
   Future<void> _load() async {
+    // A load failure is its own visible state with a retry — never a
+    // silent "not set" (v1.0.5 audit C-L4). A corrupt stored record is
+    // likewise surfaced as corrupt, not as unset (audit B-9); setting a
+    // new password replaces it.
     try {
-      final isSet = await _c.config.isEntryPasswordSet();
-      if (mounted) setState(() => _isSet = isSet);
+      final state = await _c.config.getEntryPasswordRecordState();
+      if (mounted) {
+        setState(() {
+          _isSet = state == EntryPasswordRecordState.set;
+          _corrupt = state == EntryPasswordRecordState.corrupt;
+          _loadFailed = false;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() => _isSet = false);
+      if (mounted) {
+        setState(() {
+          _isSet = null;
+          _corrupt = false;
+          _loadFailed = true;
+        });
+      }
+    }
+  }
+
+  String _graceLabel(AppLocalizations l10n, EntryGracePeriod period) =>
+      switch (period) {
+        EntryGracePeriod.immediately => l10n.entryGraceImmediately,
+        EntryGracePeriod.oneMinute => l10n.entryGraceOneMinute,
+        EntryGracePeriod.fifteenMinutes => l10n.entryGraceFifteenMinutes,
+        EntryGracePeriod.oneHour => l10n.entryGraceOneHour,
+      };
+
+  Future<void> _pickGracePeriod() async {
+    final l10n = context.l10n;
+    final current = _c.entryGracePeriod;
+    final choice = await showDialog<EntryGracePeriod>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(l10n.entryGraceTitle),
+        children: [
+          for (final period in EntryGracePeriod.values)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, period),
+              child: Row(
+                children: [
+                  Icon(
+                    period == current
+                        ? Icons.radio_button_checked_outlined
+                        : Icons.radio_button_unchecked_outlined,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(_graceLabel(l10n, period)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (choice == null || choice == current || !mounted) return;
+    if (current.loosenedBy(choice)) {
+      await runLoosening(context, _c, () async {
+        await _c.setEntryGracePeriod(choice);
+        if (mounted) setState(() {});
+      });
+    } else {
+      await _c.setEntryGracePeriod(choice);
+      if (mounted) setState(() {});
     }
   }
 
@@ -271,28 +378,58 @@ class _AppEntrySectionState extends State<AppEntrySection> {
               ),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.password_outlined),
-            title: Text(
-              isSet == null
-                  ? l10n.checking
-                  : isSet
-                  ? l10n.appEntryStatusSet
-                  : l10n.appEntryStatusUnset,
+          if (_loadFailed)
+            ListTile(
+              leading: const Icon(Icons.error_outline),
+              title: Text(l10n.passwordVerifyError),
+              trailing: TextButton(
+                onPressed: _load,
+                child: Text(l10n.retry),
+              ),
+            )
+          else if (_corrupt)
+            ListTile(
+              leading: const Icon(Icons.password_outlined),
+              title: Text(l10n.passwordRecordCorrupt),
+              subtitle: Text(l10n.appEntrySet),
+              trailing: const Icon(Icons.navigate_next_outlined),
+              onTap: _setOrChange,
+            )
+          else
+            ListTile(
+              leading: const Icon(Icons.password_outlined),
+              title: Text(
+                isSet == null
+                    ? l10n.checking
+                    : isSet
+                    ? l10n.appEntryStatusSet
+                    : l10n.appEntryStatusUnset,
+              ),
+              subtitle: Text(
+                isSet == true ? l10n.appEntryChange : l10n.appEntrySet,
+              ),
+              trailing: const Icon(Icons.navigate_next_outlined),
+              onTap: isSet == null ? null : _setOrChange,
             ),
-            subtitle: Text(
-              isSet == true ? l10n.appEntryChange : l10n.appEntrySet,
-            ),
-            trailing: const Icon(Icons.navigate_next),
-            onTap: isSet == null ? null : _setOrChange,
-          ),
           if (isSet == true)
             ListTile(
               leading: const Icon(Icons.password_outlined),
               title: Text(l10n.appEntryRemove),
-              trailing: const Icon(Icons.navigate_next),
+              trailing: const Icon(Icons.navigate_next_outlined),
               onTap: _remove,
             ),
+          // App-lock timing (v1.0.6 Phase C): how long the app stays
+          // open after a successful entry. Lengthening the grace
+          // loosens entry security → paper-code session; shortening
+          // is free. This governs ONLY the entry gate — never the
+          // recovery session or any sensitive-action gate.
+          ListTile(
+            leading: const Icon(Icons.lock_clock_outlined),
+            title: Text(l10n.entryGraceTitle),
+            subtitle: Text(l10n.entryGraceSub),
+            trailing: Text(_graceLabel(l10n, _c.entryGracePeriod)),
+            onTap: _pickGracePeriod,
+          ),
           const SizedBox(height: 8),
         ],
       ),
@@ -312,7 +449,10 @@ class _EntryPasswordSetDialog extends StatefulWidget {
 class _EntryPasswordSetDialogState extends State<_EntryPasswordSetDialog> {
   final _first = TextEditingController();
   final _second = TextEditingController();
-  bool _obscured = true;
+  // Each field has its own show/hide state (v1.0.5 audit C-C2): a
+  // shared flag revealed both fields at once.
+  bool _obscuredFirst = true;
+  bool _obscuredSecond = true;
   String? _error;
   bool _saving = false;
 
@@ -354,7 +494,7 @@ class _EntryPasswordSetDialogState extends State<_EntryPasswordSetDialog> {
         children: [
           TextField(
             controller: _first,
-            obscureText: _obscured,
+            obscureText: _obscuredFirst,
             autocorrect: false,
             enableSuggestions: false,
             autofocus: true,
@@ -363,25 +503,37 @@ class _EntryPasswordSetDialogState extends State<_EntryPasswordSetDialog> {
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscured
+                  _obscuredFirst
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                 ),
-                tooltip: _obscured ? l10n.passwordShow : l10n.passwordHide,
-                onPressed: () => setState(() => _obscured = !_obscured),
+                tooltip: _obscuredFirst ? l10n.passwordShow : l10n.passwordHide,
+                onPressed: () =>
+                    setState(() => _obscuredFirst = !_obscuredFirst),
               ),
             ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _second,
-            obscureText: _obscured,
+            obscureText: _obscuredSecond,
             autocorrect: false,
             enableSuggestions: false,
             decoration: InputDecoration(
               labelText: l10n.passwordConfirmLabel,
               border: const OutlineInputBorder(),
               errorText: _error,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscuredSecond
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
+                tooltip:
+                    _obscuredSecond ? l10n.passwordShow : l10n.passwordHide,
+                onPressed: () =>
+                    setState(() => _obscuredSecond = !_obscuredSecond),
+              ),
             ),
             onSubmitted: (_) => _save(),
           ),
