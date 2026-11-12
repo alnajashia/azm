@@ -322,27 +322,15 @@ class _AppEntrySectionState extends State<AppEntrySection> {
   }
 
   Future<void> _remove() async {
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: context.l10n.passwordRemoveTitle,
+      message: context.l10n.passwordRemoveBody,
+      confirmText: context.l10n.passwordRemoveConfirm,
+    );
+    if (!confirmed || !mounted) return;
     await runLoosening(context, _c, () async {
       if (!mounted) return;
-      final l10n = context.l10n;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text(l10n.passwordRemoveTitle),
-          content: Text(l10n.passwordRemoveBody),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(l10n.passwordRemoveConfirm),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true) return;
       await _c.config.removeEntryPassword();
       await _load();
       if (mounted) {

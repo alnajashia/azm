@@ -15,7 +15,6 @@ library;
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
-import '../data/privileged_channel.dart';
 import '../domain/visual_blocking.dart';
 import '../l10n/l10n.dart';
 import 'common.dart';
@@ -92,56 +91,13 @@ class _VisualBlockingScreenState extends State<VisualBlockingScreen> {
       };
 
   Future<void> _pickApps(VisualBlockingConfig config) async {
-    final l10n = context.l10n;
-    List<InstalledApp> apps;
-    try {
-      apps = await _c.channel.listInstalledApps();
-    } catch (e) {
-      if (mounted) await showErrorCard(context, e);
-      return;
-    }
-    if (!mounted) return;
-    final selected = {...config.targetPackages};
-    final result = await showDialog<Set<String>>(
+    final result = await showAppPicker(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          title: Text(l10n.visualAppsSection),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                for (final app in apps)
-                  CheckboxListTile(
-                    value: selected.contains(app.packageName),
-                    title: Text(app.label),
-                    subtitle: Text(app.packageName),
-                    onChanged: (v) => setDialogState(() {
-                      if (v == true) {
-                        selected.add(app.packageName);
-                      } else {
-                        selected.remove(app.packageName);
-                      }
-                    }),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, selected),
-              child: Text(l10n.save),
-            ),
-          ],
-        ),
-      ),
+      channel: _c.channel,
+      title: context.l10n.visualAppsSection,
+      initialSelected: config.targetPackages,
     );
-    if (result != null) {
+    if (result != null && mounted) {
       await _apply(config.copyWith(targetPackages: result));
     }
   }

@@ -1099,45 +1099,14 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
   }
 
   Future<List<String>?> _pickApps(List<String> current) async {
-    final selected = {...current};
-    return showDialog<List<String>>(
+    final result = await showAppPicker(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setLocal) => AlertDialog(
-          title: Text(context.l10n.appsToSuspendWhileFocusing),
-          content: SizedBox(
-            width: 360,
-            height: 400,
-            child: ListView(
-              children: [
-                for (final app in _apps!)
-                  CheckboxListTile(
-                    title: Text(app.label),
-                    value: selected.contains(app.packageName),
-                    onChanged: (v) => setLocal(() {
-                      if (v == true) {
-                        selected.add(app.packageName);
-                      } else {
-                        selected.remove(app.packageName);
-                      }
-                    }),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(context.l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, selected.toList()),
-              child: Text(context.l10n.save),
-            ),
-          ],
-        ),
-      ),
+      channel: widget.controller.channel,
+      title: context.l10n.appsToSuspendWhileFocusing,
+      initialSelected: current.toSet(),
+      preloadedApps: _apps,
     );
+    return result?.toList();
   }
 
   /// Group picker, following the original `FocusGroupPickerDialog`:

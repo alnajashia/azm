@@ -46,8 +46,9 @@ import 'entry_password_ui.dart';
 import 'recovery_ui.dart';
 
 class LockScreen extends StatefulWidget {
-  const LockScreen({super.key, required this.controller});
+  const LockScreen({super.key, required this.controller, this.auth});
   final AppController controller;
+  final LocalAuthentication? auth;
   @override
   State<LockScreen> createState() => _LockScreenState();
 }
@@ -105,8 +106,9 @@ class _LimitsData {
 }
 
 class _LockScreenState extends State<LockScreen> {
-  final _auth = LocalAuthentication();
+  late final _auth = widget.auth ?? LocalAuthentication();
   bool _authBusy = false;
+  bool _passwordBusy = false;
 
   /// Whether an app entry password is set (v1.0.4): when true, the lock
   /// screen offers "Use password instead" next to the biometric action.
@@ -162,8 +164,14 @@ class _LockScreenState extends State<LockScreen> {
   /// the same effect as biometric success. It must NOT open a recovery
   /// session, and it doesn't (see entry_password_ui.dart).
   Future<void> _accessWithPassword() async {
-    final ok = await showEntryPasswordPrompt(context, widget.controller);
-    if (ok) widget.controller.unlock();
+    if (_passwordBusy) return;
+    setState(() => _passwordBusy = true);
+    try {
+      final ok = await showEntryPasswordPrompt(context, widget.controller);
+      if (ok) widget.controller.unlock();
+    } finally {
+      if (mounted) setState(() => _passwordBusy = false);
+    }
   }
 
   @override
@@ -914,7 +922,10 @@ class _LockScreenState extends State<LockScreen> {
       final ok = await _auth.authenticate(
         localizedReason: l10n.unlockReason,
         biometricOnly: false, // device credential is an allowed fallback
-        persistAcrossBackgrounding: true,
+        persistAcrossBackgrounding: false,
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => false,
       );
       if (ok) {
         widget.controller.unlock();
@@ -988,7 +999,7 @@ class _LockScreenState extends State<LockScreen> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: Image.asset(
-                        'assets/branding/dominanter_logo.png',
+                        'assets/branding/azm_logo.png',
                         width: 40,
                         height: 40,
                       ),
@@ -1065,7 +1076,7 @@ class _LockScreenState extends State<LockScreen> {
                     if (_passwordSet) ...[
                       const SizedBox(height: 4),
                       TextButton.icon(
-                        onPressed: _authBusy ? null : _accessWithPassword,
+                        onPressed: _passwordBusy ? null : _accessWithPassword,
                         icon: const Icon(Icons.password_outlined, size: 20),
                         label: Text(l10n.usePasswordInstead),
                       ),

@@ -27,6 +27,7 @@ import '../data/privileged_channel.dart';
 import '../domain/recovery.dart';
 import '../l10n/l10n.dart';
 import 'common.dart';
+import 'scratch_card.dart';
 
 String normalizeCode(String raw) => raw.replaceAll(' ', '').toUpperCase();
 
@@ -50,7 +51,7 @@ String groupCode(String code) {
 /// Note: the original's shuffle entry (`RecoveryConfirmDialog.kt`) is a
 /// 4×4 grid that puts the *correct* next letter in one random cell and
 /// reshuffles after every tap. That design reads the stored code back one
-/// letter at a time — impossible here, because Dominanter stores only a
+/// letter at a time — impossible here, because Azm stores only a
 /// salted PBKDF2 hash of the code and can never recover its letters. The
 /// shuffled full-alphabet keypad below is the closest equivalent that
 /// works against a hash: it still defeats finger-position learning, but
@@ -194,13 +195,25 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
     super.initState();
     _confirm.addListener(_onConfirmChanged);
     _generate();
+    _updateWindowSecurity();
   }
 
   @override
   void dispose() {
+    widget.controller.channel.setWindowSecure(false);
     _confirm.removeListener(_onConfirmChanged);
     _confirm.dispose();
     super.dispose();
+  }
+
+  void _setStep(int newStep) {
+    setState(() => _step = newStep);
+    _updateWindowSecurity();
+  }
+
+  void _updateWindowSecurity() {
+    final shouldBeSecure = _step == _stepWrite;
+    widget.controller.channel.setWindowSecure(shouldBeSecure);
   }
 
   void _onConfirmChanged() {
@@ -332,7 +345,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
             children: [
               if (_step > _stepIntro) ...[
                 OutlinedButton(
-                  onPressed: _saving ? null : () => setState(() => _step--),
+                  onPressed: _saving ? null : () => _setStep(_step - 1),
                   child: Text(l10n.back),
                 ),
                 const SizedBox(width: 12),
@@ -342,7 +355,7 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
                     ? null
                     : _step == _stepStore
                     ? _save
-                    : () => setState(() => _step++),
+                    : () => _setStep(_step + 1),
                 child: _saving
                     ? const SizedBox(
                         width: 20,
@@ -363,6 +376,19 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                'assets/branding/azm_logo.png',
+                width: 72,
+                height: 72,
+              ),
+            ),
+          ),
+        ),
         _StepHeader(icon: Icons.key_outlined, title: l10n.wizardIntroTitle),
         const SizedBox(height: 20),
         _InfoCard(
@@ -395,22 +421,24 @@ class _RecoveryWizardState extends State<RecoveryWizard> {
           ErrorView(error: _generateError!, onRetry: _generate)
         else if (_generated == null)
           LoadingView(message: l10n.generatingCode)
-        else if (!_revealed)
-          FilledButton.tonalIcon(
-            onPressed: () => setState(() => _revealed = true),
-            icon: const Icon(Icons.visibility_outlined),
-            label: Text(l10n.showCode),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
-            ),
-          )
         else
-          HeroCard(
-            padding: const EdgeInsets.all(20),
-            child: Text(
-              groupCode(_generated!),
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
+          ScratchCard(
+            text: groupCode(_generated!),
+            revealed: _revealed,
+            onRevealed: () {
+              if (!_revealed && mounted) {
+                setState(() => _revealed = true);
+              }
+            },
+            child: HeroCard(
+              padding: const EdgeInsets.all(20),
+              child: Center(
+                child: Text(
+                  groupCode(_generated!),
+                  style: Theme.of(context).textTheme.headlineMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           ),
         const SizedBox(height: 16),
