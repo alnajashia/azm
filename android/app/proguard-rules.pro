@@ -1,4 +1,4 @@
-# Dominanter release ProGuard/R8 rules.
+# Azm release ProGuard/R8 rules.
 #
 # The release build type mirrors the original DeChainer posture
 # (isMinifyEnabled + isShrinkResources in app/build.gradle.kts, with
@@ -26,13 +26,13 @@
 # entry point (instantiated by the framework by name); the accessibility
 # service and both receivers are instantiated by the system by name.
 # ---------------------------------------------------------------------------
--keep class io.github.alnajashia.dominanter.MainActivity { *; }
--keep class io.github.alnajashia.dominanter.DominanterApplication { *; }
--keep class io.github.alnajashia.dominanter.accessibility.DominanterAccessibilityService { *; }
--keep class io.github.alnajashia.dominanter.accessibility.BlockActivity { *; }
--keep class io.github.alnajashia.dominanter.accessibility.AccessibilityRequestActivity { *; }
--keep class io.github.alnajashia.dominanter.deviceowner.DominanterDeviceAdminReceiver { *; }
--keep class io.github.alnajashia.dominanter.deviceowner.DominanterPolicyUpdateReceiver { *; }
+-keep class io.github.alnajashia.azm.MainActivity { *; }
+-keep class io.github.alnajashia.azm.AzmApplication { *; }
+-keep class io.github.alnajashia.azm.accessibility.AzmAccessibilityService { *; }
+-keep class io.github.alnajashia.azm.accessibility.BlockActivity { *; }
+-keep class io.github.alnajashia.azm.accessibility.AccessibilityRequestActivity { *; }
+-keep class io.github.alnajashia.azm.deviceowner.AzmDeviceAdminReceiver { *; }
+-keep class io.github.alnajashia.azm.deviceowner.AzmPolicyUpdateReceiver { *; }
 
 # ---------------------------------------------------------------------------
 # Shizuku — API, provider (rikka.shizuku.ShizukuProvider is the manifest
@@ -64,7 +64,7 @@
 # (no reflection), and its channel method names are string keys dispatched
 # through a when-block, not reflective lookups — R8 reachability keeps it
 # correctly without a rule. Do NOT add a blanket keep for the whole
-# io.github.alnajashia.dominanter package: it would defeat minification
+# io.github.alnajashia.azm package: it would defeat minification
 # of our own code, which the original did not do either.
 
 # Flutter deferred-components references Play Core split-install classes that
