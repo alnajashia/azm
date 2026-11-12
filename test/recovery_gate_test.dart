@@ -1,4 +1,4 @@
-import 'package:dominanter/domain/recovery.dart';
+import 'package:azm/domain/recovery.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

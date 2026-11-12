@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:dominanter/domain/challenges.dart';
-import 'package:dominanter/domain/focus.dart';
+import 'package:azm/domain/challenges.dart';
+import 'package:azm/domain/focus.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

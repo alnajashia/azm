@@ -5,11 +5,11 @@
 // the behaviours cannot silently drift again.
 import 'dart:math';
 
-import 'package:dominanter/data/config_store.dart';
-import 'package:dominanter/data/privileged_channel.dart';
-import 'package:dominanter/domain/challenges.dart';
-import 'package:dominanter/domain/focus.dart';
-import 'package:dominanter/domain/recovery.dart';
+import 'package:azm/data/config_store.dart';
+import 'package:azm/data/privileged_channel.dart';
+import 'package:azm/domain/challenges.dart';
+import 'package:azm/domain/focus.dart';
+import 'package:azm/domain/recovery.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -409,7 +409,7 @@ void main() {
 
   group('Usage warnings default (UsageWarningSettings DEFAULT_ENABLED)', () {
     TestWidgetsFlutterBinding.ensureInitialized();
-    const methodChannel = MethodChannel('dominanter/privileged');
+    const methodChannel = MethodChannel('azm/privileged');
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 

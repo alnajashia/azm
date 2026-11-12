@@ -3,12 +3,12 @@
 // guard that keeps every scheme/gradient colour inside the red scale
 // or the black neutrals. Presentation only — all widgets are driven
 // by the same state/handlers as the surfaces they replaced.
-import 'package:dominanter/app_controller.dart';
-import 'package:dominanter/data/privileged_channel.dart';
-import 'package:dominanter/theme.dart';
-import 'package:dominanter/ui/common.dart';
-import 'package:dominanter/ui/impulse_focus_screens.dart';
-import 'package:dominanter/ui/pill_nav.dart';
+import 'package:azm/app_controller.dart';
+import 'package:azm/data/privileged_channel.dart';
+import 'package:azm/theme.dart';
+import 'package:azm/ui/common.dart';
+import 'package:azm/ui/impulse_focus_screens.dart';
+import 'package:azm/ui/pill_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,7 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const methodChannel = MethodChannel('dominanter/privileged');
+  const methodChannel = MethodChannel('azm/privileged');
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
@@ -30,7 +30,7 @@ void main() {
     var index = 0;
     await tester.pumpWidget(
       MaterialApp(
-        theme: dominanterLightTheme(),
+        theme: azmLightTheme(),
         home: StatefulBuilder(
           builder: (context, setLocal) => Scaffold(
             body: IndexedStack(
@@ -43,7 +43,7 @@ void main() {
               ],
             ),
             // Same widget + wiring the AppShell uses.
-            bottomNavigationBar: DominanterNavBar(
+            bottomNavigationBar: AzmNavBar(
               selectedIndex: index,
               onSelected: (i) => setLocal(() => index = i),
               destinations: const [
@@ -75,7 +75,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byType(DominanterNavBar), findsOneWidget);
+    expect(find.byType(AzmNavBar), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
     for (final label in ['Status', 'Restrictions', 'Apps', 'Config']) {
       expect(find.text(label), findsOneWidget);
@@ -126,7 +126,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: dominanterDarkTheme(),
+        theme: azmDarkTheme(),
         home: FocusModeScreen(controller: controller),
       ),
     );
@@ -168,21 +168,21 @@ void main() {
     bool isBlueDominant(Color c) => c.b > c.r + 0.08 && c.b > c.g + 0.04;
 
     final colors = <Color>[
-      DominanterColors.red,
-      DominanterColors.redBright,
-      DominanterColors.redGlow,
-      DominanterColors.redDark,
-      DominanterColors.redDeep,
-      DominanterColors.redDeepest,
-      DominanterColors.black,
-      DominanterColors.blackBackground,
-      DominanterColors.blackBar,
-      DominanterColors.blackSurface,
-      DominanterColors.blackSurfaceHigh,
-      DominanterColors.blackSurfaceHighest,
+      AzmColors.red,
+      AzmColors.redBright,
+      AzmColors.redGlow,
+      AzmColors.redDark,
+      AzmColors.redDeep,
+      AzmColors.redDeepest,
+      AzmColors.black,
+      AzmColors.blackBackground,
+      AzmColors.blackBar,
+      AzmColors.blackSurface,
+      AzmColors.blackSurfaceHigh,
+      AzmColors.blackSurfaceHighest,
       for (final scheme in [
-        dominanterLightTheme().colorScheme,
-        dominanterDarkTheme().colorScheme,
+        azmLightTheme().colorScheme,
+        azmDarkTheme().colorScheme,
       ]) ...[
         scheme.primary,
         scheme.onPrimary,
@@ -206,7 +206,7 @@ void main() {
       expect(isBlueDominant(c), isFalse, reason: '$c is blue-dominant');
     }
     // And the break ring must live in the red scale now, not blue.
-    expect(DominanterColors.redDark.b, lessThan(DominanterColors.redDark.r));
+    expect(AzmColors.redDark.b, lessThan(AzmColors.redDark.r));
   });
 
   // v1.0.4 palette law (amendment B): the ONLY hue allowed anywhere is
@@ -218,24 +218,24 @@ void main() {
     bool isGreyscale(Color c) => c.r == c.g && c.g == c.b;
 
     final colors = <String, Color>{
-      'red': DominanterColors.red,
-      'redBright': DominanterColors.redBright,
-      'redGlow': DominanterColors.redGlow,
-      'redDark': DominanterColors.redDark,
-      'redDeep': DominanterColors.redDeep,
-      'redDeepest': DominanterColors.redDeepest,
-      'black': DominanterColors.black,
-      'blackBackground': DominanterColors.blackBackground,
-      'blackBar': DominanterColors.blackBar,
-      'blackSurface': DominanterColors.blackSurface,
-      'blackSurfaceHigh': DominanterColors.blackSurfaceHigh,
-      'blackSurfaceHighest': DominanterColors.blackSurfaceHighest,
-      'onBlackMuted': DominanterColors.onBlackMuted,
-      'onBlackFaint': DominanterColors.onBlackFaint,
-      'lightBackground': DominanterColors.lightBackground,
-      'lightSurface': DominanterColors.lightSurface,
+      'red': AzmColors.red,
+      'redBright': AzmColors.redBright,
+      'redGlow': AzmColors.redGlow,
+      'redDark': AzmColors.redDark,
+      'redDeep': AzmColors.redDeep,
+      'redDeepest': AzmColors.redDeepest,
+      'black': AzmColors.black,
+      'blackBackground': AzmColors.blackBackground,
+      'blackBar': AzmColors.blackBar,
+      'blackSurface': AzmColors.blackSurface,
+      'blackSurfaceHigh': AzmColors.blackSurfaceHigh,
+      'blackSurfaceHighest': AzmColors.blackSurfaceHighest,
+      'onBlackMuted': AzmColors.onBlackMuted,
+      'onBlackFaint': AzmColors.onBlackFaint,
+      'lightBackground': AzmColors.lightBackground,
+      'lightSurface': AzmColors.lightSurface,
     };
-    for (final theme in [dominanterLightTheme(), dominanterDarkTheme()]) {
+    for (final theme in [azmLightTheme(), azmDarkTheme()]) {
       final s = theme.colorScheme;
       final roles = <String, Color>{
         'primary': s.primary,
@@ -312,9 +312,9 @@ void main() {
   testWidgets('Pill nav bar is black even in the light theme', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: dominanterLightTheme(),
+        theme: azmLightTheme(),
         home: Scaffold(
-          bottomNavigationBar: DominanterNavBar(
+          bottomNavigationBar: AzmNavBar(
             selectedIndex: 0,
             onSelected: (_) {},
             destinations: const [
@@ -336,7 +336,7 @@ void main() {
     await tester.pump();
     final containers = tester.widgetList<Container>(
       find.descendant(
-        of: find.byType(DominanterNavBar),
+        of: find.byType(AzmNavBar),
         matching: find.byType(Container),
       ),
     );
@@ -344,6 +344,6 @@ void main() {
         .map((c) => (c.decoration as BoxDecoration?)?.color)
         .whereType<Color>()
         .toList();
-    expect(barColors, contains(DominanterColors.blackBar));
+    expect(barColors, contains(AzmColors.blackBar));
   });
 }

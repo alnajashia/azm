@@ -5,12 +5,12 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dominanter/app_controller.dart';
-import 'package:dominanter/data/config_store.dart';
-import 'package:dominanter/data/privileged_channel.dart';
-import 'package:dominanter/domain/challenges.dart';
-import 'package:dominanter/domain/entry_password.dart';
-import 'package:dominanter/domain/recovery.dart';
+import 'package:azm/app_controller.dart';
+import 'package:azm/data/config_store.dart';
+import 'package:azm/data/privileged_channel.dart';
+import 'package:azm/domain/challenges.dart';
+import 'package:azm/domain/entry_password.dart';
+import 'package:azm/domain/recovery.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -133,7 +133,7 @@ void main() {
       expect(entryPasswordDelaySeconds(100), 30);
     });
 
-    const methodChannel = MethodChannel('dominanter/privileged');
+    const methodChannel = MethodChannel('azm/privileged');
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     final backing = <String, Object?>{};
@@ -203,7 +203,7 @@ void main() {
 
   group('B-5/B-6/B-7 channel verified-state fields are never fabricated',
       () {
-    const channelName = 'dominanter/privileged';
+    const channelName = 'azm/privileged';
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     final methodChannel = const MethodChannel(channelName);
@@ -315,7 +315,7 @@ void main() {
   });
 
   group('H-1 impulse lock challenge early-end', () {
-    const methodChannel = MethodChannel('dominanter/privileged');
+    const methodChannel = MethodChannel('azm/privileged');
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     final backing = <String, Object?>{};
