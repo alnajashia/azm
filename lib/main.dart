@@ -1,4 +1,4 @@
-/// Dominanter — Flutter rebuild of DeChainer v1.12.0.
+/// Azm — Flutter rebuild of DeChainer v1.12.0.
 ///
 /// Startup routing (F31): no recovery code → setup wizard only; code set →
 /// lock screen (pre-auth panic surface) → biometric gate → the three root
@@ -22,17 +22,17 @@ import 'ui/restrictions_tab.dart';
 import 'ui/setup_screen.dart';
 
 void main() {
-  runApp(const DominanterApp());
+  runApp(const AzmApp());
 }
 
-class DominanterApp extends StatefulWidget {
-  const DominanterApp({super.key});
+class AzmApp extends StatefulWidget {
+  const AzmApp({super.key});
 
   @override
-  State<DominanterApp> createState() => _DominanterAppState();
+  State<AzmApp> createState() => _AzmAppState();
 }
 
-class _DominanterAppState extends State<DominanterApp> {
+class _AzmAppState extends State<AzmApp> {
   final AppController _controller = AppController();
 
   @override
@@ -64,11 +64,11 @@ class _DominanterAppState extends State<DominanterApp> {
         // Redesign v2 2026-11-09: RED & BLACK ONLY identity, inspired by
         // the user's reference images (see theme.dart for the palette,
         // the fusion pill bar and the contrast rules).
-        theme: dominanterLightTheme(),
-        darkTheme: dominanterDarkTheme(),
+        theme: azmLightTheme(),
+        darkTheme: azmDarkTheme(),
         home: switch (_controller.startup) {
           StartupState.loading => Scaffold(
-            body: LoadingView(message: context.l10n.startingDominanter),
+            body: LoadingView(message: context.l10n.startingAzm),
           ),
           StartupState.error => Scaffold(
             body: ErrorView(
@@ -140,6 +140,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         final backgroundedAt = _backgroundedAt;
         _backgroundedAt = null;
         if (backgroundedAt == null) return;
+        // Batch D Addendum: if Device Owner removal teardown is in flight,
+        // do not relock mid-teardown when returning from background.
+        if (controller.isRemovingDeviceOwner) return;
         final now = DateTime.now();
         // App-lock timing (Phase C): relock on return when the grace
         // has run out. Brief absences (biometric prompt, permission
@@ -180,7 +183,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.asset(
-                'assets/branding/dominanter_logo.png',
+                'assets/branding/azm_logo.png',
                 width: 28,
                 height: 28,
               ),
@@ -199,7 +202,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           Expanded(child: IndexedStack(index: _index, children: tabs)),
         ],
       ),
-      bottomNavigationBar: DominanterNavBar(
+      bottomNavigationBar: AzmNavBar(
         selectedIndex: _index,
         onSelected: (i) => setState(() => _index = i),
         destinations: [

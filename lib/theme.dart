@@ -1,4 +1,4 @@
-/// Dominanter visual identity — RED & BLACK ONLY (redesign v2,
+/// Azm visual identity — RED & BLACK ONLY (redesign v2,
 /// 2026-11-09, superseding the earlier red/blue/black identity at the
 /// user's explicit request).
 ///
@@ -33,7 +33,7 @@ library;
 
 import 'package:flutter/material.dart';
 
-abstract final class DominanterColors {
+abstract final class AzmColors {
   /// The red scale — the app's ONLY chromatic colour.
   static const red = Color(0xFFD90429);
   static const redBright = Color(0xFFE5383B);
@@ -65,8 +65,8 @@ abstract final class DominanterColors {
 /// anywhere in the app; every surface is one flat colour. Dark: the
 /// flat deep red of the identity's red scale. Light: flat white.
 Color heroSurface(Brightness brightness) => brightness == Brightness.dark
-    ? DominanterColors.redDeep
-    : DominanterColors.lightSurface;
+    ? AzmColors.redDeep
+    : AzmColors.lightSurface;
 
 TextTheme _textTheme(TextTheme base) => base.copyWith(
   // Stronger hero/timer numerals, per the reference's big ring digits.
@@ -79,13 +79,13 @@ TextTheme _textTheme(TextTheme base) => base.copyWith(
   titleLarge: base.titleLarge?.copyWith(fontWeight: FontWeight.w700),
 );
 
-ThemeData dominanterLightTheme() {
+ThemeData azmLightTheme() {
   const scheme = ColorScheme(
     brightness: Brightness.light,
-    primary: DominanterColors.red,
+    primary: AzmColors.red,
     onPrimary: Colors.white,
     primaryContainer: Color(0xFFFFD9DE),
-    onPrimaryContainer: DominanterColors.redDeep,
+    onPrimaryContainer: AzmColors.redDeep,
     // Secondary is BLACK in light mode: black chips, black secondary
     // buttons and badges against the light backdrop, as in the black
     // pill-bar variant of the reference.
@@ -93,13 +93,13 @@ ThemeData dominanterLightTheme() {
     onSecondary: Colors.white,
     secondaryContainer: Color(0xFFE6E6E6),
     onSecondaryContainer: Color(0xFF171717),
-    tertiary: DominanterColors.redDark,
+    tertiary: AzmColors.redDark,
     onTertiary: Colors.white,
-    error: DominanterColors.redDark,
+    error: AzmColors.redDark,
     onError: Colors.white,
     errorContainer: Color(0xFFFFD9DE),
-    onErrorContainer: DominanterColors.redDeep,
-    surface: DominanterColors.lightSurface,
+    onErrorContainer: AzmColors.redDeep,
+    surface: AzmColors.lightSurface,
     onSurface: Color(0xFF171717),
     onSurfaceVariant: Color(0xFF4D4D4D),
     surfaceContainerLowest: Colors.white,
@@ -113,38 +113,38 @@ ThemeData dominanterLightTheme() {
     scrim: Color(0xFF000000),
     inverseSurface: Color(0xFF171717),
     onInverseSurface: Color(0xFFF5F5F5),
-    inversePrimary: DominanterColors.redBright,
+    inversePrimary: AzmColors.redBright,
   );
-  return _baseTheme(scheme, DominanterColors.lightBackground);
+  return _baseTheme(scheme, AzmColors.lightBackground);
 }
 
-ThemeData dominanterDarkTheme() {
+ThemeData azmDarkTheme() {
   const scheme = ColorScheme(
     brightness: Brightness.dark,
-    primary: DominanterColors.redBright,
+    primary: AzmColors.redBright,
     onPrimary: Colors.white,
-    primaryContainer: DominanterColors.redDeep,
+    primaryContainer: AzmColors.redDeep,
     onPrimaryContainer: Color(0xFFFFD9DE),
     // Secondary is a monochrome light tint of black in dark mode (the
     // capsule and surfaces already carry the black role); tertiary
     // stays inside the red scale.
     secondary: Color(0xFFE9E9E9),
     onSecondary: Color(0xFF0A0A0A),
-    secondaryContainer: DominanterColors.blackSurfaceHighest,
+    secondaryContainer: AzmColors.blackSurfaceHighest,
     onSecondaryContainer: Color(0xFFF5F5F5),
-    tertiary: DominanterColors.redGlow,
+    tertiary: AzmColors.redGlow,
     onTertiary: Colors.white,
     error: Color(0xFFFF6B74),
     onError: Color(0xFF2A0208),
     errorContainer: Color(0xFF4A0A12),
     onErrorContainer: Color(0xFFFFD9DE),
-    surface: DominanterColors.blackSurface,
+    surface: AzmColors.blackSurface,
     onSurface: Color(0xFFF5F5F5),
     onSurfaceVariant: Color(0xFFBDBDBD),
-    surfaceContainerLowest: DominanterColors.blackBackground,
+    surfaceContainerLowest: AzmColors.blackBackground,
     surfaceContainerLow: Color(0xFF101010),
-    surfaceContainer: DominanterColors.blackSurface,
-    surfaceContainerHigh: DominanterColors.blackSurfaceHigh,
+    surfaceContainer: AzmColors.blackSurface,
+    surfaceContainerHigh: AzmColors.blackSurfaceHigh,
     surfaceContainerHighest: Color(0xFF2A2A2A),
     outline: Color(0xFF7E7E7E),
     outlineVariant: Color(0xFF363636),
@@ -152,9 +152,9 @@ ThemeData dominanterDarkTheme() {
     scrim: Color(0xFF000000),
     inverseSurface: Color(0xFFF5F5F5),
     onInverseSurface: Color(0xFF171717),
-    inversePrimary: DominanterColors.red,
+    inversePrimary: AzmColors.red,
   );
-  return _baseTheme(scheme, DominanterColors.blackBackground);
+  return _baseTheme(scheme, AzmColors.blackBackground);
 }
 
 /// The single shape language (v1.0.6, user item 10): soft, generous
@@ -167,7 +167,7 @@ ThemeData dominanterDarkTheme() {
 ///  - [medium] (20): cards, buttons, text/search fields.
 ///  - [large]  (28): dialogs, bottom sheets, hero surfaces.
 ///  - [pill]   (999): the Apps search field, chips, badges.
-abstract final class DominanterRadius {
+abstract final class AzmRadius {
   static const small = 16.0;
   static const medium = 20.0;
   static const large = 28.0;
@@ -196,25 +196,25 @@ ThemeData _baseTheme(ColorScheme scheme, Color scaffoldBackground) {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: DominanterColors.red,
+        backgroundColor: AzmColors.red,
         foregroundColor: Colors.white,
-        // Soft generous corners (DominanterRadius.medium).
+        // Soft generous corners (AzmRadius.medium).
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DominanterRadius.medium),
+          borderRadius: BorderRadius.circular(AzmRadius.medium),
         ),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DominanterRadius.medium),
+          borderRadius: BorderRadius.circular(AzmRadius.medium),
         ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DominanterRadius.medium),
+          borderRadius: BorderRadius.circular(AzmRadius.medium),
         ),
       ),
     ),
@@ -223,31 +223,31 @@ ThemeData _baseTheme(ColorScheme scheme, Color scaffoldBackground) {
       // search field goes further and is a full pill (its own
       // decoration, per user item 10).
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(DominanterRadius.medium),
+        borderRadius: BorderRadius.circular(AzmRadius.medium),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(DominanterRadius.medium),
+        borderRadius: BorderRadius.circular(AzmRadius.medium),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(DominanterRadius.medium),
+        borderRadius: BorderRadius.circular(AzmRadius.medium),
       ),
     ),
     bottomSheetTheme: const BottomSheetThemeData(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(DominanterRadius.large),
+          top: Radius.circular(AzmRadius.large),
         ),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DominanterRadius.small),
+        borderRadius: BorderRadius.circular(AzmRadius.small),
       ),
     ),
     popupMenuTheme: PopupMenuThemeData(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DominanterRadius.small),
+        borderRadius: BorderRadius.circular(AzmRadius.small),
       ),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
@@ -265,17 +265,17 @@ ThemeData _baseTheme(ColorScheme scheme, Color scaffoldBackground) {
       // Chips are pills in the shape language.
       shape: const StadiumBorder(),
     ),
-    // Cards at DominanterRadius.medium, matching the reference's
+    // Cards at AzmRadius.medium, matching the reference's
     // deeply rounded floating cards.
     cardTheme: CardThemeData(
       elevation: scheme.brightness == Brightness.dark ? 0 : 1,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DominanterRadius.medium),
+        borderRadius: BorderRadius.circular(AzmRadius.medium),
       ),
     ),
     dialogTheme: DialogThemeData(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DominanterRadius.large),
+        borderRadius: BorderRadius.circular(AzmRadius.large),
       ),
     ),
   );
