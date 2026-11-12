@@ -1,4 +1,4 @@
-# Dominanter — Red & Black Design (v2, 2026-11-09)
+# Azm — Red & Black Design (v2, 2026-11-09)
 
 Supersedes the red/blue/black identity of the first redesign, at the
 user's explicit request: **red and black only**.
@@ -71,7 +71,7 @@ redesign only, exactly like v1.
   “pill nav bar is black even in the light theme”).
 - Release APK rebuilt and verified on disk: 50,472,363 B,
   SHA-256 `38bf66b1a310635dfaba8ca40965d39996903775ac8164070009f7c11d928420`,
-  refreshed into `project/release/dominanter-v1.0.0-release.apk`
+  refreshed into `project/release/azm-v1.0.0-release.apk`
   (copy hash verified identical to the build output). Supersedes
   the v1 redesign release hash `14017379…` for the current build.
   Debug APK was not rebuilt in this round.

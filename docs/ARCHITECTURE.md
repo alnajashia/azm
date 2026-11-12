@@ -1,7 +1,7 @@
-# Dominanter — Architecture
+# Azm — Architecture
 
 > **Project:** Flutter rebuild of DeChainer v1.12.0 (`io.github.warleysr.dechainer`, commit `29822c0`)
-> **New applicationId:** `io.github.alnajashia.dominanter` (see §2)
+> **New applicationId:** `io.github.alnajashia.azm` (see §2)
 > **Status:** Design — Stage 4/5 deliverable. No application code is implemented yet;
 > see `IMPLEMENTATION_STATUS.md` for the honest status table.
 > **Evidence base:** `analysis/DECHAINER_FEATURES.md` (features F1–F34, storage, DPM and
@@ -39,7 +39,7 @@ permission, or the Accessibility framework is implemented in **Kotlin** under
 |---|---|
 | Device Owner provisioning and removal | `ShizukuProvisioning` (§3) |
 | All `DevicePolicyManager` calls (hide / suspend / uninstall-block, user restrictions, application restrictions, private DNS, permission grant state) | `DeviceOwnerManager` |
-| Accessibility Service (word / activity blocking, time limits & windows enforcement, install watcher, colour-filter tamper reversion, accessibility-loss lockdown) | `DominanterAccessibilityService` |
+| Accessibility Service (word / activity blocking, time limits & windows enforcement, install watcher, colour-filter tamper reversion, accessibility-loss lockdown) | `AzmAccessibilityService` |
 | `Settings.Secure` reads/writes for colour filters | `DeviceOwnerManager` / colour controller in Kotlin, using the `WRITE_SECURE_SETTINGS` grant obtained at setup |
 | Shizuku binder, shell processes, binder-wrapped DPM reflection | `ShizukuProvisioning` only |
 | Recovery-code hashing and verification | Kotlin (Keystore-backed store, §7.1) — Dart never sees or stores the code or its hash |
@@ -139,7 +139,7 @@ device without Flutter in the loop (§9).
 
 | Decision | Value | Justification |
 |---|---|---|
-| applicationId / namespace | `io.github.alnajashia.dominanter` | This is a **new app** by a different author. It cannot reuse `io.github.warleysr.dechainer`: Android treats applicationId as identity — reusing it would collide with the original install, its Device Owner record, and its Shizuku authorisation, and would misrepresent authorship. All strings derived from the id (Device Admin component, Accessibility component, Shizuku provider authority `${applicationId}.shizuku`, `dpm set-device-owner …` argument) are **generated from this id at build/runtime**, never copied verbatim from the original source. Display name: "Dominanter". |
+| applicationId / namespace | `io.github.alnajashia.azm` | This is a **new app** by a different author. It cannot reuse `io.github.warleysr.dechainer`: Android treats applicationId as identity — reusing it would collide with the original install, its Device Owner record, and its Shizuku authorisation, and would misrepresent authorship. All strings derived from the id (Device Admin component, Accessibility component, Shizuku provider authority `${applicationId}.shizuku`, `dpm set-device-owner …` argument) are **generated from this id at build/runtime**, never copied verbatim from the original source. Display name: "Azm". |
 | minSdk | **30** (Android 11) | Matches the original's envelope. Also the floor for `AccessibilityService.takeScreenshot` (API 30+) and the modern DPM surface the design relies on. No attempt is made to support API < 30. |
 | targetSdk / compileSdk | **36 / 36** | Matches the original's envelope (`app/build.gradle.kts`: min 30, target 36, compile 36). Behaviour changes of the target SDK in force at build time must be re-checked before raising it. |
 | Shizuku API | `dev.rikka.shizuku:api:13.1.5` | Exact Maven coordinates and version the original pins (`gradle/libs.versions.toml`: `shizuku = "13.1.5"`). Do not upgrade silently: the permission model, `IShizukuService` transactions, and pre-V11 semantics analysed in `SHIZUKU_INTEGRATION.md` are those of 13.1.5. |
@@ -185,8 +185,8 @@ attribution set is finalised (see `IMPLEMENTATION_STATUS.md`).
 │    PrivilegedRepository (the ONLY caller of the platform channels)          │
 │    SettingsRepository · SecurityRepository · UsageRepository · LogRepo      │
 └──────────────────────────────┬──────────────────────────────────────────────┘
-                               │  MethodChannel  "dominanter/privileged"  (§5)
-                               │  EventChannel   "dominanter/privileged/events"
+                               │  MethodChannel  "azm/privileged"  (§5)
+                               │  EventChannel   "azm/privileged/events"
                                ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ KOTLIN — android/                                                           │
@@ -202,7 +202,7 @@ attribution set is finalised (see `IMPLEMENTATION_STATUS.md`).
 │  │    exec + command)   │  │  · user restrictions │  └───────────────────┘  │
 │  │  · withShizukuDPM    │  │  · app restrictions  │                         │
 │  │    reflection (§3.2) │  │    (browser policy)  │  ┌───────────────────┐  │
-│  │  · setup bypass &    │  │  · private DNS       │  │ Dominanter-       │  │
+│  │  · setup bypass &    │  │  · private DNS       │  │ Azm-              │  │
 │  │    stuck-flag repair │  │  · WRITE_SECURE_     │  │ Accessibility-    │  │
 │  │  · diagnostics       │  │    SETTINGS grant*   │  │ Service           │  │
 │  │  · accessibility     │  │  · colour Secure     │  │  RUNTIME          │  │
@@ -211,7 +211,7 @@ attribution set is finalised (see `IMPLEMENTATION_STATUS.md`).
 │        * via Shizuku          * grant via Shizuku,   │  · install watch  │  │
 │          (provisioning layer)   use is direct        │  · F28 lockdown   │  │
 │                                                      └───────────────────┘  │
-│  Also Kotlin: DominanterDeviceAdminReceiver · PolicyUpdateReceiver ·        │
+│  Also Kotlin: AzmDeviceAdminReceiver · PolicyUpdateReceiver ·                │
 │  FocusService (FGS) + boot/time/schedule receivers · block Activities ·     │
 │  Android Application class (HiddenApiBypass, cold-start repair trigger,     │
 │  orphaned colour-filter release, package-change cache invalidation)         │
@@ -245,15 +245,15 @@ flowchart TB
         UI --> Pres --> Domain --> Repos
     end
 
-    Repos -->|"MethodChannel<br/>dominanter/privileged"| Handler
-    Handler -->|"EventChannel<br/>dominanter/privileged/events"| Repos
+    Repos -->|"MethodChannel<br/>azm/privileged"| Handler
+    Handler -->|"EventChannel<br/>azm/privileged/events"| Repos
 
     subgraph Kotlin["Kotlin — android/"]
         Handler["PrivilegedChannelHandler<br/>validation + error mapping"]
         Prov["ShizukuProvisioning<br/>SETUP-TIME ONLY"]
         Dom["DeviceOwnerManager<br/>DevicePolicyManager"]
         Store["SettingsStore<br/>SharedPreferences + Keystore hash"]
-        A11y["DominanterAccessibilityService"]
+        A11y["AzmAccessibilityService"]
         Handler --> Prov
         Handler --> Dom
         Handler --> Store
@@ -294,8 +294,8 @@ flowchart TB
 |---|---|
 | `PrivilegedChannelHandler` | Single `MethodChannel`/`EventChannel` handler. Validates arguments, dispatches to the components below on the correct thread (shell/DPM work off the main thread), maps every failure to the §5.4 error taxonomy. Contains no business logic of its own. |
 | `ShizukuProvisioning` | **The only Shizuku consumer.** State detection, permission request/result, binder-received/dead listeners, `ShizukuRunner` (argv `exec` + compat `command`, both exit-code-checked, concurrent stream draining, timeout), `withShizukuDevicePolicyManager` reflection (§3.2 note below), `user_setup_complete` bypass/restore + cold-start stuck-flag repair, provisioning (binder path, then `dpm` shell fallback), diagnostics (`dumpsys account`, `pm list users`, `dpm list-owners`), Accessibility enable/disable via `settings put`, `WRITE_SECURE_SETTINGS` grant via `pm grant`. |
-| `DeviceOwnerManager` | **Runtime DPM.** Owns the `ComponentName` for `DominanterDeviceAdminReceiver` and the `DevicePolicyManager` instance. Hide/suspend/uninstall-block, user restrictions, application restrictions (incl. browser policy push), private DNS, permission grant state for focus notifications, `clearDeviceOwnerApp`, and `Settings.Secure` colour-key writes using the already-granted permission. Contains **no Shizuku import**. |
-| `DominanterAccessibilityService` | Runtime enforcement: usage session tracking (self-tracked, as in the original — *not* `UsageStatsManager`), limits/windows/reopen checks, active + passive word blocking, activity blocking, install watcher hooks, colour-filter sync/tamper reversion, impulse/focus suspension sync, and the F28 accessibility-loss lockdown. Reads enforcement state from `SettingsStore`; launches the Kotlin block Activities. Contains **no Shizuku import**. |
+| `DeviceOwnerManager` | **Runtime DPM.** Owns the `ComponentName` for `AzmDeviceAdminReceiver` and the `DevicePolicyManager` instance. Hide/suspend/uninstall-block, user restrictions, application restrictions (incl. browser policy push), private DNS, permission grant state for focus notifications, `clearDeviceOwnerApp`, and `Settings.Secure` colour-key writes using the already-granted permission. Contains **no Shizuku import**. |
+| `AzmAccessibilityService` | Runtime enforcement: usage session tracking (self-tracked, as in the original — *not* `UsageStatsManager`), limits/windows/reopen checks, active + passive word blocking, activity blocking, install watcher hooks, colour-filter sync/tamper reversion, impulse/focus suspension sync, and the F28 accessibility-loss lockdown. Reads enforcement state from `SettingsStore`; launches the Kotlin block Activities. Contains **no Shizuku import**. |
 | `SettingsStore` | The only Kotlin reader/writer of the §8 SharedPreferences files, plus the Keystore-backed recovery-code hash (§7.1). Both the channel handler and the Accessibility Service go through it, replacing the original's pattern of 14 ad-hoc prefs handles in the service. |
 | Native Activities / receivers / FGS | Block screens (`TimeUp`, `OutsideTimeWindow`, `ReopeningLimit`, `BlockedWord`, later `NsfwContentBlocked`), `AccessibilityRequestActivity`, focus reminder — all `singleInstance`, `excludeFromRecents`, `noHistory`, `showOnLockScreen` where the original did so. `DeviceAdminReceiver` (empty callbacks, as in the original — power comes from Device Owner status, not the legacy admin policies), policy-update receiver, `FocusService` (foreground service, `specialUse`), boot/time-change/schedule receivers. |
 
@@ -335,13 +335,13 @@ Dart and Kotlin communicate only through the contract in §5. Three rules govern
 
 | Channel | Type | Name |
 |---|---|---|
-| Privileged commands | `MethodChannel` | **`dominanter/privileged`** |
-| Status / accessibility events | `EventChannel` | **`dominanter/privileged/events`** |
+| Privileged commands | `MethodChannel` | **`azm/privileged`** |
+| Status / accessibility events | `EventChannel` | **`azm/privileged/events`** |
 
 These names are fixed by this document. Dart code references them from one
 constants file; Kotlin registers exactly these names in `MainActivity`'s
 `configureFlutterEngine`. Note the spelling: the channel prefix is
-`dominanter` (matching the applicationId's final segment), not `dominater`.
+`azm` (matching the applicationId's final segment).
 
 **Pigeon note (optional, deferred):** Pigeon would generate type-safe Dart/Kotlin
 stubs for this contract and is a reasonable adoption **later**, once the contract
@@ -408,7 +408,7 @@ where Pigeon permits.
 - **Behaviour (fixed sequence):** read `user_setup_complete`; if `1`, set it to
   `0` and refresh via the wrapped DPM; attempt binder-wrapped
   `setActiveAdmin` + `setDeviceOwner`; if not owner afterwards, fall back to
-  `dpm set-device-owner <applicationId>/.DominanterDeviceAdminReceiver`;
+  `dpm set-device-owner <applicationId>/.AzmDeviceAdminReceiver`;
   **in a `finally`, restore `user_setup_complete` to `1` and refresh**; re-check
   `isDeviceOwnerApp`; on success, also attempt the `WRITE_SECURE_SETTINGS` grant
   (failure of the grant does not un-provision the owner — it is reported in
@@ -587,7 +587,7 @@ where Pigeon permits.
 
 ### 5.4 Error taxonomy — exit codes are mandatory
 
-Every `PlatformException` from `dominanter/privileged` carries:
+Every `PlatformException` from `azm/privileged` carries:
 
 ```text
 code:    one of the codes below (String, stable, machine-readable)
@@ -633,7 +633,7 @@ failed with a non-zero exit and empty stderr was reported to its listener as
    `SHELL_FAILED` with `details.exitCode` set.
 3. "Empty stderr" is never, anywhere, a success criterion.
 
-### 5.5 EventChannel — `dominanter/privileged/events`
+### 5.5 EventChannel — `azm/privileged/events`
 
 A single event stream; each event is a `Map` with a `type` key. Dart's
 `PrivilegedRepository` demultiplexes it into typed streams. Events are
