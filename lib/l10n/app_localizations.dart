@@ -326,11 +326,11 @@ abstract class AppLocalizations {
   /// **'no'**
   String get wordNo;
 
-  /// No description provided for @startingDominanter.
+  /// No description provided for @startingAzm.
   ///
   /// In en, this message translates to:
   /// **'Starting Azm…'**
-  String get startingDominanter;
+  String get startingAzm;
 
   /// No description provided for @unknownStartupError.
   ///
@@ -1631,7 +1631,7 @@ abstract class AppLocalizations {
   /// No description provided for @colourModesNote.
   ///
   /// In en, this message translates to:
-  /// **'Scheduled grayscale / night light / extra dim ship in v1.1 (the WRITE_SECURE_SETTINGS grant they need is on the Setup screen).'**
+  /// **'Grayscale, night light, extra dim and colour inversion — scheduled and per app.'**
   String get colourModesNote;
 
   /// No description provided for @activityBlocker.
@@ -1643,8 +1643,404 @@ abstract class AppLocalizations {
   /// No description provided for @activityBlockerNote.
   ///
   /// In en, this message translates to:
-  /// **'Blocking specific activity screens ships in v1.1.'**
+  /// **'Block specific activity screens; the launcher and system apps can never be blocked.'**
   String get activityBlockerNote;
+
+  /// No description provided for @removalStepColourModes.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour modes released'**
+  String get removalStepColourModes;
+
+  /// No description provided for @browserUnsupportedWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Restrictions do not work in this browser, it is recommended to disable it.'**
+  String get browserUnsupportedWarning;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get loading;
+
+  /// No description provided for @block.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get block;
+
+  /// No description provided for @blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get blocked;
+
+  /// No description provided for @unblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get unblock;
+
+  /// No description provided for @activityBlockerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When a blocked activity opens, Azm sends it back. The launcher, system UI, Settings, calls and Azm itself can never be blocked.'**
+  String get activityBlockerDescription;
+
+  /// No description provided for @blockedActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked activities'**
+  String get blockedActivities;
+
+  /// No description provided for @noBlockedActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'No activities blocked yet.'**
+  String get noBlockedActivities;
+
+  /// No description provided for @recentlyAccessedActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently accessed'**
+  String get recentlyAccessedActivities;
+
+  /// No description provided for @noAccessedActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'No activities seen yet — open some apps and come back.'**
+  String get noAccessedActivities;
+
+  /// No description provided for @activitiesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} activities'**
+  String activitiesCount(int count);
+
+  /// No description provided for @unblockActivityConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock this activity?'**
+  String get unblockActivityConfirmTitle;
+
+  /// No description provided for @unblockActivityConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'“{activity}” will be allowed to open again.'**
+  String unblockActivityConfirmMessage(String activity);
+
+  /// No description provided for @addActivityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block an activity'**
+  String get addActivityTitle;
+
+  /// No description provided for @addActivityBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the full activity class name, as shown in the recently accessed list.'**
+  String get addActivityBody;
+
+  /// No description provided for @activityClassNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity class name'**
+  String get activityClassNameLabel;
+
+  /// No description provided for @addActivityInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a full class name, e.g. com.example.app.MainActivity.'**
+  String get addActivityInvalid;
+
+  /// No description provided for @addActivityProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'This activity is protected and can never be blocked.'**
+  String get addActivityProtected;
+
+  /// No description provided for @addActivityAlreadyBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This activity is already blocked.'**
+  String get addActivityAlreadyBlocked;
+
+  /// No description provided for @colourModesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Make the screen less stimulating: grayscale, night light, extra dim and colour inversion, on schedules and per app. A mode that is on right now cannot be loosened without the recovery code.'**
+  String get colourModesDescription;
+
+  /// No description provided for @colourModesStatusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get colourModesStatusTitle;
+
+  /// No description provided for @colourModesStatusNoAccessibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessibility service is off — colour modes cannot apply. Turn it on below.'**
+  String get colourModesStatusNoAccessibility;
+
+  /// No description provided for @colourModesStatusNoGrant.
+  ///
+  /// In en, this message translates to:
+  /// **'WRITE_SECURE_SETTINGS is not granted — enable the feature below to grant it via Shizuku.'**
+  String get colourModesStatusNoGrant;
+
+  /// No description provided for @colourModesStatusUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This device could not apply the grayscale keys — the feature may not work here.'**
+  String get colourModesStatusUnsupported;
+
+  /// No description provided for @colourModesStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active now: {modes}'**
+  String colourModesStatusActive(String modes);
+
+  /// No description provided for @colourModesStatusIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled — no mode is active right now.'**
+  String get colourModesStatusIdle;
+
+  /// No description provided for @colourModesStatusOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off.'**
+  String get colourModesStatusOff;
+
+  /// No description provided for @colourModesEnableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour modes'**
+  String get colourModesEnableTitle;
+
+  /// No description provided for @colourModesEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable colour modes'**
+  String get colourModesEnable;
+
+  /// No description provided for @colourModesSummaryActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active: {modes}'**
+  String colourModesSummaryActive(String modes);
+
+  /// No description provided for @colourModesSummaryIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled — nothing active right now'**
+  String get colourModesSummaryIdle;
+
+  /// No description provided for @colourModesSummaryOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get colourModesSummaryOff;
+
+  /// No description provided for @colourModeGrayscale.
+  ///
+  /// In en, this message translates to:
+  /// **'Grayscale'**
+  String get colourModeGrayscale;
+
+  /// No description provided for @colourModeGrayscaleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Removes all colour from the screen.'**
+  String get colourModeGrayscaleDesc;
+
+  /// No description provided for @colourModeNightLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Night light'**
+  String get colourModeNightLight;
+
+  /// No description provided for @colourModeNightLightDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Warms the screen colours at night.'**
+  String get colourModeNightLightDesc;
+
+  /// No description provided for @colourModeExtraDim.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra dim'**
+  String get colourModeExtraDim;
+
+  /// No description provided for @colourModeExtraDimDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Dims the screen below its lowest brightness.'**
+  String get colourModeExtraDimDesc;
+
+  /// No description provided for @colourModeInversion.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour inversion'**
+  String get colourModeInversion;
+
+  /// No description provided for @colourModeInversionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Inverts all colours on screen.'**
+  String get colourModeInversionDesc;
+
+  /// No description provided for @colourModeExtraDimUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra dim is not available on this device.'**
+  String get colourModeExtraDimUnavailable;
+
+  /// No description provided for @colourModeLockedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked until {time} — the recovery code opens it.'**
+  String colourModeLockedUntil(String time);
+
+  /// No description provided for @colourModeLockedActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked while active — the recovery code opens it.'**
+  String get colourModeLockedActive;
+
+  /// No description provided for @colourModesLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked right now'**
+  String get colourModesLockedTitle;
+
+  /// No description provided for @colourModesLockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{modes} is on right now, so it cannot be loosened without the recovery code.'**
+  String colourModesLockedMessage(String modes);
+
+  /// No description provided for @openRecoveryGate.
+  ///
+  /// In en, this message translates to:
+  /// **'Open recovery gate'**
+  String get openRecoveryGate;
+
+  /// No description provided for @colourModesNeedAccessibilityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessibility service is off'**
+  String get colourModesNeedAccessibilityTitle;
+
+  /// No description provided for @colourModesNeedAccessibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour modes are enforced by the accessibility service. Enable it now?'**
+  String get colourModesNeedAccessibility;
+
+  /// No description provided for @enableAccessibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable accessibility'**
+  String get enableAccessibility;
+
+  /// No description provided for @accessibilityStillDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessibility is still off.'**
+  String get accessibilityStillDisabled;
+
+  /// No description provided for @secureSettingsGrantFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The WRITE_SECURE_SETTINGS grant failed.'**
+  String get secureSettingsGrantFailed;
+
+  /// No description provided for @nightLightTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get nightLightTemperature;
+
+  /// No description provided for @nightLightIntensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity: {value}'**
+  String nightLightIntensity(int value);
+
+  /// No description provided for @extraDimLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dim level: {value}'**
+  String extraDimLevel(int value);
+
+  /// No description provided for @colourWindowsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Windows: {windows}'**
+  String colourWindowsLabel(String windows);
+
+  /// No description provided for @colourWindowsAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'Always, while enabled'**
+  String get colourWindowsAlways;
+
+  /// No description provided for @editWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit windows'**
+  String get editWindows;
+
+  /// No description provided for @colourScopeDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole device'**
+  String get colourScopeDevice;
+
+  /// No description provided for @colourScopeExceptApps.
+  ///
+  /// In en, this message translates to:
+  /// **'All apps except…'**
+  String get colourScopeExceptApps;
+
+  /// No description provided for @colourScopeOnlyApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Only these apps…'**
+  String get colourScopeOnlyApps;
+
+  /// No description provided for @colourScopeAppsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps for {mode}'**
+  String colourScopeAppsTitle(String mode);
+
+  /// No description provided for @colourScopeAppsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} apps chosen'**
+  String colourScopeAppsCount(int count);
+
+  /// No description provided for @applyDuringFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Also apply during focus sessions'**
+  String get applyDuringFocus;
+
+  /// No description provided for @applyDuringFocusDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Grayscale stays on for the whole focus phase, even outside the windows above.'**
+  String get applyDuringFocusDesc;
 
   /// No description provided for @language.
   ///
@@ -4645,6 +5041,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keep it safe'**
   String get storeCardTitle;
+
+  /// No description provided for @removalLoadingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Completing Device Owner removal…'**
+  String get removalLoadingTitle;
+
+  /// No description provided for @removalLoadingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait. Do not close the app or uninstall until teardown completes.'**
+  String get removalLoadingBody;
+
+  /// No description provided for @removalTimeoutWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Teardown incomplete — do not uninstall yet'**
+  String get removalTimeoutWarningTitle;
+
+  /// No description provided for @removalTimeoutWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Owner was cleared, but the system has not finished settling all teardown steps. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:'**
+  String get removalTimeoutWarningBody;
+
+  /// No description provided for @removalRecheckAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-check status'**
+  String get removalRecheckAction;
+
+  /// No description provided for @removalUnverifiedOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Owner is still active'**
+  String get removalUnverifiedOwner;
+
+  /// No description provided for @removalUnverifiedAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Admin is still active'**
+  String get removalUnverifiedAdmin;
+
+  /// No description provided for @removalUnverifiedRestrictions.
+  ///
+  /// In en, this message translates to:
+  /// **'Restrictions still in force: {restrictions}'**
+  String removalUnverifiedRestrictions(String restrictions);
+
+  /// No description provided for @removalUnverifiedScreenCapture.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen capture is still blocked'**
+  String get removalUnverifiedScreenCapture;
+
+  /// No description provided for @deleteGroupConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete group?'**
+  String get deleteGroupConfirmTitle;
+
+  /// No description provided for @deleteGroupConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{name}\"? All its limits and time windows will be permanently removed.'**
+  String deleteGroupConfirmMessage(String name);
+
+  /// No description provided for @deleteWindowConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete time window?'**
+  String get deleteWindowConfirmTitle;
+
+  /// No description provided for @deleteWindowConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete the time window \"{window}\"?'**
+  String deleteWindowConfirmMessage(String window);
+
+  /// No description provided for @deleteBlocklistConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete blocklist?'**
+  String get deleteBlocklistConfirmTitle;
+
+  /// No description provided for @deleteBlocklistConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete the blocklist \"{title}\"?'**
+  String deleteBlocklistConfirmMessage(String title);
+
+  /// No description provided for @deleteStageConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete warning stage?'**
+  String get deleteStageConfirmTitle;
+
+  /// No description provided for @deleteStageConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete the warning stage at {minutes} minutes?'**
+  String deleteStageConfirmMessage(String minutes);
+
+  /// No description provided for @deleteRuleConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete seal rule?'**
+  String get deleteRuleConfirmTitle;
+
+  /// No description provided for @deleteRuleConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this seal rule: \"{summary}\"?'**
+  String deleteRuleConfirmMessage(String summary);
+
+  /// No description provided for @removeOwnerConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Device Owner and end protection?'**
+  String get removeOwnerConfirmTitle;
+
+  /// No description provided for @removeOwnerConsequenceRestrictions.
+  ///
+  /// In en, this message translates to:
+  /// **'All system restrictions, app suspensions, and website blocks will be lifted immediately.'**
+  String get removeOwnerConsequenceRestrictions;
+
+  /// No description provided for @removeOwnerConsequenceDns.
+  ///
+  /// In en, this message translates to:
+  /// **'Private DNS settings will be reset.'**
+  String get removeOwnerConsequenceDns;
+
+  /// No description provided for @removeOwnerConsequenceUninstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstalling the Azm app will be allowed.'**
+  String get removeOwnerConsequenceUninstall;
+
+  /// No description provided for @removeOwnerUnderstandCheckbox.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand the consequences of this action'**
+  String get removeOwnerUnderstandCheckbox;
+
+  /// No description provided for @removeOwnerConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove protection'**
+  String get removeOwnerConfirmButton;
+
+  /// No description provided for @scratchToReveal.
+  ///
+  /// In en, this message translates to:
+  /// **'Scratch to reveal'**
+  String get scratchToReveal;
 }
 
 class _AppLocalizationsDelegate
