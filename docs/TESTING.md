@@ -29,7 +29,7 @@ Companion documents: [`ARCHITECTURE.md`](ARCHITECTURE.md) §9 (test plan),
 | Kotlin compile (Gradle) | ✅ Compile-verified | `compileDebugKotlin` and `compileReleaseKotlin` pass as part of the successful `assembleDebug` / `assembleRelease` builds. The first real build found **5 Kotlin compile errors**, all fixed: a `*/` sequence terminating a KDoc comment early in `DeviceOwnerManager.kt`; the non-existent `PRIVATE_DNS_SET_SUCCESS` constant (correct: `PRIVATE_DNS_SET_NO_ERROR`); a duplicate companion object in the Accessibility Service; a missing `Context` threaded through `ShizukuProvisioning.refreshUserSetupComplete`; a vararg array type mismatch in `ShizukuRunner.exec` |
 | `flutter build apk --debug` | ✅ Succeeded — first build 866 s (`build_logs/build12_debug.log`); **post-redesign rebuild also succeeded** | `build_logs/build14_redesign_debug.log`; recipe codified in `build_apk.sh`, root causes in `build_logs/README.md` |
 | `flutter build apk --release` | ✅ Succeeded — first build 315 s (`build_logs/build13_release.log`); **post-redesign rebuild also succeeded** | `build_logs/build15_redesign_release.log` |
-| APK badging (`aapt2 dump badging`) | ✅ Verified on the built APKs | `package: name='io.github.alnajashia.azm' versionCode='1' versionName='1.0.0' compileSdkVersion='36'`, `minSdkVersion:'30'`, `targetSdkVersion:'36'` |
+| APK badging (`aapt2 dump badging`) | ✅ Verified on the built APKs | `package: name='com.alnajashia.azm' versionCode='1' versionName='1.0.0' compileSdkVersion='36'`, `minSdkVersion:'30'`, `targetSdkVersion:'36'` |
 | REA inspection of the rebuilt APK | ✅ Run on the **pre-redesign** release APK — see [`REA_REBUILT_APK.md`](REA_REBUILT_APK.md) | REA 6.8.0 CLI commands run against the first `app-release.apk` (50,406,827 B) 2026-11-09; **not re-run on the post-redesign APK** — that document's size/hash describe the earlier artefact, not the current one |
 | Device / emulator testing | ❌ **None** | No device or emulator exists in this environment. Every device-dependent item in §3 is untested |
 
@@ -53,7 +53,7 @@ at copy time. These are the **post-redesign rebuilds of 2026-11-09**
 (`build14_redesign_debug.log` / `build15_redesign_release.log`), which
 supersede the first builds (debug 148,894,306 B / `86bfa331…`; release
 50,406,827 B / `c1bd2fa2…`). Badging was re-verified with `aapt2` on both
-new APKs: `io.github.alnajashia.azm`, versionCode 1 / versionName
+new APKs: `com.alnajashia.azm`, versionCode 1 / versionName
 1.0.0, minSdk 30, targetSdk 36 — unchanged.
 
 Neither APK has been installed or run on any device.

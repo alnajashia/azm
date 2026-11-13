@@ -1,7 +1,7 @@
 # Azm — Architecture
 
 > **Project:** Flutter rebuild of DeChainer v1.12.0 (`io.github.warleysr.dechainer`, commit `29822c0`)
-> **New applicationId:** `io.github.alnajashia.azm` (see §2)
+> **New applicationId:** `com.alnajashia.azm` (see §2)
 > **Status:** Design — Stage 4/5 deliverable. No application code is implemented yet;
 > see `IMPLEMENTATION_STATUS.md` for the honest status table.
 > **Evidence base:** `analysis/DECHAINER_FEATURES.md` (features F1–F34, storage, DPM and
@@ -139,7 +139,7 @@ device without Flutter in the loop (§9).
 
 | Decision | Value | Justification |
 |---|---|---|
-| applicationId / namespace | `io.github.alnajashia.azm` | This is a **new app** by a different author. It cannot reuse `io.github.warleysr.dechainer`: Android treats applicationId as identity — reusing it would collide with the original install, its Device Owner record, and its Shizuku authorisation, and would misrepresent authorship. All strings derived from the id (Device Admin component, Accessibility component, Shizuku provider authority `${applicationId}.shizuku`, `dpm set-device-owner …` argument) are **generated from this id at build/runtime**, never copied verbatim from the original source. Display name: "Azm". |
+| applicationId / namespace | `com.alnajashia.azm` | This is a **new app** by a different author. It cannot reuse `io.github.warleysr.dechainer`: Android treats applicationId as identity — reusing it would collide with the original install, its Device Owner record, and its Shizuku authorisation, and would misrepresent authorship. All strings derived from the id (Device Admin component, Accessibility component, Shizuku provider authority `${applicationId}.shizuku`, `dpm set-device-owner …` argument) are **generated from this id at build/runtime**, never copied verbatim from the original source. Display name: "Azm". |
 | minSdk | **30** (Android 11) | Matches the original's envelope. Also the floor for `AccessibilityService.takeScreenshot` (API 30+) and the modern DPM surface the design relies on. No attempt is made to support API < 30. |
 | targetSdk / compileSdk | **36 / 36** | Matches the original's envelope (`app/build.gradle.kts`: min 30, target 36, compile 36). Behaviour changes of the target SDK in force at build time must be re-checked before raising it. |
 | Shizuku API | `dev.rikka.shizuku:api:13.1.5` | Exact Maven coordinates and version the original pins (`gradle/libs.versions.toml`: `shizuku = "13.1.5"`). Do not upgrade silently: the permission model, `IShizukuService` transactions, and pre-V11 semantics analysed in `SHIZUKU_INTEGRATION.md` are those of 13.1.5. |
