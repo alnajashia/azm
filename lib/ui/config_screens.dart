@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 
 import '../app_controller.dart';
 import '../data/config_store.dart';
+import '../data/dns_protection.dart';
 import '../data/privileged_channel.dart';
 import '../l10n/l10n.dart';
 import 'common.dart';
@@ -31,10 +32,32 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
   Object? _error;
   bool _busy = false;
 
+  // DNS protection (Batch DNS): persisted selection + verified native
+  // state. The shortcut card below the browsers scrolls to the full
+  // DNS card below the blocklists.
+  DnsProtection? _dns;
+  PrivateDnsState? _dnsState;
+  bool _dnsBusy = false;
+  final _dnsCardKey = GlobalKey();
+  final _dnsIdController = TextEditingController();
+
+  // Torrent apps (Batch F, item 4): detected clients + the native
+  // block-torrents flag. The flag lives natively (SettingsStore) so
+  // the install hook (AzmApplication) can read it with the UI closed.
+  List<({String packageName, String label})>? _torrentApps;
+  bool? _blockTorrents;
+  bool _torrentBusy = false;
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _dnsIdController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -50,11 +73,35 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       } catch (e) {
         browserError = e;
       }
+      // Batch DNS: persisted selection + the verified native state
+      // (never trust the saved flag alone — read the device).
+      DnsProtection? dns;
+      PrivateDnsState? dnsState;
+      try {
+        dns = await widget.controller.config.getDnsProtection();
+      } catch (_) {}
+      try {
+        dnsState = await widget.controller.channel.getPrivateDns();
+      } catch (_) {}
+      // Batch F, item 4: detected torrent clients + the native flag.
+      List<({String packageName, String label})>? torrentApps;
+      bool? blockTorrents;
+      try {
+        torrentApps = await widget.controller.channel.getTorrentApps();
+      } catch (_) {}
+      try {
+        blockTorrents = await widget.controller.channel.isBlockTorrentsEnabled();
+      } catch (_) {}
       if (mounted) {
         setState(() {
           _lists = lists;
           _browsers = browsers;
           _error = browserError;
+          _dns = dns;
+          _dnsState = dnsState;
+          if (dns != null) _dnsIdController.text = dns.nextDnsConfigId;
+          _torrentApps = torrentApps;
+          _blockTorrents = blockTorrents;
         });
       }
     } catch (e) {
@@ -161,6 +208,158 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       } catch (e) {
         if (mounted) await showErrorCard(context, e);
       }
+    }
+  }
+
+  /// The torrent switch (Batch F, item 4). Enabling is a tightening
+  /// (direct): the native flag is set first, then every detected
+  /// torrent client is suspended with reason TORRENT_APP and the
+  /// suspended set is saved — so disabling later unsuspends exactly
+  /// the apps this toggle blocked. Disabling is a loosening
+  /// (recovery-gated). New installs while enabled are suspended by
+  /// the AzmApplication install hook, not here.
+  Future<void> _toggleTorrents(bool enabled) async {
+    Future<void> apply() async {
+      setState(() => _torrentBusy = true);
+      try {
+        // Channel first, prefs only after the verified native reply.
+        final verified =
+            await widget.controller.channel.setBlockTorrents(enabled);
+        final apps = _torrentApps ?? const [];
+        if (verified) {
+          final suspended = <String>{};
+          if (apps.isNotEmpty) {
+            final results = await widget.controller.channel.setAppSuspended(
+              apps.map((a) => a.packageName).toList(),
+              true,
+              reason: 'TORRENT_APP',
+            );
+            suspended.addAll(
+              results.where((r) => r.isSuspended).map((r) => r.packageName),
+            );
+          }
+          await widget.controller.config.setTorrentBlockedPackages(suspended);
+          if (mounted) {
+            setState(() => _blockTorrents = true);
+            showInfoSnackBar(
+              context,
+              context.l10n.torrentBlockedMsg(suspended.length),
+            );
+          }
+        } else {
+          final blocked =
+              await widget.controller.config.getTorrentBlockedPackages();
+          if (blocked.isNotEmpty) {
+            await widget.controller.channel.setAppSuspended(
+              blocked.toList(),
+              false,
+            );
+          }
+          await widget.controller.config.setTorrentBlockedPackages(const {});
+          if (mounted) {
+            setState(() => _blockTorrents = false);
+            showInfoSnackBar(context, context.l10n.torrentUnblockedMsg);
+          }
+        }
+      } finally {
+        if (mounted) setState(() => _torrentBusy = false);
+      }
+    }
+
+    if (enabled) {
+      try {
+        await apply();
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
+    } else {
+      await runLoosening(context, widget.controller, apply);
+    }
+  }
+
+  /// Applies a DNS-protection selection: the channel call runs FIRST
+  /// and the preference is saved only after the verified native reply,
+  /// so the saved flag can never claim a state the device is not in.
+  /// Enabling is a tightening (direct); disabling is a loosening
+  /// (recovery-gated, like unsuspending a browser).
+  Future<void> _applyDns(DnsProtection next) async {
+    if (_dnsBusy) return;
+    if (next.enabled && !next.isValid) {
+      if (mounted) {
+        showInfoSnackBar(context, context.l10n.dnsInvalidConfigId);
+      }
+      return;
+    }
+
+    Future<void> apply() async {
+      setState(() => _dnsBusy = true);
+      try {
+        final PrivateDnsState state;
+        if (!next.enabled) {
+          state = await widget.controller.channel.resetPrivateDns();
+        } else {
+          state = await widget.controller.channel.setPrivateDns(
+            next.hostname!,
+          );
+        }
+        await widget.controller.config.setDnsProtection(next);
+        if (mounted) {
+          setState(() {
+            _dns = next;
+            _dnsState = state;
+          });
+          showInfoSnackBar(
+            context,
+            next.enabled
+                ? context.l10n.dnsApplied
+                : context.l10n.dnsTurnedOff,
+          );
+        }
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      } finally {
+        if (mounted) setState(() => _dnsBusy = false);
+      }
+    }
+
+    if (!next.enabled && (_dns?.enabled ?? false)) {
+      await runLoosening(context, widget.controller, apply);
+    } else {
+      await apply();
+    }
+  }
+
+  Future<void> _toggleDns(bool value) async {
+    final current = _dns ?? const DnsProtection();
+    await _applyDns(current.copyWith(enabled: value));
+  }
+
+  /// Provider switch: while protection is on it re-applies at once
+  /// with the new provider's hostname; while off it only persists the
+  /// choice. A switch to NextDNS without an ID is refused, so the
+  /// saved selection can never name a hostname that does not exist.
+  Future<void> _selectDnsProvider(DnsProvider provider) async {
+    final current = _dns ?? const DnsProtection();
+    if (current.provider == provider) return;
+    final next = current.copyWith(provider: provider);
+    if (next.enabled) {
+      await _applyDns(next);
+    } else {
+      await widget.controller.config.setDnsProtection(next);
+      if (mounted) setState(() => _dns = next);
+    }
+  }
+
+  /// NextDNS configuration ID, applied on submit: while protection is
+  /// on with NextDNS it re-applies at once; otherwise it only persists.
+  Future<void> _submitDnsConfigId(String value) async {
+    final current = _dns ?? const DnsProtection();
+    final next = current.copyWith(nextDnsConfigId: value.trim());
+    if (next.enabled && next.provider == DnsProvider.nextdns) {
+      await _applyDns(next);
+    } else {
+      await widget.controller.config.setDnsProtection(next);
+      if (mounted) setState(() => _dns = next);
     }
   }
 
@@ -342,6 +541,72 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                         ),
                   ],
                 ),
+                // Batch F, item 4: block torrent apps — one switch
+                // suspends every detected torrent client now and arms
+                // the install hook for later ones (AzmApplication).
+                const SizedBox(height: 12),
+                SectionCard(
+                  title: l10n.torrentTitle,
+                  children: [
+                    SwitchListTile(
+                      title: Text(l10n.torrentTitle),
+                      subtitle: Text(l10n.torrentSub),
+                      value: _blockTorrents ?? false,
+                      onChanged: _torrentBusy || _blockTorrents == null
+                          ? null
+                          : _toggleTorrents,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: _torrentApps == null
+                          ? Text(l10n.loadingShort)
+                          : _torrentApps!.isEmpty
+                              ? Text(l10n.torrentDetectedNone)
+                              : Text(
+                                  l10n.torrentDetectedCount(
+                                    _torrentApps!.length,
+                                  ),
+                                ),
+                    ),
+                    if (_torrentApps != null)
+                      for (final a in _torrentApps!)
+                        ListTile(
+                          leading:
+                              const Icon(Icons.file_download_outlined),
+                          title: Text(a.label),
+                          subtitle: Text(a.packageName),
+                        ),
+                  ],
+                ),
+                // Batch DNS: compact shortcut to the full DNS card
+                // below the blocklists — the state at a glance, one
+                // tap scrolls to the controls.
+                const SizedBox(height: 12),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.shield_outlined),
+                    title: Text(l10n.dnsProtectionTitle),
+                    subtitle: Text(
+                      _dns == null
+                          ? ''
+                          : _dns!.enabled
+                              ? '${l10n.dnsProtectionEnabled} — ${_dns!.provider == DnsProvider.nextdns ? l10n.dnsProviderNextdns : l10n.dnsProviderCleanbrowsing}'
+                              : l10n.dnsProtectionDisabled,
+                    ),
+                    trailing: TextButton(
+                      onPressed: () {
+                        final ctx = _dnsCardKey.currentContext;
+                        if (ctx != null) {
+                          Scrollable.ensureVisible(
+                            ctx,
+                            duration: const Duration(milliseconds: 300),
+                          );
+                        }
+                      },
+                      child: Text(l10n.dnsSettings),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 SectionCard(
                   title: l10n.blocklistsSection,
@@ -379,6 +644,119 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                         ),
                   ],
                 ),
+                // Batch DNS: the full DNS-protection card — switch,
+                // provider choice (both inside the app), NextDNS ID,
+                // verified native state and the honest note that
+                // filtering is domain-level and device-wide.
+                const SizedBox(height: 12),
+                SectionCard(
+                  key: _dnsCardKey,
+                  title: l10n.dnsProtectionTitle,
+                  children: [
+                    SwitchListTile(
+                      title: Text(l10n.dnsProtectionTitle),
+                      subtitle: Text(
+                        _dnsState?.hostname != null
+                            ? l10n.dnsCurrentHost(_dnsState!.hostname!)
+                            : l10n.dnsNotSet,
+                      ),
+                      value: _dns?.enabled ?? false,
+                      onChanged:
+                          _dnsBusy || _dns == null ? null : _toggleDns,
+                    ),
+                    RadioGroup<DnsProvider>(
+                      groupValue:
+                          _dns?.provider ?? DnsProvider.cleanBrowsing,
+                      onChanged: (v) {
+                        if (_dnsBusy || _dns == null || v == null) return;
+                        _selectDnsProvider(v);
+                      },
+                      child: Column(
+                        children: [
+                          RadioListTile<DnsProvider>(
+                            title: Text(l10n.dnsProviderNextdns),
+                            subtitle: Text(l10n.dnsProviderNextdnsNote),
+                            value: DnsProvider.nextdns,
+                          ),
+                          if ((_dns?.provider ??
+                                      DnsProvider.cleanBrowsing) ==
+                                  DnsProvider.nextdns)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    8,
+                                  ),
+                                  child: TextField(
+                                    controller: _dnsIdController,
+                                    decoration: InputDecoration(
+                                      labelText: l10n.dnsConfigIdLabel,
+                                      hintText: l10n.dnsConfigIdHint,
+                                      helperText: _dnsIdController.text
+                                              .trim()
+                                              .isEmpty
+                                          ? null
+                                          : l10n.dnsConfigIdHostname(
+                                              _dnsIdController.text.trim(),
+                                            ),
+                                    ),
+                                    enabled: !_dnsBusy,
+                                    onChanged: (_) => setState(() {}),
+                                    onSubmitted: _submitDnsConfigId,
+                                  ),
+                                ),
+                                // In-app NextDNS setup guide (user
+                                // request 14:30): the steps live in
+                                // the app itself, next to the ID field.
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    8,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        l10n.dnsNextdnsHowTitle,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(l10n.dnsNextdnsStep1),
+                                      Text(l10n.dnsNextdnsStep2),
+                                      Text(l10n.dnsNextdnsStep3),
+                                      Text(l10n.dnsNextdnsStep4),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          RadioListTile<DnsProvider>(
+                            title: Text(l10n.dnsProviderCleanbrowsing),
+                            subtitle:
+                                Text(l10n.dnsProviderCleanbrowsingNote),
+                            value: DnsProvider.cleanBrowsing,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Text(l10n.dnsProtectionNote),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   onPressed:
@@ -412,10 +790,21 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
   List<InstalledApp>? _apps;
   Object? _error;
 
+  /// The active list's read-only field (Dechainer parity): one
+  /// controller owned by the state, re-synced in build — never a fresh
+  /// controller per build (that would leak one per rebuild).
+  final _activeWordsController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _activeWordsController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -446,6 +835,7 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
           controller: controller,
           maxLines: 8,
           decoration: InputDecoration(
+            hintText: dialogContext.l10n.wordHint,
             labelText: dialogContext.l10n.oneWordPerLine,
             border: const OutlineInputBorder(),
           ),
@@ -534,13 +924,14 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
     final saved = await showDialog<List<String>>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(
-          dialogContext.l10n.onScreenWordsFor(_labelFor(packageName)),
-        ),
+        // Dechainer parity (item 3): the per-app dialog is titled
+        // with the app's name alone, exactly like the original.
+        title: Text(_labelFor(packageName)),
         content: TextField(
           controller: controller,
           maxLines: 8,
           decoration: InputDecoration(
+            hintText: dialogContext.l10n.wordHint,
             labelText: dialogContext.l10n.oneWordPerLine,
             border: const OutlineInputBorder(),
           ),
@@ -591,6 +982,23 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
     }
   }
 
+  /// Deletes a per-app (passive) word list — Dechainer's trash icon on
+  /// each passive row. Clearing the list removes the entry natively
+  /// (an empty set is deleted, not stored), so the row disappears.
+  /// Removing blocking is a loosening, so the delete is recovery-gated.
+  Future<void> _deletePassive(String packageName) async {
+    Future<void> apply() async {
+      final s = await widget.controller.channel.setPassiveWords(
+        packageName,
+        const [],
+      );
+      if (mounted) setState(() => _state = s);
+    }
+
+    if (!mounted) return;
+    await runLoosening(context, widget.controller, apply);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -626,6 +1034,23 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
                 trailing: const Icon(Icons.edit_outlined),
                 onTap: _editWords,
               ),
+              // Dechainer parity (item 3): the active list itself is
+              // shown as a read-only multi-line field (placeholder +
+              // "one word per line"), not only as a count.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: TextField(
+                  controller: _activeWordsController
+                    ..text = s.words.join('\n'),
+                  readOnly: true,
+                  maxLines: 6,
+                  decoration: InputDecoration(
+                    hintText: l10n.wordHint,
+                    helperText: l10n.oneWordPerLine,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
               ListTile(
                 title: Text(l10n.targetAppsCount(s.targetPackages.length)),
                 subtitle: Text(
@@ -652,24 +1077,44 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
               else
                 for (final entry in s.passiveWords.entries)
                   ListTile(
+                    leading: const Icon(Icons.android_outlined),
                     title: Text(_labelFor(entry.key)),
                     subtitle: Text(l10n.wordsCount(entry.value.length)),
-                    trailing: const Icon(Icons.edit_outlined),
+                    // Dechainer parity (item 3): each passive row has
+                    // an edit pencil AND a delete trash icon.
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined),
+                          onPressed: () => _editPassive(entry.key),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outlined),
+                          onPressed: () => _deletePassive(entry.key),
+                        ),
+                      ],
+                    ),
                     onTap: () => _editPassive(entry.key),
                   ),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
                   onPressed: () async {
-                    // Add a passive list for one of the target apps not
-                    // yet listed — the user picks WHICH app (v1.0.1 fix:
-                    // the old code always took the first unlisted app,
-                    // forcing lists to be created in target order).
-                    final candidates = s.targetPackages
-                        .where((p) => !s.passiveWords.containsKey(p))
+                    // Dechainer parity (item 3): a passive list can be
+                    // created for ANY installed app — not only the
+                    // active targets. The v1 restriction ("add target
+                    // apps first") is gone: the original's Passive
+                    // section works with "No apps selected" in Active.
+                    final listed = s.passiveWords.keys.toSet();
+                    final candidates = (_apps ?? const [])
+                        .where((a) => !listed.contains(a.packageName))
                         .toList();
                     if (candidates.isEmpty) {
-                      showInfoSnackBar(context, l10n.addTargetAppsFirst);
+                      showInfoSnackBar(
+                        context,
+                        l10n.noMoreAppsForPassive,
+                      );
                       return;
                     }
                     final picked = await showAppPicker(
@@ -677,18 +1122,7 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
                       channel: widget.controller.channel,
                       title: l10n.addPerAppList,
                       singleSelect: true,
-                      preloadedApps: candidates
-                          .map(
-                            (p) => InstalledApp(
-                              packageName: p,
-                              label: _labelFor(p),
-                              isSystem: false,
-                              isHidden: false,
-                              isSuspended: false,
-                              isUninstallBlocked: false,
-                            ),
-                          )
-                          .toList(),
+                      preloadedApps: candidates,
                     );
                     if (picked == null || picked.isEmpty) return;
                     await _editPassive(picked.first);

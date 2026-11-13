@@ -33,6 +33,11 @@ class _VisualBlockingScreenState extends State<VisualBlockingScreen> {
   Object? _error;
   bool _saving = false;
 
+  /// The accessibility service's last detector-init failure, if any
+  /// (null = loaded, or never tried yet). Shown as a warning banner
+  /// so a missing/broken model can never fail silently again (v1.0.0).
+  String? _detectorError;
+
   AppController get _c => widget.controller;
 
   @override
@@ -50,6 +55,12 @@ class _VisualBlockingScreenState extends State<VisualBlockingScreen> {
     } catch (e) {
       if (mounted) setState(() => _error = e);
     }
+    // The detector error is display-only; a failure to read it must
+    // not take the screen down.
+    try {
+      final error = await _c.channel.getVisualDetectorError();
+      if (mounted) setState(() => _detectorError = error);
+    } catch (_) {}
   }
 
   Future<void> _apply(VisualBlockingConfig next) async {
@@ -152,6 +163,50 @@ class _VisualBlockingScreenState extends State<VisualBlockingScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // The detector failed to load: visual blocking is off
+                // and the user must see that, not discover it by a
+                // missed block (the v1.0.0 missing-model failure).
+                if (_detectorError != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.warning_amber_outlined,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.visualDetectorErrorTitle,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                l10n.visualDetectorErrorBody(
+                                  _detectorError!,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 SectionCard(
                   title: l10n.visualBlockingTitle,
                   children: [

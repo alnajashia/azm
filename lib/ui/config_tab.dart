@@ -57,6 +57,13 @@ class _ConfigTabState extends State<ConfigTab> {
   /// probe in [_load]); empty when none were found.
   List<String> _residue = const [];
 
+  /// The item-6 Settings switch: whether suspending an app also blocks
+  /// its uninstall. Null while the flag is loading.
+  bool? _autoBlockUninstall;
+
+  /// True while a toggle apply is in flight (the switch is disabled).
+  bool _autoBlockBusy = false;
+
   AppController get _c => widget.controller;
 
   @override
@@ -124,6 +131,14 @@ class _ConfigTabState extends State<ConfigTab> {
         if (mounted) setState(() => _colourModesStatus = colourStatus);
       } catch (_) {
         // Leave the previous (or null) status; the tile falls back.
+      }
+      // Item-6 Settings switch (Batch F): best-effort; a failed probe
+      // leaves the switch disabled (null) rather than guessing.
+      try {
+        final autoBlock = await _c.channel.isAutoBlockUninstallSuspended();
+        if (mounted) setState(() => _autoBlockUninstall = autoBlock);
+      } catch (_) {
+        // Leave null; the switch stays disabled.
       }
     } catch (e) {
       if (mounted) setState(() => _error = e);
@@ -298,6 +313,24 @@ class _ConfigTabState extends State<ConfigTab> {
               subtitle: Text(l10n.activityBlockerNote),
               trailing: const Icon(Icons.navigate_next_outlined),
               onTap: () => _push(ActivityBlockerScreen(controller: _c)),
+            ),
+            // Batch F, item 6 — the second, distinct feature: a
+            // Settings switch that blocks uninstalling suspended or
+            // blocked apps. Turning it ON is tightening (direct);
+            // turning it OFF is loosening (recovery-gated). Disabled
+            // while loading or while Azm is not the Device Owner
+            // (the native setter requires owner rights).
+            SwitchListTile(
+              secondary: const Icon(Icons.block_outlined),
+              title: Text(l10n.autoBlockUninstallTitle),
+              subtitle: Text(l10n.autoBlockUninstallSub),
+              value: _autoBlockUninstall ?? false,
+              onChanged:
+                  _autoBlockBusy ||
+                          _autoBlockUninstall == null ||
+                          _isOwner != true
+                      ? null
+                      : _toggleAutoBlockUninstall,
             ),
           ],
         ),
@@ -621,6 +654,44 @@ class _ConfigTabState extends State<ConfigTab> {
         },
       );
     });
+  }
+
+  /// The item-6 Settings switch (Batch F). Turning it ON is tightening
+  /// (direct): the native side blocks uninstall for every
+  /// currently-suspended app and arms the coupling for future
+  /// suspensions. Turning it OFF is loosening (recovery-gated): the
+  /// native side releases exactly the AUTO-applied blocks, never a
+  /// manual one.
+  Future<void> _toggleAutoBlockUninstall(bool enabled) async {
+    Future<void> apply() async {
+      setState(() => _autoBlockBusy = true);
+      try {
+        final verified = await _c.channel.setAutoBlockUninstallSuspended(
+          enabled,
+        );
+        if (mounted) {
+          setState(() => _autoBlockUninstall = verified);
+          showInfoSnackBar(
+            context,
+            verified
+                ? context.l10n.autoBlockUninstallOn
+                : context.l10n.autoBlockUninstallOff,
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _autoBlockBusy = false);
+      }
+    }
+
+    if (enabled) {
+      try {
+        await apply();
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
+    } else {
+      await runLoosening(context, _c, apply);
+    }
   }
 
   /// Start dialog (`ConfigTab.kt`, `showStartForcedRemovalDialog`):
