@@ -89,7 +89,7 @@
   "endSession": "إنهاء الجلسة",
   "wordYes": "نعم",
   "wordNo": "لا",
-  "startingDominanter": "جارٍ بدء عزم…",
+  "startingAzm": "جارٍ بدء عزم…",
   "unknownStartupError": "خطأ غير معروف عند البدء",
   "tabStatus": "الحالة",
   "tabRestrictions": "القيود",
@@ -570,9 +570,152 @@
   "suspensionLogs": "سجلات التعليق",
   "suspensionLogsSub": "سجل تدقيق لكل عملية تعليق",
   "colourModes": "أوضاع الألوان",
-  "colourModesNote": "التدرج الرمادي المجدول والإضاءة الليلية والتعتيم الإضافي قادمة في v1.1 (منح WRITE_SECURE_SETTINGS اللازم لها موجود في شاشة الإعداد).",
+  "colourModesNote": "التدرج الرمادي والإضاءة الليلية والتعتيم الإضافي وعكس الألوان — وفق جداول ولكل تطبيق.",
   "activityBlocker": "حاجب الأنشطة",
-  "activityBlockerNote": "حظر شاشات نشاط محددة قادم في v1.1.",
+  "activityBlockerNote": "حظر شاشات نشاط محددة؛ لا يمكن حظر المشغّل وتطبيقات النظام أبداً.",
+  "removalStepColourModes": "تم تحرير أوضاع الألوان",
+  "browserUnsupportedWarning": "القيود لا تعمل في هذا المتصفح، يُنصح بتعطيله.",
+  "refresh": "تحديث",
+  "loading": "جارٍ التحميل…",
+  "block": "حظر",
+  "blocked": "محظور",
+  "unblock": "إلغاء الحظر",
+  "activityBlockerDescription": "عند فتح نشاط محظور يعيده عزم إلى الخلف. لا يمكن حظر المشغّل أو واجهة النظام أو الإعدادات أو المكالمات أو عزم نفسه أبداً.",
+  "blockedActivities": "الأنشطة المحظورة",
+  "noBlockedActivities": "لا توجد أنشطة محظورة بعد.",
+  "recentlyAccessedActivities": "الأنشطة التي تم الوصول إليها مؤخراً",
+  "noAccessedActivities": "لم يتم رصد أي نشاط بعد — افتح بعض التطبيقات ثم عُد.",
+  "activitiesCount": "{count} أنشطة",
+  "@activitiesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unblockActivityConfirmTitle": "إلغاء حظر هذا النشاط؟",
+  "unblockActivityConfirmMessage": "سيُسمح بفتح «{activity}» مجدداً.",
+  "@unblockActivityConfirmMessage": {
+    "placeholders": {
+      "activity": {
+        "type": "String"
+      }
+    }
+  },
+  "addActivityTitle": "حظر نشاط",
+  "addActivityBody": "أدخل اسم فئة النشاط الكامل كما يظهر في قائمة الأنشطة التي تم الوصول إليها.",
+  "activityClassNameLabel": "اسم فئة النشاط",
+  "addActivityInvalid": "أدخل اسم فئة كاملاً، مثل com.example.app.MainActivity.",
+  "addActivityProtected": "هذا النشاط محمي ولا يمكن حظره أبداً.",
+  "addActivityAlreadyBlocked": "هذا النشاط محظور بالفعل.",
+  "colourModesDescription": "اجعل الشاشة أقل إثارة: التدرج الرمادي والإضاءة الليلية والتعتيم الإضافي وعكس الألوان، وفق جداول ولكل تطبيق. لا يمكن تخفيف وضع مفعّل الآن دون رمز الاسترداد.",
+  "colourModesStatusTitle": "الحالة",
+  "colourModesStatusNoAccessibility": "خدمة الوصول مغلقة — لا يمكن تطبيق أوضاع الألوان. فعّلها بالأسفل.",
+  "colourModesStatusNoGrant": "لم يُمنح إذن WRITE_SECURE_SETTINGS — فعّل الميزة بالأسفل لمنحه عبر Shizuku.",
+  "colourModesStatusUnsupported": "تعذّر على هذا الجهاز تطبيق مفاتيح التدرج الرمادي — قد لا تعمل الميزة هنا.",
+  "colourModesStatusActive": "مفعّلة الآن: {modes}",
+  "@colourModesStatusActive": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
+  "colourModesStatusIdle": "مفعّلة — لا يوجد وضع نشط الآن.",
+  "colourModesStatusOff": "مغلقة.",
+  "colourModesEnableTitle": "أوضاع الألوان",
+  "colourModesEnable": "تفعيل أوضاع الألوان",
+  "colourModesSummaryActive": "نشطة: {modes}",
+  "@colourModesSummaryActive": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
+  "colourModesSummaryIdle": "مفعّلة — لا شيء نشط الآن",
+  "colourModesSummaryOff": "مغلقة",
+  "colourModeGrayscale": "التدرج الرمادي",
+  "colourModeGrayscaleDesc": "يزيل كل الألوان من الشاشة.",
+  "colourModeNightLight": "الإضاءة الليلية",
+  "colourModeNightLightDesc": "تدفئ ألوان الشاشة ليلاً.",
+  "colourModeExtraDim": "التعتيم الإضافي",
+  "colourModeExtraDimDesc": "يخفت الشاشة دون أدنى سطوع لها.",
+  "colourModeInversion": "عكس الألوان",
+  "colourModeInversionDesc": "يعكس كل الألوان على الشاشة.",
+  "colourModeExtraDimUnavailable": "التعتيم الإضافي غير متوفر على هذا الجهاز.",
+  "colourModeLockedUntil": "مقفل حتى {time} — رمز الاسترداد يفتحه.",
+  "@colourModeLockedUntil": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "colourModeLockedActive": "مقفل أثناء التفعيل — رمز الاسترداد يفتحه.",
+  "colourModesLockedTitle": "مقفل الآن",
+  "colourModesLockedMessage": "{modes} مفعّل الآن، لذا لا يمكن تخفيفه دون رمز الاسترداد.",
+  "@colourModesLockedMessage": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
+  "openRecoveryGate": "فتح بوابة الاسترداد",
+  "colourModesNeedAccessibilityTitle": "خدمة الوصول مغلقة",
+  "colourModesNeedAccessibility": "تُفرض أوضاع الألوان عبر خدمة الوصول. هل تريد تفعيلها الآن؟",
+  "enableAccessibility": "تفعيل الوصول",
+  "accessibilityStillDisabled": "خدمة الوصول ما زالت مغلقة.",
+  "secureSettingsGrantFailed": "فشل منح إذن WRITE_SECURE_SETTINGS.",
+  "nightLightTemperature": "درجة الحرارة",
+  "nightLightIntensity": "الشدة: {value}",
+  "@nightLightIntensity": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "extraDimLevel": "مستوى التعتيم: {value}",
+  "@extraDimLevel": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "colourWindowsLabel": "النوافذ: {windows}",
+  "@colourWindowsLabel": {
+    "placeholders": {
+      "windows": {
+        "type": "String"
+      }
+    }
+  },
+  "colourWindowsAlways": "دائماً، أثناء التفعيل",
+  "editWindows": "تحرير النوافذ",
+  "colourScopeDevice": "الجهاز كاملاً",
+  "colourScopeExceptApps": "كل التطبيقات باستثناء…",
+  "colourScopeOnlyApps": "هذه التطبيقات فقط…",
+  "colourScopeAppsTitle": "تطبيقات {mode}",
+  "@colourScopeAppsTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "colourScopeAppsCount": "تم اختيار {count} تطبيقات",
+  "@colourScopeAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "applyDuringFocus": "تطبيق أيضاً أثناء جلسات التركيز",
+  "applyDuringFocusDesc": "يبقى التدرج الرمادي مفعّلاً طوال مرحلة التركيز، حتى خارج النوافذ أعلاه.",
   "language": "اللغة",
   "languageDialogTitle": "اللغة",
   "languageEnglish": "English",
@@ -823,7 +966,7 @@
     }
   },
   "supportingBrowsers": "المتصفحات الداعمة",
-  "noSupportingBrowser": "لا يصرّح أي متصفح مثبّت بـ URLBlocklist في قيوده المُدارة، فلا توجد سياسة لدفعها. المتصفحات غير الداعمة تُعالج بقواعد التعليق (التعليق التلقائي v1.1).",
+  "noSupportingBrowser": "لا يصرّح أي متصفح مثبّت بـ URLBlocklist في قيوده المُدارة، فلا توجد سياسة لدفعها. المتصفحات غير الداعمة تُعالج بقواعد التعليق.",
   "blocklists": "قوائم الحظر",
   "noBlocklists": "لا توجد قوائم حظر بعد. أنشئ واحدة لبدء حظر المواقع.",
   "sitesCount": "{count} موقع",
@@ -1390,7 +1533,7 @@
     }
   },
   "ownerStillActiveMsg": "ما زال مالك الجهاز نشطًا بعد الإزالة",
-  "noCapableBrowser": "لا يعلن أي متصفح مثبّت عن URLBlocklist في قيوده المُدارة، فلا يوجد ما تُدفع إليه السياسة. المتصفحات غير الداعمة تُعالج بقواعد التعليق (التعليق التلقائي في v1.1).",
+  "noCapableBrowser": "لا يعلن أي متصفح مثبّت عن URLBlocklist في قيوده المُدارة، فلا يوجد ما تُدفع إليه السياسة. المتصفحات غير الداعمة تُعالج بقواعد التعليق.",
   "blocklistsSection": "قوائم الحظر",
   "noBlocklistsYet": "لا قوائم حظر بعد. أنشئ واحدة لبدء حظر المواقع.",
   "usageWarningsBody": "تحذّر كل مرحلة مرة واحدة قبل انتهاء الحد اليومي للتطبيق بعدد الدقائق المضبوط. تُحفظ المراحل لتطلقها خدمة إمكانية الوصول؛ ويعتمد وصول الإشعار على المُشعِر الأصلي.",
@@ -1590,5 +1733,73 @@
   "appProtectionSection": "الحماية",
   "appLimitsSection": "الحدود والنوافذ",
   "setupServicesSection": "الخدمات والأذونات",
-  "storeCardTitle": "احفظها بأمان"
+  "storeCardTitle": "احفظها بأمان",
+  "removalLoadingTitle": "جارٍ إكمال إزالة مالك الجهاز…",
+  "removalLoadingBody": "يرجى الانتظار. لا تغلق التطبيق ولا تقم بإلغاء التثبيت حتى يكتمل التفكيك.",
+  "removalTimeoutWarningTitle": "لم يكتمل التفكيك — لا تقم بإلغاء التثبيت بعد",
+  "removalTimeoutWarningBody": "تمت إزالة مالك الجهاز، لكن النظام لم ينتهِ من تسوية جميع خطوات التفكيك بعد. لا تقم بإلغاء التثبيت الآن حتى لا يتعطل الجهاز. الفحوصات التالية لم يتم التحقق منها:",
+  "removalRecheckAction": "إعادة التحقق من الحالة",
+  "removalUnverifiedOwner": "مالك الجهاز لا يزال نشطاً",
+  "removalUnverifiedAdmin": "مسؤول الجهاز لا يزال نشطاً",
+  "removalUnverifiedRestrictions": "القيود لا تزال سارية: {restrictions}",
+  "@removalUnverifiedRestrictions": {
+    "placeholders": {
+      "restrictions": {
+        "type": "String"
+      }
+    }
+  },
+  "removalUnverifiedScreenCapture": "التقاط الشاشة لا يزال محظوراً",
+  "deleteGroupConfirmTitle": "حذف المجموعة؟",
+  "deleteGroupConfirmMessage": "هل أنت متأكد من حذف المجموعة \"{name}\"؟ ستتم إزالة جميع حدودها ونوافذها الزمنية نهائياً.",
+  "@deleteGroupConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteWindowConfirmTitle": "حذف النافذة الزمنية؟",
+  "deleteWindowConfirmMessage": "هل أنت متأكد من حذف النافذة الزمنية \"{window}\"؟",
+  "@deleteWindowConfirmMessage": {
+    "placeholders": {
+      "window": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteBlocklistConfirmTitle": "حذف قائمة الحظر؟",
+  "deleteBlocklistConfirmMessage": "هل أنت متأكد من حذف قائمة الحظر \"{title}\"؟",
+  "@deleteBlocklistConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteStageConfirmTitle": "حذف مرحلة التنبيه؟",
+  "deleteStageConfirmMessage": "هل أنت متأكد من حذف مرحلة التنبيه عند {minutes} دقيقة؟",
+  "@deleteStageConfirmMessage": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteRuleConfirmTitle": "حذف قاعدة الختم؟",
+  "deleteRuleConfirmMessage": "هل أنت متأكد من حذف قاعدة الختم: \"{summary}\"؟",
+  "@deleteRuleConfirmMessage": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "removeOwnerConfirmTitle": "إزالة مالك الجهاز وإنهاء الحماية؟",
+  "removeOwnerConsequenceRestrictions": "رفع كافة قيود النظام وتعليق التطبيقات وحجب المواقع فوراً.",
+  "removeOwnerConsequenceDns": "إعادة ضبط إعدادات DNS الخاص.",
+  "removeOwnerConsequenceUninstall": "السماح بإلغاء تثبيت تطبيق عزم.",
+  "removeOwnerUnderstandCheckbox": "أدرك عواقب هذا الإجراء",
+  "removeOwnerConfirmButton": "إزالة الحماية",
+  "scratchToReveal": "اخدش للكشف"
 }

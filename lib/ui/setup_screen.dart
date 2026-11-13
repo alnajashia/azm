@@ -1,7 +1,7 @@
 /// Setup / Status screen (F30): the Shizuku state machine
 /// (notInstalled → notRunning → preV11 → noPermission → granted), Device
 /// Owner provisioning, diagnostics, the WRITE_SECURE_SETTINGS grant and the
-/// Accessibility toggle. Every state is distinct and honest — e.g. Dominanter
+/// Accessibility toggle. Every state is distinct and honest — e.g. Azm
 /// cannot start the Shizuku server, so `notRunning` says exactly that.
 ///
 /// Permission flow (the original's polling design): requesting Shizuku
@@ -41,7 +41,7 @@ class SetupScreen extends StatefulWidget {
 
 /// This app's own package name, for telling "we are the current owner"
 /// apart from "*another* app is the current owner" in diagnostics.
-const String _ownPackage = 'io.github.alnajashia.dominanter';
+const String _ownPackage = 'com.alnajashia.azm';
 
 class _SetupScreenState extends State<SetupScreen> {
   ShizukuStatus? _shizuku;
@@ -492,6 +492,19 @@ class _SetupScreenState extends State<SetupScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  'assets/branding/azm_logo.png',
+                  width: 64,
+                  height: 64,
+                ),
+              ),
+            ),
+          ),
           _ShizukuCard(
             status: shizuku,
             busy: _busy,

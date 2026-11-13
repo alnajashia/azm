@@ -10,9 +10,11 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import '../domain/colour_modes.dart';
 import '../domain/focus.dart';
 
 /// A failure from the privileged channel, in the §5.4 taxonomy shape.
@@ -185,6 +187,74 @@ class CapableApp {
   );
 }
 
+/// An installed browser (Batch C, C1), from `listInstalledBrowsers`:
+/// every app that can open web links, with whether it honours managed
+/// browser restrictions (declares BOTH `URLBlocklist` and
+/// `ForceGoogleSafeSearch`), whether it is currently suspended, and
+/// its icon as raw PNG bytes (Base64 on the wire, downscaled to 96px
+/// natively; null when the icon could not be read).
+class InstalledBrowser {
+  const InstalledBrowser({
+    required this.packageName,
+    required this.label,
+    required this.supportsRestrictions,
+    required this.isSuspended,
+    this.iconBytes,
+  });
+
+  final String packageName;
+  final String label;
+  final bool supportsRestrictions;
+  final bool isSuspended;
+  final List<int>? iconBytes;
+
+  factory InstalledBrowser.fromMap(Map<dynamic, dynamic> m) {
+    final iconRaw = m['icon'] as String?;
+    List<int>? icon;
+    if (iconRaw != null && iconRaw.isNotEmpty) {
+      try {
+        icon = base64Decode(iconRaw);
+      } catch (_) {
+        icon = null;
+      }
+    }
+    return InstalledBrowser(
+      packageName: m['packageName'] as String,
+      label: m['label'] as String? ?? (m['packageName'] as String),
+      supportsRestrictions: m['supportsRestrictions'] as bool? ?? false,
+      isSuspended: m['isSuspended'] as bool? ?? false,
+      iconBytes: icon,
+    );
+  }
+}
+
+/// One entry of the accessibility service's in-memory seen-activities
+/// log (Batch C, C2), from `getAccessedActivities`. The service keeps
+/// the last 100, newest first, de-duplicated by package + class.
+class ActivityLogEntry {
+  const ActivityLogEntry({
+    required this.packageName,
+    required this.className,
+    required this.appName,
+    required this.timestamp,
+  });
+
+  final String packageName;
+  final String className;
+  final String appName;
+  final DateTime timestamp;
+
+  factory ActivityLogEntry.fromMap(Map<dynamic, dynamic> m) =>
+      ActivityLogEntry(
+        packageName: m['packageName'] as String,
+        className: m['className'] as String,
+        appName: m['appName'] as String? ?? (m['packageName'] as String),
+        timestamp: DateTime.fromMillisecondsSinceEpoch(
+          (m['timestamp'] as num?)?.toInt() ?? 0,
+        ),
+      );
+}
+
 /// One entry of a target app's own manifest-declared restrictions, as
 /// returned by `getAvailableRestrictions` — the model behind the original's
 /// `AppRestrictionsScreen` (its `RestrictionEntry` list from
@@ -341,6 +411,45 @@ class DeviceOwnerRemovalResult {
             RemovalStepResult.fromMap(e as Map<dynamic, dynamic>),
         ],
       );
+}
+
+/// The result of lightweight post-confirmation removal verification
+/// (Batch D Addendum): checks whether owner & admin are gone, residue is
+/// empty, and screen capture is allowed again.
+class RemovalVerificationResult {
+  const RemovalVerificationResult({
+    required this.verified,
+    required this.isDeviceOwner,
+    required this.isAdminActive,
+    required this.restrictionsResidue,
+    required this.screenCaptureDisabled,
+  });
+
+  final bool verified;
+  final bool isDeviceOwner;
+  final bool isAdminActive;
+  final List<String> restrictionsResidue;
+  final bool screenCaptureDisabled;
+
+  factory RemovalVerificationResult.fromMap(Map<dynamic, dynamic> m) =>
+      RemovalVerificationResult(
+        verified: m['verified'] as bool? ?? false,
+        isDeviceOwner: m['isDeviceOwner'] as bool? ?? false,
+        isAdminActive: m['isAdminActive'] as bool? ?? false,
+        restrictionsResidue: [
+          for (final e in (m['restrictionsResidue'] as List? ?? const []))
+            e as String,
+        ],
+        screenCaptureDisabled: m['screenCaptureDisabled'] as bool? ?? false,
+      );
+
+  Map<String, dynamic> toMap() => {
+        'verified': verified,
+        'isDeviceOwner': isDeviceOwner,
+        'isAdminActive': isAdminActive,
+        'restrictionsResidue': restrictionsResidue,
+        'screenCaptureDisabled': screenCaptureDisabled,
+      };
 }
 
 class UsageToday {
@@ -691,12 +800,12 @@ class NativeFocusSessionState {
   }
 }
 
-/// The single Dart-side caller of `dominanter/privileged`.
+/// The single Dart-side caller of `azm/privileged`.
 class PrivilegedChannel {
   PrivilegedChannel({MethodChannel? methodChannel, EventChannel? eventChannel})
-    : _methods = methodChannel ?? const MethodChannel('dominanter/privileged'),
+    : _methods = methodChannel ?? const MethodChannel('azm/privileged'),
       _events =
-          eventChannel ?? const EventChannel('dominanter/privileged/events');
+          eventChannel ?? const EventChannel('azm/privileged/events');
 
   final MethodChannel _methods;
   final EventChannel _events;
@@ -799,6 +908,14 @@ class PrivilegedChannel {
   /// outcome; see [DeviceOwnerRemovalResult].
   Future<DeviceOwnerRemovalResult> removeDeviceOwner() async =>
       DeviceOwnerRemovalResult.fromMap(await _invokeMap('removeDeviceOwner'));
+
+  /// Lightweight removal verification probe (Batch D Addendum): polls
+  /// whether Device Owner and Device Admin are dropped, key restrictions
+  /// cleared, and screen capture allowed.
+  Future<RemovalVerificationResult> verifyRemovalComplete() async =>
+      RemovalVerificationResult.fromMap(
+        await _invokeMap('verifyRemovalComplete'),
+      );
 
   /// The app's own user-restriction keys still in force for the user,
   /// read natively WITHOUT owner rights (v1.0.5 field-failure
@@ -1001,6 +1118,21 @@ class PrivilegedChannel {
     throw PrivilegedException(
       'INTERNAL',
       'Malformed reply for listRestrictionCapableApps',
+    );
+  }
+
+  /// All installed browsers (Batch C, C1): every app that can open web
+  /// links, with restriction support, suspension state and icon.
+  Future<List<InstalledBrowser>> listInstalledBrowsers() async {
+    final raw = await _invoke<dynamic>('listInstalledBrowsers');
+    if (raw is List) {
+      return raw
+          .map((e) => InstalledBrowser.fromMap(e as Map<dynamic, dynamic>))
+          .toList();
+    }
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply for listInstalledBrowsers',
     );
   }
 
@@ -1272,6 +1404,61 @@ class PrivilegedChannel {
     }),
   );
 
+  // ---------------------------------------------------------- Activity blocker (Batch C, C2)
+
+  /// The blocked activity class names. The native side is the
+  /// authority on what may be blocked: [setBlockedActivities] throws
+  /// INVALID_ARGUMENT (nothing written) for a protected entry.
+  Future<List<String>> getBlockedActivities() async {
+    final m = await _invokeMap('getBlockedActivities');
+    return (m['activities'] as List? ?? const [])
+        .map((e) => e.toString())
+        .toList();
+  }
+
+  Future<List<String>> setBlockedActivities(List<String> activities) async {
+    final m = await _invokeMap('setBlockedActivities', {
+      'activities': activities,
+    });
+    return (m['activities'] as List? ?? const [])
+        .map((e) => e.toString())
+        .toList();
+  }
+
+  /// The service's in-memory seen-activities log (last 100, newest
+  /// first). Empty when the service has not run yet.
+  Future<List<ActivityLogEntry>> getAccessedActivities() async {
+    final m = await _invokeMap('getAccessedActivities');
+    return (m['activities'] as List? ?? const [])
+        .map((e) => ActivityLogEntry.fromMap(e as Map<dynamic, dynamic>))
+        .toList();
+  }
+
+  // ---------------------------------------------------------- Colour modes (Batch C, C3)
+
+  /// The colour-modes configuration. This is the ONLY read path for
+  /// `colour_modes_prefs` — there is no generic get/setSetting route
+  /// for it (the lock must live in Kotlin).
+  Future<ColourModesConfig> getColourModesConfig() async =>
+      ColourModesConfig.fromMap(await _invokeMap('getColourModesConfig'));
+
+  /// Writes the whole configuration. A refused (locked) change is not
+  /// an exception: the result carries `ok: false` with the locked
+  /// modes, and nothing was written.
+  Future<ColourModesSetResult> setColourModesConfig(
+    ColourModesConfig config,
+  ) async => ColourModesSetResult.fromMap(
+    await _invokeMap('setColourModesConfig', config.toMap()),
+  );
+
+  Future<ColourModesStatus> getColourModesStatus() async =>
+      ColourModesStatus.fromMap(await _invokeMap('getColourModesStatus'));
+
+  /// Asks the running accessibility service to re-sync colour modes
+  /// now. Returns false when the service is not running.
+  Future<bool> syncColourModes() async =>
+      (await _invokeMap('syncColourModes'))['ok'] as bool? ?? false;
+
   Future<List<SuspensionLogEntry>> getSuspensionLogs() async {
     final m = await _invokeMap('getSuspensionLogs');
     return (m['logs'] as List? ?? const [])
@@ -1298,5 +1485,16 @@ class PrivilegedChannel {
       'key': key,
       'value': value,
     });
+  }
+
+  /// Sets or clears FLAG_SECURE on the host Activity window (v1.0.6 UX / Audit 12.1).
+  /// While enabled, Android blocks screen captures, screen sharing, and
+  /// recents task snapshots from exposing sensitive content (e.g. recovery codes).
+  Future<void> setWindowSecure(bool enabled) async {
+    try {
+      await _invoke<dynamic>('setWindowSecure', {'enabled': enabled});
+    } catch (_) {
+      // Best-effort: ignored if unsupported in the current host environment.
+    }
   }
 }

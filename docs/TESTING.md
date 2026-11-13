@@ -1,4 +1,4 @@
-# Dominanter — Testing
+# Azm — Testing
 
 > **Last updated:** 2026-11-09 (post-redesign rebuild + compliance audit — see `COMPLIANCE_AUDIT.md`)
 > **Headline honesty statement:** All evidence in this file was produced in a
@@ -29,7 +29,7 @@ Companion documents: [`ARCHITECTURE.md`](ARCHITECTURE.md) §9 (test plan),
 | Kotlin compile (Gradle) | ✅ Compile-verified | `compileDebugKotlin` and `compileReleaseKotlin` pass as part of the successful `assembleDebug` / `assembleRelease` builds. The first real build found **5 Kotlin compile errors**, all fixed: a `*/` sequence terminating a KDoc comment early in `DeviceOwnerManager.kt`; the non-existent `PRIVATE_DNS_SET_SUCCESS` constant (correct: `PRIVATE_DNS_SET_NO_ERROR`); a duplicate companion object in the Accessibility Service; a missing `Context` threaded through `ShizukuProvisioning.refreshUserSetupComplete`; a vararg array type mismatch in `ShizukuRunner.exec` |
 | `flutter build apk --debug` | ✅ Succeeded — first build 866 s (`build_logs/build12_debug.log`); **post-redesign rebuild also succeeded** | `build_logs/build14_redesign_debug.log`; recipe codified in `build_apk.sh`, root causes in `build_logs/README.md` |
 | `flutter build apk --release` | ✅ Succeeded — first build 315 s (`build_logs/build13_release.log`); **post-redesign rebuild also succeeded** | `build_logs/build15_redesign_release.log` |
-| APK badging (`aapt2 dump badging`) | ✅ Verified on the built APKs | `package: name='io.github.alnajashia.dominanter' versionCode='1' versionName='1.0.0' compileSdkVersion='36'`, `minSdkVersion:'30'`, `targetSdkVersion:'36'` |
+| APK badging (`aapt2 dump badging`) | ✅ Verified on the built APKs | `package: name='com.alnajashia.azm' versionCode='1' versionName='1.0.0' compileSdkVersion='36'`, `minSdkVersion:'30'`, `targetSdkVersion:'36'` |
 | REA inspection of the rebuilt APK | ✅ Run on the **pre-redesign** release APK — see [`REA_REBUILT_APK.md`](REA_REBUILT_APK.md) | REA 6.8.0 CLI commands run against the first `app-release.apk` (50,406,827 B) 2026-11-09; **not re-run on the post-redesign APK** — that document's size/hash describe the earlier artefact, not the current one |
 | Device / emulator testing | ❌ **None** | No device or emulator exists in this environment. Every device-dependent item in §3 is untested |
 
@@ -44,8 +44,8 @@ Local deliverable copies (kept on this machine only, **not** in git — they
 are binaries and are excluded from the snapshot pushes):
 
 ```
-~/workspace/dominater-rebuild/project/release/dominanter-v1.0.0-debug.apk
-~/workspace/dominater-rebuild/project/release/dominanter-v1.0.0-release.apk
+~/workspace/azm-launch/project/release/azm-v1.0.0-debug.apk
+~/workspace/azm-launch/project/release/azm-v1.0.0-release.apk
 ```
 
 Checksums of the copies were verified identical to the build outputs above
@@ -53,7 +53,7 @@ at copy time. These are the **post-redesign rebuilds of 2026-11-09**
 (`build14_redesign_debug.log` / `build15_redesign_release.log`), which
 supersede the first builds (debug 148,894,306 B / `86bfa331…`; release
 50,406,827 B / `c1bd2fa2…`). Badging was re-verified with `aapt2` on both
-new APKs: `io.github.alnajashia.dominanter`, versionCode 1 / versionName
+new APKs: `com.alnajashia.azm`, versionCode 1 / versionName
 1.0.0, minSdk 30, targetSdk 36 — unchanged.
 
 Neither APK has been installed or run on any device.
@@ -66,7 +66,7 @@ Neither APK has been installed or run on any device.
 |---|---|---|
 | `test/recovery_gate_test.dart` | 20 | The recovery-gate domain model (F23): loosening vs tightening detection for daily/per-weekday time limits (raise/remove = loosens, lower/add = tightens, any single loosening weekday wins), time windows (widen/remove = loosens, narrow = tightens, midnight-spanning windows measured correctly), restriction sets (dropping a key loosens, `true → false` loosens), blocklists (shrinking loosens, growing does not); the 5-second undo window (`PendingChange`: undo inside 5 s reverts exactly once, after 5 s the change stands); the 10-minute in-memory recovery session (start, clock expiry, renew, end); 48-hour forced-removal accounting (negative deltas never rewind it); impulse lock (duration clamped to 15 min–6 h, ticks to completion, negative ticks ignored) |
 | `test/challenges_test.dart` | 8 | Access challenges (F22) and focus model (F25): math challenge requires 5 correct answers and wrong answers do not advance; all four operations produce self-consistent problems; words challenge streak restarts on a mistake; reading challenge reveals one tick at a time, advances passages, completes; Tetris is the **only** challenge unavailable in v1; focus phase cycle (focus → break → focus → long break at cycle 2); pause stores remaining time and resume re-enters focus with it; focus config JSON round-trip preserves v1 defaults and values |
-| `test/channel_client_test.dart` | 8 | The typed Dart client for the `dominanter/privileged` MethodChannel (§3 of `IMPLEMENTATION_STATUS.md`): `getShizukuState` parses the exact Kotlin payload; all five Shizuku states parse distinctly; `SHELL_FAILED` keeps error code, `exitCode`, command and stderr from `details` (regression test for the original `ShizukuRunner.command()` flaw — shell failures must never be reported as success); `DPM_NOT_OWNER` is mapped and recognisable; a missing native side becomes `UNAVAILABLE`, never a fake result; `listInstalledApps` parses Kotlin `AppInfo` maps including a null rating; `setAppSuspended` returns verified per-package results; time-limit / windows / groups payloads round-trip through the client |
+| `test/channel_client_test.dart` | 8 | The typed Dart client for the `azm/privileged` MethodChannel (§3 of `IMPLEMENTATION_STATUS.md`): `getShizukuState` parses the exact Kotlin payload; all five Shizuku states parse distinctly; `SHELL_FAILED` keeps error code, `exitCode`, command and stderr from `details` (regression test for the original `ShizukuRunner.command()` flaw — shell failures must never be reported as success); `DPM_NOT_OWNER` is mapped and recognisable; a missing native side becomes `UNAVAILABLE`, never a fake result; `listInstalledApps` parses Kotlin `AppInfo` maps including a null rating; `setAppSuspended` returns verified per-package results; time-limit / windows / groups payloads round-trip through the client |
 | `test/widget_test.dart` | 3 | Critical gates as widgets: the lock-screen panic button is visible **before** any authentication (F21/F32); the first-run wizard shows the generated recovery code grouped for writing on paper (F24); the wizard stores the re-typed code via the channel (F24) |
 | `test/redesign_test.dart` | 2 | UI redesign (2026-11-09): the floating pill navigation renders 4 destinations and tapping the 3rd switches the tab; the circular focus timer ring shows the `FocusSession` model's remaining time (idle 25:00 → 24:5x after Start) |
 
@@ -97,7 +97,7 @@ From the master prompt's testing phase, mapped to `ARCHITECTURE.md` §9.
 | 9 | Binder communication | **Requires real device** | The highest-risk item in the project: the binder-wrapped `DevicePolicyManager` path (`ShizukuBinderWrapper` + reflection into `DevicePolicyManager.mService` + HiddenApiBypass hidden overloads) is Android-version-fragile by construction and has **never executed** outside compilation. It is spike #1 in `ARCHITECTURE.md` §10 and gates all provisioning claims. |
 | 10 | Every implemented system operation | **Requires real device** | Each DPM operation (hide/suspend/uninstall-block, user restrictions, managed restrictions, private DNS), `WRITE_SECURE_SETTINGS` grant, and accessibility enablement is implemented and compile-verified, and the Dart client is unit-tested against transcribed payloads — but no operation has executed against a real `DevicePolicyManager`. Partially covered here only at the Dart/domain level (§2). |
 | 11 | Service disconnection | **Requires real device** | Behaviour on Shizuku server death (binder death, `pingBinder()` going false, UI state transitions) needs a running server to kill. Implemented states exist; the transition is untested. |
-| 12 | Authorization revocation | **Requires real device** | Revoking Dominanter's permission in the Shizuku manager and observing the app degrade honestly (never fake success) requires a device. |
+| 12 | Authorization revocation | **Requires real device** | Revoking Azm's permission in the Shizuku manager and observing the app degrade honestly (never fake success) requires a device. |
 | 13 | Unsupported Android versions | **Not yet** | Pre-V11 Shizuku and below-minSdk behaviour are handled in code (pre-V11 hard-fail state; `minSdk 30`), but no emulator or device matrix has been run. Emulator work does not strictly need hardware, but no emulator exists in this environment either; left as Not yet rather than Verified. |
 | 14 | Application lifecycle changes | **Not yet** | Dart-side timer models are unit-tested (pause/resume, session expiry by clock), but process death / reboot behaviour is a known limitation: forced-removal and impulse accounting advance only while the app process is alive, and focus has no native foreground service in v1 (see `IMPLEMENTATION_STATUS.md` §6). On-device lifecycle testing has not been done. |
 | 15 | Error handling | **Verified here** *(Dart level only)* | Channel error taxonomy is unit-tested: `SHELL_FAILED` preserves exit code/command/stderr, `DPM_NOT_OWNER` maps distinctly, a missing native side surfaces as `UNAVAILABLE` — never a fabricated success. Native-side error behaviour on a real system is part of #10 and remains device-unverified. |
@@ -157,14 +157,14 @@ relay ceremony is specific to this sandbox.
   (restriction activation opens the recovery gate and applies nothing;
   with a session open it applies directly), and the extended strict
   palette guard in `redesign_test.dart`.
-- **Release APK:** `release/dominanter-v1.0.4-release.apk`,
+- **Release APK:** `release/azm-v1.0.4-release.apk`,
   54,093,015 bytes, sha256
   `bf7e61a95d8c0c0838dd722e3030effee00d2400d9c25266a2666e4ef512d4d9`.
   aapt2 badging: versionName 1.0.4, versionCode 5,
   application icon = the adaptive-icon XML; resource dump confirms
   `mipmap/ic_launcher`, `ic_launcher_foreground` and
   `ic_launcher_monochrome`; APK listing confirms
-  `assets/branding/dominanter_logo.png/.svg/dominanter_logo_symbol.png`
+  `assets/branding/azm_logo.png/.svg`
   and all four Cairo TTFs.
 - **Not done:** no GitHub push, no GitHub release (separate approval),
   and no on-device install test yet — v1.0.4 should update a v1.0.3

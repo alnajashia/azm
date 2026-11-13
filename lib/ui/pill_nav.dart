@@ -29,8 +29,8 @@ class PillNavDestination {
   final String label;
 }
 
-class DominanterNavBar extends StatelessWidget {
-  const DominanterNavBar({
+class AzmNavBar extends StatelessWidget {
+  const AzmNavBar({
     super.key,
     required this.destinations,
     required this.selectedIndex,
@@ -55,7 +55,7 @@ class DominanterNavBar extends StatelessWidget {
           decoration: BoxDecoration(
             // Always black — light mode gets the reference's black pill
             // bar too, not a white one (red & black only identity).
-            color: DominanterColors.blackBar,
+            color: AzmColors.blackBar,
             borderRadius: BorderRadius.circular(36),
             border: Border.all(
               color: Colors.white.withValues(alpha: dark ? 0.10 : 0.16),
@@ -80,7 +80,7 @@ class DominanterNavBar extends StatelessWidget {
                     // Muted light-grey in BOTH modes: the bar is always
                     // black, so the theme's onSurfaceVariant (near-black
                     // in light mode) would be unreadable here.
-                    mutedColor: DominanterColors.onBlackMuted,
+                    mutedColor: AzmColors.onBlackMuted,
                     onTap: () => onSelected(i),
                   ),
                 ),
@@ -155,7 +155,7 @@ class _PillNavItem extends StatelessWidget {
                         // Flat red fill (single flat colour, per the
                         // no-gradient directive; the swept shape stays).
                         decoration: const BoxDecoration(
-                          color: DominanterColors.red,
+                          color: AzmColors.red,
                         ),
                         child: Center(
                           child: DefaultTextStyle.merge(

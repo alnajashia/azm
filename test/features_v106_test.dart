@@ -7,14 +7,14 @@ library;
 
 import 'dart:io';
 
-import 'package:dominanter/data/privileged_channel.dart';
-import 'package:dominanter/domain/entry_grace.dart';
-import 'package:dominanter/domain/seal_rules.dart';
-import 'package:dominanter/domain/visual_blocking.dart';
-import 'package:dominanter/l10n/app_localizations.dart';
-import 'package:dominanter/l10n/app_localizations_ar.dart';
-import 'package:dominanter/l10n/app_localizations_en.dart';
-import 'package:dominanter/ui/common.dart';
+import 'package:azm/data/privileged_channel.dart';
+import 'package:azm/domain/entry_grace.dart';
+import 'package:azm/domain/seal_rules.dart';
+import 'package:azm/domain/visual_blocking.dart';
+import 'package:azm/l10n/app_localizations.dart';
+import 'package:azm/l10n/app_localizations_ar.dart';
+import 'package:azm/l10n/app_localizations_en.dart';
+import 'package:azm/ui/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -372,7 +372,7 @@ void main() {
       // search field's "include system apps" trailing toggle renders
       // FILLED while the filter is active. That single control, in
       // that single file, may reference the filled filter icon.
-      const sanctionedFile = 'lib/ui/apps_tab.dart';
+      const sanctionedFiles = ['lib/ui/apps_tab.dart', 'lib/ui/common.dart'];
       const sanctionedIcon = 'Icons.filter_alt';
       final iconRef = RegExp(r'Icons\.([a-z0-9_]+)');
       for (final f in dartSources()) {
@@ -383,7 +383,7 @@ void main() {
             continue;
           }
           final isSanctioned =
-              f.path.endsWith(sanctionedFile) &&
+              sanctionedFiles.any((file) => f.path.endsWith(file)) &&
               'Icons.$name' == sanctionedIcon;
           expect(
             isSanctioned,

@@ -144,7 +144,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get wordNo => 'لا';
 
   @override
-  String get startingDominanter => 'جارٍ بدء عزم…';
+  String get startingAzm => 'جارٍ بدء عزم…';
 
   @override
   String get unknownStartupError => 'خطأ غير معروف عند البدء';
@@ -890,13 +890,248 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get colourModesNote =>
-      'التدرج الرمادي المجدول والإضاءة الليلية والتعتيم الإضافي قادمة في v1.1 (منح WRITE_SECURE_SETTINGS اللازم لها موجود في شاشة الإعداد).';
+      'التدرج الرمادي والإضاءة الليلية والتعتيم الإضافي وعكس الألوان — وفق جداول ولكل تطبيق.';
 
   @override
   String get activityBlocker => 'حاجب الأنشطة';
 
   @override
-  String get activityBlockerNote => 'حظر شاشات نشاط محددة قادم في v1.1.';
+  String get activityBlockerNote =>
+      'حظر شاشات نشاط محددة؛ لا يمكن حظر المشغّل وتطبيقات النظام أبداً.';
+
+  @override
+  String get removalStepColourModes => 'تم تحرير أوضاع الألوان';
+
+  @override
+  String get browserUnsupportedWarning =>
+      'القيود لا تعمل في هذا المتصفح، يُنصح بتعطيله.';
+
+  @override
+  String get refresh => 'تحديث';
+
+  @override
+  String get loading => 'جارٍ التحميل…';
+
+  @override
+  String get block => 'حظر';
+
+  @override
+  String get blocked => 'محظور';
+
+  @override
+  String get unblock => 'إلغاء الحظر';
+
+  @override
+  String get activityBlockerDescription =>
+      'عند فتح نشاط محظور يعيده عزم إلى الخلف. لا يمكن حظر المشغّل أو واجهة النظام أو الإعدادات أو المكالمات أو عزم نفسه أبداً.';
+
+  @override
+  String get blockedActivities => 'الأنشطة المحظورة';
+
+  @override
+  String get noBlockedActivities => 'لا توجد أنشطة محظورة بعد.';
+
+  @override
+  String get recentlyAccessedActivities =>
+      'الأنشطة التي تم الوصول إليها مؤخراً';
+
+  @override
+  String get noAccessedActivities =>
+      'لم يتم رصد أي نشاط بعد — افتح بعض التطبيقات ثم عُد.';
+
+  @override
+  String activitiesCount(int count) {
+    return '$count أنشطة';
+  }
+
+  @override
+  String get unblockActivityConfirmTitle => 'إلغاء حظر هذا النشاط؟';
+
+  @override
+  String unblockActivityConfirmMessage(String activity) {
+    return 'سيُسمح بفتح «$activity» مجدداً.';
+  }
+
+  @override
+  String get addActivityTitle => 'حظر نشاط';
+
+  @override
+  String get addActivityBody =>
+      'أدخل اسم فئة النشاط الكامل كما يظهر في قائمة الأنشطة التي تم الوصول إليها.';
+
+  @override
+  String get activityClassNameLabel => 'اسم فئة النشاط';
+
+  @override
+  String get addActivityInvalid =>
+      'أدخل اسم فئة كاملاً، مثل com.example.app.MainActivity.';
+
+  @override
+  String get addActivityProtected => 'هذا النشاط محمي ولا يمكن حظره أبداً.';
+
+  @override
+  String get addActivityAlreadyBlocked => 'هذا النشاط محظور بالفعل.';
+
+  @override
+  String get colourModesDescription =>
+      'اجعل الشاشة أقل إثارة: التدرج الرمادي والإضاءة الليلية والتعتيم الإضافي وعكس الألوان، وفق جداول ولكل تطبيق. لا يمكن تخفيف وضع مفعّل الآن دون رمز الاسترداد.';
+
+  @override
+  String get colourModesStatusTitle => 'الحالة';
+
+  @override
+  String get colourModesStatusNoAccessibility =>
+      'خدمة الوصول مغلقة — لا يمكن تطبيق أوضاع الألوان. فعّلها بالأسفل.';
+
+  @override
+  String get colourModesStatusNoGrant =>
+      'لم يُمنح إذن WRITE_SECURE_SETTINGS — فعّل الميزة بالأسفل لمنحه عبر Shizuku.';
+
+  @override
+  String get colourModesStatusUnsupported =>
+      'تعذّر على هذا الجهاز تطبيق مفاتيح التدرج الرمادي — قد لا تعمل الميزة هنا.';
+
+  @override
+  String colourModesStatusActive(String modes) {
+    return 'مفعّلة الآن: $modes';
+  }
+
+  @override
+  String get colourModesStatusIdle => 'مفعّلة — لا يوجد وضع نشط الآن.';
+
+  @override
+  String get colourModesStatusOff => 'مغلقة.';
+
+  @override
+  String get colourModesEnableTitle => 'أوضاع الألوان';
+
+  @override
+  String get colourModesEnable => 'تفعيل أوضاع الألوان';
+
+  @override
+  String colourModesSummaryActive(String modes) {
+    return 'نشطة: $modes';
+  }
+
+  @override
+  String get colourModesSummaryIdle => 'مفعّلة — لا شيء نشط الآن';
+
+  @override
+  String get colourModesSummaryOff => 'مغلقة';
+
+  @override
+  String get colourModeGrayscale => 'التدرج الرمادي';
+
+  @override
+  String get colourModeGrayscaleDesc => 'يزيل كل الألوان من الشاشة.';
+
+  @override
+  String get colourModeNightLight => 'الإضاءة الليلية';
+
+  @override
+  String get colourModeNightLightDesc => 'تدفئ ألوان الشاشة ليلاً.';
+
+  @override
+  String get colourModeExtraDim => 'التعتيم الإضافي';
+
+  @override
+  String get colourModeExtraDimDesc => 'يخفت الشاشة دون أدنى سطوع لها.';
+
+  @override
+  String get colourModeInversion => 'عكس الألوان';
+
+  @override
+  String get colourModeInversionDesc => 'يعكس كل الألوان على الشاشة.';
+
+  @override
+  String get colourModeExtraDimUnavailable =>
+      'التعتيم الإضافي غير متوفر على هذا الجهاز.';
+
+  @override
+  String colourModeLockedUntil(String time) {
+    return 'مقفل حتى $time — رمز الاسترداد يفتحه.';
+  }
+
+  @override
+  String get colourModeLockedActive =>
+      'مقفل أثناء التفعيل — رمز الاسترداد يفتحه.';
+
+  @override
+  String get colourModesLockedTitle => 'مقفل الآن';
+
+  @override
+  String colourModesLockedMessage(String modes) {
+    return '$modes مفعّل الآن، لذا لا يمكن تخفيفه دون رمز الاسترداد.';
+  }
+
+  @override
+  String get openRecoveryGate => 'فتح بوابة الاسترداد';
+
+  @override
+  String get colourModesNeedAccessibilityTitle => 'خدمة الوصول مغلقة';
+
+  @override
+  String get colourModesNeedAccessibility =>
+      'تُفرض أوضاع الألوان عبر خدمة الوصول. هل تريد تفعيلها الآن؟';
+
+  @override
+  String get enableAccessibility => 'تفعيل الوصول';
+
+  @override
+  String get accessibilityStillDisabled => 'خدمة الوصول ما زالت مغلقة.';
+
+  @override
+  String get secureSettingsGrantFailed => 'فشل منح إذن WRITE_SECURE_SETTINGS.';
+
+  @override
+  String get nightLightTemperature => 'درجة الحرارة';
+
+  @override
+  String nightLightIntensity(int value) {
+    return 'الشدة: $value';
+  }
+
+  @override
+  String extraDimLevel(int value) {
+    return 'مستوى التعتيم: $value';
+  }
+
+  @override
+  String colourWindowsLabel(String windows) {
+    return 'النوافذ: $windows';
+  }
+
+  @override
+  String get colourWindowsAlways => 'دائماً، أثناء التفعيل';
+
+  @override
+  String get editWindows => 'تحرير النوافذ';
+
+  @override
+  String get colourScopeDevice => 'الجهاز كاملاً';
+
+  @override
+  String get colourScopeExceptApps => 'كل التطبيقات باستثناء…';
+
+  @override
+  String get colourScopeOnlyApps => 'هذه التطبيقات فقط…';
+
+  @override
+  String colourScopeAppsTitle(String mode) {
+    return 'تطبيقات $mode';
+  }
+
+  @override
+  String colourScopeAppsCount(int count) {
+    return 'تم اختيار $count تطبيقات';
+  }
+
+  @override
+  String get applyDuringFocus => 'تطبيق أيضاً أثناء جلسات التركيز';
+
+  @override
+  String get applyDuringFocusDesc =>
+      'يبقى التدرج الرمادي مفعّلاً طوال مرحلة التركيز، حتى خارج النوافذ أعلاه.';
 
   @override
   String get language => 'اللغة';
@@ -1601,7 +1836,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noSupportingBrowser =>
-      'لا يصرّح أي متصفح مثبّت بـ URLBlocklist في قيوده المُدارة، فلا توجد سياسة لدفعها. المتصفحات غير الداعمة تُعالج بقواعد التعليق (التعليق التلقائي v1.1).';
+      'لا يصرّح أي متصفح مثبّت بـ URLBlocklist في قيوده المُدارة، فلا توجد سياسة لدفعها. المتصفحات غير الداعمة تُعالج بقواعد التعليق.';
 
   @override
   String get blocklists => 'قوائم الحظر';
@@ -2428,7 +2663,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noCapableBrowser =>
-      'لا يعلن أي متصفح مثبّت عن URLBlocklist في قيوده المُدارة، فلا يوجد ما تُدفع إليه السياسة. المتصفحات غير الداعمة تُعالج بقواعد التعليق (التعليق التلقائي في v1.1).';
+      'لا يعلن أي متصفح مثبّت عن URLBlocklist في قيوده المُدارة، فلا يوجد ما تُدفع إليه السياسة. المتصفحات غير الداعمة تُعالج بقواعد التعليق.';
 
   @override
   String get blocklistsSection => 'قوائم الحظر';
@@ -2672,4 +2907,99 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get storeCardTitle => 'احفظها بأمان';
+
+  @override
+  String get removalLoadingTitle => 'جارٍ إكمال إزالة مالك الجهاز…';
+
+  @override
+  String get removalLoadingBody =>
+      'يرجى الانتظار. لا تغلق التطبيق ولا تقم بإلغاء التثبيت حتى يكتمل التفكيك.';
+
+  @override
+  String get removalTimeoutWarningTitle =>
+      'لم يكتمل التفكيك — لا تقم بإلغاء التثبيت بعد';
+
+  @override
+  String get removalTimeoutWarningBody =>
+      'تمت إزالة مالك الجهاز، لكن النظام لم ينتهِ من تسوية جميع خطوات التفكيك بعد. لا تقم بإلغاء التثبيت الآن حتى لا يتعطل الجهاز. الفحوصات التالية لم يتم التحقق منها:';
+
+  @override
+  String get removalRecheckAction => 'إعادة التحقق من الحالة';
+
+  @override
+  String get removalUnverifiedOwner => 'مالك الجهاز لا يزال نشطاً';
+
+  @override
+  String get removalUnverifiedAdmin => 'مسؤول الجهاز لا يزال نشطاً';
+
+  @override
+  String removalUnverifiedRestrictions(String restrictions) {
+    return 'القيود لا تزال سارية: $restrictions';
+  }
+
+  @override
+  String get removalUnverifiedScreenCapture => 'التقاط الشاشة لا يزال محظوراً';
+
+  @override
+  String get deleteGroupConfirmTitle => 'حذف المجموعة؟';
+
+  @override
+  String deleteGroupConfirmMessage(String name) {
+    return 'هل أنت متأكد من حذف المجموعة \"$name\"؟ ستتم إزالة جميع حدودها ونوافذها الزمنية نهائياً.';
+  }
+
+  @override
+  String get deleteWindowConfirmTitle => 'حذف النافذة الزمنية؟';
+
+  @override
+  String deleteWindowConfirmMessage(String window) {
+    return 'هل أنت متأكد من حذف النافذة الزمنية \"$window\"؟';
+  }
+
+  @override
+  String get deleteBlocklistConfirmTitle => 'حذف قائمة الحظر؟';
+
+  @override
+  String deleteBlocklistConfirmMessage(String title) {
+    return 'هل أنت متأكد من حذف قائمة الحظر \"$title\"؟';
+  }
+
+  @override
+  String get deleteStageConfirmTitle => 'حذف مرحلة التنبيه؟';
+
+  @override
+  String deleteStageConfirmMessage(String minutes) {
+    return 'هل أنت متأكد من حذف مرحلة التنبيه عند $minutes دقيقة؟';
+  }
+
+  @override
+  String get deleteRuleConfirmTitle => 'حذف قاعدة الختم؟';
+
+  @override
+  String deleteRuleConfirmMessage(String summary) {
+    return 'هل أنت متأكد من حذف قاعدة الختم: \"$summary\"؟';
+  }
+
+  @override
+  String get removeOwnerConfirmTitle => 'إزالة مالك الجهاز وإنهاء الحماية؟';
+
+  @override
+  String get removeOwnerConsequenceRestrictions =>
+      'رفع كافة قيود النظام وتعليق التطبيقات وحجب المواقع فوراً.';
+
+  @override
+  String get removeOwnerConsequenceDns => 'إعادة ضبط إعدادات DNS الخاص.';
+
+  @override
+  String get removeOwnerConsequenceUninstall =>
+      'السماح بإلغاء تثبيت تطبيق عزم.';
+
+  @override
+  String get removeOwnerUnderstandCheckbox => 'أدرك عواقب هذا الإجراء';
+
+  @override
+  String get removeOwnerConfirmButton => 'إزالة الحماية';
+
+  @override
+  String get scratchToReveal => 'اخدش للكشف';
 }

@@ -147,7 +147,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wordNo => 'no';
 
   @override
-  String get startingDominanter => 'Starting Azm…';
+  String get startingAzm => 'Starting Azm…';
 
   @override
   String get unknownStartupError => 'Unknown startup error';
@@ -901,14 +901,251 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get colourModesNote =>
-      'Scheduled grayscale / night light / extra dim ship in v1.1 (the WRITE_SECURE_SETTINGS grant they need is on the Setup screen).';
+      'Grayscale, night light, extra dim and colour inversion — scheduled and per app.';
 
   @override
   String get activityBlocker => 'Activity blocker';
 
   @override
   String get activityBlockerNote =>
-      'Blocking specific activity screens ships in v1.1.';
+      'Block specific activity screens; the launcher and system apps can never be blocked.';
+
+  @override
+  String get removalStepColourModes => 'Colour modes released';
+
+  @override
+  String get browserUnsupportedWarning =>
+      'Restrictions do not work in this browser, it is recommended to disable it.';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get loading => 'Loading…';
+
+  @override
+  String get block => 'Block';
+
+  @override
+  String get blocked => 'Blocked';
+
+  @override
+  String get unblock => 'Unblock';
+
+  @override
+  String get activityBlockerDescription =>
+      'When a blocked activity opens, Azm sends it back. The launcher, system UI, Settings, calls and Azm itself can never be blocked.';
+
+  @override
+  String get blockedActivities => 'Blocked activities';
+
+  @override
+  String get noBlockedActivities => 'No activities blocked yet.';
+
+  @override
+  String get recentlyAccessedActivities => 'Recently accessed';
+
+  @override
+  String get noAccessedActivities =>
+      'No activities seen yet — open some apps and come back.';
+
+  @override
+  String activitiesCount(int count) {
+    return '$count activities';
+  }
+
+  @override
+  String get unblockActivityConfirmTitle => 'Unblock this activity?';
+
+  @override
+  String unblockActivityConfirmMessage(String activity) {
+    return '“$activity” will be allowed to open again.';
+  }
+
+  @override
+  String get addActivityTitle => 'Block an activity';
+
+  @override
+  String get addActivityBody =>
+      'Enter the full activity class name, as shown in the recently accessed list.';
+
+  @override
+  String get activityClassNameLabel => 'Activity class name';
+
+  @override
+  String get addActivityInvalid =>
+      'Enter a full class name, e.g. com.example.app.MainActivity.';
+
+  @override
+  String get addActivityProtected =>
+      'This activity is protected and can never be blocked.';
+
+  @override
+  String get addActivityAlreadyBlocked => 'This activity is already blocked.';
+
+  @override
+  String get colourModesDescription =>
+      'Make the screen less stimulating: grayscale, night light, extra dim and colour inversion, on schedules and per app. A mode that is on right now cannot be loosened without the recovery code.';
+
+  @override
+  String get colourModesStatusTitle => 'Status';
+
+  @override
+  String get colourModesStatusNoAccessibility =>
+      'Accessibility service is off — colour modes cannot apply. Turn it on below.';
+
+  @override
+  String get colourModesStatusNoGrant =>
+      'WRITE_SECURE_SETTINGS is not granted — enable the feature below to grant it via Shizuku.';
+
+  @override
+  String get colourModesStatusUnsupported =>
+      'This device could not apply the grayscale keys — the feature may not work here.';
+
+  @override
+  String colourModesStatusActive(String modes) {
+    return 'Active now: $modes';
+  }
+
+  @override
+  String get colourModesStatusIdle => 'Enabled — no mode is active right now.';
+
+  @override
+  String get colourModesStatusOff => 'Off.';
+
+  @override
+  String get colourModesEnableTitle => 'Colour modes';
+
+  @override
+  String get colourModesEnable => 'Enable colour modes';
+
+  @override
+  String colourModesSummaryActive(String modes) {
+    return 'Active: $modes';
+  }
+
+  @override
+  String get colourModesSummaryIdle => 'Enabled — nothing active right now';
+
+  @override
+  String get colourModesSummaryOff => 'Off';
+
+  @override
+  String get colourModeGrayscale => 'Grayscale';
+
+  @override
+  String get colourModeGrayscaleDesc => 'Removes all colour from the screen.';
+
+  @override
+  String get colourModeNightLight => 'Night light';
+
+  @override
+  String get colourModeNightLightDesc => 'Warms the screen colours at night.';
+
+  @override
+  String get colourModeExtraDim => 'Extra dim';
+
+  @override
+  String get colourModeExtraDimDesc =>
+      'Dims the screen below its lowest brightness.';
+
+  @override
+  String get colourModeInversion => 'Colour inversion';
+
+  @override
+  String get colourModeInversionDesc => 'Inverts all colours on screen.';
+
+  @override
+  String get colourModeExtraDimUnavailable =>
+      'Extra dim is not available on this device.';
+
+  @override
+  String colourModeLockedUntil(String time) {
+    return 'Locked until $time — the recovery code opens it.';
+  }
+
+  @override
+  String get colourModeLockedActive =>
+      'Locked while active — the recovery code opens it.';
+
+  @override
+  String get colourModesLockedTitle => 'Locked right now';
+
+  @override
+  String colourModesLockedMessage(String modes) {
+    return '$modes is on right now, so it cannot be loosened without the recovery code.';
+  }
+
+  @override
+  String get openRecoveryGate => 'Open recovery gate';
+
+  @override
+  String get colourModesNeedAccessibilityTitle =>
+      'Accessibility service is off';
+
+  @override
+  String get colourModesNeedAccessibility =>
+      'Colour modes are enforced by the accessibility service. Enable it now?';
+
+  @override
+  String get enableAccessibility => 'Enable accessibility';
+
+  @override
+  String get accessibilityStillDisabled => 'Accessibility is still off.';
+
+  @override
+  String get secureSettingsGrantFailed =>
+      'The WRITE_SECURE_SETTINGS grant failed.';
+
+  @override
+  String get nightLightTemperature => 'Temperature';
+
+  @override
+  String nightLightIntensity(int value) {
+    return 'Intensity: $value';
+  }
+
+  @override
+  String extraDimLevel(int value) {
+    return 'Dim level: $value';
+  }
+
+  @override
+  String colourWindowsLabel(String windows) {
+    return 'Windows: $windows';
+  }
+
+  @override
+  String get colourWindowsAlways => 'Always, while enabled';
+
+  @override
+  String get editWindows => 'Edit windows';
+
+  @override
+  String get colourScopeDevice => 'Whole device';
+
+  @override
+  String get colourScopeExceptApps => 'All apps except…';
+
+  @override
+  String get colourScopeOnlyApps => 'Only these apps…';
+
+  @override
+  String colourScopeAppsTitle(String mode) {
+    return 'Apps for $mode';
+  }
+
+  @override
+  String colourScopeAppsCount(int count) {
+    return '$count apps chosen';
+  }
+
+  @override
+  String get applyDuringFocus => 'Also apply during focus sessions';
+
+  @override
+  String get applyDuringFocusDesc =>
+      'Grayscale stays on for the whole focus phase, even outside the windows above.';
 
   @override
   String get language => 'Language';
@@ -1618,7 +1855,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noSupportingBrowser =>
-      'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).';
+      'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.';
 
   @override
   String get blocklists => 'Blocklists';
@@ -2450,7 +2687,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noCapableBrowser =>
-      'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).';
+      'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.';
 
   @override
   String get blocklistsSection => 'Blocklists';
@@ -2695,4 +2932,102 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storeCardTitle => 'Keep it safe';
+
+  @override
+  String get removalLoadingTitle => 'Completing Device Owner removal…';
+
+  @override
+  String get removalLoadingBody =>
+      'Please wait. Do not close the app or uninstall until teardown completes.';
+
+  @override
+  String get removalTimeoutWarningTitle =>
+      'Teardown incomplete — do not uninstall yet';
+
+  @override
+  String get removalTimeoutWarningBody =>
+      'Device Owner was cleared, but the system has not finished settling all teardown steps. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:';
+
+  @override
+  String get removalRecheckAction => 'Re-check status';
+
+  @override
+  String get removalUnverifiedOwner => 'Device Owner is still active';
+
+  @override
+  String get removalUnverifiedAdmin => 'Device Admin is still active';
+
+  @override
+  String removalUnverifiedRestrictions(String restrictions) {
+    return 'Restrictions still in force: $restrictions';
+  }
+
+  @override
+  String get removalUnverifiedScreenCapture =>
+      'Screen capture is still blocked';
+
+  @override
+  String get deleteGroupConfirmTitle => 'Delete group?';
+
+  @override
+  String deleteGroupConfirmMessage(String name) {
+    return 'Are you sure you want to delete \"$name\"? All its limits and time windows will be permanently removed.';
+  }
+
+  @override
+  String get deleteWindowConfirmTitle => 'Delete time window?';
+
+  @override
+  String deleteWindowConfirmMessage(String window) {
+    return 'Are you sure you want to delete the time window \"$window\"?';
+  }
+
+  @override
+  String get deleteBlocklistConfirmTitle => 'Delete blocklist?';
+
+  @override
+  String deleteBlocklistConfirmMessage(String title) {
+    return 'Are you sure you want to delete the blocklist \"$title\"?';
+  }
+
+  @override
+  String get deleteStageConfirmTitle => 'Delete warning stage?';
+
+  @override
+  String deleteStageConfirmMessage(String minutes) {
+    return 'Are you sure you want to delete the warning stage at $minutes minutes?';
+  }
+
+  @override
+  String get deleteRuleConfirmTitle => 'Delete seal rule?';
+
+  @override
+  String deleteRuleConfirmMessage(String summary) {
+    return 'Are you sure you want to delete this seal rule: \"$summary\"?';
+  }
+
+  @override
+  String get removeOwnerConfirmTitle =>
+      'Remove Device Owner and end protection?';
+
+  @override
+  String get removeOwnerConsequenceRestrictions =>
+      'All system restrictions, app suspensions, and website blocks will be lifted immediately.';
+
+  @override
+  String get removeOwnerConsequenceDns => 'Private DNS settings will be reset.';
+
+  @override
+  String get removeOwnerConsequenceUninstall =>
+      'Uninstalling the Azm app will be allowed.';
+
+  @override
+  String get removeOwnerUnderstandCheckbox =>
+      'I understand the consequences of this action';
+
+  @override
+  String get removeOwnerConfirmButton => 'Remove protection';
+
+  @override
+  String get scratchToReveal => 'Scratch to reveal';
 }

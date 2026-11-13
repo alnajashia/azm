@@ -30,7 +30,7 @@ import 'domain/recovery.dart';
 
 /// The app's display version (matches `pubspec.yaml`'s versionName;
 /// shown in the lock-screen footer).
-const String kAppVersion = '1.0.6';
+const String kAppVersion = '1.0.0';
 
 enum StartupState { loading, needsRecoverySetup, locked, unlocked, error }
 
@@ -74,6 +74,18 @@ class AppController extends ChangeNotifier {
   /// behaviour — so existing users are never silently weakened.
   EntryGracePeriod entryGracePeriod = EntryGracePeriod.immediately;
   DateTime? entryLastUnlockAt;
+
+  /// Device Owner removal in flight (Batch D Addendum): modal teardown &
+  /// verification is active. Disables duplicate removal triggers and prevents
+  /// the app from relocking when backgrounded during teardown.
+  bool _isRemovingDeviceOwner = false;
+  bool get isRemovingDeviceOwner => _isRemovingDeviceOwner;
+  set isRemovingDeviceOwner(bool value) {
+    if (_isRemovingDeviceOwner != value) {
+      _isRemovingDeviceOwner = value;
+      notifyListeners();
+    }
+  }
 
   /// The exact set of packages suspended when the current impulse lock
   /// started. The original records this as the "active impulse

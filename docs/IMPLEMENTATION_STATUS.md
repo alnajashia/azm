@@ -1,4 +1,4 @@
-# Dominanter — Implementation Status
+# Azm — Implementation Status
 
 > **Last updated:** 2026-11-09 (post-redesign rebuild + compliance audit — APKs rebuilt with the UI redesign, [`COMPLIANCE_AUDIT.md`](COMPLIANCE_AUDIT.md) completed)
 > **Honesty rule:** a feature is listed as *Implemented and tested* only with
@@ -25,7 +25,7 @@
 | COMPLIANCE_AUDIT.md | ✅ Done | `project/docs/COMPLIANCE_AUDIT.md` — post-redesign audit (2026-11-09): every F1–F34 and every Shizuku integration point (incl. all 13 shell commands individually) re-verified against the code with status + evidence; 3 unit/build-tested, 20 device-untested, 8 deferred v1.1, 3 not ported; 3 new gaps found (G1–G3, see §6) + doc drift fixed (G4). This file's statuses were reconciled with it |
 | REVERSE_ENGINEERING.md (project docs copy) | ✅ Done | `project/docs/REVERSE_ENGINEERING.md` — repo-appropriate consolidation of the three `analysis/` reports: what DeChainer is, condensed F1–F34 table, Shizuku integration (13 commands, binder-DPM provisioning path, dependency matrix), the honest REA audit, finding→rebuild-consequence mapping, credits/licences. Links to `ARCHITECTURE.md` rather than duplicating it |
 | LICENSE | ✅ Done | Apache License 2.0 (verbatim text, as in DeChainer/Shizuku sources), added 2026-11-09; attribution to DeChainer and Shizuku is in the README |
-| Complete Flutter project (scaffold) | ✅ Done | Flutter 3.35.1 scaffold in `project/`; applicationId `io.github.alnajashia.dominanter` |
+| Complete Flutter project (scaffold) | ✅ Done | Flutter 3.35.1 scaffold in `project/`; applicationId `com.alnajashia.azm` |
 | Dart UI layer | 🧪 Implemented but not fully tested | ~6,400 lines in `lib/` (see §2). `flutter analyze`: **0 errors, 0 warnings**, 32 info-level lints (mostly `use_build_context_synchronously` behind `mounted` guards, deprecated `RadioListTile.groupValue`/`onChanged`). No device run yet. |
 | Kotlin native implementation | 🧪 Implemented but not fully tested | 14 Kotlin files (~3,300 lines): channel handler, `ShizukuProvisioning`, `DeviceOwnerManager`, Accessibility Service, `SettingsStore`, `RecoveryStore`. **Gradle compile-verified 2026-11-09**: `compileDebugKotlin` and `compileReleaseKotlin` pass as part of the successful `assembleDebug`/`assembleRelease` builds (see APK row). Five compile errors found by the first real build were fixed (see `build_logs/build9_debug.log` → `build12_debug.log`): a `*/` sequence terminating a KDoc comment early in `DeviceOwnerManager.kt`, the non-existent `PRIVATE_DNS_SET_SUCCESS` constant (correct: `PRIVATE_DNS_SET_NO_ERROR`), a duplicate companion object in the Accessibility Service, a missing `Context` threaded through `ShizukuProvisioning.refreshUserSetupComplete`, and a vararg array type mismatch in `ShizukuRunner.exec`. Still never run on a device |
 | Functional Shizuku integration | 🧪 Implemented but not fully tested | Contract implemented both sides; never run against a real Shizuku server / device |
@@ -126,8 +126,8 @@ Scope is from `ARCHITECTURE.md` §6. **Status is independent of scope.**
 
 ## 3. Platform-channel contract status
 
-Contract: `ARCHITECTURE.md` §5 — MethodChannel `dominanter/privileged`,
-EventChannel `dominanter/privileged/events`. All methods below are
+Contract: `ARCHITECTURE.md` §5 — MethodChannel `azm/privileged`,
+EventChannel `azm/privileged/events`. All methods below are
 implemented in Kotlin **and** consumed by the typed Dart client
 (`lib/data/privileged_channel.dart`). None are device-tested.
 
@@ -152,7 +152,7 @@ implemented in Kotlin **and** consumed by the typed Dart client
 | `setAccessibilityEnabled` / `isAccessibilityEnabled` | 🧪 Implemented both sides |
 | `getUsageToday` | 🧪 Implemented both sides |
 | `setRecoveryCode` / `verifyRecoveryCode` / `isRecoveryCodeSet` | 🧪 Implemented both sides |
-| EventChannel (`dominanter/privileged/events`, all event types) | 🧪 Implemented both sides — Dart treats events as advisory and re-reads state |
+| EventChannel (`azm/privileged/events`, all event types) | 🧪 Implemented both sides — Dart treats events as advisory and re-reads state |
 
 **§8 extension methods (added during the Dart stage — contract fix):**
 `ARCHITECTURE.md` §8.3 requires channel-mediated `SettingsStore` writes, but

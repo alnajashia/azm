@@ -17,7 +17,6 @@ library;
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
-import '../data/privileged_channel.dart';
 import '../domain/seal_rules.dart';
 import '../l10n/l10n.dart';
 import 'common.dart';
@@ -140,41 +139,13 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
   }
 
   Future<String?> _pickApp() async {
-    final l10n = context.l10n;
-    List<InstalledApp> apps;
-    try {
-      apps = await _c.channel.listInstalledApps();
-    } catch (e) {
-      if (mounted) await showErrorCard(context, e);
-      return null;
-    }
-    if (!mounted) return null;
-    return showDialog<String>(
+    final result = await showAppPicker(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.sealChooseApp),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              for (final app in apps)
-                ListTile(
-                  title: Text(app.label),
-                  subtitle: Text(app.packageName),
-                  onTap: () => Navigator.pop(dialogContext, app.packageName),
-                ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(l10n.cancel),
-          ),
-        ],
-      ),
+      channel: _c.channel,
+      title: context.l10n.sealChooseApp,
+      singleSelect: true,
     );
+    return result?.firstOrNull;
   }
 
   Future<void> _editRule(SealRule? existing) async {
@@ -293,6 +264,13 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
   }
 
   Future<void> _deleteRule(SealRule rule) async {
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: context.l10n.deleteRuleConfirmTitle,
+      message: context.l10n.deleteRuleConfirmMessage(_ruleSummary(context.l10n, rule)),
+      confirmText: context.l10n.sealDeleteRule,
+    );
+    if (!confirmed || !mounted) return;
     final rules = [...?_rules];
     await _save(
       rules.where((r) => r.id != rule.id).toList(),

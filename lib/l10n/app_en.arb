@@ -89,7 +89,7 @@
   "endSession": "End session",
   "wordYes": "yes",
   "wordNo": "no",
-  "startingDominanter": "Starting Azm…",
+  "startingAzm": "Starting Azm…",
   "unknownStartupError": "Unknown startup error",
   "tabStatus": "Status",
   "tabRestrictions": "Restrictions",
@@ -570,9 +570,152 @@
   "suspensionLogs": "Suspension logs",
   "suspensionLogsSub": "Audit log of every suspension",
   "colourModes": "Colour modes",
-  "colourModesNote": "Scheduled grayscale / night light / extra dim ship in v1.1 (the WRITE_SECURE_SETTINGS grant they need is on the Setup screen).",
+  "colourModesNote": "Grayscale, night light, extra dim and colour inversion — scheduled and per app.",
   "activityBlocker": "Activity blocker",
-  "activityBlockerNote": "Blocking specific activity screens ships in v1.1.",
+  "activityBlockerNote": "Block specific activity screens; the launcher and system apps can never be blocked.",
+  "removalStepColourModes": "Colour modes released",
+  "browserUnsupportedWarning": "Restrictions do not work in this browser, it is recommended to disable it.",
+  "refresh": "Refresh",
+  "loading": "Loading…",
+  "block": "Block",
+  "blocked": "Blocked",
+  "unblock": "Unblock",
+  "activityBlockerDescription": "When a blocked activity opens, Azm sends it back. The launcher, system UI, Settings, calls and Azm itself can never be blocked.",
+  "blockedActivities": "Blocked activities",
+  "noBlockedActivities": "No activities blocked yet.",
+  "recentlyAccessedActivities": "Recently accessed",
+  "noAccessedActivities": "No activities seen yet — open some apps and come back.",
+  "activitiesCount": "{count} activities",
+  "@activitiesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unblockActivityConfirmTitle": "Unblock this activity?",
+  "unblockActivityConfirmMessage": "“{activity}” will be allowed to open again.",
+  "@unblockActivityConfirmMessage": {
+    "placeholders": {
+      "activity": {
+        "type": "String"
+      }
+    }
+  },
+  "addActivityTitle": "Block an activity",
+  "addActivityBody": "Enter the full activity class name, as shown in the recently accessed list.",
+  "activityClassNameLabel": "Activity class name",
+  "addActivityInvalid": "Enter a full class name, e.g. com.example.app.MainActivity.",
+  "addActivityProtected": "This activity is protected and can never be blocked.",
+  "addActivityAlreadyBlocked": "This activity is already blocked.",
+  "colourModesDescription": "Make the screen less stimulating: grayscale, night light, extra dim and colour inversion, on schedules and per app. A mode that is on right now cannot be loosened without the recovery code.",
+  "colourModesStatusTitle": "Status",
+  "colourModesStatusNoAccessibility": "Accessibility service is off — colour modes cannot apply. Turn it on below.",
+  "colourModesStatusNoGrant": "WRITE_SECURE_SETTINGS is not granted — enable the feature below to grant it via Shizuku.",
+  "colourModesStatusUnsupported": "This device could not apply the grayscale keys — the feature may not work here.",
+  "colourModesStatusActive": "Active now: {modes}",
+  "@colourModesStatusActive": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
+  "colourModesStatusIdle": "Enabled — no mode is active right now.",
+  "colourModesStatusOff": "Off.",
+  "colourModesEnableTitle": "Colour modes",
+  "colourModesEnable": "Enable colour modes",
+  "colourModesSummaryActive": "Active: {modes}",
+  "@colourModesSummaryActive": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
+  "colourModesSummaryIdle": "Enabled — nothing active right now",
+  "colourModesSummaryOff": "Off",
+  "colourModeGrayscale": "Grayscale",
+  "colourModeGrayscaleDesc": "Removes all colour from the screen.",
+  "colourModeNightLight": "Night light",
+  "colourModeNightLightDesc": "Warms the screen colours at night.",
+  "colourModeExtraDim": "Extra dim",
+  "colourModeExtraDimDesc": "Dims the screen below its lowest brightness.",
+  "colourModeInversion": "Colour inversion",
+  "colourModeInversionDesc": "Inverts all colours on screen.",
+  "colourModeExtraDimUnavailable": "Extra dim is not available on this device.",
+  "colourModeLockedUntil": "Locked until {time} — the recovery code opens it.",
+  "@colourModeLockedUntil": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "colourModeLockedActive": "Locked while active — the recovery code opens it.",
+  "colourModesLockedTitle": "Locked right now",
+  "colourModesLockedMessage": "{modes} is on right now, so it cannot be loosened without the recovery code.",
+  "@colourModesLockedMessage": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
+  "openRecoveryGate": "Open recovery gate",
+  "colourModesNeedAccessibilityTitle": "Accessibility service is off",
+  "colourModesNeedAccessibility": "Colour modes are enforced by the accessibility service. Enable it now?",
+  "enableAccessibility": "Enable accessibility",
+  "accessibilityStillDisabled": "Accessibility is still off.",
+  "secureSettingsGrantFailed": "The WRITE_SECURE_SETTINGS grant failed.",
+  "nightLightTemperature": "Temperature",
+  "nightLightIntensity": "Intensity: {value}",
+  "@nightLightIntensity": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "extraDimLevel": "Dim level: {value}",
+  "@extraDimLevel": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "colourWindowsLabel": "Windows: {windows}",
+  "@colourWindowsLabel": {
+    "placeholders": {
+      "windows": {
+        "type": "String"
+      }
+    }
+  },
+  "colourWindowsAlways": "Always, while enabled",
+  "editWindows": "Edit windows",
+  "colourScopeDevice": "Whole device",
+  "colourScopeExceptApps": "All apps except…",
+  "colourScopeOnlyApps": "Only these apps…",
+  "colourScopeAppsTitle": "Apps for {mode}",
+  "@colourScopeAppsTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "colourScopeAppsCount": "{count} apps chosen",
+  "@colourScopeAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "applyDuringFocus": "Also apply during focus sessions",
+  "applyDuringFocusDesc": "Grayscale stays on for the whole focus phase, even outside the windows above.",
   "language": "Language",
   "languageDialogTitle": "Language",
   "languageEnglish": "English",
@@ -823,7 +966,7 @@
     }
   },
   "supportingBrowsers": "Supporting browsers",
-  "noSupportingBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).",
+  "noSupportingBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.",
   "blocklists": "Blocklists",
   "noBlocklists": "No blocklists yet. Create one to start blocking sites.",
   "sitesCount": "{count} site(s)",
@@ -1390,7 +1533,7 @@
     }
   },
   "ownerStillActiveMsg": "Device Owner is still active after removal",
-  "noCapableBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).",
+  "noCapableBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.",
   "blocklistsSection": "Blocklists",
   "noBlocklistsYet": "No blocklists yet. Create one to start blocking sites.",
   "usageWarningsBody": "Each stage warns once, the configured number of minutes before an app's daily limit runs out. Stages are stored for the Accessibility Service to fire; notification delivery depends on the native notifier.",
@@ -1590,5 +1733,73 @@
   "appProtectionSection": "Protection",
   "appLimitsSection": "Limits & windows",
   "setupServicesSection": "Services & permissions",
-  "storeCardTitle": "Keep it safe"
+  "storeCardTitle": "Keep it safe",
+  "removalLoadingTitle": "Completing Device Owner removal…",
+  "removalLoadingBody": "Please wait. Do not close the app or uninstall until teardown completes.",
+  "removalTimeoutWarningTitle": "Teardown incomplete — do not uninstall yet",
+  "removalTimeoutWarningBody": "Device Owner was cleared, but the system has not finished settling all teardown steps. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:",
+  "removalRecheckAction": "Re-check status",
+  "removalUnverifiedOwner": "Device Owner is still active",
+  "removalUnverifiedAdmin": "Device Admin is still active",
+  "removalUnverifiedRestrictions": "Restrictions still in force: {restrictions}",
+  "@removalUnverifiedRestrictions": {
+    "placeholders": {
+      "restrictions": {
+        "type": "String"
+      }
+    }
+  },
+  "removalUnverifiedScreenCapture": "Screen capture is still blocked",
+  "deleteGroupConfirmTitle": "Delete group?",
+  "deleteGroupConfirmMessage": "Are you sure you want to delete \"{name}\"? All its limits and time windows will be permanently removed.",
+  "@deleteGroupConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteWindowConfirmTitle": "Delete time window?",
+  "deleteWindowConfirmMessage": "Are you sure you want to delete the time window \"{window}\"?",
+  "@deleteWindowConfirmMessage": {
+    "placeholders": {
+      "window": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteBlocklistConfirmTitle": "Delete blocklist?",
+  "deleteBlocklistConfirmMessage": "Are you sure you want to delete the blocklist \"{title}\"?",
+  "@deleteBlocklistConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteStageConfirmTitle": "Delete warning stage?",
+  "deleteStageConfirmMessage": "Are you sure you want to delete the warning stage at {minutes} minutes?",
+  "@deleteStageConfirmMessage": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteRuleConfirmTitle": "Delete seal rule?",
+  "deleteRuleConfirmMessage": "Are you sure you want to delete this seal rule: \"{summary}\"?",
+  "@deleteRuleConfirmMessage": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "removeOwnerConfirmTitle": "Remove Device Owner and end protection?",
+  "removeOwnerConsequenceRestrictions": "All system restrictions, app suspensions, and website blocks will be lifted immediately.",
+  "removeOwnerConsequenceDns": "Private DNS settings will be reset.",
+  "removeOwnerConsequenceUninstall": "Uninstalling the Azm app will be allowed.",
+  "removeOwnerUnderstandCheckbox": "I understand the consequences of this action",
+  "removeOwnerConfirmButton": "Remove protection",
+  "scratchToReveal": "Scratch to reveal"
 }

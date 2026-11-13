@@ -4,10 +4,10 @@
 // password shows an error and stays locked.
 import 'dart:convert';
 
-import 'package:dominanter/app_controller.dart';
-import 'package:dominanter/data/privileged_channel.dart';
-import 'package:dominanter/domain/entry_password.dart';
-import 'package:dominanter/ui/lock_screen.dart';
+import 'package:azm/app_controller.dart';
+import 'package:azm/data/privileged_channel.dart';
+import 'package:azm/domain/entry_password.dart';
+import 'package:azm/ui/lock_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const methodChannel = MethodChannel('dominanter/privileged');
+  const methodChannel = MethodChannel('azm/privileged');
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 

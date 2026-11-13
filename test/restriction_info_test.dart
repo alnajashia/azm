@@ -4,9 +4,9 @@
 /// explanation rather than a blank.
 library;
 
-import 'package:dominanter/l10n/app_localizations_ar.dart';
-import 'package:dominanter/l10n/app_localizations_en.dart';
-import 'package:dominanter/ui/restriction_info.dart';
+import 'package:azm/l10n/app_localizations_ar.dart';
+import 'package:azm/l10n/app_localizations_en.dart';
+import 'package:azm/ui/restriction_info.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

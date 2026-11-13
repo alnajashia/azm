@@ -16,27 +16,27 @@ plugins {
 // move when the Flutter template itself moves. Recorded here so the parity
 // documentation stays honest — do not "fix" this silently.
 
-val dominanterKeystoreProps = Properties()
-val dominanterKeystorePropsFile = rootProject.file(
-    System.getenv("DOMINANTER_KEYSTORE_PROPERTIES")
+val azmKeystoreProps = Properties()
+val azmKeystorePropsFile = rootProject.file(
+    System.getenv("AZM_KEYSTORE_PROPERTIES")
         ?: "../../keys/keystore.properties"
 )
-if (dominanterKeystorePropsFile.exists()) {
-    dominanterKeystorePropsFile.inputStream().use {
-        dominanterKeystoreProps.load(it)
+if (azmKeystorePropsFile.exists()) {
+    azmKeystorePropsFile.inputStream().use {
+        azmKeystoreProps.load(it)
     }
 }
 
 android {
-    namespace = "io.github.alnajashia.dominanter"
+    namespace = "com.alnajashia.azm"
 
     signingConfigs {
-        create("dominanterRelease") {
-            if (dominanterKeystorePropsFile.exists()) {
-                storeFile = file(dominanterKeystoreProps.getProperty("storeFile"))
-                storePassword = dominanterKeystoreProps.getProperty("storePassword")
-                keyAlias = dominanterKeystoreProps.getProperty("keyAlias")
-                keyPassword = dominanterKeystoreProps.getProperty("keyPassword")
+        create("azmRelease") {
+            if (azmKeystorePropsFile.exists()) {
+                storeFile = file(azmKeystoreProps.getProperty("storeFile"))
+                storePassword = azmKeystoreProps.getProperty("storePassword")
+                keyAlias = azmKeystoreProps.getProperty("keyAlias")
+                keyPassword = azmKeystoreProps.getProperty("keyPassword")
             }
         }
     }
@@ -82,7 +82,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.alnajashia.dominanter"
+        applicationId = "com.alnajashia.azm"
         minSdk = 30
         targetSdk = 36
         versionCode = flutter.versionCode
@@ -91,8 +91,8 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (dominanterKeystorePropsFile.exists()) {
-                signingConfigs.getByName("dominanterRelease")
+            signingConfig = if (azmKeystorePropsFile.exists()) {
+                signingConfigs.getByName("azmRelease")
             } else {
                 signingConfigs.getByName("debug")
             }

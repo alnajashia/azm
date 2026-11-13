@@ -1,11 +1,11 @@
-import 'package:dominanter/data/privileged_channel.dart';
+import 'package:azm/data/privileged_channel.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channelName = 'dominanter/privileged';
+  const channelName = 'azm/privileged';
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   final methodChannel = const MethodChannel(channelName);
 

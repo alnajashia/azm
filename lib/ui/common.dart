@@ -12,6 +12,7 @@
 /// ONLY to the local debug log via [logTechnicalError] — never the UI.
 library;
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/privileged_channel.dart';
@@ -182,10 +183,10 @@ class HeroCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: heroSurface(brightness),
         // Deeply rounded, like the reference's floating red planes.
-        borderRadius: BorderRadius.circular(DominanterRadius.large),
+        borderRadius: BorderRadius.circular(AzmRadius.large),
         border: Border.all(
           color: dark
-              ? DominanterColors.red.withValues(alpha: 0.28)
+              ? AzmColors.red.withValues(alpha: 0.28)
               : Colors.black.withValues(alpha: 0.08),
         ),
         boxShadow: [
@@ -197,7 +198,7 @@ class HeroCard extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(DominanterRadius.large),
+        borderRadius: BorderRadius.circular(AzmRadius.large),
         child: Padding(padding: padding, child: child),
       ),
     );
@@ -276,8 +277,8 @@ class FocusTimerRing extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final ringColor = isBreak
-        ? DominanterColors.redDark
-        : DominanterColors.redBright;
+        ? AzmColors.redDark
+        : AzmColors.redBright;
     return SizedBox(
       width: size,
       height: size,
@@ -291,9 +292,9 @@ class FocusTimerRing extends StatelessWidget {
             height: size - 26,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: dark ? DominanterColors.blackBackground : Colors.white,
+              color: dark ? AzmColors.blackBackground : Colors.white,
               border: Border.all(
-                color: DominanterColors.red.withValues(alpha: 0.30),
+                color: AzmColors.red.withValues(alpha: 0.30),
               ),
             ),
           ),
@@ -491,4 +492,334 @@ String formatDuration(Duration d, AppLocalizations l10n) {
     );
   }
   return l10n.durationSecondsOnly(s.toString());
+}
+
+/// Centred confirmation card before ANY delete (Batch B / Audit Item 6):
+/// displays a centred card with a red destructive action, a clear statement
+/// of what will be deleted, and explicit confirm and cancel actions.
+/// Always invoked BEFORE any recovery gate (runLoosening).
+Future<bool> showDestructiveConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String? confirmText,
+  String? cancelText,
+  IconData icon = Icons.delete_outline,
+}) async {
+  if (!context.mounted) return false;
+  final l10n = context.l10n;
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: dark ? const Color(0xFF17171A) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AzmRadius.large),
+      ),
+      icon: Icon(
+        icon,
+        color: AzmColors.red,
+        size: 40,
+      ),
+      title: Text(
+        title,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: dark ? Colors.white : const Color(0xFF0B0B0C),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      content: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: dark ? Colors.white : const Color(0xFF0B0B0C),
+          fontSize: 16,
+          height: 1.45,
+        ),
+      ),
+      actionsAlignment: MainAxisAlignment.center,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: Text(cancelText ?? l10n.cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: AzmColors.red,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(confirmText ?? l10n.deleteGroup),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}
+
+/// Shared app picker with search + system-apps toggle (Batch B / Audit Item 10).
+/// Reuses the Apps-tab pattern verbatim (apps_tab.dart ~85-100):
+/// pill search field + includeSystemApps toggle as suffixIcon
+/// (Icons.filter_alt filled when on, filter_alt_outlined when off),
+/// ListView.builder, and debounced search by name or package.
+Future<Set<String>?> showAppPicker({
+  required BuildContext context,
+  required PrivilegedChannel channel,
+  String? title,
+  Set<String> initialSelected = const {},
+  bool singleSelect = false,
+  List<InstalledApp>? preloadedApps,
+}) async {
+  if (!context.mounted) return null;
+  return showDialog<Set<String>>(
+    context: context,
+    builder: (dialogContext) => _AppPickerDialog(
+      channel: channel,
+      title: title,
+      initialSelected: initialSelected,
+      singleSelect: singleSelect,
+      preloadedApps: preloadedApps,
+    ),
+  );
+}
+
+class _AppPickerDialog extends StatefulWidget {
+  const _AppPickerDialog({
+    required this.channel,
+    this.title,
+    required this.initialSelected,
+    required this.singleSelect,
+    this.preloadedApps,
+  });
+
+  final PrivilegedChannel channel;
+  final String? title;
+  final Set<String> initialSelected;
+  final bool singleSelect;
+  final List<InstalledApp>? preloadedApps;
+
+  @override
+  State<_AppPickerDialog> createState() => _AppPickerDialogState();
+}
+
+class _AppPickerDialogState extends State<_AppPickerDialog> {
+  late Set<String> _selected;
+  bool _includeSystem = false;
+  String _query = '';
+  List<InstalledApp>? _apps;
+  Object? _error;
+  bool _loading = true;
+  Timer? _debounce;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = Set<String>.from(widget.initialSelected);
+    if (widget.preloadedApps != null && !_includeSystem) {
+      _apps = widget.preloadedApps;
+      _loading = false;
+    } else {
+      _load();
+    }
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final apps = await widget.channel.listInstalledApps(
+        includeSystem: _includeSystem,
+      );
+      if (mounted) {
+        setState(() {
+          _apps = apps;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e;
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  void _onQueryChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 150), () {
+      if (mounted) {
+        setState(() => _query = value);
+      }
+    });
+  }
+
+  List<InstalledApp> get _filtered {
+    final apps = (_apps ?? const [])
+        .where((a) => _includeSystem || !a.isSystem);
+    if (_query.trim().isEmpty) return apps.toList();
+    final q = _query.trim().toLowerCase();
+    return apps
+        .where(
+          (a) =>
+              a.label.toLowerCase().contains(q) ||
+              a.packageName.toLowerCase().contains(q),
+        )
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final filtered = _filtered;
+
+    return AlertDialog(
+      backgroundColor: dark ? const Color(0xFF17171A) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AzmRadius.large),
+      ),
+      title: Text(
+        widget.title ?? l10n.searchApps,
+        style: TextStyle(
+          color: dark ? Colors.white : const Color(0xFF0B0B0C),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      content: SizedBox(
+        width: 380,
+        height: 480,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search_outlined),
+                  suffixIcon: IconButton(
+                    tooltip: l10n.includeSystemApps,
+                    icon: Icon(
+                      _includeSystem
+                          ? Icons.filter_alt
+                          : Icons.filter_alt_outlined,
+                      color: _includeSystem
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    onPressed: () {
+                      setState(() => _includeSystem = !_includeSystem);
+                      if (widget.preloadedApps == null) {
+                        _load();
+                      }
+                    },
+                  ),
+                  labelText: l10n.searchApps,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(999),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(999),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(999),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: _onQueryChanged,
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(
+                          child: Text(
+                            _error is PrivilegedException
+                                ? friendlyError(_error as PrivilegedException, l10n)
+                                : l10n.errGeneric,
+                          ),
+                        )
+                      : filtered.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  l10n.noAppsMatch,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.outline,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final app = filtered[index];
+                                final isSelected = _selected.contains(app.packageName);
+                                if (widget.singleSelect) {
+                                  return ListTile(
+                                    title: Text(app.label),
+                                    subtitle: Text(app.packageName),
+                                    trailing: isSelected
+                                        ? const Icon(
+                                            Icons.check_circle_outlined,
+                                            color: AzmColors.red,
+                                          )
+                                        : null,
+                                    onTap: () {
+                                      Navigator.of(context).pop({app.packageName});
+                                    },
+                                  );
+                                }
+                                return CheckboxListTile(
+                                  title: Text(app.label),
+                                  subtitle: Text(app.packageName),
+                                  value: isSelected,
+                                  activeColor: AzmColors.red,
+                                  onChanged: (v) {
+                                    setState(() {
+                                      if (v == true) {
+                                        _selected.add(app.packageName);
+                                      } else {
+                                        _selected.remove(app.packageName);
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: Text(l10n.cancel),
+        ),
+        if (!widget.singleSelect)
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(_selected),
+            child: Text(l10n.save),
+          ),
+      ],
+    );
+  }
 }

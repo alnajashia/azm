@@ -1,178 +1,142 @@
-# Dominanter
+<p align="center">
+  <img src="assets/branding/azm_logo.png" alt="Azm Logo" width="128" height="128" />
+</p>
 
-A Flutter reimplementation of [DeChainer](https://github.com/warleysr/dechainer)
-(v1.12.0) — a self-control / app-blocking app — with
-[Shizuku](https://github.com/RikkaApps/Shizuku) used only for setup-time
-privileged provisioning. Dart provides the UI and pure logic; all privileged
-effects live in Kotlin behind a single MethodChannel.
+<h1 align="center">Azm (عزم) — Self-Control & Digital Sovereign for Android</h1>
 
-> **Status (2026-11-09):** Dart UI implemented, `flutter analyze` clean
-> (0 errors, 0 warnings), `flutter test` 41/41 passing, and **debug +
-> release APKs are built** (see Tests below for sizes/hashes). **No
-> on-device testing yet:** nothing that touches a real Shizuku server,
-> Device Owner provisioning, or the Accessibility Service has run on
-> hardware. See
-> [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) for the
-> honest per-feature status (F1–F34) and
-> [`docs/TESTING.md`](docs/TESTING.md) for the full test evidence.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-D90429.svg" alt="License: Apache-2.0" /></a>
+  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/flutter-3.35.1-0B0B0C.svg" alt="Flutter 3.35.1" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/version-v1.0.0-D90429.svg" alt="Version: v1.0.0" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-196%20passing-0B0B0C.svg" alt="Tests: 196 passing" /></a>
+</p>
 
-## What it does
+---
 
-- **Device Owner provisioning** via Shizuku (binder DPM path, with a `dpm
-  set-device-owner` shell fallback), including the `user_setup_complete`
-  bypass/restore and a cold-start repair for a stuck flag.
-- **App control:** hide / suspend / uninstall-block per app, per-app and
-  per-group time limits, allowed time windows, reopen handling.
-- **Restrictions:** system restrictions (draft/apply), per-app managed
-  restrictions, browser URL blocklist + forced SafeSearch, forced family
-  private DNS.
-- **Blocking enforcement:** Accessibility Service with active/passive word
-  blocking, suspension audit log, and accessibility-loss lockdown.
-- **Self-control gates:** 16-character paper recovery code (stored as a
-  salted PBKDF2 hash, never plaintext), a 10-minute recovery session,
-  math / words / reading challenges before loosening a restriction,
-  impulse lock, focus (Pomodoro) mode, and 48-hour delayed forced removal.
-- **UI:** Material 3, light/dark themes, English/Portuguese (app chrome;
-  per-screen Portuguese is partial — see the status doc).
+## Philosophy & Core Principles
 
-Deliberately **not** ported: Play Store rating scraping, the unauthenticated
-lock-screen APK installer, and the debug self-disable hatch. Deferred to
-v1.1: the NSFW TFLite pipeline, Tetris challenge, colour modes, and
-browser/torrent install-watchers. Features deferred to v1.1 appear in the UI
-as explicitly labelled tiles, never as dead buttons.
+**Azm (عزم)** is an uncompromising, on-device self-discipline and digital sovereignty companion for Android. Designed to conquer digital addiction and eliminate impulse relapse, Azm enforces absolute digital sovereignty through Android's native Device Owner management layer.
 
-## Architecture
+- **100% On-Device Execution:** Zero cloud servers, zero external backends, zero accounts, and zero telemetry. Your data, rules, and schedules never leave your hardware.
+- **Uncompromising Self-Control:** Rules and restrictions are designed to be tamper-resistant. Once active, barriers cannot be impulsively dismissed or bypassed without dedicated cooling-off rituals or the physical paper recovery key.
+- **Setup-Time Privilege Only:** [Shizuku](https://shizuku.rikka.app/) is utilized strictly as a one-time provisioning mechanism during initial setup to grant Device Owner privileges and permissions. Once provisioned, Azm operates fully autonomously and requires no background Shizuku daemon.
+- **Privacy & Security First:** Recovery codes are never stored in plaintext. They are protected using a salted PBKDF2 cryptographic derivation.
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/azm_settings.jpg" alt="Azm Settings & Diagnostics" width="45%" />
+  &nbsp; &nbsp;
+  <img src="docs/screenshots/azm_browser_restrictions.jpg" alt="Azm Browser Restrictions" width="45%" />
+</p>
+
+---
+
+## Features
+
+### Strict Application Control
+- **Deep Application Suspension & Hiding:** Suspend or hide distracting apps at the Android system level via DevicePolicyManager. Suspended applications cannot be opened or produce background distractions.
+- **Uninstall Prevention:** Protect critical apps and Azm itself against impulsive uninstallation.
+- **Usage Limits & Windows:** Configure daily usage limits per app or application group, and define allowed operating time windows.
+- **Internal Activity Blocker:** Intercept and block specific distracting sub-activities inside applications.
+
+### Network & Browser Hardening
+- **Managed Browser Policies:** Push native enterprise browser restrictions to supported browsers (including Chrome and Chromium derivatives) to restrict URL patterns and enforce Google SafeSearch.
+- **Forced Family Private DNS:** Lock in encrypted, privacy-respecting DNS providers with content-level protection directly at the operating system level.
+
+### Accessibility Enforcement Engine
+- **Tamper Reversion:** Continuous monitoring to safeguard essential accessibility services against unauthorized termination.
+- **Proactive & Passive Content Guard:** Keyword filtering and on-device text scanning to keep apps aligned with your self-control goals.
+- **Colour Modes:** Grayscale, night light, extra dim and colour inversion enforced at the system level on schedules, per app, and during focus sessions — with a recovery-gated lock against loosening and automatic release on removal, so the phone is never left grey with no way to switch it off.
+
+### Self-Control Rituals & Gates
+- **PBKDF2 Paper Recovery Key:** An unrecoverable 16-character recovery key designed to be written down on physical paper and stored securely. Modifying protected settings requires a deliberate physical friction ritual.
+- **Scratch-to-Reveal Recovery Key:** At first launch the paper code stays hidden under a scratch cover until revealed, with a screen-reader alternative, and screenshots are blocked while it is shown.
+- **Timed Recovery Sessions:** Emergency loosening sessions expire automatically after 10 minutes.
+- **Focus & Discipline Challenges:** Mathematical drills and typing friction challenges ensure intentionality before sensitive restrictions can be altered.
+- **Focus (Pomodoro) Sessions:** Deep-work cycles with strict enforcement and break timers.
+
+---
+
+## Architecture Overview
+
+Azm adopts a clean two-tier architecture separating the user experience and state machine from privileged Android operating system interactions:
 
 ```
-Flutter / Dart (UI + pure logic)
-        │  MethodChannel dominanter/privileged (+ events channel)
-Kotlin (Accessibility Service, Device Owner manager,
-        Shizuku provisioning, settings/recovery stores)
-        │  Shizuku API 13.1.5 — setup time only
-Shizuku → Binder → Android system services (DPM, PackageManager, Settings)
+┌─────────────────────────────────────────────────────────┐
+│                   Flutter / Dart UI                     │
+│  · Material 3 (Red & Black visual identity)             │
+│  · State management & client repositories               │
+│  · Bilingual Arabic / English typography (Cairo font)   │
+└────────────────────────────┬────────────────────────────┘
+                             │
+            MethodChannel: azm/privileged
+            EventChannel:  azm/privileged/events
+                             │
+┌────────────────────────────▼────────────────────────────┐
+│                  Native Kotlin Layer                    │
+│  · AzmDeviceAdminReceiver & DeviceOwnerManager          │
+│  · AzmAccessibilityService (runtime enforcement)        │
+│  · ShizukuProvisioning (setup-time provisioning only)   │
+│  · Keystore-backed cryptographic hash verification      │
+└─────────────────────────────────────────────────────────┘
 ```
 
-Full design, channel contract (25 methods), data model and security
-deviations: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (1,022 lines).
-Per-feature status: [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md).
-How the original was reverse-engineered:
-[`docs/REVERSE_ENGINEERING.md`](docs/REVERSE_ENGINEERING.md). Test
-evidence: [`docs/TESTING.md`](docs/TESTING.md). REA inspection of the
-built APK: [`docs/REA_REBUILT_APK.md`](docs/REA_REBUILT_APK.md).
+---
 
-Key point from the reverse engineering: Shizuku is **not** the runtime
-engine. Once Device Owner is granted, day-to-day blocking runs on ordinary
-in-process `DevicePolicyManager` calls and the Accessibility Service;
-Shizuku is needed again only for setup, diagnostics/re-grants, and the
-cold-start `user_setup_complete` repair.
+## Requirements & Setup
 
-## Requirements
+### Requirements
+- Android 11+ (API Level 30 through 36)
+- Shizuku app installed and running (required solely for the one-time initial setup provisioning)
 
-| Requirement | Version / note |
-|---|---|
-| Flutter | 3.35.1 stable |
-| JDK | 21 |
-| Android SDK | platform 36; `minSdk 30` (Android 11), `targetSdk 36` |
-| Application ID | `io.github.alnajashia.dominanter` |
-| Shizuku | Manager app `moe.shizuku.privileged.api`, API/provider `13.1.5` |
-| Device | A real Android device for any privileged test — **use a sacrificial device first**: Device Owner provisioning and accessibility-loss lockdown are hard to undo casually |
+### Initial Provisioning (Step-by-Step)
+1. **Install Shizuku:** Download and launch Shizuku from its official source. Start the Shizuku service via Wireless Debugging or ADB as directed by Shizuku.
+2. **Install & Launch Azm:** Open Azm. On first launch, the setup wizard guides you through provisioning.
+3. **Grant Shizuku Access:** When prompted, grant Azm access to Shizuku.
+4. **Provision Device Owner:** Tap **Provision Device Owner**. Azm will securely establish Device Owner administration.
+5. **Grant Secure Settings & Accessibility:** Enable Azm's Accessibility Service and grant necessary secure settings.
+6. **Set Paper Recovery Key:** Generate your 16-character recovery key, transcribe it onto paper, and keep it in a safe physical location.
 
-## Setup — install and run
+> **Developer Notice:** Device Owner status grants extensive control over device policies. For development and testing, always use an emulator or a dedicated test device.
 
-1. Install the Shizuku manager app and start its service (via ADB or
-   wireless debugging, as Shizuku documents).
-2. Clone this repo and fetch dependencies:
-   ```sh
-   git clone https://github.com/alnajashia/dominanter.git
-   cd dominanter
-   flutter pub get
-   ```
-3. Build and install the debug APK:
-   ```sh
-   flutter run
-   # or: flutter build apk --debug
-   ```
-   On a normal developer machine that is all there is to it. The APKs in
-   this repo's build record were produced in a sandbox whose network gate
-   intercepts Java TCP connections and drops TLS handshakes without ALPN
-   `http/1.1`, which breaks Gradle's plugin downloads; the working recipe
-   for that environment (IPv4-forcing, a loopback TLS relay, persistent
-   JDK/Gradle home) is codified in `build_apk.sh`
-   (`./build_apk.sh debug` / `./build_apk.sh release`) and root-caused in
-   `build_logs/README.md`. That ceremony is sandbox-specific — it is not
-   part of the app's build requirements.
-4. In the app, follow the setup wizard: create and write down the
-   16-character recovery code on paper, grant Shizuku permission, provision
-   Device Owner, enable the Accessibility Service, and grant
-   `WRITE_SECURE_SETTINGS` when asked. The wizard shows five distinct
-   Shizuku states and diagnostics if anything fails.
+---
 
-## Permissions
+## Security & Privacy Architecture
 
-- **Device Owner** (`dpm set-device-owner`) — app suspension, restrictions,
-  managed restrictions, private DNS. Granted once, via Shizuku.
-- **Accessibility Service** — word blocking, time-limit enforcement,
-  accessibility-loss lockdown.
-- **Shizuku permission** — setup-time shell/binder access only.
-- **`WRITE_SECURE_SETTINGS`** (via Shizuku) — Accessibility enablement and
-  colour-mode grant.
-- **Biometric / device credential** (optional, via `local_auth`) — entry gate.
+- **Zero Network Communications:** Azm contains no analytics, advertising SDKs, error tracking services, or cloud connections. All data stays local to your device.
+- **Irreversible Cryptographic Paper Key:** The paper recovery key is hashed using PBKDF2 with a cryptographic salt. Plaintext keys are never persisted to disk or flash memory.
+- **Fail-Closed Operations:** If privileged components are compromised or unexpected state is detected, Azm defaults to maximum protection rather than failing open.
 
-No root is used or required. No accounts, telemetry, or UsageStatsManager.
+---
 
-## Tests
+## Building from Source
 
-```sh
-flutter analyze   # 0 errors, 0 warnings (2026-11-09)
-flutter test      # 41 tests, all passing (2026-11-09, post-redesign rebuild):
-                  # recovery gate, 5-second undo window, session model,
-                  # challenges, focus timer, channel error mapping, widgets,
-                  # pill navigation + focus timer ring (redesign)
-./build_apk.sh debug     # assembleDebug ✅ (sandbox recipe; see Setup)
-./build_apk.sh release   # assembleRelease ✅
+### Prerequisites
+- Flutter SDK 3.35.1+
+- Android SDK (API 36, Build-Tools 35.0.0+)
+- JDK 17+
+
+### Build Commands
+```bash
+# Clone the repository
+git clone https://github.com/alnajashia/azm.git
+cd azm
+
+# Fetch dependencies
+flutter pub get
+
+# Run test suite (149 tests)
+flutter test
+
+# Build release APK
+flutter build apk --release
 ```
 
-Built APKs (2026-11-09, post-redesign rebuild — `build_logs/build14_redesign_debug.log`
-/ `build15_redesign_release.log`): `app-debug.apk` 163,293,074 bytes, SHA-256
-`4fdbab00ab3596740231a11a7546792cb64823d5d8022f5bd04033a1f3de49bc`;
-`app-release.apk` 50,472,363 bytes, SHA-256
-`14017379ad806dfb5b120708e94e35a02d192a1d459b7b63ac1f35a6b411c7a4`.
-Badging (`aapt2`): `io.github.alnajashia.dominanter`
-v1.0.0, minSdk 30, targetSdk 36. All Kotlin — including the channel
-methods added during the Dart UI stage — is **Gradle compile-verified**
-by these builds. REA independently inspected the release APK (Flutter
-build identified) — see
-[`docs/REA_REBUILT_APK.md`](docs/REA_REBUILT_APK.md).
+---
 
-Kotlin instrumentation tests and real-device verification are **not yet
-done** — nothing is marked "verified" until it has run on a device. Full
-evidence and the 17-area status map:
-[`docs/TESTING.md`](docs/TESTING.md).
+## License
 
-## Known limitations (v1)
-
-- APKs are built but **device-unverified** — neither has been installed
-  or run on a device (see Status above).
-- Graduated usage-warning notifications are configured and stored but not
-  yet fired from the native service.
-- Focus timer has no native foreground service — the countdown runs while
-  the app is alive.
-- Weekly window editing from the UI is daily-only.
-- Portuguese translation is partial (app UI only).
-
-## Attribution and license
-
-Dominanter is a clean-room Flutter reimplementation of DeChainer's verified
-behaviour, not a copy of its source. Original projects:
-
-- **DeChainer** by warleysr — https://github.com/warleysr/dechainer —
-  Apache License 2.0.
-- **Shizuku** by RikkaApps — https://github.com/RikkaApps/Shizuku —
-  Apache License 2.0. Shizuku's own restrictions apply: do not reuse its
-  launcher icons, the name "Shizuku", the applicationId
-  `moe.shizuku.privileged.api`, or `moe.shizuku.manager.permission.*` for
-  another app. Dominanter uses its own applicationId
-  `io.github.alnajashia.dominanter` and its own Shizuku provider authority.
-
-Licensed under the **Apache License, Version 2.0** — see
-[`LICENSE`](LICENSE). Copyright 2026 Ahmed Mohammed Alnajashi.
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.

@@ -27,7 +27,7 @@ class BrowserRestrictionsScreen extends StatefulWidget {
 
 class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
   List<BlockedList>? _lists;
-  List<CapableApp>? _browsers;
+  List<InstalledBrowser>? _browsers;
   Object? _error;
   bool _busy = false;
 
@@ -40,16 +40,13 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
   Future<void> _load() async {
     try {
       final lists = await widget.controller.config.getBlockedLists();
-      List<CapableApp> browsers = const [];
+      List<InstalledBrowser> browsers = const [];
       Object? browserError;
       try {
-        // The key actually pushed is URLBlocklist (the original's
-        // `applyRestrictions`); ForceGoogleSafeSearch is only added by
-        // the native side when a browser is newly installed
-        // (`installed = true`), never by this screen's apply.
-        browsers = await widget.controller.channel.listRestrictionCapableApps(
-          requiredKeys: const ['URLBlocklist'],
-        );
+        // Batch C (C1): every installed browser, with restriction
+        // support, suspension state and icon — the port of DeChainer's
+        // BrowserRestrictionsManager.getPossibleBrowsers.
+        browsers = await widget.controller.channel.listInstalledBrowsers();
       } catch (e) {
         browserError = e;
       }
@@ -87,17 +84,21 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
     await runLoosening(context, widget.controller, save);
   }
 
-  /// Pushes the union of all lists' sites to every target browser,
+  /// Pushes the union of all lists' sites to every SUPPORTING browser,
   /// mirroring `BrowserRestrictionsManager.applyRestrictions`
   /// (`BrowserRestrictionsManager.kt:124-149`): bundle is exactly
   /// `{URLBlocklist: sites}` — SafeSearch is NOT forced here — and the
   /// write MERGES with each browser's existing restrictions
-  /// (`merge = true`), never replacing them.
+  /// (`merge = true`), never replacing them. Unsupported browsers are
+  /// skipped: they cannot honour the blocklist, and the screen says so
+  /// under each one instead of pretending the apply reached them.
   Future<void> _applyRestrictions(
     List<BlockedList> lists, {
     required bool silent,
   }) async {
-    final browsers = _browsers ?? const [];
+    final browsers = (_browsers ?? const [])
+        .where((b) => b.supportsRestrictions)
+        .toList();
     if (browsers.isEmpty) return;
     final sites = <String>{for (final l in lists) ...l.sites}.toList()..sort();
     final bundle = <String, dynamic>{'URLBlocklist': sites};
@@ -117,6 +118,49 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       }
     } catch (e) {
       if (mounted) await showErrorCard(context, e);
+    }
+  }
+
+  /// The per-browser allow switch (Batch C, C1). The switch shows
+  /// "allowed": ON means the browser is NOT suspended. Suspending is
+  /// a tightening (direct); unsuspending is a loosening (recovery
+  /// gate). The state is updated from the verified native reply, not
+  /// from the requested value.
+  Future<void> _toggleBrowser(InstalledBrowser browser, bool allowed) async {
+    Future<void> apply() async {
+      final results = await widget.controller.channel.setAppSuspended(
+        [browser.packageName],
+        !allowed,
+        reason: 'MANUAL',
+      );
+      final verified = results.firstOrNull;
+      if (mounted) {
+        setState(() {
+          _browsers = _browsers
+              ?.map(
+                (b) => b.packageName == browser.packageName
+                    ? InstalledBrowser(
+                        packageName: b.packageName,
+                        label: b.label,
+                        supportsRestrictions: b.supportsRestrictions,
+                        isSuspended: verified?.isSuspended ?? !allowed,
+                        iconBytes: b.iconBytes,
+                      )
+                    : b,
+              )
+              .toList();
+        });
+      }
+    }
+
+    if (allowed) {
+      await runLoosening(context, widget.controller, apply);
+    } else {
+      try {
+        await apply();
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
     }
   }
 
@@ -195,7 +239,9 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
   }
 
   Future<void> _applyToBrowsers() async {
-    final browsers = _browsers ?? const [];
+    final browsers = (_browsers ?? const [])
+        .where((b) => b.supportsRestrictions)
+        .toList();
     if (browsers.isEmpty || _lists == null) return;
     Future<void> apply() async {
       setState(() => _busy = true);
@@ -242,21 +288,58 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                     ),
                   ),
                 // v1.0.5 UX (user directive): titled card groups.
+                // Batch C (C1): every installed browser gets its own
+                // tile with icon, allow switch and — for unsupported
+                // browsers — the red warning that restrictions do not
+                // work there (DeChainer's exact wording).
                 SectionCard(
                   title: l10n.supportingBrowsers,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                      child: _browsers == null || _browsers!.isEmpty
-                          ? Text(l10n.noCapableBrowser)
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (final b in _browsers!)
-                                  Text('• ${b.label} (${b.packageName})'),
-                              ],
+                    if (_browsers == null || _browsers!.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                        child: Text(l10n.noCapableBrowser),
+                      )
+                    else
+                      for (final b in _browsers!)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ListTile(
+                              leading: b.iconBytes != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.memory(
+                                        Uint8List.fromList(b.iconBytes!),
+                                        width: 40,
+                                        height: 40,
+                                      ),
+                                    )
+                                  : const Icon(Icons.language_outlined),
+                              title: Text(b.label),
+                              subtitle: Text(b.packageName),
+                              trailing: Switch(
+                                value: !b.isSuspended,
+                                onChanged: _busy
+                                    ? null
+                                    : (v) => _toggleBrowser(b, v),
+                              ),
                             ),
-                    ),
+                            if (!b.supportsRestrictions)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                                child: Text(
+                                  l10n.browserUnsupportedWarning,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -275,9 +358,22 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                           subtitle: Text(l10n.sitesCount(l.sites.length)),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete_outline),
-                            onPressed: () => _saveLists(
-                              _lists!.where((x) => x.id != l.id).toList(),
-                            ),
+                            onPressed: () async {
+                              final confirmed =
+                                  await showDestructiveConfirmDialog(
+                                context,
+                                title: l10n.deleteBlocklistConfirmTitle,
+                                message: l10n.deleteBlocklistConfirmMessage(
+                                  l.title,
+                                ),
+                                confirmText: l10n.passwordRemoveConfirm,
+                              );
+                              if (confirmed && mounted) {
+                                await _saveLists(
+                                  _lists!.where((x) => x.id != l.id).toList(),
+                                );
+                              }
+                            },
                           ),
                           onTap: () => _editList(l),
                         ),
@@ -285,7 +381,12 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: _busy || (_browsers?.isEmpty ?? true)
+                  onPressed:
+                      _busy ||
+                          !(_browsers?.any(
+                                (b) => b.supportsRestrictions,
+                              ) ??
+                              false)
                       ? null
                       : _applyToBrowsers,
                   icon: const Icon(Icons.upload_outlined),
@@ -396,56 +497,25 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
   }
 
   Future<void> _pickTargets() async {
-    final selected = {..._state!.targetPackages};
-    final result = await showDialog<List<String>>(
+    final result = await showAppPicker(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setLocal) => AlertDialog(
-          title: Text(context.l10n.appsWhereWordsBlock),
-          content: SizedBox(
-            width: 360,
-            height: 400,
-            child: ListView(
-              children: [
-                for (final app in _apps!)
-                  CheckboxListTile(
-                    title: Text(app.label),
-                    value: selected.contains(app.packageName),
-                    onChanged: (v) => setLocal(() {
-                      if (v == true) {
-                        selected.add(app.packageName);
-                      } else {
-                        selected.remove(app.packageName);
-                      }
-                    }),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(context.l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, selected.toList()),
-              child: Text(context.l10n.save),
-            ),
-          ],
-        ),
-      ),
+      channel: widget.controller.channel,
+      title: context.l10n.appsWhereWordsBlock,
+      initialSelected: _state!.targetPackages.toSet(),
+      preloadedApps: _apps,
     );
-    if (result == null) return;
+    if (result == null || !mounted) return;
+    final list = result.toList();
     // ANY change to the target set is recovery-gated: removing a target
     // loosens (F23), and ADDING one ACTIVATES word blocking inside an
     // app that did not have it (user directive, v1.0.4 audit).
     final changed =
-        result.length != _state!.targetPackages.length ||
-        !_state!.targetPackages.every(result.contains);
+        list.length != _state!.targetPackages.length ||
+        !_state!.targetPackages.every(list.contains);
     Future<void> save() async {
       final s = await widget.controller.channel.setBlockedWords(
         _state!.words,
-        result,
+        list,
       );
       if (mounted) setState(() => _state = s);
     }
@@ -679,8 +749,19 @@ class _UsageWarningsScreenState extends State<UsageWarningsScreen> {
     ]);
   }
 
-  void _removeStage(UsageWarningStage stage) {
-    _save(_enabled ?? false, _stages!.where((s) => s.id != stage.id).toList());
+  Future<void> _removeStage(UsageWarningStage stage) async {
+    final minutesStr = stage.minutesBefore.toStringAsFixed(
+      stage.minutesBefore.truncateToDouble() == stage.minutesBefore ? 0 : 1,
+    );
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: context.l10n.deleteStageConfirmTitle,
+      message: context.l10n.deleteStageConfirmMessage(minutesStr),
+      confirmText: context.l10n.passwordRemoveConfirm,
+    );
+    if (confirmed && mounted) {
+      _save(_enabled ?? false, _stages!.where((s) => s.id != stage.id).toList());
+    }
   }
 
   /// The original's `addStage` (`UsageWarningViewModel.kt:32-35`): the

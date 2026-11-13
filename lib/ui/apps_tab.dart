@@ -713,7 +713,17 @@ class _TimeWindowsEditorState extends State<TimeWindowsEditor> {
                   title: Text(_windows[i].formatted),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
-                    onPressed: () => setState(() => _windows.removeAt(i)),
+                    onPressed: () async {
+                      final confirmed = await showDestructiveConfirmDialog(
+                        context,
+                        title: l10n.deleteWindowConfirmTitle,
+                        message: l10n.deleteWindowConfirmMessage(_windows[i].formatted),
+                        confirmText: l10n.passwordRemoveConfirm,
+                      );
+                      if (confirmed && mounted) {
+                        setState(() => _windows.removeAt(i));
+                      }
+                    },
                   ),
                 ),
             TextButton.icon(
@@ -807,6 +817,19 @@ class _GroupsScreenState extends State<GroupsScreen> {
     ]);
   }
 
+  Future<void> _deleteGroup(AppGroupModel g) async {
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: context.l10n.deleteGroupConfirmTitle,
+      message: context.l10n.deleteGroupConfirmMessage(g.name),
+      confirmText: context.l10n.deleteGroup,
+    );
+    if (!confirmed || !mounted) return;
+    await runLoosening(context, widget.controller, () async {
+      await _save(_groups!.where((x) => x.id != g.id).toList());
+    });
+  }
+
   Future<void> _rename(AppGroupModel group) async {
     final nameController = TextEditingController(text: group.name);
     final name = await showDialog<String>(
@@ -852,46 +875,15 @@ class _GroupsScreenState extends State<GroupsScreen> {
       (g.weeklyWindows?.any((d) => d.isNotEmpty) ?? false);
 
   Future<void> _editMembers(AppGroupModel group) async {
-    final selected = {...group.packages};
-    final result = await showDialog<List<String>>(
+    final result = await showAppPicker(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setLocal) => AlertDialog(
-          title: Text(context.l10n.membersOf(group.name)),
-          content: SizedBox(
-            width: 360,
-            height: 400,
-            child: ListView(
-              children: [
-                for (final app in widget.apps)
-                  CheckboxListTile(
-                    title: Text(app.label),
-                    subtitle: Text(app.packageName),
-                    value: selected.contains(app.packageName),
-                    onChanged: (v) => setLocal(() {
-                      if (v == true) {
-                        selected.add(app.packageName);
-                      } else {
-                        selected.remove(app.packageName);
-                      }
-                    }),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(context.l10n.cancel)),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, selected.toList()),
-              child: Text(context.l10n.save),
-            ),
-          ],
-        ),
-      ),
+      channel: widget.controller.channel,
+      title: context.l10n.membersOf(group.name),
+      initialSelected: group.packages.toSet(),
+      preloadedApps: widget.apps,
     );
     if (result == null || _groups == null || !mounted) return;
+    final resultList = result.toList();
     // Removing a member strips the group's limit/windows/cooldown from
     // that app — a loosening the original explicitly gates (group-save
     // loosening includes `!newPackages.containsAll(oldPackages)`,
@@ -899,7 +891,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
     // no restrictions stays ungated, as in the original.
     final loosening = Loosening.isLooserSet(
           oldSet: group.packages.toSet(),
-          newSet: result.toSet(),
+          newSet: result,
         ) &&
         _groupHasRestrictions(group);
     // User directive (v1.0.4 audit): ADDING a member to a group that
@@ -909,7 +901,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         _groupHasRestrictions(group);
     Future<void> save() => _save([
           for (final g in _groups!)
-            if (g.id == group.id) g.copyWith(packages: result) else g,
+            if (g.id == group.id) g.copyWith(packages: resultList) else g,
         ]);
     if (loosening || activates) {
       await runLoosening(context, widget.controller, save);
@@ -1023,16 +1015,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
                               ),
                             ),
                             trailing: PopupMenuButton<String>(
-                              onSelected: (action) async {
+                              onSelected: (action) {
                                 if (action == 'members') _editMembers(g);
                                 if (action == 'limit') _editGroupLimit(g);
                                 if (action == 'rename') _rename(g);
-                                if (action == 'delete') {
-                                  await runLoosening(context, widget.controller, () async {
-                                    await _save(
-                                        _groups!.where((x) => x.id != g.id).toList());
-                                  });
-                                }
+                                if (action == 'delete') _deleteGroup(g);
                               },
                               itemBuilder: (_) => [
                                 PopupMenuItem(

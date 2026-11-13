@@ -5,13 +5,13 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dominanter/app_controller.dart';
-import 'package:dominanter/data/privileged_channel.dart';
-import 'package:dominanter/domain/entry_password.dart';
-import 'package:dominanter/l10n/app_localizations.dart';
-import 'package:dominanter/l10n/app_localizations_ar.dart';
-import 'package:dominanter/l10n/app_localizations_en.dart';
-import 'package:dominanter/ui/lock_screen.dart';
+import 'package:azm/app_controller.dart';
+import 'package:azm/data/privileged_channel.dart';
+import 'package:azm/domain/entry_password.dart';
+import 'package:azm/l10n/app_localizations.dart';
+import 'package:azm/l10n/app_localizations_ar.dart';
+import 'package:azm/l10n/app_localizations_en.dart';
+import 'package:azm/ui/lock_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,7 +63,7 @@ void main() {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    const methodChannel = MethodChannel('dominanter/privileged');
+    const methodChannel = MethodChannel('azm/privileged');
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     addTearDown(() {
