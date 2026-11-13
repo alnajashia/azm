@@ -26,13 +26,13 @@
 # entry point (instantiated by the framework by name); the accessibility
 # service and both receivers are instantiated by the system by name.
 # ---------------------------------------------------------------------------
--keep class io.github.alnajashia.azm.MainActivity { *; }
--keep class io.github.alnajashia.azm.AzmApplication { *; }
--keep class io.github.alnajashia.azm.accessibility.AzmAccessibilityService { *; }
--keep class io.github.alnajashia.azm.accessibility.BlockActivity { *; }
--keep class io.github.alnajashia.azm.accessibility.AccessibilityRequestActivity { *; }
--keep class io.github.alnajashia.azm.deviceowner.AzmDeviceAdminReceiver { *; }
--keep class io.github.alnajashia.azm.deviceowner.AzmPolicyUpdateReceiver { *; }
+-keep class com.alnajashia.azm.MainActivity { *; }
+-keep class com.alnajashia.azm.AzmApplication { *; }
+-keep class com.alnajashia.azm.accessibility.AzmAccessibilityService { *; }
+-keep class com.alnajashia.azm.accessibility.BlockActivity { *; }
+-keep class com.alnajashia.azm.accessibility.AccessibilityRequestActivity { *; }
+-keep class com.alnajashia.azm.deviceowner.AzmDeviceAdminReceiver { *; }
+-keep class com.alnajashia.azm.deviceowner.AzmPolicyUpdateReceiver { *; }
 
 # ---------------------------------------------------------------------------
 # Shizuku — API, provider (rikka.shizuku.ShizukuProvider is the manifest
@@ -64,7 +64,7 @@
 # (no reflection), and its channel method names are string keys dispatched
 # through a when-block, not reflective lookups — R8 reachability keeps it
 # correctly without a rule. Do NOT add a blanket keep for the whole
-# io.github.alnajashia.azm package: it would defeat minification
+# com.alnajashia.azm package: it would defeat minification
 # of our own code, which the original did not do either.
 
 # Flutter deferred-components references Play Core split-install classes that

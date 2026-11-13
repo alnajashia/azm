@@ -28,7 +28,7 @@ if (azmKeystorePropsFile.exists()) {
 }
 
 android {
-    namespace = "io.github.alnajashia.azm"
+    namespace = "com.alnajashia.azm"
 
     signingConfigs {
         create("azmRelease") {
@@ -82,7 +82,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.alnajashia.azm"
+        applicationId = "com.alnajashia.azm"
         minSdk = 30
         targetSdk = 36
         versionCode = flutter.versionCode
