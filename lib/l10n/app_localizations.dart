@@ -1772,6 +1772,24 @@ abstract class AppLocalizations {
   /// **'This activity is already blocked.'**
   String get addActivityAlreadyBlocked;
 
+  /// No description provided for @blockEntireApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Block entire app'**
+  String get blockEntireApp;
+
+  /// No description provided for @noBlockableActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'This app has no activities that can be blocked.'**
+  String get noBlockableActivities;
+
+  /// No description provided for @blockedWholeApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked {count} activities of this app.'**
+  String blockedWholeApp(int count);
+
   /// No description provided for @colourModesDescription.
   ///
   /// In en, this message translates to:

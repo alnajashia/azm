@@ -984,6 +984,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addActivityAlreadyBlocked => 'This activity is already blocked.';
 
   @override
+  String get blockEntireApp => 'Block entire app';
+
+  @override
+  String get noBlockableActivities =>
+      'This app has no activities that can be blocked.';
+
+  @override
+  String blockedWholeApp(int count) {
+    return 'Blocked $count activities of this app.';
+  }
+
+  @override
   String get colourModesDescription =>
       'Make the screen less stimulating: grayscale, night light, extra dim and colour inversion, on schedules and per app. A mode that is on right now cannot be loosened without the recovery code.';
 

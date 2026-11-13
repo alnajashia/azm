@@ -608,6 +608,16 @@
   "addActivityInvalid": "أدخل اسم فئة كاملاً، مثل com.example.app.MainActivity.",
   "addActivityProtected": "هذا النشاط محمي ولا يمكن حظره أبداً.",
   "addActivityAlreadyBlocked": "هذا النشاط محظور بالفعل.",
+  "blockEntireApp": "حظر التطبيق كاملاً",
+  "noBlockableActivities": "لا يحتوي هذا التطبيق على أنشطة يمكن حظرها.",
+  "blockedWholeApp": "تم حظر {count} أنشطة من هذا التطبيق.",
+  "@blockedWholeApp": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "colourModesDescription": "اجعل الشاشة أقل إثارة: التدرج الرمادي والإضاءة الليلية والتعتيم الإضافي وعكس الألوان، وفق جداول ولكل تطبيق. لا يمكن تخفيف وضع مفعّل الآن دون رمز الاسترداد.",
   "colourModesStatusTitle": "الحالة",
   "colourModesStatusNoAccessibility": "خدمة الوصول مغلقة — لا يمكن تطبيق أوضاع الألوان. فعّلها بالأسفل.",

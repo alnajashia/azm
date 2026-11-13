@@ -973,6 +973,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get addActivityAlreadyBlocked => 'هذا النشاط محظور بالفعل.';
 
   @override
+  String get blockEntireApp => 'حظر التطبيق كاملاً';
+
+  @override
+  String get noBlockableActivities =>
+      'لا يحتوي هذا التطبيق على أنشطة يمكن حظرها.';
+
+  @override
+  String blockedWholeApp(int count) {
+    return 'تم حظر $count أنشطة من هذا التطبيق.';
+  }
+
+  @override
   String get colourModesDescription =>
       'اجعل الشاشة أقل إثارة: التدرج الرمادي والإضاءة الليلية والتعتيم الإضافي وعكس الألوان، وفق جداول ولكل تطبيق. لا يمكن تخفيف وضع مفعّل الآن دون رمز الاسترداد.';
 

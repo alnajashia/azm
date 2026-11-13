@@ -608,6 +608,16 @@
   "addActivityInvalid": "Enter a full class name, e.g. com.example.app.MainActivity.",
   "addActivityProtected": "This activity is protected and can never be blocked.",
   "addActivityAlreadyBlocked": "This activity is already blocked.",
+  "blockEntireApp": "Block entire app",
+  "noBlockableActivities": "This app has no activities that can be blocked.",
+  "blockedWholeApp": "Blocked {count} activities of this app.",
+  "@blockedWholeApp": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "colourModesDescription": "Make the screen less stimulating: grayscale, night light, extra dim and colour inversion, on schedules and per app. A mode that is on right now cannot be loosened without the recovery code.",
   "colourModesStatusTitle": "Status",
   "colourModesStatusNoAccessibility": "Accessibility service is off — colour modes cannot apply. Turn it on below.",
