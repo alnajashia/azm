@@ -56,6 +56,12 @@ void main() {
   late Set<String> fakeLockedModes;
   late bool fakeVerifyCodeMatches;
   late bool fakeRemoveOwnerThrowsSealed;
+  // Batch E review finding F-E2-1: models the native exemption —
+  // when a filed forced removal is due, removeDeviceOwner succeeds
+  // even with a seal active. The fake mirrors the contract; the
+  // native logic itself is verified by code reading (this repo has
+  // no Kotlin unit-test harness — all tests are Dart).
+  late bool fakeForcedRemovalDue;
   late String? fakeBlocklistsJson;
 
   /// Controllers created in a test: their recovery sessions arm a
@@ -131,6 +137,7 @@ void main() {
     fakeLockedModes = {};
     fakeVerifyCodeMatches = true;
     fakeRemoveOwnerThrowsSealed = false;
+    fakeForcedRemovalDue = false;
     fakeBlocklistsJson = null;
 
     messenger.setMockMethodCallHandler(methodChannel, (call) async {
@@ -164,7 +171,9 @@ void main() {
         case 'verifyRecoveryCode':
           return {'matches': fakeVerifyCodeMatches};
         case 'removeDeviceOwner':
-          if (fakeRemoveOwnerThrowsSealed) {
+          // Batch E review finding F-E2-1: a due forced removal
+          // bypasses the seal, exactly like a live recovery session.
+          if (fakeRemoveOwnerThrowsSealed && !fakeForcedRemovalDue) {
             throw PlatformException(
               code: 'SEALED',
               message: 'Removal refused by an active seal',
@@ -785,6 +794,19 @@ void main() {
       expect(caught, isNotNull);
       expect(caught!.isSealed, isTrue);
       expect(caught.sealDetails, isNotNull);
+    });
+
+    test(
+        'a due forced removal completes removal despite an active seal (F-E2-1)',
+        () async {
+      // A seal is active (the fake would throw SEALED), but the filed
+      // forced removal's 24-hour countdown is complete — the wait is
+      // itself the anti-impulse proof, so removal must proceed.
+      fakeRemoveOwnerThrowsSealed = true;
+      fakeForcedRemovalDue = true;
+      final channel = PrivilegedChannel(methodChannel: methodChannel);
+      final result = await channel.removeDeviceOwner();
+      expect(result.isDeviceOwner, isFalse);
     });
 
     testWidgets('forced-removal start is never gated on focus state',
