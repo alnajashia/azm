@@ -794,7 +794,13 @@ class AzmAccessibilityService : AccessibilityService() {
         visualExecutor().execute {
             if (visualDetector == null) {
                 visualDetector = runCatching { NsfwContentDetector(appContext) }
-                    .onFailure { Log.w(TAG, "NSFW detector init failed: ${it.message}") }
+                    .onFailure {
+                        Log.w(TAG, "NSFW detector init failed: ${it.message}")
+                        VisualBlockingSettings.setDetectorError(
+                            it.message ?: it.toString(),
+                        )
+                    }
+                    .onSuccess { VisualBlockingSettings.setDetectorError(null) }
                     .getOrNull()
             }
         }
@@ -850,6 +856,14 @@ class AzmAccessibilityService : AccessibilityService() {
                                 hardwareBitmap.recycle()
                                 val detector = visualDetector
                                     ?: runCatching { NsfwContentDetector(appContext) }
+                                        .onFailure {
+                                            VisualBlockingSettings.setDetectorError(
+                                                it.message ?: it.toString(),
+                                            )
+                                        }
+                                        .onSuccess {
+                                            VisualBlockingSettings.setDetectorError(null)
+                                        }
                                         .getOrNull()?.also { visualDetector = it }
                                 if (detector == null || softwareBitmap == null) {
                                     softwareBitmap?.recycle()
@@ -1362,6 +1376,34 @@ class AzmAccessibilityService : AccessibilityService() {
         }
         if (suspend && reason != null) {
             packages.forEach { SettingsStore.logSuspension(it, reason) }
+        }
+        // Batch F, item 6: same auto uninstall-block coupling as
+        // DeviceOwnerManager.setPackagesSuspended — a suspended app
+        // must not be uninstallable, and only AUTO-applied blocks are
+        // cleared on unsuspend. Best-effort per package, never failing
+        // the suspension itself. Armed by the item-6 Settings switch
+        // (default ON).
+        if (SettingsStore.isAutoBlockUninstallSuspended()) {
+            if (suspend) {
+                packages.forEach { pkg ->
+                    try {
+                        dpm.setUninstallBlocked(admin, pkg, true)
+                        SettingsStore.setAutoUninstallBlocked(pkg, true)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "auto uninstall-block failed for $pkg", e)
+                    }
+                }
+            } else {
+                packages.forEach { pkg ->
+                    if (pkg !in SettingsStore.autoUninstallBlockedPackages()) return@forEach
+                    try {
+                        dpm.setUninstallBlocked(admin, pkg, false)
+                        SettingsStore.setAutoUninstallBlocked(pkg, false)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "auto uninstall-unblock failed for $pkg", e)
+                    }
+                }
+            }
         }
     }
 
