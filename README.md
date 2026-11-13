@@ -8,7 +8,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-D90429.svg" alt="License: Apache-2.0" /></a>
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/flutter-3.35.1-0B0B0C.svg" alt="Flutter 3.35.1" /></a>
   <a href="#"><img src="https://img.shields.io/badge/version-v1.0.0-D90429.svg" alt="Version: v1.0.0" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-149%20passing-0B0B0C.svg" alt="Tests: 149 passing" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-196%20passing-0B0B0C.svg" alt="Tests: 196 passing" /></a>
 </p>
 
 ---
