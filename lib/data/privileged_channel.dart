@@ -1434,6 +1434,17 @@ class PrivilegedChannel {
         .toList();
   }
 
+  /// Every activity an app declares (v1.0.1 — "block the whole app").
+  /// The caller filters protected entries client-side before saving.
+  Future<List<String>> getAppActivities(String packageName) async {
+    final m = await _invokeMap('getAppActivities', {
+      'packageName': packageName,
+    });
+    return (m['activities'] as List? ?? const [])
+        .map((e) => e.toString())
+        .toList();
+  }
+
   // ---------------------------------------------------------- Colour modes (Batch C, C3)
 
   /// The colour-modes configuration. This is the ONLY read path for
