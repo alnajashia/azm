@@ -907,6 +907,162 @@ class AppLocalizationsAr extends AppLocalizations {
       'القيود لا تعمل في هذا المتصفح، يُنصح بتعطيله.';
 
   @override
+  String get dnsProtectionTitle => 'حماية DNS';
+
+  @override
+  String get dnsProtectionNote =>
+      'هذا المتصفح لا يدعم حظر المواقع من داخله، فلا يمكن حظر المواقع فيه حظراً كاملاً. حماية DNS بدلاً من ذلك تحظر النطاقات المحظورة على مستوى الجهاز كله — كل المتصفحات والتطبيقات — وعلى مستوى النطاق فقط، لا على مستوى الصفحات داخل الموقع.';
+
+  @override
+  String get dnsProtectionEnabled => 'مفعّلة';
+
+  @override
+  String get dnsProtectionDisabled => 'متوقفة';
+
+  @override
+  String get dnsProviderNextdns => 'NextDNS';
+
+  @override
+  String get dnsProviderNextdnsNote =>
+      'قائمتك الخاصة (تُدار من لوحة تحكم NextDNS)';
+
+  @override
+  String get dnsProviderCleanbrowsing => 'CleanBrowsing (فلتر العائلة)';
+
+  @override
+  String get dnsProviderCleanbrowsingNote =>
+      'محتوى البالغين والبروكسيات، بلا حساب';
+
+  @override
+  String get dnsConfigIdLabel => 'رمز إعداد NextDNS';
+
+  @override
+  String get dnsConfigIdHint => 'مثال: abc123';
+
+  @override
+  String dnsConfigIdHostname(String id) {
+    return 'اسم المضيف: $id.dns.nextdns.io';
+  }
+
+  @override
+  String get dnsNextdnsHowTitle => 'كيف أُعدّ NextDNS؟';
+
+  @override
+  String get dnsNextdnsStep1 =>
+      '١. أنشئ حساباً مجانياً في nextdns.io (بريد وكلمة مرور، بلا بطاقة).';
+
+  @override
+  String get dnsNextdnsStep2 =>
+      '٢. انسخ رمز الإعداد من تبويب Setup في لوحة التحكم.';
+
+  @override
+  String get dnsNextdnsStep3 =>
+      '٣. أضف المواقع إلى Denylist من تبويب Privacy، وفعّل Block Bypass Methods من Settings.';
+
+  @override
+  String get dnsNextdnsStep4 =>
+      '٤. الصق الرمز في الحقل أعلاه وفعّل الحماية — وسيضبطها عزم ويقفلها.';
+
+  @override
+  String get torrentTitle => 'حظر تطبيقات التورنت';
+
+  @override
+  String get torrentSub =>
+      'يعلّق أي تطبيق تورنت مثبّت الآن وأي تطبيق يُثبَّت لاحقاً';
+
+  @override
+  String get torrentDetectedNone =>
+      'لم يتم العثور على تطبيقات تورنت في هذا الهاتف';
+
+  @override
+  String torrentDetectedCount(int count) {
+    return 'تطبيقات التورنت المكتشفة: $count';
+  }
+
+  @override
+  String torrentBlockedMsg(int count) {
+    return 'تم تعليق $count من تطبيقات التورنت';
+  }
+
+  @override
+  String get torrentUnblockedMsg => 'تم إلغاء تعليق تطبيقات التورنت';
+
+  @override
+  String get uninstallBlockScreenTitle => 'حظر إلغاء التثبيت';
+
+  @override
+  String get uninstallBlockScreenSub =>
+      'اختر التطبيقات التي لا يمكن إلغاء تثبيتها';
+
+  @override
+  String get uninstallBlockEmpty => 'لا توجد تطبيقات محظور إلغاء تثبيتها';
+
+  @override
+  String get uninstallBlockAdd => 'إضافة تطبيق';
+
+  @override
+  String uninstallBlockRemovedFor(String app) {
+    return 'تم السماح بإلغاء تثبيت $app';
+  }
+
+  @override
+  String get blockGroup => 'حظر المجموعة';
+
+  @override
+  String get unblockGroup => 'إلغاء حظر المجموعة';
+
+  @override
+  String get groupBlockedBadge => 'محظورة';
+
+  @override
+  String get groupBlockedDesc => 'جميع تطبيقات هذه المجموعة معلّقة';
+
+  @override
+  String groupBlockedMsg(String name) {
+    return 'تم حظر المجموعة $name';
+  }
+
+  @override
+  String groupUnblockedMsg(String name) {
+    return 'تم إلغاء حظر المجموعة $name';
+  }
+
+  @override
+  String get autoBlockUninstallTitle =>
+      'حظر إلغاء تثبيت التطبيقات المعلَّقة أو المحظورة';
+
+  @override
+  String get autoBlockUninstallSub =>
+      'ما دام مفعّلاً، لا يمكن إلغاء تثبيت أي تطبيق معلَّق أو محظور';
+
+  @override
+  String get autoBlockUninstallOn => 'تم حظر إلغاء تثبيت التطبيقات المعلَّقة';
+
+  @override
+  String get autoBlockUninstallOff =>
+      'تم السماح بإلغاء تثبيت التطبيقات المعلَّقة';
+
+  @override
+  String get dnsInvalidConfigId => 'أدخل رمز إعداد NextDNS صحيحاً';
+
+  @override
+  String dnsCurrentHost(String hostname) {
+    return 'المضيف الحالي: $hostname';
+  }
+
+  @override
+  String get dnsNotSet => 'DNS الخاص غير مضبوط';
+
+  @override
+  String get dnsApplied => 'تم تطبيق حماية DNS';
+
+  @override
+  String get dnsTurnedOff => 'تم إيقاف حماية DNS';
+
+  @override
+  String get dnsSettings => 'الإعدادات';
+
+  @override
   String get refresh => 'تحديث';
 
   @override
@@ -971,6 +1127,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addActivityAlreadyBlocked => 'هذا النشاط محظور بالفعل.';
+
+  @override
+  String get blockEntireApp => 'حظر التطبيق كاملاً';
+
+  @override
+  String get noBlockableActivities =>
+      'لا يحتوي هذا التطبيق على أنشطة يمكن حظرها.';
+
+  @override
+  String blockedWholeApp(int count) {
+    return 'تم حظر $count أنشطة من هذا التطبيق.';
+  }
 
   @override
   String get colourModesDescription =>
@@ -1243,7 +1411,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get removalPartialBody =>
-      'أُزيل مالك الجهاز، لكن بعض خطوات التنظيف لم تكتمل. يمكنك إعادة المحاولة، أو إلغاء التثبيت بشكل طبيعي — إذ يتخلّص أندرويد من أي سياسات متبقية لمالك الجهاز عند إلغاء تثبيت التطبيق.';
+      'انتهى التفكيك، لكن بعض الخطوات لم تكتمل — وهي مذكورة أدناه. أعد محاولة الإزالة بدل إلغاء التثبيت بينما قد يكون مالك الجهاز ما زال نشطًا.';
 
   @override
   String get removalStepDisarm => 'تعطيل وسائل الحماية';
@@ -1672,6 +1840,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get visualSaved => 'تم حفظ إعدادات فحص المحتوى.';
 
   @override
+  String get visualDetectorErrorTitle => 'فحص المحتوى لا يعمل';
+
+  @override
+  String visualDetectorErrorBody(String error) {
+    return 'تعذّر تحميل مصنّف الصور، فالحظر البصري متوقف: $error';
+  }
+
+  @override
   String get sealRulesTitle => 'قواعد الختم';
 
   @override
@@ -1906,6 +2082,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addPerAppList => 'إضافة قائمة لكل تطبيق';
+
+  @override
+  String get wordHint => 'e.g., pussy';
+
+  @override
+  String get noMoreAppsForPassive =>
+      'كل التطبيقات المثبتة لديها قائمة سلبية بالفعل';
 
   @override
   String get loadingWarningStages => 'جارٍ تحميل مراحل التحذير…';
@@ -2459,6 +2642,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get editLimit => 'تحرير الحد';
 
   @override
+  String get editGroupWindows => 'تحرير النوافذ الزمنية';
+
+  @override
+  String groupWindowsUpdatedDesc(String group) {
+    return 'تم تحديث النوافذ الزمنية لمجموعة $group';
+  }
+
+  @override
   String get renameGroupAction => 'إعادة تسمية المجموعة';
 
   @override
@@ -2828,6 +3019,20 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get appGroupTile => 'المجموعة';
+
+  @override
+  String get noGroup => 'بلا مجموعة';
+
+  @override
+  String get selectGroupTitle => 'اختر مجموعة';
+
+  @override
+  String groupAssignedDesc(String app) {
+    return 'تم تحديث مجموعة $app';
+  }
+
+  @override
   String noRestrictionsFor(String app) {
     return 'لا قيود متاحة لـ$app. هذا التطبيق لا يعلن عن أي قيود مُدارة.';
   }
@@ -2921,7 +3126,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get removalTimeoutWarningBody =>
-      'تمت إزالة مالك الجهاز، لكن النظام لم ينتهِ من تسوية جميع خطوات التفكيك بعد. لا تقم بإلغاء التثبيت الآن حتى لا يتعطل الجهاز. الفحوصات التالية لم يتم التحقق منها:';
+      'لم ينتهِ التفكيك خلال المهلة، فالنتيجة غير مؤكدة — وقد يكون مالك الجهاز ما زال نشطًا. لا تقم بإلغاء التثبيت الآن حتى لا يتعطل الجهاز. الفحوصات التالية لم يتم التحقق منها:';
 
   @override
   String get removalRecheckAction => 'إعادة التحقق من الحالة';

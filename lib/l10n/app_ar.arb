@@ -575,6 +575,63 @@
   "activityBlockerNote": "حظر شاشات نشاط محددة؛ لا يمكن حظر المشغّل وتطبيقات النظام أبداً.",
   "removalStepColourModes": "تم تحرير أوضاع الألوان",
   "browserUnsupportedWarning": "القيود لا تعمل في هذا المتصفح، يُنصح بتعطيله.",
+  "dnsProtectionTitle": "حماية DNS",
+  "dnsProtectionNote": "هذا المتصفح لا يدعم حظر المواقع من داخله، فلا يمكن حظر المواقع فيه حظراً كاملاً. حماية DNS بدلاً من ذلك تحظر النطاقات المحظورة على مستوى الجهاز كله — كل المتصفحات والتطبيقات — وعلى مستوى النطاق فقط، لا على مستوى الصفحات داخل الموقع.",
+  "dnsProtectionEnabled": "مفعّلة",
+  "dnsProtectionDisabled": "متوقفة",
+  "dnsProviderNextdns": "NextDNS",
+  "dnsProviderNextdnsNote": "قائمتك الخاصة (تُدار من لوحة تحكم NextDNS)",
+  "dnsProviderCleanbrowsing": "CleanBrowsing (فلتر العائلة)",
+  "dnsProviderCleanbrowsingNote": "محتوى البالغين والبروكسيات، بلا حساب",
+  "dnsConfigIdLabel": "رمز إعداد NextDNS",
+  "dnsConfigIdHint": "مثال: abc123",
+  "dnsConfigIdHostname": "اسم المضيف: {id}.dns.nextdns.io",
+  "@dnsConfigIdHostname": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsNextdnsHowTitle": "كيف أُعدّ NextDNS؟",
+  "dnsNextdnsStep1": "١. أنشئ حساباً مجانياً في nextdns.io (بريد وكلمة مرور، بلا بطاقة).",
+  "dnsNextdnsStep2": "٢. انسخ رمز الإعداد من تبويب Setup في لوحة التحكم.",
+  "dnsNextdnsStep3": "٣. أضف المواقع إلى Denylist من تبويب Privacy، وفعّل Block Bypass Methods من Settings.",
+  "dnsNextdnsStep4": "٤. الصق الرمز في الحقل أعلاه وفعّل الحماية — وسيضبطها عزم ويقفلها.",
+  "torrentTitle": "حظر تطبيقات التورنت",
+  "torrentSub": "يعلّق أي تطبيق تورنت مثبّت الآن وأي تطبيق يُثبَّت لاحقاً",
+  "torrentDetectedNone": "لم يتم العثور على تطبيقات تورنت في هذا الهاتف",
+  "torrentDetectedCount": "تطبيقات التورنت المكتشفة: {count}",
+  "torrentBlockedMsg": "تم تعليق {count} من تطبيقات التورنت",
+  "torrentUnblockedMsg": "تم إلغاء تعليق تطبيقات التورنت",
+  "uninstallBlockScreenTitle": "حظر إلغاء التثبيت",
+  "uninstallBlockScreenSub": "اختر التطبيقات التي لا يمكن إلغاء تثبيتها",
+  "uninstallBlockEmpty": "لا توجد تطبيقات محظور إلغاء تثبيتها",
+  "uninstallBlockAdd": "إضافة تطبيق",
+  "uninstallBlockRemovedFor": "تم السماح بإلغاء تثبيت {app}",
+  "blockGroup": "حظر المجموعة",
+  "unblockGroup": "إلغاء حظر المجموعة",
+  "groupBlockedBadge": "محظورة",
+  "groupBlockedDesc": "جميع تطبيقات هذه المجموعة معلّقة",
+  "groupBlockedMsg": "تم حظر المجموعة {name}",
+  "groupUnblockedMsg": "تم إلغاء حظر المجموعة {name}",
+  "autoBlockUninstallTitle": "حظر إلغاء تثبيت التطبيقات المعلَّقة أو المحظورة",
+  "autoBlockUninstallSub": "ما دام مفعّلاً، لا يمكن إلغاء تثبيت أي تطبيق معلَّق أو محظور",
+  "autoBlockUninstallOn": "تم حظر إلغاء تثبيت التطبيقات المعلَّقة",
+  "autoBlockUninstallOff": "تم السماح بإلغاء تثبيت التطبيقات المعلَّقة",
+  "dnsInvalidConfigId": "أدخل رمز إعداد NextDNS صحيحاً",
+  "dnsCurrentHost": "المضيف الحالي: {hostname}",
+  "@dnsCurrentHost": {
+    "placeholders": {
+      "hostname": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsNotSet": "DNS الخاص غير مضبوط",
+  "dnsApplied": "تم تطبيق حماية DNS",
+  "dnsTurnedOff": "تم إيقاف حماية DNS",
+  "dnsSettings": "الإعدادات",
   "refresh": "تحديث",
   "loading": "جارٍ التحميل…",
   "block": "حظر",
@@ -608,6 +665,16 @@
   "addActivityInvalid": "أدخل اسم فئة كاملاً، مثل com.example.app.MainActivity.",
   "addActivityProtected": "هذا النشاط محمي ولا يمكن حظره أبداً.",
   "addActivityAlreadyBlocked": "هذا النشاط محظور بالفعل.",
+  "blockEntireApp": "حظر التطبيق كاملاً",
+  "noBlockableActivities": "لا يحتوي هذا التطبيق على أنشطة يمكن حظرها.",
+  "blockedWholeApp": "تم حظر {count} أنشطة من هذا التطبيق.",
+  "@blockedWholeApp": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "colourModesDescription": "اجعل الشاشة أقل إثارة: التدرج الرمادي والإضاءة الليلية والتعتيم الإضافي وعكس الألوان، وفق جداول ولكل تطبيق. لا يمكن تخفيف وضع مفعّل الآن دون رمز الاسترداد.",
   "colourModesStatusTitle": "الحالة",
   "colourModesStatusNoAccessibility": "خدمة الوصول مغلقة — لا يمكن تطبيق أوضاع الألوان. فعّلها بالأسفل.",
@@ -756,7 +823,7 @@
   "removalCompleteTitle": "أُزيلت الحماية بالكامل",
   "removalCompleteBody": "أُزيلت حماية عزم بالكامل: لم تبقَ أي قيود، ولا يوجد تطبيق موقوف أو مخفي بواسطة عزم، ولا شيء من عزم ما زال يعمل. يمكنك الآن إلغاء التثبيت بشكل طبيعي من إعدادات النظام.",
   "removalPartialTitle": "أُزيلت الحماية مع تنبيهات",
-  "removalPartialBody": "أُزيل مالك الجهاز، لكن بعض خطوات التنظيف لم تكتمل. يمكنك إعادة المحاولة، أو إلغاء التثبيت بشكل طبيعي — إذ يتخلّص أندرويد من أي سياسات متبقية لمالك الجهاز عند إلغاء تثبيت التطبيق.",
+  "removalPartialBody": "انتهى التفكيك، لكن بعض الخطوات لم تكتمل — وهي مذكورة أدناه. أعد محاولة الإزالة بدل إلغاء التثبيت بينما قد يكون مالك الجهاز ما زال نشطًا.",
   "removalStepDisarm": "تعطيل وسائل الحماية",
   "removalStepFocus": "إيقاف وضع التركيز",
   "removalStepUnsuspend": "إلغاء إيقاف التطبيقات",
@@ -878,6 +945,15 @@
   "visualSuspendWindow": "خلال (دقائق)",
   "visualSuspendDuration": "التعليق لمدة (دقائق)",
   "visualSaved": "تم حفظ إعدادات فحص المحتوى.",
+  "visualDetectorErrorTitle": "فحص المحتوى لا يعمل",
+  "visualDetectorErrorBody": "تعذّر تحميل مصنّف الصور، فالحظر البصري متوقف: {error}",
+  "@visualDetectorErrorBody": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "sealRulesTitle": "قواعد الختم",
   "sealRulesSub": "شروط يرفض فيها عزم إزالة نفسه",
   "sealIntro": "بينما أي قاعدة ختم نشطة، يرفض عزم إزالة مالك الجهاز — فورًا أو عبر بدء الإزالة القسرية المؤجلة. لا يمكن إلغاء ختم نشط؛ ينتهي فقط بانتهاء وقته أو زوال شرطه. ورمز الاسترداد الورقي لا يكسر ختمًا نشطًا. والإزالة القسرية التي بدأت قبل نشوء الختم تكتمل في موعدها بعد 24 ساعة. للختم قوة فقط بينما عزم مالك للجهاز: بدون مالك الجهاز يتيح أندرويد إلغاء تثبيت أي تطبيق ولا تستطيع أي قاعدة منع ذلك.",
@@ -1014,6 +1090,8 @@
   "noPerAppLists": "لا توجد قوائم لكل تطبيق بعد.",
   "addTargetAppsFirst": "أضف التطبيقات المستهدفة أعلاه أولاً — القوائم السلبية ترتبط بها في v1.",
   "addPerAppList": "إضافة قائمة لكل تطبيق",
+  "wordHint": "e.g., pussy",
+  "noMoreAppsForPassive": "كل التطبيقات المثبتة لديها قائمة سلبية بالفعل",
   "loadingWarningStages": "جارٍ تحميل مراحل التحذير…",
   "stagedWarningsTitle": "تحذيرات متدرجة قبل انتهاء الحد",
   "warningsBody": "تحذّر كل مرحلة مرة واحدة، قبل نفاد حد التطبيق اليومي بعدد الدقائق المضبوط. تُحفظ المراحل لتشغّلها خدمة إمكانية الوصول؛ توصيل الإشعارات يعتمد على المنبّه الأصلي.",
@@ -1365,6 +1443,16 @@
   },
   "editMembers": "تحرير الأعضاء",
   "editLimit": "تحرير الحد",
+  "editGroupWindows": "تحرير النوافذ الزمنية",
+  "groupWindowsUpdatedDesc": "تم تحديث النوافذ الزمنية لمجموعة {group}",
+  "@groupWindowsUpdatedDesc": {
+    "description": "Undo snackbar for a group time-windows save.",
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
   "renameGroupAction": "إعادة تسمية المجموعة",
   "deleteGroup": "حذف المجموعة",
   "membersOf": "أعضاء {group}",
@@ -1683,6 +1771,17 @@
       }
     }
   },
+  "appGroupTile": "المجموعة",
+  "noGroup": "بلا مجموعة",
+  "selectGroupTitle": "اختر مجموعة",
+  "groupAssignedDesc": "تم تحديث مجموعة {app}",
+  "@groupAssignedDesc": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
   "noRestrictionsFor": "لا قيود متاحة لـ{app}. هذا التطبيق لا يعلن عن أي قيود مُدارة.",
   "@noRestrictionsFor": {
     "placeholders": {
@@ -1737,7 +1836,7 @@
   "removalLoadingTitle": "جارٍ إكمال إزالة مالك الجهاز…",
   "removalLoadingBody": "يرجى الانتظار. لا تغلق التطبيق ولا تقم بإلغاء التثبيت حتى يكتمل التفكيك.",
   "removalTimeoutWarningTitle": "لم يكتمل التفكيك — لا تقم بإلغاء التثبيت بعد",
-  "removalTimeoutWarningBody": "تمت إزالة مالك الجهاز، لكن النظام لم ينتهِ من تسوية جميع خطوات التفكيك بعد. لا تقم بإلغاء التثبيت الآن حتى لا يتعطل الجهاز. الفحوصات التالية لم يتم التحقق منها:",
+  "removalTimeoutWarningBody": "لم ينتهِ التفكيك خلال المهلة، فالنتيجة غير مؤكدة — وقد يكون مالك الجهاز ما زال نشطًا. لا تقم بإلغاء التثبيت الآن حتى لا يتعطل الجهاز. الفحوصات التالية لم يتم التحقق منها:",
   "removalRecheckAction": "إعادة التحقق من الحالة",
   "removalUnverifiedOwner": "مالك الجهاز لا يزال نشطاً",
   "removalUnverifiedAdmin": "مسؤول الجهاز لا يزال نشطاً",
@@ -1801,5 +1900,40 @@
   "removeOwnerConsequenceUninstall": "السماح بإلغاء تثبيت تطبيق عزم.",
   "removeOwnerUnderstandCheckbox": "أدرك عواقب هذا الإجراء",
   "removeOwnerConfirmButton": "إزالة الحماية",
-  "scratchToReveal": "اخدش للكشف"
+  "scratchToReveal": "اخدش للكشف",
+  "@torrentDetectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@torrentBlockedMsg": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@uninstallBlockRemovedFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "@groupBlockedMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@groupUnblockedMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

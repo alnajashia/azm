@@ -13,6 +13,7 @@ import com.alnajashia.azm.accessibility.AzmAccessibilityService
 import com.alnajashia.azm.data.AzmState
 import com.alnajashia.azm.data.ColourModesController
 import com.alnajashia.azm.data.SettingsStore
+import com.alnajashia.azm.data.SuspensionReason
 import com.alnajashia.azm.deviceowner.DeviceOwnerManager
 import com.alnajashia.azm.shizuku.ShizukuProvisioning
 import org.lsposed.hiddenapibypass.HiddenApiBypass
@@ -53,6 +54,9 @@ class AzmApplication : Application() {
             }
             if (change == "added" || change == "replaced") {
                 reapplyHiddenIfNeeded(pkg)
+            }
+            if (change == "added") {
+                suspendTorrentIfNeeded(pkg)
             }
             AzmState.eventSink?.invoke(
                 "packageChanged",
@@ -95,6 +99,39 @@ class AzmApplication : Application() {
                 Log.d(TAG, "reapplyHiddenIfNeeded: package=$packageName reHidden=$hidden")
             } catch (e: Exception) {
                 Log.w(TAG, "reapplyHiddenIfNeeded failed for $packageName", e)
+            }
+        }.start()
+    }
+
+    /**
+     * Batch F, item 4: port of DeChainer's install-time torrent block
+     * (`DechainerAccessibilityService.kt:181-183`) — a freshly
+     * installed torrent client is suspended at once while
+     * block-torrents is on. Runs off the main thread like
+     * [reapplyHiddenIfNeeded]; failures are logged, never faked.
+     * (The `setPackagesSuspended` call also applies item 6's auto
+     * uninstall-block, so a new torrent app cannot be uninstalled to
+     * escape either.)
+     */
+    private fun suspendTorrentIfNeeded(packageName: String) {
+        if (packageName == this.packageName) return
+        // v1.0.5 fix #6: never apply policy while a removal teardown
+        // is in progress.
+        if (SettingsStore.isRemovalInProgress()) return
+        if (!SettingsStore.isBlockTorrentsEnabled()) return
+        val appContext = this
+        Thread {
+            try {
+                if (!DeviceOwnerManager.isTorrentApp(appContext, packageName)) return@Thread
+                DeviceOwnerManager.setPackagesSuspended(
+                    appContext,
+                    listOf(packageName),
+                    true,
+                    SuspensionReason.TORRENT_APP,
+                )
+                Log.d(TAG, "suspendTorrentIfNeeded: suspended $packageName")
+            } catch (e: Exception) {
+                Log.w(TAG, "suspendTorrentIfNeeded failed for $packageName", e)
             }
         }.start()
     }

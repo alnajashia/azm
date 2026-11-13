@@ -123,6 +123,18 @@ class _ColourModesScreenState extends State<ColourModesScreen> {
       };
 
   Future<void> _save(ColourModesConfig next) async {
+    // v1.0.1: a change that ADDS enforcement (enabling the feature
+    // or switching a mode on) first makes sure the accessibility
+    // service is running and WRITE_SECURE_SETTINGS is granted —
+    // per-mode toggles used to save with no such check, and the
+    // sync below then failed silently, leaving the toggle on with
+    // nothing applied on the device.
+    final current = _config;
+    final addsEnforcement = next.enabled &&
+        (current == null ||
+            !current.enabled ||
+            next.modes.difference(current.modes).isNotEmpty);
+    if (addsEnforcement && !await _ensurePrerequisites()) return;
     setState(() => _busy = true);
     try {
       final result = await widget.controller.channel.setColourModesConfig(next);
@@ -132,13 +144,86 @@ class _ColourModesScreenState extends State<ColourModesScreen> {
         return;
       }
       setState(() => _config = next);
-      await widget.controller.channel.syncColourModes();
+      // v1.0.1: the sync result used to be ignored — when the
+      // service is not running it returns false and nothing is
+      // applied. Say so honestly instead of showing the toggle on.
+      final synced = await widget.controller.channel.syncColourModes();
+      if (!synced && next.enabled && next.modes.isNotEmpty && mounted) {
+        showInfoSnackBar(
+          context,
+          context.l10n.colourModesStatusNoAccessibility,
+        );
+      }
       await _refreshStatus();
     } catch (e) {
       if (mounted) await showErrorCard(context, e);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Makes sure the accessibility service is running and
+  /// WRITE_SECURE_SETTINGS is granted before anything is enforced.
+  /// Returns false when the user declines or the prerequisites
+  /// still are not met. Shared by the master toggle and [_save].
+  Future<bool> _ensurePrerequisites() async {
+    var status = await _refreshStatus();
+    if (status == null || !mounted) return false;
+    if (!status.accessibilityServiceEnabled) {
+      final enable = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(dialogContext.l10n.colourModesNeedAccessibilityTitle),
+          content: Text(
+            dialogContext.l10n.colourModesNeedAccessibility,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(dialogContext.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(dialogContext.l10n.enableAccessibility),
+            ),
+          ],
+        ),
+      );
+      if (enable != true || !mounted) return false;
+      try {
+        await widget.controller.channel.setAccessibilityEnabled(true);
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+        return false;
+      }
+      status = await _refreshStatus();
+      if (status == null || !status.accessibilityServiceEnabled) {
+        if (mounted) {
+          showInfoSnackBar(context, context.l10n.accessibilityStillDisabled);
+        }
+        return false;
+      }
+    }
+    if (!status.writeSecureSettingsGranted) {
+      try {
+        final granted =
+            await widget.controller.channel.grantWriteSecureSettings();
+        if (!granted) {
+          if (mounted) {
+            showInfoSnackBar(
+              context,
+              context.l10n.secureSettingsGrantFailed,
+            );
+          }
+          return false;
+        }
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+        return false;
+      }
+      await _refreshStatus();
+    }
+    return true;
   }
 
   /// A locked change: explain, offer the recovery gate, retry after
@@ -178,65 +263,8 @@ class _ColourModesScreenState extends State<ColourModesScreen> {
   Future<void> _toggleEnabled(bool value) async {
     final config = _config;
     if (config == null) return;
-    if (value) {
-      var status = await _refreshStatus();
-      if (status == null || !mounted) return;
-      if (!status.accessibilityServiceEnabled) {
-        final enable = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(dialogContext.l10n.colourModesNeedAccessibilityTitle),
-            content: Text(
-              dialogContext.l10n.colourModesNeedAccessibility,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(dialogContext.l10n.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(dialogContext.l10n.enableAccessibility),
-              ),
-            ],
-          ),
-        );
-        if (enable != true || !mounted) return;
-        try {
-          await widget.controller.channel.setAccessibilityEnabled(true);
-        } catch (e) {
-          if (mounted) await showErrorCard(context, e);
-          return;
-        }
-        status = await _refreshStatus();
-        if (status == null ||
-            !status.accessibilityServiceEnabled) {
-          if (mounted) {
-            showInfoSnackBar(context, context.l10n.accessibilityStillDisabled);
-          }
-          return;
-        }
-      }
-      if (!status.writeSecureSettingsGranted) {
-        try {
-          final granted = await widget.controller.channel
-              .grantWriteSecureSettings();
-          if (!granted) {
-            if (mounted) {
-              showInfoSnackBar(
-                context,
-                context.l10n.secureSettingsGrantFailed,
-              );
-            }
-            return;
-          }
-        } catch (e) {
-          if (mounted) await showErrorCard(context, e);
-          return;
-        }
-        await _refreshStatus();
-      }
-    }
+    // Turning on is gated inside _save (prerequisites); turning
+    // off must always work, even with the service down.
     await _save(config.copyWith(enabled: value));
   }
 
@@ -499,22 +527,30 @@ class _ColourModesScreenState extends State<ColourModesScreen> {
                   ),
                 ),
               ),
-              Slider(
-                min: 0,
-                max: ColourModesConfig.maxNightLightIntensity.toDouble(),
-                divisions: ColourModesConfig.maxNightLightIntensity,
-                value:
-                    (_intensityDraft ?? config.nightLightIntensity).toDouble(),
-                onChanged: _busy
-                    ? null
-                    : (v) => setState(
-                        () => _intensityDraft = v.round(),
-                      ),
-                onChangeEnd: (v) {
-                  final intensity = v.round();
-                  setState(() => _intensityDraft = null);
-                  _save(config.copyWith(nightLightIntensity: intensity));
-                },
+              // v1.0.1: sliders are LTR even in the Arabic UI, so the
+              // value always rises left-to-right with the number above
+              // it. (In RTL the slider mirrors and the right end is
+              // the minimum — the user dragged it right expecting
+              // maximum and got level 0, i.e. no dimming at all.)
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: Slider(
+                  min: 0,
+                  max: ColourModesConfig.maxNightLightIntensity.toDouble(),
+                  divisions: ColourModesConfig.maxNightLightIntensity,
+                  value: (_intensityDraft ?? config.nightLightIntensity)
+                      .toDouble(),
+                  onChanged: _busy
+                      ? null
+                      : (v) => setState(
+                          () => _intensityDraft = v.round(),
+                        ),
+                  onChangeEnd: (v) {
+                    final intensity = v.round();
+                    setState(() => _intensityDraft = null);
+                    _save(config.copyWith(nightLightIntensity: intensity));
+                  },
+                ),
               ),
             ],
           ],
@@ -525,19 +561,23 @@ class _ColourModesScreenState extends State<ColourModesScreen> {
                 l10n.extraDimLevel(_dimDraft ?? config.extraDimLevel),
               ),
             ),
-            Slider(
-              min: 0,
-              max: 100,
-              divisions: 100,
-              value: (_dimDraft ?? config.extraDimLevel).toDouble(),
-              onChanged: _busy
-                  ? null
-                  : (v) => setState(() => _dimDraft = v.round()),
-              onChangeEnd: (v) {
-                final level = v.round();
-                setState(() => _dimDraft = null);
-                _save(config.copyWith(extraDimLevel: level));
-              },
+            // v1.0.1: LTR slider — see the night-light slider above.
+            Directionality(
+              textDirection: TextDirection.ltr,
+              child: Slider(
+                min: 0,
+                max: 100,
+                divisions: 100,
+                value: (_dimDraft ?? config.extraDimLevel).toDouble(),
+                onChanged: _busy
+                    ? null
+                    : (v) => setState(() => _dimDraft = v.round()),
+                onChangeEnd: (v) {
+                  final level = v.round();
+                  setState(() => _dimDraft = null);
+                  _save(config.copyWith(extraDimLevel: level));
+                },
+              ),
             ),
           ],
           Padding(

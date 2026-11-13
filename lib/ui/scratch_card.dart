@@ -3,9 +3,15 @@
 /// Features:
 /// - Opaque FLAT cover (#0B0B0C in dark mode, #D90429 in light mode, no gradients).
 /// - CustomPainter + drag erase via BlendMode.dstOut on an offscreen canvas.
-/// - Checkpoint grid tracks erase coverage: ~60% erased fades cover and triggers onRevealed.
+/// - Checkpoint grid tracks erase coverage: ~20% erased fades cover and triggers onRevealed.
+///   (Batch F, item 2: the old 60% threshold made scratching feel slow —
+///   the user had to scrub most of the card. One swipe now reveals.)
 /// - TalkBack / screen-reader "show code" accessibility alternative.
 /// - Constrains repaints with RepaintBoundary.
+/// - The code/hint TextPainters are laid out ONCE per card size in the
+///   state and handed to the painter ready-made: laying them out on
+///   every paint frame was the other half of the slowness (a full
+///   saveLayer redraw plus two text layouts per finger-move event).
 library;
 
 import 'package:flutter/material.dart';
@@ -21,9 +27,9 @@ class ScratchCard extends StatefulWidget {
     this.text,
     this.textStyle,
     this.revealed = false,
-    this.threshold = 0.60,
+    this.threshold = 0.20,
     this.coverColor,
-    this.scratchRadius = 24.0,
+    this.scratchRadius = 30.0,
   });
 
   final Widget child;
@@ -50,6 +56,58 @@ class _ScratchCardState extends State<ScratchCard>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   bool _thresholdReached = false;
+
+  // Laid-out text painters, cached per card size (Batch F, item 2).
+  // The painter used to call TextPainter.layout() on EVERY paint frame;
+  // now the state lays them out once and the painter only paints.
+  // The cache key is size + code text + hint text, so a regenerated
+  // code or a locale change re-lays out exactly once.
+  Size? _painterSize;
+  String? _painterText;
+  String? _painterHint;
+  TextPainter? _codePainter;
+  TextPainter? _hintPainter;
+
+  void _ensurePainters(Size size, TextStyle? codeStyle, String hintText) {
+    if (_painterSize == size &&
+        _painterText == widget.text &&
+        _painterHint == hintText) {
+      return;
+    }
+    _painterSize = size;
+    _painterText = widget.text;
+    _painterHint = hintText;
+    _codePainter = widget.text == null
+        ? null
+        : (TextPainter(
+              text: TextSpan(
+                text: widget.text,
+                style: widget.textStyle ??
+                    codeStyle ??
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                      letterSpacing: 2.0,
+                    ),
+              ),
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.ltr,
+            )..layout(maxWidth: size.width - 32));
+    _hintPainter = TextPainter(
+      text: TextSpan(
+        text: hintText,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          letterSpacing: 0.5,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: size.width - 32);
+  }
 
   @override
   void initState() {
@@ -168,6 +226,11 @@ class _ScratchCardState extends State<ScratchCard>
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final size = Size(constraints.maxWidth, 140);
+                _ensurePainters(
+                  size,
+                  defaultTextStyle,
+                  l10n.scratchToReveal,
+                );
                 return SizedBox(
                   width: size.width,
                   height: size.height,
@@ -198,14 +261,13 @@ class _ScratchCardState extends State<ScratchCard>
                                   painter: _ScratchPainter(
                                     scratchPath: _scratchPath,
                                     coverColor: cover,
-                                    hintText: l10n.scratchToReveal,
                                     opacity: opacity,
                                     showHint: _erasedCheckpoints.length < (_totalCheckpoints * 0.25),
                                     scratchRadius: widget.scratchRadius,
                                     cardColor: cardBg,
                                     borderColor: cardBorder,
-                                    text: widget.text,
-                                    textStyle: widget.textStyle ?? defaultTextStyle,
+                                    codePainter: _codePainter,
+                                    hintPainter: _hintPainter,
                                   ),
                                 ),
                               ),
@@ -236,29 +298,30 @@ class _ScratchCardState extends State<ScratchCard>
 }
 
 class _ScratchPainter extends CustomPainter {
-  const _ScratchPainter({
+  _ScratchPainter({
     required this.scratchPath,
     required this.coverColor,
-    required this.hintText,
     required this.opacity,
     required this.showHint,
     required this.scratchRadius,
     this.cardColor,
     this.borderColor,
-    this.text,
-    this.textStyle,
+    this.codePainter,
+    this.hintPainter,
   });
 
   final Path scratchPath;
   final Color coverColor;
-  final String hintText;
   final double opacity;
   final bool showHint;
   final double scratchRadius;
   final Color? cardColor;
   final Color? borderColor;
-  final String? text;
-  final TextStyle? textStyle;
+
+  /// Already laid out by the state (see _ensurePainters) — the painter
+  /// only paints them, never lays out text mid-frame.
+  final TextPainter? codePainter;
+  final TextPainter? hintPainter;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -270,9 +333,10 @@ class _ScratchPainter extends CustomPainter {
       const Radius.circular(AzmRadius.large),
     );
 
-    // If text is provided, paint card background and the code underneath
-    // directly on the canvas so it isn't inspected in the widget tree.
-    if (text != null && cardColor != null) {
+    // If a code painter is provided, paint card background and the code
+    // underneath directly on the canvas so it isn't inspected in the
+    // widget tree. The painter is pre-laid-out; no layout happens here.
+    if (codePainter != null && cardColor != null) {
       final bgPaint = Paint()
         ..color = cardColor!
         ..style = PaintingStyle.fill;
@@ -286,26 +350,11 @@ class _ScratchPainter extends CustomPainter {
         canvas.drawRRect(rrect, borderPaint);
       }
 
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: textStyle ??
-              const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-                letterSpacing: 2.0,
-              ),
-        ),
-        textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr,
-      )..layout(maxWidth: size.width - 32);
-
       final textOffset = Offset(
-        (size.width - textPainter.width) / 2,
-        (size.height - textPainter.height) / 2,
+        (size.width - codePainter!.width) / 2,
+        (size.height - codePainter!.height) / 2,
       );
-      textPainter.paint(canvas, textOffset);
+      codePainter!.paint(canvas, textOffset);
     }
 
     // Save offscreen layer for dstOut blending
@@ -326,26 +375,12 @@ class _ScratchPainter extends CustomPainter {
     canvas.drawRRect(rrect, borderPaint);
 
     // 2. Draw hint text in the centre before heavy scratching
-    if (showHint && opacity > 0.3) {
-      final hintPainter = TextPainter(
-        text: TextSpan(
-          text: hintText,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            letterSpacing: 0.5,
-          ),
-        ),
-        textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr,
-      )..layout(maxWidth: size.width - 32);
-
+    if (showHint && opacity > 0.3 && hintPainter != null) {
       final hintOffset = Offset(
-        (size.width - hintPainter.width) / 2,
-        (size.height - hintPainter.height) / 2,
+        (size.width - hintPainter!.width) / 2,
+        (size.height - hintPainter!.height) / 2,
       );
-      hintPainter.paint(canvas, hintOffset);
+      hintPainter!.paint(canvas, hintOffset);
     }
 
     // 3. Erase scratched areas via BlendMode.dstOut
@@ -366,6 +401,7 @@ class _ScratchPainter extends CustomPainter {
         oldDelegate.opacity != opacity ||
         oldDelegate.showHint != showHint ||
         oldDelegate.coverColor != coverColor ||
-        oldDelegate.text != text;
+        oldDelegate.codePainter != codePainter ||
+        oldDelegate.hintPainter != hintPainter;
   }
 }

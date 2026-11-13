@@ -2,6 +2,7 @@ package com.alnajashia.azm.channel
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -170,6 +171,12 @@ class PrivilegedChannelHandler(
             mapOf("secure" to enabled)
         }
         "getVisualBlockingConfig" -> VisualBlockingSettings.load().toMap()
+        // The detector's last init failure (if any) — the settings UI
+        // shows it as a warning instead of letting visual blocking
+        // fail silently when the bundled model cannot load.
+        "getVisualDetectorError" -> mapOf(
+            "error" to VisualBlockingSettings.detectorError(),
+        )
         "setVisualBlockingConfig" -> {
             val config = VisualBlockingSettings.configFromMap(call.arguments as? Map<*, *> ?: emptyMap<Any, Any>())
             VisualBlockingSettings.save(config)
@@ -319,8 +326,28 @@ class PrivilegedChannelHandler(
         // All installed browsers (Batch C, C1): the discovery port of
         // DeChainer's BrowserRestrictionsManager.getPossibleBrowsers.
         "listInstalledBrowsers" -> DeviceOwnerManager.listInstalledBrowsers(appContext)
+        // Torrent clients (Batch F, item 4): the discovery port of
+        // DeChainer's BrowserRestrictionsManager.getPossibleTorrentApps,
+        // plus the block_torrents flag (DeChainer's SecurityManager).
+        "getTorrentApps" -> DeviceOwnerManager.getPossibleTorrentApps(appContext)
+        "isBlockTorrentsEnabled" -> SettingsStore.isBlockTorrentsEnabled()
+        "setBlockTorrents" -> {
+            val enabled = call.reqBool("enabled")
+            SettingsStore.setBlockTorrentsEnabled(enabled)
+            enabled
+        }
+        // Auto uninstall-block for suspended apps (Batch F, item 6):
+        // the Settings switch. The setter applies/releases the rule
+        // for currently-suspended apps and returns the verified flag.
+        "isAutoBlockUninstallSuspended" ->
+            SettingsStore.isAutoBlockUninstallSuspended()
+        "setAutoBlockUninstallSuspended" -> {
+            val enabled = call.reqBool("enabled")
+            DeviceOwnerManager.setAutoBlockUninstallSuspended(appContext, enabled)
+        }
         // Private DNS
         "setPrivateDns" -> DeviceOwnerManager.setPrivateDns(appContext, call.reqString("hostname"))
+        "resetPrivateDns" -> DeviceOwnerManager.resetPrivateDns(appContext)
         "getPrivateDns" -> DeviceOwnerManager.getPrivateDns(appContext)
         // Secure-settings grant & Accessibility (provisioning layer)
         "grantWriteSecureSettings" -> {
@@ -515,6 +542,22 @@ class PrivilegedChannelHandler(
                         "timestamp" to entry.timestamp,
                     )
                 },
+            )
+        }
+        "getAppActivities" -> {
+            // v1.0.1: every activity an app declares, for "block the
+            // whole app" (the seen-activities log only knows activities
+            // the service already watched). The caller filters the
+            // protected ones client-side before saving.
+            val pkg = call.reqString("packageName")
+            @Suppress("DEPRECATION")
+            val info = appContext.packageManager.getPackageInfo(
+                pkg,
+                PackageManager.GET_ACTIVITIES,
+            )
+            mapOf(
+                "activities" to
+                    (info.activities?.map { it.name } ?: emptyList<String>()),
             )
         }
         "getSuspensionLogs" -> mapOf(

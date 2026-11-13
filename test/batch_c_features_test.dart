@@ -236,7 +236,9 @@ void main() {
         case 'getColourModesStatus':
           return fakeColourStatus;
         case 'syncColourModes':
-          return {'ok': true};
+          // The real sync only runs while the service instance
+          // exists; a stopped service is a silent no-op (v1.0.1).
+          return {'ok': fakeColourStatus['accessibilityServiceEnabled']};
         case 'grantWriteSecureSettings':
           return {'granted': true};
         case 'setAccessibilityEnabled':
@@ -249,6 +251,17 @@ void main() {
           return {'activities': fakeBlockedActivities};
         case 'getAccessedActivities':
           return {'activities': fakeAccessedActivities};
+        case 'getAppActivities':
+          // v1.0.1 follow-up: the example app declares three
+          // activities — one of them the launcher, which must be
+          // filtered out client-side.
+          return {
+            'activities': [
+              'com.example.app.MainActivity',
+              'com.example.app.SecondActivity',
+              'com.example.app.LauncherActivity',
+            ],
+          };
         default:
           return null;
       }
@@ -308,7 +321,10 @@ void main() {
       expect(find.text('Chrome'), findsOneWidget);
       expect(find.text('Example Browser'), findsOneWidget);
       expect(find.text('com.android.chrome'), findsOneWidget);
-      expect(find.byType(Switch), findsNWidgets(2));
+      // Batch DNS added a third switch (the DNS card's toggle) after
+      // the two browser allow-switches; Batch F added a fourth (the
+      // torrent card's toggle, disabled here — its mock has no data).
+      expect(find.byType(Switch), findsNWidgets(4));
       // Chrome is allowed (not suspended); Example is allowed too.
       expect(tester.widget<Switch>(find.byType(Switch).first).value, isTrue);
     });
@@ -449,7 +465,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // v1.0.1: the add flow picks the app first (search + system
+      // toggle), then the activity.
       await tester.tap(find.byIcon(Icons.add_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Block an activity'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Example'),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byType(TextField),
@@ -463,11 +489,49 @@ void main() {
         findsOneWidget,
       );
       // The dialog stays open and nothing was written.
-      expect(find.text('Block an activity'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
       expect(
         calls.where((c) => c.method == 'setBlockedActivities'),
         isEmpty,
       );
+    });
+
+    testWidgets('blocking the whole app saves every non-protected activity',
+        (tester) async {
+      await tester.pumpWidget(
+        buildTestApp(
+          child: ActivityBlockerScreen(controller: makeController()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.add_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Example'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // v1.0.1 follow-up: one tap blocks the whole app.
+      // (find.text, not widgetWithText: FilledButton.icon's label
+      // is a plain Text descendant; the text itself is the handle.)
+      await tester.tap(find.text('Block entire app'));
+      await tester.pumpAndSettle();
+
+      final saveCalls = calls.where(
+        (c) => c.method == 'setBlockedActivities',
+      );
+      expect(saveCalls, hasLength(1));
+      final saved = saveCalls.first.arguments['activities'] as List;
+      expect(saved, contains('com.example.app.MainActivity'));
+      expect(saved, contains('com.example.app.SecondActivity'));
+      // The launcher activity is protected and must be filtered out.
+      expect(saved, isNot(contains('com.example.app.LauncherActivity')));
+      // The already-blocked activity stays.
+      expect(saved, contains('com.example.app.BadActivity'));
+      expect(find.text('Blocked 2 activities of this app.'), findsOneWidget);
     });
 
     testWidgets('removing a block goes through confirm + gate',
@@ -679,6 +743,76 @@ void main() {
       );
       expect(tester.widget<Switch>(find.byType(Switch).at(1)).value, isFalse);
       controller.session.end();
+    });
+
+    testWidgets(
+        'v1.0.1: switching a mode on with the service off asks to '
+        'enable it and saves nothing', (tester) async {
+      fakeColourStatus['accessibilityServiceEnabled'] = false;
+      final controller = makeController();
+      await tester.pumpWidget(
+        buildTestApp(
+          child: ColourModesScreen(controller: controller),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Night light is off in the default config; its switch is the
+      // fourth Switch (master, grayscale, the grayscale card's
+      // "apply during focus" switch, night light).
+      final nightLightSwitch = find.byType(Switch).at(3);
+      expect(tester.widget<Switch>(nightLightSwitch).value, isFalse);
+      await tester.tap(nightLightSwitch);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Accessibility service is off'), findsOneWidget);
+      expect(
+        calls.where((c) => c.method == 'setColourModesConfig'),
+        isEmpty,
+      );
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets(
+        'v1.0.1: a slider change with the service off saves but '
+        'says the sync did not apply', (tester) async {
+      fakeColourStatus['accessibilityServiceEnabled'] = false;
+      fakeColourConfig['modes'] = ['EXTRA_DIM'];
+      fakeColourConfig['extraDimLevel'] = 50;
+      final controller = makeController();
+      await tester.pumpWidget(
+        buildTestApp(
+          child: ColourModesScreen(controller: controller),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final slider = find.byType(Slider);
+      expect(slider, findsOneWidget);
+      await tester.drag(slider, const Offset(100, 0));
+      await tester.pumpAndSettle();
+
+      final saveCalls = calls.where(
+        (c) => c.method == 'setColourModesConfig',
+      );
+      expect(saveCalls, hasLength(1));
+      expect(
+        (saveCalls.single.arguments['extraDimLevel'] as int),
+        greaterThan(50),
+      );
+      // The same text also sits in the status card, so assert the
+      // snackbar specifically.
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.text(
+            'Accessibility service is off — colour modes cannot apply. '
+            'Turn it on below.',
+          ),
+        ),
+        findsOneWidget,
+      );
     });
   });
 

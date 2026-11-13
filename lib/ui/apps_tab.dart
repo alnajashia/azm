@@ -32,6 +32,11 @@ class _AppsTabState extends State<AppsTab> {
   String _query = '';
   UsageToday? _usage;
 
+  // Batch F, items 7/9: groups appear in the app filters — one chip
+  // per group; selecting it lists only that group's apps.
+  List<AppGroupModel>? _groups;
+  String? _groupFilter; // null = all apps
+
   PrivilegedChannel get _channel => widget.controller.channel;
 
   @override
@@ -60,13 +65,31 @@ class _AppsTabState extends State<AppsTab> {
           _usage = usage;
         });
       }
+      // Groups are filter data only; a failure here must not take the
+      // app list down.
+      try {
+        final groups = await _channel.getGroups();
+        if (mounted) setState(() => _groups = groups);
+      } catch (_) {
+        // Ignored: see above.
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e);
     }
   }
 
   List<InstalledApp> get _filtered {
-    final apps = _apps ?? const [];
+    var apps = _apps ?? const <InstalledApp>[];
+    final filterId = _groupFilter;
+    if (filterId != null) {
+      final packages = _groups
+              ?.where((g) => g.id == filterId)
+              .firstOrNull
+              ?.packages
+              .toSet() ??
+          const <String>{};
+      apps = apps.where((a) => packages.contains(a.packageName)).toList();
+    }
     if (_query.isEmpty) return apps;
     final q = _query.toLowerCase();
     return apps
@@ -122,6 +145,34 @@ class _AppsTabState extends State<AppsTab> {
             onChanged: (v) => setState(() => _query = v),
           ),
         ),
+        // Batch F, items 7/9: groups appear in the app filters — one
+        // chip per group; selecting it lists only that group's apps.
+        if ((_groups ?? const []).isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: Text(l10n.allFilter),
+                    selected: _groupFilter == null,
+                    onSelected: (_) => setState(() => _groupFilter = null),
+                  ),
+                  for (final g in _groups!)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 8),
+                      child: FilterChip(
+                        label: Text(g.name),
+                        selected: _groupFilter == g.id,
+                        onSelected: (_) =>
+                            setState(() => _groupFilter = g.id),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         // v1.0.5 audit C-M4 (fix-#3 completion): the header controls sit
         // in a titled card like every other tab's groups. The search
         // field above stays flat chrome (it is a filter, not a setting
@@ -140,6 +191,23 @@ class _AppsTabState extends State<AppsTab> {
                     ? null
                     : () => Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => GroupsScreen(
+                            controller: widget.controller,
+                            apps: _apps!,
+                          ),
+                        )),
+              ),
+              // Batch F, items 5/8: the per-app uninstall block
+              // already lived in the app sheet — this tile makes it
+              // discoverable and manageable in one place.
+              ListTile(
+                leading: const Icon(Icons.block_outlined),
+                title: Text(l10n.uninstallBlockScreenTitle),
+                subtitle: Text(l10n.uninstallBlockScreenSub),
+                trailing: const Icon(Icons.navigate_next_outlined),
+                onTap: _apps == null
+                    ? null
+                    : () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => UninstallBlockScreen(
                             controller: widget.controller,
                             apps: _apps!,
                           ),
@@ -218,6 +286,14 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
   // race the first through the recovery gate.
   bool _busy = false;
 
+  /// Groups for the "Group" tile (Dechainer parity, item 7). Loaded
+  /// best-effort: a failure leaves the tile disabled, never the sheet.
+  List<AppGroupModel>? _groups;
+
+  /// IDs of groups blocked as a whole — needed so moving an app into
+  /// or out of a blocked group keeps its suspension state right.
+  Set<String>? _blockedGroupIds;
+
   PrivilegedChannel get _channel => widget.controller.channel;
 
   @override
@@ -225,6 +301,30 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
     super.initState();
     _app = widget.app;
     _loadEnforcement();
+    _loadGroups();
+  }
+
+  Future<void> _loadGroups() async {
+    try {
+      final groups = await _channel.getGroups();
+      if (mounted) setState(() => _groups = groups);
+    } catch (_) {
+      // Ignored: see above.
+    }
+    try {
+      final ids = await widget.controller.config.getBlockedGroupIds();
+      if (mounted) setState(() => _blockedGroupIds = ids);
+    } catch (_) {
+      // Ignored: see above.
+    }
+  }
+
+  AppGroupModel? _currentGroup() {
+    final groups = _groups;
+    if (groups == null) return null;
+    return groups
+        .where((g) => g.packages.contains(_app.packageName))
+        .firstOrNull;
   }
 
   Future<void> _loadEnforcement() async {
@@ -369,6 +469,19 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
               ),
             )),
           ),
+          // Dechainer parity (item 7): the per-app sheet has a
+          // "Group" entry — the original's sheet lists Group, Time
+          // limit, Time windows, App restrictions, Suspend, Prevent
+          // Uninstall, Block. Azm had every entry except Group.
+          ListTile(
+            leading: const Icon(Icons.group_work_outlined),
+            title: Text(l10n.appGroupTile),
+            subtitle: Text(_groups == null
+                ? l10n.loadingShort
+                : _currentGroup()?.name ?? l10n.noGroup),
+            trailing: const Icon(Icons.edit_outlined),
+            onTap: _groups == null ? null : _pickGroup,
+          ),
             ],
           ),
           if (_enforcementError != null)
@@ -502,10 +615,264 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
     }
   }
 
+  /// Assigns this app to a group (Dechainer parity, item 7: the
+  /// per-app sheet has a "Group" entry — Azm could only assign groups
+  /// from the Groups screen). The picker is the original's
+  /// AppGroupPickerDialog: None + groups + New group.
+  Future<void> _pickGroup() async {
+    final groups = _groups;
+    if (groups == null) return;
+    final result = await showDialog<({bool confirmed, String? groupId})>(
+      context: context,
+      builder: (_) => _GroupPickerDialog(
+        channel: _channel,
+        groups: groups,
+        currentGroupId: _currentGroup()?.id,
+      ),
+    );
+    if (result == null || !result.confirmed || !mounted) return;
+    // Reload: the picker may have created a new group, which the
+    // stale local list does not contain.
+    List<AppGroupModel> fresh;
+    try {
+      fresh = await _channel.getGroups();
+    } catch (e) {
+      if (mounted) await showErrorCard(context, e);
+      return;
+    }
+    if (!mounted) return;
+    final newGroupId = result.groupId;
+    final oldGroup = fresh
+        .where((g) => g.packages.contains(_app.packageName))
+        .firstOrNull;
+    if (newGroupId == oldGroup?.id) return;
+    final newGroup = newGroupId == null
+        ? null
+        : fresh.where((g) => g.id == newGroupId).firstOrNull;
+    // Gate (mirror GroupsScreen._editMembers): removing from a
+    // restricted group loosens; adding to a restricted group activates.
+    final loosening = oldGroup != null &&
+        _GroupsScreenState._groupHasRestrictions(oldGroup);
+    final activates = newGroup != null &&
+        _GroupsScreenState._groupHasRestrictions(newGroup);
+    Future<void> save() async {
+      final updated = <AppGroupModel>[];
+      for (final g in fresh) {
+        final packages = g.packages.toList();
+        if (g.id == oldGroup?.id) packages.remove(_app.packageName);
+        if (g.id == newGroup?.id &&
+            !packages.contains(_app.packageName)) {
+          packages.add(_app.packageName);
+        }
+        updated.add(g.copyWith(packages: packages));
+      }
+      final saved = await _channel.setGroups(updated);
+      // A blocked group suspends members added to it at once, and
+      // releases members removed from it (mirror
+      // GroupsScreen._editMembers). Moving between two blocked groups
+      // keeps the app suspended — neither call runs.
+      final newBlocked = newGroup != null &&
+          (_blockedGroupIds?.contains(newGroup.id) ?? false);
+      final oldBlocked = oldGroup != null &&
+          (_blockedGroupIds?.contains(oldGroup.id) ?? false);
+      try {
+        if (newBlocked && !oldBlocked) {
+          await _channel.setAppSuspended(
+            [_app.packageName],
+            true,
+            reason: 'GROUP',
+          );
+        } else if (oldBlocked && !newBlocked) {
+          await _channel.setAppSuspended([_app.packageName], false);
+        }
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
+      if (mounted) setState(() => _groups = saved);
+    }
+
+    if (loosening || activates) {
+      await runLoosening(context, widget.controller, save);
+    } else {
+      await runTighteningWithUndo(
+        context,
+        PendingChange(
+          description: context.l10n.groupAssignedDesc(_app.label),
+          direction: ChangeDirection.tightening,
+          apply: save,
+        ),
+      );
+    }
+  }
+
   static bool _sameWindowSet(List<TimeWindowModel> a, List<(int, int)> b) {
     final sa = a.map((w) => (w.startMinute, w.endMinute)).toSet();
     final sb = b.toSet();
     return sa.length == sb.length && sa.containsAll(sb);
+  }
+}
+
+/// Assigns one app to a group (Dechainer's AppGroupPickerDialog):
+/// "No group" + one radio per group + "New group" (an inline name
+/// field that creates the group immediately, like GroupsScreen's
+/// create flow). Returns whether the user confirmed, and the selected
+/// group id (null = no group).
+class _GroupPickerDialog extends StatefulWidget {
+  const _GroupPickerDialog({
+    required this.channel,
+    required this.groups,
+    required this.currentGroupId,
+  });
+  final PrivilegedChannel channel;
+  final List<AppGroupModel> groups;
+  final String? currentGroupId;
+  @override
+  State<_GroupPickerDialog> createState() => _GroupPickerDialogState();
+}
+
+class _GroupPickerDialogState extends State<_GroupPickerDialog> {
+  late List<AppGroupModel> _groups;
+  String? _selected;
+  bool _showNameField = false;
+  bool _creating = false;
+  Object? _createError;
+  final _nameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _groups = widget.groups;
+    _selected = widget.currentGroupId;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _createGroup() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty || _creating) return;
+    setState(() {
+      _creating = true;
+      _createError = null;
+    });
+    try {
+      final created = AppGroupModel(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        name: name,
+      );
+      final saved = await widget.channel.setGroups([..._groups, created]);
+      if (mounted) {
+        setState(() {
+          _groups = saved;
+          _selected = created.id;
+          _showNameField = false;
+          _creating = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _createError = e;
+          _creating = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.selectGroupTitle),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // RadioGroup (not per-tile groupValue/onChanged — those
+            // are deprecated in this Flutter; same pattern as the DNS
+            // provider choice in config_screens.dart).
+            RadioGroup<String?>(
+              groupValue: _selected,
+              onChanged: (v) => setState(() => _selected = v),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<String?>(
+                    title: Text(l10n.noGroup),
+                    value: null,
+                  ),
+                  for (final g in _groups)
+                    RadioListTile<String?>(
+                      title: Text(g.name),
+                      subtitle: Text(l10n.groupAppsLimitLine(
+                        g.packages.length,
+                        formatMinutes(
+                          g.weeklyMinutes != null
+                              ? g.weeklyMinutes![
+                                  DateTime.now().weekday - 1]
+                              : g.dailyMinutes,
+                          l10n,
+                        ),
+                      )),
+                      value: g.id,
+                    ),
+                ],
+              ),
+            ),
+            if (_showNameField)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: TextField(
+                  controller: _nameController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: l10n.groupNameLabel,
+                    errorText:
+                        _createError == null ? null : l10n.errGeneric,
+                  ),
+                  onSubmitted: (_) => _createGroup(),
+                ),
+              )
+            else
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _showNameField = true),
+                  icon: const Icon(Icons.add_outlined),
+                  label: Text(l10n.newGroup),
+                ),
+              ),
+            if (_showNameField)
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: FilledButton(
+                  onPressed: _creating ? null : _createGroup,
+                  child: Text(l10n.create),
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(
+            context,
+            (confirmed: false, groupId: widget.currentGroupId),
+          ),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(
+            context,
+            (confirmed: true, groupId: _selected),
+          ),
+          child: Text(l10n.confirm),
+        ),
+      ],
+    );
   }
 }
 
@@ -761,6 +1128,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
   List<AppGroupModel>? _groups;
   Object? _error;
 
+  // Batch F, items 7/9: IDs of groups blocked as a whole. The
+  // enforcement is per-package suspension; this set is the record of
+  // WHICH groups are blocked, so member edits and the list UI can
+  // tell a blocked group from a merely limited one.
+  Set<String>? _blockedIds;
+
   @override
   void initState() {
     super.initState();
@@ -773,6 +1146,14 @@ class _GroupsScreenState extends State<GroupsScreen> {
       if (mounted) setState(() => _groups = groups);
     } catch (e) {
       if (mounted) setState(() => _error = e);
+    }
+    // Blocked-group IDs are display/control data only; a failure here
+    // must not take the screen down.
+    try {
+      final ids = await widget.controller.config.getBlockedGroupIds();
+      if (mounted) setState(() => _blockedIds = ids);
+    } catch (_) {
+      // Ignored: see above.
     }
   }
 
@@ -830,6 +1211,50 @@ class _GroupsScreenState extends State<GroupsScreen> {
     });
   }
 
+  /// Blocks (or unblocks) a group as a whole (Batch F, items 7/9):
+  /// every member is suspended with reason GROUP — the group is
+  /// controlled like one app instead of app by app. Blocking is a
+  /// tightening (direct); unblocking is a loosening (recovery-gated).
+  /// An empty group still records the block, so members added to it
+  /// later are suspended on entry (see _editMembers).
+  Future<void> _toggleGroupBlock(AppGroupModel g, bool block) async {
+    Future<void> apply() async {
+      if (g.packages.isNotEmpty) {
+        await widget.controller.channel.setAppSuspended(
+          g.packages,
+          block,
+          reason: block ? 'GROUP' : null,
+        );
+      }
+      final ids = {...?_blockedIds};
+      if (block) {
+        ids.add(g.id);
+      } else {
+        ids.remove(g.id);
+      }
+      await widget.controller.config.setBlockedGroupIds(ids);
+      if (mounted) {
+        setState(() => _blockedIds = ids);
+        showInfoSnackBar(
+          context,
+          block
+              ? context.l10n.groupBlockedMsg(g.name)
+              : context.l10n.groupUnblockedMsg(g.name),
+        );
+      }
+    }
+
+    if (block) {
+      try {
+        await apply();
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
+    } else {
+      await runLoosening(context, widget.controller, apply);
+    }
+  }
+
   Future<void> _rename(AppGroupModel group) async {
     final nameController = TextEditingController(text: group.name);
     final name = await showDialog<String>(
@@ -874,6 +1299,34 @@ class _GroupsScreenState extends State<GroupsScreen> {
       g.dailyWindows.isNotEmpty ||
       (g.weeklyWindows?.any((d) => d.isNotEmpty) ?? false);
 
+  /// Whether the group has any allowed time windows at all.
+  static bool _groupHasWindows(AppGroupModel g) =>
+      g.dailyWindows.isNotEmpty ||
+      (g.weeklyWindows?.any((d) => d.isNotEmpty) ?? false);
+
+  /// The group row subtitle — Dechainer's Manage groups dialog shows
+  /// the same three facts: app count, limit, time windows (plus the
+  /// blocked badge when the group is blocked as a whole).
+  String _subtitleFor(AppGroupModel g) {
+    final l10n = context.l10n;
+    final todayMinutes = g.weeklyMinutes != null
+        ? g.weeklyMinutes![DateTime.now().weekday - 1]
+        : g.dailyMinutes;
+    var line = l10n.groupAppsLimitLine(
+      g.packages.length,
+      formatMinutes(todayMinutes, l10n),
+    );
+    final windowCount = g.dailyWindows.length +
+        (g.weeklyWindows?.expand((d) => d).length ?? 0);
+    if (windowCount > 0) {
+      line += ' • ${l10n.windowsCount(windowCount)}';
+    }
+    if (_blockedIds?.contains(g.id) == true) {
+      line = '${l10n.groupBlockedBadge} • $line';
+    }
+    return line;
+  }
+
   Future<void> _editMembers(AppGroupModel group) async {
     final result = await showAppPicker(
       context: context,
@@ -899,10 +1352,34 @@ class _GroupsScreenState extends State<GroupsScreen> {
     // code-gated like the removal is.
     final activates = result.any((p) => !group.packages.contains(p)) &&
         _groupHasRestrictions(group);
-    Future<void> save() => _save([
-          for (final g in _groups!)
-            if (g.id == group.id) g.copyWith(packages: resultList) else g,
-        ]);
+    Future<void> save() async {
+      await _save([
+        for (final g in _groups!)
+          if (g.id == group.id) g.copyWith(packages: resultList) else g,
+      ]);
+      // Batch F, items 7/9: a blocked group suspends members added to
+      // it at once, and releases members removed from it.
+      if (_blockedIds?.contains(group.id) == true) {
+        final added =
+            result.where((p) => !group.packages.contains(p)).toList();
+        final removed =
+            group.packages.where((p) => !result.contains(p)).toList();
+        try {
+          if (added.isNotEmpty) {
+            await widget.controller.channel.setAppSuspended(
+              added,
+              true,
+              reason: 'GROUP',
+            );
+          }
+          if (removed.isNotEmpty) {
+            await widget.controller.channel.setAppSuspended(removed, false);
+          }
+        } catch (e) {
+          if (mounted) await showErrorCard(context, e);
+        }
+      }
+    }
     if (loosening || activates) {
       await runLoosening(context, widget.controller, save);
     } else {
@@ -976,6 +1453,63 @@ class _GroupsScreenState extends State<GroupsScreen> {
     }
   }
 
+  /// Edits a group's allowed time windows (Dechainer parity, item 7:
+  /// the group-edit dialog has a "Group time windows" button — Azm's
+  /// group menu had members and limit only). Same gate formula as the
+  /// per-app windows editor: a daily save replaces the whole window
+  /// set, so dropping per-weekday windows that allowed a minute the
+  /// new set does not is a loosening, and adding windows where none
+  /// existed activates blocking for every member.
+  Future<void> _editGroupWindows(AppGroupModel group) async {
+    final result = await showDialog<List<TimeWindowModel>>(
+      context: context,
+      builder: (_) => TimeWindowsEditor(windows: group.dailyWindows),
+    );
+    if (result == null || _groups == null || !mounted) return;
+    List<(int, int)> tuples(List<TimeWindowModel> ws) =>
+        ws.map((w) => (w.startMinute, w.endMinute)).toList();
+    final newDaily = tuples(result);
+    final loosening = Loosening.isLooserWindowsForWeek(
+      oldDaily: tuples(group.dailyWindows),
+      oldWeekly: group.weeklyWindows?.map(tuples).toList(),
+      newDaily: newDaily,
+      newWeekly: null,
+    );
+    final weekly = group.weeklyWindows;
+    final dropsWeekly = weekly != null &&
+        weekly.length == 7 &&
+        weekly.any((d) => d.isNotEmpty) &&
+        !List.generate(7, (day) => day).every(
+          (day) => _AppManagementSheetState._sameWindowSet(
+            weekly[day],
+            newDaily,
+          ),
+        );
+    final activates = !_groupHasWindows(group) && result.isNotEmpty;
+    Future<void> save() => _save([
+          for (final g in _groups!)
+            if (g.id == group.id)
+              g.copyWith(
+                dailyWindows: result,
+                clearWeeklyWindows: true,
+              )
+            else
+              g,
+        ]);
+    if (loosening || dropsWeekly || activates) {
+      await runLoosening(context, widget.controller, save);
+    } else {
+      await runTighteningWithUndo(
+        context,
+        PendingChange(
+          description: context.l10n.groupWindowsUpdatedDesc(group.name),
+          direction: ChangeDirection.tightening,
+          apply: save,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -1003,23 +1537,16 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         for (final g in _groups!)
                           ListTile(
                             title: Text(g.name),
-                            subtitle: Text(
-                              l10n.groupAppsLimitLine(
-                                g.packages.length,
-                                formatMinutes(
-                                    g.weeklyMinutes != null
-                                        ? g.weeklyMinutes![
-                                            DateTime.now().weekday - 1]
-                                        : g.dailyMinutes,
-                                    l10n),
-                              ),
-                            ),
+                            subtitle: Text(_subtitleFor(g)),
                             trailing: PopupMenuButton<String>(
                               onSelected: (action) {
                                 if (action == 'members') _editMembers(g);
                                 if (action == 'limit') _editGroupLimit(g);
+                                if (action == 'windows') _editGroupWindows(g);
                                 if (action == 'rename') _rename(g);
                                 if (action == 'delete') _deleteGroup(g);
+                                if (action == 'block') _toggleGroupBlock(g, true);
+                                if (action == 'unblock') _toggleGroupBlock(g, false);
                               },
                               itemBuilder: (_) => [
                                 PopupMenuItem(
@@ -1029,6 +1556,17 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                     value: 'limit',
                                     child: Text(l10n.editLimit)),
                                 PopupMenuItem(
+                                    value: 'windows',
+                                    child: Text(l10n.editGroupWindows)),
+                                if (_blockedIds?.contains(g.id) == true)
+                                  PopupMenuItem(
+                                      value: 'unblock',
+                                      child: Text(l10n.unblockGroup))
+                                else
+                                  PopupMenuItem(
+                                      value: 'block',
+                                      child: Text(l10n.blockGroup)),
+                                PopupMenuItem(
                                     value: 'rename',
                                     child: Text(l10n.renameGroup)),
                                 PopupMenuItem(
@@ -1037,6 +1575,141 @@ class _GroupsScreenState extends State<GroupsScreen> {
                               ],
                             ),
                             onTap: () => _editMembers(g),
+                          ),
+                      ],
+                    ),
+    );
+  }
+}
+
+// ------------------------------------------------------- Uninstall block (Batch F, items 5/8)
+
+/// A dedicated screen for the per-app uninstall block. Items 5 and 8
+/// are the same feature (block uninstalling apps the user picks); the
+/// toggle itself already existed in the per-app sheet, and this
+/// screen makes it discoverable and manageable in one place: the full
+/// blocked list, an app-picker add, and a per-app remove.
+class UninstallBlockScreen extends StatefulWidget {
+  const UninstallBlockScreen({
+    super.key,
+    required this.controller,
+    required this.apps,
+  });
+  final AppController controller;
+  final List<InstalledApp> apps;
+  @override
+  State<UninstallBlockScreen> createState() => _UninstallBlockScreenState();
+}
+
+class _UninstallBlockScreenState extends State<UninstallBlockScreen> {
+  List<InstalledApp>? _apps;
+  Object? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final apps = await widget.controller.channel.listInstalledApps();
+      if (mounted) setState(() => _apps = apps);
+    } catch (e) {
+      if (mounted) setState(() => _error = e);
+    }
+  }
+
+  List<InstalledApp> get _blocked =>
+      (_apps ?? const []).where((a) => a.isUninstallBlocked).toList();
+
+  /// Add/remove via the shared app picker. Adding a block is
+  /// tightening (direct); removing one is loosening (recovery-gated).
+  Future<void> _edit() async {
+    final result = await showAppPicker(
+      context: context,
+      channel: widget.controller.channel,
+      title: context.l10n.uninstallBlockScreenTitle,
+      initialSelected: _blocked.map((a) => a.packageName).toSet(),
+      preloadedApps: widget.apps,
+    );
+    if (result == null || _apps == null || !mounted) return;
+    final current = _blocked.map((a) => a.packageName).toSet();
+    final added = result.difference(current).toList();
+    final removed = current.difference(result).toList();
+    try {
+      for (final pkg in added) {
+        await widget.controller.channel.setUninstallBlocked(pkg, true);
+      }
+    } catch (e) {
+      if (mounted) await showErrorCard(context, e);
+      await _load();
+      return;
+    }
+    if (!mounted) return;
+    if (removed.isNotEmpty) {
+      // runLoosening shows its own error card on failure.
+      await runLoosening(context, widget.controller, () async {
+        for (final pkg in removed) {
+          await widget.controller.channel.setUninstallBlocked(pkg, false);
+        }
+      });
+    }
+    await _load();
+  }
+
+  Future<void> _remove(InstalledApp app) async {
+    await runLoosening(context, widget.controller, () async {
+      await widget.controller.channel
+          .setUninstallBlocked(app.packageName, false);
+      if (mounted) {
+        showInfoSnackBar(
+          context,
+          context.l10n.uninstallBlockRemovedFor(app.label),
+        );
+      }
+    });
+    await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.uninstallBlockScreenTitle),
+        actions: [
+          IconButton(
+            onPressed: _apps == null ? null : _edit,
+            icon: const Icon(Icons.add_outlined),
+            tooltip: l10n.uninstallBlockAdd,
+          ),
+        ],
+      ),
+      body: _error != null
+          ? ErrorView(error: _error!, onRetry: _load)
+          : _apps == null
+              ? LoadingView(message: l10n.loadingInstalledApps)
+              : _blocked.isEmpty
+                  ? EmptyView(
+                      icon: Icons.block_outlined,
+                      message: l10n.uninstallBlockEmpty,
+                    )
+                  : ListView(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                          child: Text(l10n.uninstallBlockScreenSub),
+                        ),
+                        for (final app in _blocked)
+                          ListTile(
+                            leading: const Icon(Icons.block_outlined),
+                            title: Text(app.label),
+                            subtitle: Text(app.packageName),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => _remove(app),
+                            ),
                           ),
                       ],
                     ),

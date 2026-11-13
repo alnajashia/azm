@@ -575,6 +575,63 @@
   "activityBlockerNote": "Block specific activity screens; the launcher and system apps can never be blocked.",
   "removalStepColourModes": "Colour modes released",
   "browserUnsupportedWarning": "Restrictions do not work in this browser, it is recommended to disable it.",
+  "dnsProtectionTitle": "DNS protection",
+  "dnsProtectionNote": "This browser cannot block sites from inside, so sites cannot be blocked in it completely. DNS protection instead blocks banned domains for the whole device — every browser and app — at domain level only, not per page.",
+  "dnsProtectionEnabled": "Enabled",
+  "dnsProtectionDisabled": "Disabled",
+  "dnsProviderNextdns": "NextDNS",
+  "dnsProviderNextdnsNote": "Your own blocklist (managed in the NextDNS dashboard)",
+  "dnsProviderCleanbrowsing": "CleanBrowsing (Family filter)",
+  "dnsProviderCleanbrowsingNote": "Adult content and proxies, no account needed",
+  "dnsConfigIdLabel": "NextDNS configuration ID",
+  "dnsConfigIdHint": "e.g. abc123",
+  "dnsConfigIdHostname": "Hostname: {id}.dns.nextdns.io",
+  "@dnsConfigIdHostname": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsNextdnsHowTitle": "How do I set up NextDNS?",
+  "dnsNextdnsStep1": "1. Create a free account at nextdns.io (email and password, no card).",
+  "dnsNextdnsStep2": "2. Copy the configuration ID from the Setup tab in the dashboard.",
+  "dnsNextdnsStep3": "3. Add sites to the Denylist from the Privacy tab, and turn on Block Bypass Methods in Settings.",
+  "dnsNextdnsStep4": "4. Paste the ID in the field above and turn protection on — Azm sets it and locks it.",
+  "torrentTitle": "Block torrent apps",
+  "torrentSub": "Suspends any installed torrent app now, and any installed later",
+  "torrentDetectedNone": "No torrent apps found on this phone",
+  "torrentDetectedCount": "Detected torrent apps: {count}",
+  "torrentBlockedMsg": "Suspended {count} torrent app(s)",
+  "torrentUnblockedMsg": "Torrent apps unsuspended",
+  "uninstallBlockScreenTitle": "Block uninstallation",
+  "uninstallBlockScreenSub": "Choose apps that cannot be uninstalled",
+  "uninstallBlockEmpty": "No apps are uninstall-blocked",
+  "uninstallBlockAdd": "Add app",
+  "uninstallBlockRemovedFor": "Uninstall allowed for {app}",
+  "blockGroup": "Block group",
+  "unblockGroup": "Unblock group",
+  "groupBlockedBadge": "Blocked",
+  "groupBlockedDesc": "All apps in this group are suspended",
+  "groupBlockedMsg": "Group {name} blocked",
+  "groupUnblockedMsg": "Group {name} unblocked",
+  "autoBlockUninstallTitle": "Block uninstalling suspended or blocked apps",
+  "autoBlockUninstallSub": "While on, any suspended or blocked app cannot be uninstalled",
+  "autoBlockUninstallOn": "Uninstall blocked for suspended apps",
+  "autoBlockUninstallOff": "Uninstall allowed for suspended apps",
+  "dnsInvalidConfigId": "Enter a valid NextDNS configuration ID",
+  "dnsCurrentHost": "Current host: {hostname}",
+  "@dnsCurrentHost": {
+    "placeholders": {
+      "hostname": {
+        "type": "String"
+      }
+    }
+  },
+  "dnsNotSet": "Private DNS is not set",
+  "dnsApplied": "DNS protection applied",
+  "dnsTurnedOff": "DNS protection turned off",
+  "dnsSettings": "Settings",
   "refresh": "Refresh",
   "loading": "Loading…",
   "block": "Block",
@@ -608,6 +665,16 @@
   "addActivityInvalid": "Enter a full class name, e.g. com.example.app.MainActivity.",
   "addActivityProtected": "This activity is protected and can never be blocked.",
   "addActivityAlreadyBlocked": "This activity is already blocked.",
+  "blockEntireApp": "Block entire app",
+  "noBlockableActivities": "This app has no activities that can be blocked.",
+  "blockedWholeApp": "Blocked {count} activities of this app.",
+  "@blockedWholeApp": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "colourModesDescription": "Make the screen less stimulating: grayscale, night light, extra dim and colour inversion, on schedules and per app. A mode that is on right now cannot be loosened without the recovery code.",
   "colourModesStatusTitle": "Status",
   "colourModesStatusNoAccessibility": "Accessibility service is off — colour modes cannot apply. Turn it on below.",
@@ -756,7 +823,7 @@
   "removalCompleteTitle": "Protection fully removed",
   "removalCompleteBody": "Azm's protection has been completely removed: no restrictions remain, no app is suspended or hidden by Azm, and nothing of Azm is still running. You can now uninstall normally from your system settings.",
   "removalPartialTitle": "Protection removed, with warnings",
-  "removalPartialBody": "Device Owner was removed, but some cleanup steps did not complete. You can try again, or uninstall normally — Android discards any remaining owner policies when the app is uninstalled.",
+  "removalPartialBody": "The teardown finished, but some steps did not complete — they are listed below. Try the removal again instead of uninstalling while Device Owner may still be active.",
   "removalStepDisarm": "Disarm safeguards",
   "removalStepFocus": "Stop focus mode",
   "removalStepUnsuspend": "Unsuspend apps",
@@ -878,6 +945,15 @@
   "visualSuspendWindow": "Within (minutes)",
   "visualSuspendDuration": "Suspend for (minutes)",
   "visualSaved": "Content inspection settings saved.",
+  "visualDetectorErrorTitle": "Content inspection is not working",
+  "visualDetectorErrorBody": "The image classifier failed to load, so visual blocking is off: {error}",
+  "@visualDetectorErrorBody": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "sealRulesTitle": "Seal rules",
   "sealRulesSub": "Conditions under which Azm refuses to be removed",
   "sealIntro": "While any seal rule is active, Azm refuses to remove Device Owner — immediately or by filing the delayed forced removal. A seal cannot be cancelled while it is active; it ends only when its time runs out or its condition clears. The paper recovery code does NOT break an active seal. A forced removal filed BEFORE a seal engaged still completes at its 24-hour mark. Seals have force only while Azm is Device Owner: without Device Owner, Android lets any app be uninstalled and no rule can prevent it.",
@@ -1014,6 +1090,8 @@
   "noPerAppLists": "No per-app lists yet.",
   "addTargetAppsFirst": "Add target apps above first — passive lists attach to them in v1.",
   "addPerAppList": "Add per-app list",
+  "wordHint": "e.g., pussy",
+  "noMoreAppsForPassive": "Every installed app already has a passive list",
   "loadingWarningStages": "Loading warning stages…",
   "stagedWarningsTitle": "Staged warnings before a limit expires",
   "warningsBody": "Each stage warns once, the configured number of minutes before an app's daily limit runs out. Stages are stored for the Accessibility Service to fire; notification delivery depends on the native notifier.",
@@ -1365,6 +1443,16 @@
   },
   "editMembers": "Edit members",
   "editLimit": "Edit limit",
+  "editGroupWindows": "Edit time windows",
+  "groupWindowsUpdatedDesc": "Time windows updated for group {group}",
+  "@groupWindowsUpdatedDesc": {
+    "description": "Undo snackbar for a group time-windows save.",
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
   "renameGroupAction": "Rename group",
   "deleteGroup": "Delete group",
   "membersOf": "Members of {group}",
@@ -1683,6 +1771,17 @@
       }
     }
   },
+  "appGroupTile": "Group",
+  "noGroup": "No group",
+  "selectGroupTitle": "Select group",
+  "groupAssignedDesc": "Group updated for {app}",
+  "@groupAssignedDesc": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
   "noRestrictionsFor": "No restrictions available for {app}. This app does not declare any managed restrictions.",
   "@noRestrictionsFor": {
     "placeholders": {
@@ -1737,7 +1836,7 @@
   "removalLoadingTitle": "Completing Device Owner removal…",
   "removalLoadingBody": "Please wait. Do not close the app or uninstall until teardown completes.",
   "removalTimeoutWarningTitle": "Teardown incomplete — do not uninstall yet",
-  "removalTimeoutWarningBody": "Device Owner was cleared, but the system has not finished settling all teardown steps. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:",
+  "removalTimeoutWarningBody": "The teardown did not finish within the time limit, so its outcome is unverified — Device Owner may still be active. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:",
   "removalRecheckAction": "Re-check status",
   "removalUnverifiedOwner": "Device Owner is still active",
   "removalUnverifiedAdmin": "Device Admin is still active",
@@ -1801,5 +1900,40 @@
   "removeOwnerConsequenceUninstall": "Uninstalling the Azm app will be allowed.",
   "removeOwnerUnderstandCheckbox": "I understand the consequences of this action",
   "removeOwnerConfirmButton": "Remove protection",
-  "scratchToReveal": "Scratch to reveal"
+  "scratchToReveal": "Scratch to reveal",
+  "@torrentDetectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@torrentBlockedMsg": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@uninstallBlockRemovedFor": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "@groupBlockedMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@groupUnblockedMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }
