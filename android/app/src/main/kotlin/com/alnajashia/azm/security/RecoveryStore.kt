@@ -2,6 +2,7 @@ package com.alnajashia.azm.security
 
 import android.content.Context
 import android.util.Base64
+import com.alnajashia.azm.data.SettingsStore
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Locale
@@ -114,6 +115,39 @@ object RecoveryStore {
             p.getLong(KEY_SESSION_VERIFIED_AT_ELAPSED, 0L)
         return wallAge in 0 until RECOVERY_SESSION_MS &&
             elapsedAge in 0 until RECOVERY_SESSION_MS
+    }
+
+    /**
+     * Whether a delayed forced removal has been filed AND its countdown
+     * is complete (Batch E review finding F-E2-1). The countdown state
+     * is the Dart-persisted JSON in the `recovery_prefs` file
+     * (`{'active': bool, 'accumulatedMs': int}` — see
+     * `lib/domain/recovery.dart` ForcedRemoval.toJson and
+     * `lib/data/config_store.dart` setForcedRemoval): due means active
+     * and accumulated >= the 24-hour delay. A missing, corrupt, or
+     * incomplete record is NOT due (fail closed — the seal still
+     * refuses). Read natively from the persisted record, never from a
+     * client-asserted flag, so the seal exemption for a due countdown
+     * is decided the same way as the recovery session. Note the two
+     * files: the session lives in `recovery_secure` (this object's
+     * [prefs]); the countdown lives in `recovery_prefs`
+     * ([SettingsStore.PREFS_RECOVERY_STATE]).
+     */
+    fun isForcedRemovalDue(context: Context): Boolean {
+        val raw = context.applicationContext
+            .getSharedPreferences(
+                SettingsStore.PREFS_RECOVERY_STATE,
+                Context.MODE_PRIVATE,
+            )
+            .getString("forced_removal", null) ?: return false
+        val json = try {
+            org.json.JSONObject(raw)
+        } catch (_: Exception) {
+            return false
+        }
+        if (!json.optBoolean("active", false)) return false
+        val accumulatedMs = json.optLong("accumulatedMs", 0L)
+        return accumulatedMs >= FORCED_REMOVAL_DELAY_HOURS * 3_600_000L
     }
 
     /** Constant-time verification against the stored salted hash. */
