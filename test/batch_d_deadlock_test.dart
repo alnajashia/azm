@@ -96,7 +96,7 @@ void main() {
     group('(a) Teardown calls removeActiveAdmin after clearDeviceOwnerApp', () {
       test('DeviceOwnerManager.kt source-level pin: clearOwner precedes removeAdmin with exact logcat line', () {
         final src = File(
-          'android/app/src/main/kotlin/io/github/alnajashia/azm/deviceowner/DeviceOwnerManager.kt',
+          'android/app/src/main/kotlin/com/alnajashia/azm/deviceowner/DeviceOwnerManager.kt',
         ).readAsStringSync();
 
         // 1. clearDeviceOwnerApp must be invoked
@@ -241,7 +241,7 @@ void main() {
 
       test('AzmAccessibilityService.kt source-level pin: all enforcement gated by isProtectionTornDown', () {
         final src = File(
-          'android/app/src/main/kotlin/io/github/alnajashia/azm/accessibility/AzmAccessibilityService.kt',
+          'android/app/src/main/kotlin/com/alnajashia/azm/accessibility/AzmAccessibilityService.kt',
         ).readAsStringSync();
 
         // 1. onUnbind lockdown guard checks !SettingsStore.isProtectionTornDown()
@@ -282,7 +282,7 @@ void main() {
 
       test('SettingsStore.kt source-level pin: isProtectionTornDown and isRemovalInProgress coupling', () {
         final src = File(
-          'android/app/src/main/kotlin/io/github/alnajashia/azm/data/SettingsStore.kt',
+          'android/app/src/main/kotlin/com/alnajashia/azm/data/SettingsStore.kt',
         ).readAsStringSync();
 
         expect(src.contains('KEY_PROTECTION_TORN_DOWN'), isTrue);
@@ -477,7 +477,7 @@ void main() {
     group('(d) Teardown entry is never seal-refused', () {
       test('DeviceOwnerManager.removeDeviceOwner does not evaluate seals and disarms existing seals', () {
         final src = File(
-          'android/app/src/main/kotlin/io/github/alnajashia/azm/deviceowner/DeviceOwnerManager.kt',
+          'android/app/src/main/kotlin/com/alnajashia/azm/deviceowner/DeviceOwnerManager.kt',
         ).readAsStringSync();
 
         // 1. removeDeviceOwner must NOT contain any call to SealRules.firstActiveSeal
