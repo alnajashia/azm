@@ -178,20 +178,37 @@ object DeviceOwnerManager {
      *     notification survived a "complete" removal in the shade.
      *  11. `clearOwner` — only now `clearDeviceOwnerApp`, verified by
      *     re-reading the owner state.
-     *  12. `verify` — POST-removal verification with reads that work
-     *     without admin rights: owner still gone, none of the
-     *     restriction keys that were in force at teardown start still
-     *     true in the CALLING USER's effective restriction bundle
-     *     (UserManager, no admin needed), and no app notification
-     *     still posted. Any residue fails this step, so the result
-     *     dialog can never print a clean success while a surface
-     *     persists. (Once ownership is surrendered the app can no
-     *     longer clear residue itself — the dialog says so, and the
-     *     Config tab's residue check says re-provisioning is the
-     *     route back to clearing power.)
-     *  13. `flagClear` — clear the removal flag LAST, whatever
-     *     happened above: a failed removal must re-arm protection,
-     *     and every step is idempotent, so a retry is safe.
+     *  12. `removeAdmin` — drop Device Admin immediately after
+     *     clearing owner (Batch D root cause 1: `clearDeviceOwnerApp`
+     *     alone leaves the admin active, and an active admin blocks
+     *     uninstall for ~3 minutes).
+     *  13. `tornDown` — re-assert the permanent torn-down flag.
+     *  14. `stopAccessibility` — stop the accessibility service
+     *     cleanly (its `onUnbind` lockdown is already disarmed by
+     *     step 1, so nothing fires while the system tears down).
+     *  14b. `colourModes` — release any enforced colour modes and
+     *     verify every daltonizer key came back to its pre-filter
+     *     value (Batch C: a filter left enforced after removal would
+     *     leave the phone grey with no app left to switch it off).
+     *  15. `verify` — POST-removal verification with reads that work
+     *     without admin rights: owner still gone, admin inactive,
+     *     none of the restriction keys that were in force at teardown
+     *     start still true in the CALLING USER's effective restriction
+     *     bundle (UserManager, no admin needed), screen capture
+     *     allowed, and no app notification still posted. Any residue
+     *     fails this step, so the result dialog can never print a
+     *     clean success while a surface persists. (Once ownership is
+     *     surrendered the app can no longer clear residue itself —
+     *     the dialog says so, and the Config tab's residue check says
+     *     re-provisioning is the route back to clearing power.)
+     *  16. `flagClear` — a no-op by design (Batch D): the removal
+     *     disarm is PERMANENT. The flag is never cleared in the
+     *     teardown — clearing it here would re-arm the accessibility
+     *     lockdown while the system is still tearing down (Batch D
+     *     root cause 2). The flags are reset only by a fresh
+     *     provisioning (`AdminReceiver.onEnabled`,
+     *     `ShizukuProvisioning.verifyProvisioning`). Every step is
+     *     idempotent, so a retry is safe.
      *
      * Threading: the channel handler dispatches on a background
      * executor, so none of this runs on the main thread; the
@@ -199,11 +216,11 @@ object DeviceOwnerManager {
      * chunked (50 packages per binder call).
      */
     // @Synchronized (v1.0.5 audit FIX-1): two overlapping teardowns
-    // (e.g. a double-invoked removal) could otherwise interleave — one
-    // run's final flag-clear could drop the removal flag while the
-    // other run is still mid-teardown, re-arming the accessibility
-    // lockdown inside it. Serialised, each run is atomic start-to-end;
-    // a second invocation simply re-runs the (idempotent) teardown.
+    // (e.g. a double-invoked removal) could otherwise interleave —
+    // one run's disarm/verify steps could race the other's, and the
+    // per-step report would mix two runs. Serialised, each run is
+    // atomic start-to-end; a second invocation simply re-runs the
+    // (idempotent) teardown.
     @Synchronized
     fun removeDeviceOwner(context: Context): RemovalReport {
         requireOwner(context)
