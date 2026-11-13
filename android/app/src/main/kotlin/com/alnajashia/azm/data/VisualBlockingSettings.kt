@@ -40,6 +40,24 @@ object VisualBlockingSettings {
     private const val KEY_BLOCK_HISTORY = "block_history"
     private const val KEY_ACTIVE_SUSPENSIONS = "active_suspensions"
 
+    /**
+     * Last detector-init failure, if any — written by the accessibility
+     * service when the bundled NSFW model fails to load, so the settings
+     * UI can show it instead of failing silently. The v1.0.0 lesson:
+     * the model was missing from the APK and visual blocking simply
+     * never fired, with nothing visible to the user. A successful init
+     * clears a stale error (e.g. after an update fixed the model).
+     */
+    const val KEY_DETECTOR_ERROR = "detector_error"
+
+    fun detectorError(): String? = prefs().getString(KEY_DETECTOR_ERROR, null)
+
+    fun setDetectorError(message: String?) {
+        prefs().edit().apply {
+            if (message == null) remove(KEY_DETECTOR_ERROR) else putString(KEY_DETECTOR_ERROR, message)
+        }.apply()
+    }
+
     val DEFAULT_TARGET_PACKAGES: Set<String> = setOf("com.reddit.frontpage")
     val DEFAULT_CATEGORIES: Set<String> = setOf("hentai", "porn", "sexy")
     const val DEFAULT_THRESHOLD = 0.5f

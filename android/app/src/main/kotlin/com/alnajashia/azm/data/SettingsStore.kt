@@ -58,6 +58,9 @@ object SettingsStore {
 
     private const val KEY_GROUPS = "groups"
     private const val KEY_HIDDEN_PACKAGES = "hidden_packages"
+    private const val KEY_BLOCK_TORRENTS = "block_torrents"
+    private const val KEY_AUTO_UNINSTALL_BLOCKED = "auto_uninstall_blocked_packages"
+    private const val KEY_AUTO_BLOCK_UNINSTALL_SUSPENDED = "auto_block_uninstall_suspended"
     private const val KEY_LOGS = "logs"
     private const val KEY_USAGE_DATE = "date"
     private const val KEY_INTENTIONAL_A11Y_DISABLE = "intentional_a11y_disable_at"
@@ -454,6 +457,48 @@ object SettingsStore {
         val current = hiddenPackages()
         val updated = if (hidden) current + packageName else current - packageName
         prefs(PREFS_HIDDEN).edit().putStringSet(KEY_HIDDEN_PACKAGES, updated).apply()
+    }
+
+    // ------------------------------------------------------- block torrents (Batch F, item 4)
+
+    /** Mirrors DeChainer's `SecurityManager` `block_torrents` flag. */
+    fun isBlockTorrentsEnabled(): Boolean =
+        prefs(PREFS_SECURITY).getBoolean(KEY_BLOCK_TORRENTS, false)
+
+    fun setBlockTorrentsEnabled(enabled: Boolean) {
+        prefs(PREFS_SECURITY).edit().putBoolean(KEY_BLOCK_TORRENTS, enabled).apply()
+    }
+
+    // ------------------------------------------- auto uninstall-block (Batch F, item 6)
+
+    /**
+     * Packages whose uninstall-block Azm applied AUTOMATICALLY when they
+     * were suspended (item 6). A manual block set by the user in the app
+     * sheet is never recorded here, so unsuspending never clears a block
+     * the user set on purpose.
+     */
+    fun autoUninstallBlockedPackages(): Set<String> =
+        prefs(PREFS_SECURITY).getStringSet(KEY_AUTO_UNINSTALL_BLOCKED, emptySet())
+            ?: emptySet()
+
+    fun setAutoUninstallBlocked(packageName: String, blocked: Boolean) {
+        val current = autoUninstallBlockedPackages()
+        val updated = if (blocked) current + packageName else current - packageName
+        prefs(PREFS_SECURITY).edit().putStringSet(KEY_AUTO_UNINSTALL_BLOCKED, updated).apply()
+    }
+
+    // --------------------------------- auto-block-uninstall toggle (Batch F, item 6)
+
+    /**
+     * Whether suspending an app also blocks its uninstall (item 6's
+     * Settings switch). Default TRUE: the Batch F auto-coupling stays
+     * on unless the user turns it off in Settings.
+     */
+    fun isAutoBlockUninstallSuspended(): Boolean =
+        prefs(PREFS_SECURITY).getBoolean(KEY_AUTO_BLOCK_UNINSTALL_SUSPENDED, true)
+
+    fun setAutoBlockUninstallSuspended(enabled: Boolean) {
+        prefs(PREFS_SECURITY).edit().putBoolean(KEY_AUTO_BLOCK_UNINSTALL_SUSPENDED, enabled).apply()
     }
 
     // ------------------------------------------------------------------ suspension log (F27)

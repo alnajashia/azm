@@ -112,6 +112,7 @@ enum class SuspensionReason {
     VISUAL_BLOCKING,
     IMPULSE_LOCK,
     FOCUS_MODE,
+    GROUP,
     ACCESSIBILITY_DISABLED,
     MANUAL;
 
