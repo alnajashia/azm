@@ -127,25 +127,70 @@ class _ActivityBlockerScreenState extends State<ActivityBlockerScreen> {
     await _saveBlocked(next);
   }
 
+  /// v1.0.1: pick the app first (search + system-apps toggle, the
+  /// shared picker), then pick one of its recently seen activities —
+  /// or type a class name. The old flow was a bare text field that
+  /// demanded the full class name from memory.
   Future<void> _addManually() async {
+    final picked = await showAppPicker(
+      context: context,
+      channel: widget.controller.channel,
+      title: context.l10n.addActivityTitle,
+      singleSelect: true,
+    );
+    if (picked == null || picked.isEmpty || !mounted) return;
+    final packageName = picked.first;
+    final seen = (_accessed ?? const [])
+        .where((e) => e.packageName == packageName)
+        .toList();
     final controller = TextEditingController();
     String? error;
     final saved = await showDialog<String>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
-          title: Text(dialogContext.l10n.addActivityTitle),
+          title: Text(_labelFor(packageName)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (seen.isNotEmpty) ...[
+                Text(dialogContext.l10n.recentlyAccessedActivities),
+                const SizedBox(height: 8),
+                // Plain Column, not a ListView: a viewport inside a
+                // dialog's min-sized content cannot report intrinsic
+                // dimensions, and the dialog itself scrolls when tall.
+                for (final entry in seen)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(entry.className),
+                    onTap: () {
+                      // Same guards as the manual field; the
+                      // native side remains authoritative.
+                      String? problem;
+                      if (_looksProtected(entry.className)) {
+                        problem = dialogContext.l10n.addActivityProtected;
+                      } else if ((_blocked ?? const [])
+                          .contains(entry.className)) {
+                        problem =
+                            dialogContext.l10n.addActivityAlreadyBlocked;
+                      }
+                      if (problem != null) {
+                        setDialogState(() => error = problem);
+                        return;
+                      }
+                      Navigator.pop(dialogContext, entry.className);
+                    },
+                  ),
+                const SizedBox(height: 12),
+              ],
               Text(dialogContext.l10n.addActivityBody),
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
                 decoration: InputDecoration(
                   labelText: dialogContext.l10n.activityClassNameLabel,
-                  hintText: 'com.example.app.MainActivity',
+                  hintText: '$packageName.MainActivity',
                   border: const OutlineInputBorder(),
                   errorText: error,
                 ),

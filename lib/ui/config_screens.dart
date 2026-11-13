@@ -661,7 +661,10 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
                 alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
                   onPressed: () async {
-                    // Add a passive list for one of the target apps not yet listed.
+                    // Add a passive list for one of the target apps not
+                    // yet listed — the user picks WHICH app (v1.0.1 fix:
+                    // the old code always took the first unlisted app,
+                    // forcing lists to be created in target order).
                     final candidates = s.targetPackages
                         .where((p) => !s.passiveWords.containsKey(p))
                         .toList();
@@ -669,7 +672,26 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
                       showInfoSnackBar(context, l10n.addTargetAppsFirst);
                       return;
                     }
-                    await _editPassive(candidates.first);
+                    final picked = await showAppPicker(
+                      context: context,
+                      channel: widget.controller.channel,
+                      title: l10n.addPerAppList,
+                      singleSelect: true,
+                      preloadedApps: candidates
+                          .map(
+                            (p) => InstalledApp(
+                              packageName: p,
+                              label: _labelFor(p),
+                              isSystem: false,
+                              isHidden: false,
+                              isSuspended: false,
+                              isUninstallBlocked: false,
+                            ),
+                          )
+                          .toList(),
+                    );
+                    if (picked == null || picked.isEmpty) return;
+                    await _editPassive(picked.first);
                   },
                   icon: const Icon(Icons.add_outlined),
                   label: Text(l10n.addPerAppList),
