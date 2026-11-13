@@ -17,6 +17,7 @@ import '../domain/entry_grace.dart';
 import '../domain/entry_password.dart';
 import '../domain/focus.dart';
 import '../domain/recovery.dart';
+import 'dns_protection.dart';
 import 'privileged_channel.dart';
 
 class BlockedList {
@@ -348,6 +349,68 @@ class ConfigStore {
 
   Future<void> setBlockedLists(List<BlockedList> lists) => _channel.setSetting(
       browser, 'blocked_lists_json', jsonEncode(lists.map((l) => l.toJson()).toList()));
+
+  // ------------------------------------------------------------ DNS protection
+
+  /// DNS filtering for unsupported browsers (Batch DNS): the persisted
+  /// selection behind the DNS card. Absent/corrupt JSON reads as the
+  /// default (off, CleanBrowsing) — never as enabled.
+  Future<DnsProtection> getDnsProtection() async {
+    final raw = await _getJson(browser, 'dns_protection_json');
+    if (raw == null) return const DnsProtection();
+    try {
+      return DnsProtection.fromJson(raw);
+    } catch (_) {
+      return const DnsProtection();
+    }
+  }
+
+  Future<void> setDnsProtection(DnsProtection dns) =>
+      _setJson(browser, 'dns_protection_json', dns.toJson());
+
+  // ------------------------------------------------------------ torrent apps (Batch F, item 4)
+
+  /// Packages the torrent toggle suspended. Kept so disabling the
+  /// toggle unsuspends exactly the apps it blocked — never a package
+  /// suspended by another feature. Corrupt/absent reads as empty.
+  Future<Set<String>> getTorrentBlockedPackages() async {
+    final raw = await _channel.getSetting(browser, 'torrent_blocked_json');
+    if (raw is String && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          return decoded.map((e) => e.toString()).toSet();
+        }
+      } catch (_) {}
+    }
+    return const {};
+  }
+
+  Future<void> setTorrentBlockedPackages(Set<String> packages) =>
+      _channel.setSetting(browser, 'torrent_blocked_json', jsonEncode(packages.toList()));
+
+  // ------------------------------------------------------------ blocked groups (Batch F, items 7/9)
+
+  /// IDs of groups the user blocked as a whole (group-block). The
+  /// enforcement is per-package suspension; this set is the record of
+  /// WHICH groups are blocked, so member edits and the list UI can
+  /// tell a blocked group from a merely limited one. Corrupt/absent
+  /// reads as empty.
+  Future<Set<String>> getBlockedGroupIds() async {
+    final raw = await _channel.getSetting(browser, 'blocked_groups_json');
+    if (raw is String && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          return decoded.map((e) => e.toString()).toSet();
+        }
+      } catch (_) {}
+    }
+    return const {};
+  }
+
+  Future<void> setBlockedGroupIds(Set<String> ids) =>
+      _channel.setSetting(browser, 'blocked_groups_json', jsonEncode(ids.toList()));
 
   // ------------------------------------------------------------ usage warnings
 

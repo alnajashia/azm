@@ -948,6 +948,13 @@ class PrivilegedChannel {
   Future<Map<String, dynamic>> getVisualBlockingConfig() async =>
       (await _invokeMap('getVisualBlockingConfig')).cast<String, dynamic>();
 
+  /// The accessibility service's last NSFW-detector init failure, if
+  /// any (null = the detector loaded, or never tried yet). The Visual
+  /// Blocking screen shows it as a warning — the v1.0.0 lesson was
+  /// that a missing model failed silently and the feature never fired.
+  Future<String?> getVisualDetectorError() async =>
+      (await _invokeMap('getVisualDetectorError'))['error'] as String?;
+
   Future<Map<String, dynamic>> setVisualBlockingConfig(
     Map<String, dynamic> config,
   ) async => (await _invokeMap(
@@ -1136,6 +1143,71 @@ class PrivilegedChannel {
     );
   }
 
+  // ---------------------------------------------------------- Torrent apps (Batch F, item 4)
+
+  /// Installed torrent clients (magnet / .torrent handlers), each with
+  /// its display label. No icons — the torrent card lists names only.
+  Future<List<({String packageName, String label})>> getTorrentApps() async {
+    final raw = await _invoke<dynamic>('getTorrentApps');
+    if (raw is List) {
+      return raw.map((e) {
+        final m = e as Map<dynamic, dynamic>;
+        return (
+          packageName: m['packageName'].toString(),
+          label: m['label']?.toString() ?? m['packageName'].toString(),
+        );
+      }).toList();
+    }
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply for getTorrentApps',
+    );
+  }
+
+  Future<bool> isBlockTorrentsEnabled() async {
+    final raw = await _invoke<dynamic>('isBlockTorrentsEnabled');
+    if (raw is bool) return raw;
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply for isBlockTorrentsEnabled',
+    );
+  }
+
+  /// Sets the native block-torrents flag; returns the verified state.
+  /// (The channel returns the plain bool here, so it is read directly.)
+  Future<bool> setBlockTorrents(bool enabled) async {
+    final raw = await _invoke<dynamic>('setBlockTorrents', {
+      'enabled': enabled,
+    });
+    if (raw is bool) return raw;
+    throw PrivilegedException('INTERNAL', 'Malformed reply for setBlockTorrents');
+  }
+
+  // ------------------------------------------- Auto uninstall-block (Batch F, item 6)
+
+  /// The Settings switch: whether suspending an app also blocks its
+  /// uninstall. The native setter applies/releases the rule for
+  /// currently-suspended apps and returns the verified flag.
+  Future<bool> isAutoBlockUninstallSuspended() async {
+    final raw = await _invoke<dynamic>('isAutoBlockUninstallSuspended');
+    if (raw is bool) return raw;
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply for isAutoBlockUninstallSuspended',
+    );
+  }
+
+  Future<bool> setAutoBlockUninstallSuspended(bool enabled) async {
+    final raw = await _invoke<dynamic>('setAutoBlockUninstallSuspended', {
+      'enabled': enabled,
+    });
+    if (raw is bool) return raw;
+    throw PrivilegedException(
+      'INTERNAL',
+      'Malformed reply for setAutoBlockUninstallSuspended',
+    );
+  }
+
   // ---------------------------------------------------------- Private DNS
 
   Future<PrivateDnsState> getPrivateDns() async =>
@@ -1145,6 +1217,12 @@ class PrivilegedChannel {
       PrivateDnsState.fromMap(
         await _invokeMap('setPrivateDns', {'hostname': hostname}),
       );
+
+  /// Clears any specified-host Private DNS (back to opportunistic):
+  /// the "off" side of the DNS-protection switch. The native side
+  /// verifies the mode is no longer specified-host.
+  Future<PrivateDnsState> resetPrivateDns() async =>
+      PrivateDnsState.fromMap(await _invokeMap('resetPrivateDns'));
 
   // ---------------------------------------------------------- Grant & Accessibility
 
