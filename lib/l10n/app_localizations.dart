@@ -1658,6 +1658,264 @@ abstract class AppLocalizations {
   /// **'Restrictions do not work in this browser, it is recommended to disable it.'**
   String get browserUnsupportedWarning;
 
+  /// No description provided for @dnsProtectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS protection'**
+  String get dnsProtectionTitle;
+
+  /// No description provided for @dnsProtectionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This browser cannot block sites from inside, so sites cannot be blocked in it completely. DNS protection instead blocks banned domains for the whole device — every browser and app — at domain level only, not per page.'**
+  String get dnsProtectionNote;
+
+  /// No description provided for @dnsProtectionEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get dnsProtectionEnabled;
+
+  /// No description provided for @dnsProtectionDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get dnsProtectionDisabled;
+
+  /// No description provided for @dnsProviderNextdns.
+  ///
+  /// In en, this message translates to:
+  /// **'NextDNS'**
+  String get dnsProviderNextdns;
+
+  /// No description provided for @dnsProviderNextdnsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own blocklist (managed in the NextDNS dashboard)'**
+  String get dnsProviderNextdnsNote;
+
+  /// No description provided for @dnsProviderCleanbrowsing.
+  ///
+  /// In en, this message translates to:
+  /// **'CleanBrowsing (Family filter)'**
+  String get dnsProviderCleanbrowsing;
+
+  /// No description provided for @dnsProviderCleanbrowsingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Adult content and proxies, no account needed'**
+  String get dnsProviderCleanbrowsingNote;
+
+  /// No description provided for @dnsConfigIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'NextDNS configuration ID'**
+  String get dnsConfigIdLabel;
+
+  /// No description provided for @dnsConfigIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. abc123'**
+  String get dnsConfigIdHint;
+
+  /// No description provided for @dnsConfigIdHostname.
+  ///
+  /// In en, this message translates to:
+  /// **'Hostname: {id}.dns.nextdns.io'**
+  String dnsConfigIdHostname(String id);
+
+  /// No description provided for @dnsNextdnsHowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I set up NextDNS?'**
+  String get dnsNextdnsHowTitle;
+
+  /// No description provided for @dnsNextdnsStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Create a free account at nextdns.io (email and password, no card).'**
+  String get dnsNextdnsStep1;
+
+  /// No description provided for @dnsNextdnsStep2.
+  ///
+  /// In en, this message translates to:
+  /// **'2. Copy the configuration ID from the Setup tab in the dashboard.'**
+  String get dnsNextdnsStep2;
+
+  /// No description provided for @dnsNextdnsStep3.
+  ///
+  /// In en, this message translates to:
+  /// **'3. Add sites to the Denylist from the Privacy tab, and turn on Block Bypass Methods in Settings.'**
+  String get dnsNextdnsStep3;
+
+  /// No description provided for @dnsNextdnsStep4.
+  ///
+  /// In en, this message translates to:
+  /// **'4. Paste the ID in the field above and turn protection on — Azm sets it and locks it.'**
+  String get dnsNextdnsStep4;
+
+  /// No description provided for @torrentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block torrent apps'**
+  String get torrentTitle;
+
+  /// No description provided for @torrentSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspends any installed torrent app now, and any installed later'**
+  String get torrentSub;
+
+  /// No description provided for @torrentDetectedNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No torrent apps found on this phone'**
+  String get torrentDetectedNone;
+
+  /// No description provided for @torrentDetectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected torrent apps: {count}'**
+  String torrentDetectedCount(int count);
+
+  /// No description provided for @torrentBlockedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspended {count} torrent app(s)'**
+  String torrentBlockedMsg(int count);
+
+  /// No description provided for @torrentUnblockedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Torrent apps unsuspended'**
+  String get torrentUnblockedMsg;
+
+  /// No description provided for @uninstallBlockScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block uninstallation'**
+  String get uninstallBlockScreenTitle;
+
+  /// No description provided for @uninstallBlockScreenSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose apps that cannot be uninstalled'**
+  String get uninstallBlockScreenSub;
+
+  /// No description provided for @uninstallBlockEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No apps are uninstall-blocked'**
+  String get uninstallBlockEmpty;
+
+  /// No description provided for @uninstallBlockAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add app'**
+  String get uninstallBlockAdd;
+
+  /// No description provided for @uninstallBlockRemovedFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall allowed for {app}'**
+  String uninstallBlockRemovedFor(String app);
+
+  /// No description provided for @blockGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Block group'**
+  String get blockGroup;
+
+  /// No description provided for @unblockGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock group'**
+  String get unblockGroup;
+
+  /// No description provided for @groupBlockedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get groupBlockedBadge;
+
+  /// No description provided for @groupBlockedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'All apps in this group are suspended'**
+  String get groupBlockedDesc;
+
+  /// No description provided for @groupBlockedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Group {name} blocked'**
+  String groupBlockedMsg(String name);
+
+  /// No description provided for @groupUnblockedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Group {name} unblocked'**
+  String groupUnblockedMsg(String name);
+
+  /// No description provided for @autoBlockUninstallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block uninstalling suspended or blocked apps'**
+  String get autoBlockUninstallTitle;
+
+  /// No description provided for @autoBlockUninstallSub.
+  ///
+  /// In en, this message translates to:
+  /// **'While on, any suspended or blocked app cannot be uninstalled'**
+  String get autoBlockUninstallSub;
+
+  /// No description provided for @autoBlockUninstallOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall blocked for suspended apps'**
+  String get autoBlockUninstallOn;
+
+  /// No description provided for @autoBlockUninstallOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall allowed for suspended apps'**
+  String get autoBlockUninstallOff;
+
+  /// No description provided for @dnsInvalidConfigId.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid NextDNS configuration ID'**
+  String get dnsInvalidConfigId;
+
+  /// No description provided for @dnsCurrentHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Current host: {hostname}'**
+  String dnsCurrentHost(String hostname);
+
+  /// No description provided for @dnsNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Private DNS is not set'**
+  String get dnsNotSet;
+
+  /// No description provided for @dnsApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS protection applied'**
+  String get dnsApplied;
+
+  /// No description provided for @dnsTurnedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS protection turned off'**
+  String get dnsTurnedOff;
+
+  /// No description provided for @dnsSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get dnsSettings;
+
   /// No description provided for @refresh.
   ///
   /// In en, this message translates to:
@@ -2261,7 +2519,7 @@ abstract class AppLocalizations {
   /// No description provided for @removalPartialBody.
   ///
   /// In en, this message translates to:
-  /// **'Device Owner was removed, but some cleanup steps did not complete. You can try again, or uninstall normally — Android discards any remaining owner policies when the app is uninstalled.'**
+  /// **'The teardown finished, but some steps did not complete — they are listed below. Try the removal again instead of uninstalling while Device Owner may still be active.'**
   String get removalPartialBody;
 
   /// No description provided for @removalStepDisarm.
@@ -2948,6 +3206,18 @@ abstract class AppLocalizations {
   /// **'Content inspection settings saved.'**
   String get visualSaved;
 
+  /// No description provided for @visualDetectorErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Content inspection is not working'**
+  String get visualDetectorErrorTitle;
+
+  /// No description provided for @visualDetectorErrorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The image classifier failed to load, so visual blocking is off: {error}'**
+  String visualDetectorErrorBody(String error);
+
   /// No description provided for @sealRulesTitle.
   ///
   /// In en, this message translates to:
@@ -3367,6 +3637,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add per-app list'**
   String get addPerAppList;
+
+  /// No description provided for @wordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g., pussy'**
+  String get wordHint;
+
+  /// No description provided for @noMoreAppsForPassive.
+  ///
+  /// In en, this message translates to:
+  /// **'Every installed app already has a passive list'**
+  String get noMoreAppsForPassive;
 
   /// No description provided for @loadingWarningStages.
   ///
@@ -4328,6 +4610,18 @@ abstract class AppLocalizations {
   /// **'Edit limit'**
   String get editLimit;
 
+  /// No description provided for @editGroupWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit time windows'**
+  String get editGroupWindows;
+
+  /// Undo snackbar for a group time-windows save.
+  ///
+  /// In en, this message translates to:
+  /// **'Time windows updated for group {group}'**
+  String groupWindowsUpdatedDesc(String group);
+
   /// No description provided for @renameGroupAction.
   ///
   /// In en, this message translates to:
@@ -4922,6 +5216,30 @@ abstract class AppLocalizations {
   /// **'Limit of {name} updated'**
   String groupLimitUpdatedDesc(String name);
 
+  /// No description provided for @appGroupTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get appGroupTile;
+
+  /// No description provided for @noGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'No group'**
+  String get noGroup;
+
+  /// No description provided for @selectGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select group'**
+  String get selectGroupTitle;
+
+  /// No description provided for @groupAssignedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Group updated for {app}'**
+  String groupAssignedDesc(String app);
+
   /// No description provided for @noRestrictionsFor.
   ///
   /// In en, this message translates to:
@@ -5081,7 +5399,7 @@ abstract class AppLocalizations {
   /// No description provided for @removalTimeoutWarningBody.
   ///
   /// In en, this message translates to:
-  /// **'Device Owner was cleared, but the system has not finished settling all teardown steps. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:'**
+  /// **'The teardown did not finish within the time limit, so its outcome is unverified — Device Owner may still be active. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:'**
   String get removalTimeoutWarningBody;
 
   /// No description provided for @removalRecheckAction.

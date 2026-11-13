@@ -918,6 +918,160 @@ class AppLocalizationsEn extends AppLocalizations {
       'Restrictions do not work in this browser, it is recommended to disable it.';
 
   @override
+  String get dnsProtectionTitle => 'DNS protection';
+
+  @override
+  String get dnsProtectionNote =>
+      'This browser cannot block sites from inside, so sites cannot be blocked in it completely. DNS protection instead blocks banned domains for the whole device — every browser and app — at domain level only, not per page.';
+
+  @override
+  String get dnsProtectionEnabled => 'Enabled';
+
+  @override
+  String get dnsProtectionDisabled => 'Disabled';
+
+  @override
+  String get dnsProviderNextdns => 'NextDNS';
+
+  @override
+  String get dnsProviderNextdnsNote =>
+      'Your own blocklist (managed in the NextDNS dashboard)';
+
+  @override
+  String get dnsProviderCleanbrowsing => 'CleanBrowsing (Family filter)';
+
+  @override
+  String get dnsProviderCleanbrowsingNote =>
+      'Adult content and proxies, no account needed';
+
+  @override
+  String get dnsConfigIdLabel => 'NextDNS configuration ID';
+
+  @override
+  String get dnsConfigIdHint => 'e.g. abc123';
+
+  @override
+  String dnsConfigIdHostname(String id) {
+    return 'Hostname: $id.dns.nextdns.io';
+  }
+
+  @override
+  String get dnsNextdnsHowTitle => 'How do I set up NextDNS?';
+
+  @override
+  String get dnsNextdnsStep1 =>
+      '1. Create a free account at nextdns.io (email and password, no card).';
+
+  @override
+  String get dnsNextdnsStep2 =>
+      '2. Copy the configuration ID from the Setup tab in the dashboard.';
+
+  @override
+  String get dnsNextdnsStep3 =>
+      '3. Add sites to the Denylist from the Privacy tab, and turn on Block Bypass Methods in Settings.';
+
+  @override
+  String get dnsNextdnsStep4 =>
+      '4. Paste the ID in the field above and turn protection on — Azm sets it and locks it.';
+
+  @override
+  String get torrentTitle => 'Block torrent apps';
+
+  @override
+  String get torrentSub =>
+      'Suspends any installed torrent app now, and any installed later';
+
+  @override
+  String get torrentDetectedNone => 'No torrent apps found on this phone';
+
+  @override
+  String torrentDetectedCount(int count) {
+    return 'Detected torrent apps: $count';
+  }
+
+  @override
+  String torrentBlockedMsg(int count) {
+    return 'Suspended $count torrent app(s)';
+  }
+
+  @override
+  String get torrentUnblockedMsg => 'Torrent apps unsuspended';
+
+  @override
+  String get uninstallBlockScreenTitle => 'Block uninstallation';
+
+  @override
+  String get uninstallBlockScreenSub =>
+      'Choose apps that cannot be uninstalled';
+
+  @override
+  String get uninstallBlockEmpty => 'No apps are uninstall-blocked';
+
+  @override
+  String get uninstallBlockAdd => 'Add app';
+
+  @override
+  String uninstallBlockRemovedFor(String app) {
+    return 'Uninstall allowed for $app';
+  }
+
+  @override
+  String get blockGroup => 'Block group';
+
+  @override
+  String get unblockGroup => 'Unblock group';
+
+  @override
+  String get groupBlockedBadge => 'Blocked';
+
+  @override
+  String get groupBlockedDesc => 'All apps in this group are suspended';
+
+  @override
+  String groupBlockedMsg(String name) {
+    return 'Group $name blocked';
+  }
+
+  @override
+  String groupUnblockedMsg(String name) {
+    return 'Group $name unblocked';
+  }
+
+  @override
+  String get autoBlockUninstallTitle =>
+      'Block uninstalling suspended or blocked apps';
+
+  @override
+  String get autoBlockUninstallSub =>
+      'While on, any suspended or blocked app cannot be uninstalled';
+
+  @override
+  String get autoBlockUninstallOn => 'Uninstall blocked for suspended apps';
+
+  @override
+  String get autoBlockUninstallOff => 'Uninstall allowed for suspended apps';
+
+  @override
+  String get dnsInvalidConfigId => 'Enter a valid NextDNS configuration ID';
+
+  @override
+  String dnsCurrentHost(String hostname) {
+    return 'Current host: $hostname';
+  }
+
+  @override
+  String get dnsNotSet => 'Private DNS is not set';
+
+  @override
+  String get dnsApplied => 'DNS protection applied';
+
+  @override
+  String get dnsTurnedOff => 'DNS protection turned off';
+
+  @override
+  String get dnsSettings => 'Settings';
+
+  @override
   String get refresh => 'Refresh';
 
   @override
@@ -1270,7 +1424,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removalPartialBody =>
-      'Device Owner was removed, but some cleanup steps did not complete. You can try again, or uninstall normally — Android discards any remaining owner policies when the app is uninstalled.';
+      'The teardown finished, but some steps did not complete — they are listed below. Try the removal again instead of uninstalling while Device Owner may still be active.';
 
   @override
   String get removalStepDisarm => 'Disarm safeguards';
@@ -1701,6 +1855,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get visualSaved => 'Content inspection settings saved.';
 
   @override
+  String get visualDetectorErrorTitle => 'Content inspection is not working';
+
+  @override
+  String visualDetectorErrorBody(String error) {
+    return 'The image classifier failed to load, so visual blocking is off: $error';
+  }
+
+  @override
   String get sealRulesTitle => 'Seal rules';
 
   @override
@@ -1937,6 +2099,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addPerAppList => 'Add per-app list';
+
+  @override
+  String get wordHint => 'e.g., pussy';
+
+  @override
+  String get noMoreAppsForPassive =>
+      'Every installed app already has a passive list';
 
   @override
   String get loadingWarningStages => 'Loading warning stages…';
@@ -2490,6 +2659,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editLimit => 'Edit limit';
 
   @override
+  String get editGroupWindows => 'Edit time windows';
+
+  @override
+  String groupWindowsUpdatedDesc(String group) {
+    return 'Time windows updated for group $group';
+  }
+
+  @override
   String get renameGroupAction => 'Rename group';
 
   @override
@@ -2864,6 +3041,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get appGroupTile => 'Group';
+
+  @override
+  String get noGroup => 'No group';
+
+  @override
+  String get selectGroupTitle => 'Select group';
+
+  @override
+  String groupAssignedDesc(String app) {
+    return 'Group updated for $app';
+  }
+
+  @override
   String noRestrictionsFor(String app) {
     return 'No restrictions available for $app. This app does not declare any managed restrictions.';
   }
@@ -2958,7 +3149,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removalTimeoutWarningBody =>
-      'Device Owner was cleared, but the system has not finished settling all teardown steps. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:';
+      'The teardown did not finish within the time limit, so its outcome is unverified — Device Owner may still be active. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:';
 
   @override
   String get removalRecheckAction => 'Re-check status';
