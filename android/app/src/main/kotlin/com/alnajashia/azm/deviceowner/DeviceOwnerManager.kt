@@ -753,6 +753,45 @@ object DeviceOwnerManager {
         if (suspended && reason != null) {
             packageNames.forEach { SettingsStore.logSuspension(it, reason) }
         }
+        // Batch F, item 6: a suspended app must not be uninstallable —
+        // uninstalling is the obvious escape from a suspension. The
+        // block is recorded as AUTO-applied, so unsuspending clears only
+        // blocks Azm itself set, never a manual block from the app
+        // sheet. Best-effort per package: a failed block is logged and
+        // left unrecorded (never faked), and never fails the suspension
+        // itself; a failed unblock stays recorded so the next unsuspend
+        // retries it. The whole coupling is armed by the item-6
+        // Settings switch (default ON).
+        if (SettingsStore.isAutoBlockUninstallSuspended()) {
+            if (suspended) {
+                packageNames.forEach { pkg ->
+                    try {
+                        dpm.setUninstallBlocked(admin, pkg, true)
+                        SettingsStore.setAutoUninstallBlocked(pkg, true)
+                    } catch (e: Exception) {
+                        android.util.Log.w(
+                            "DeviceOwnerManager",
+                            "auto uninstall-block failed for $pkg",
+                            e,
+                        )
+                    }
+                }
+            } else {
+                packageNames.forEach { pkg ->
+                    if (pkg !in SettingsStore.autoUninstallBlockedPackages()) return@forEach
+                    try {
+                        dpm.setUninstallBlocked(admin, pkg, false)
+                        SettingsStore.setAutoUninstallBlocked(pkg, false)
+                    } catch (e: Exception) {
+                        android.util.Log.w(
+                            "DeviceOwnerManager",
+                            "auto uninstall-unblock failed for $pkg",
+                            e,
+                        )
+                    }
+                }
+            }
+        }
         return results
     }
 
@@ -774,6 +813,63 @@ object DeviceOwnerManager {
             )
         }
         return verified
+    }
+
+    /**
+     * The item-6 Settings switch: turning it ON blocks uninstall for
+     * every currently-suspended app (and arms the coupling in
+     * [setPackagesSuspended] for future suspensions); turning it OFF
+     * releases exactly the AUTO-applied blocks and clears the record.
+     * Manual blocks are never touched in either direction. Returns the
+     * verified flag.
+     */
+    fun setAutoBlockUninstallSuspended(context: Context, enabled: Boolean): Boolean {
+        requireOwner(context)
+        val dpm = dpm(context)
+        val admin = adminComponent(context)
+        SettingsStore.setAutoBlockUninstallSuspended(enabled)
+        if (enabled) {
+            val pm = context.packageManager
+            val installed = try {
+                pm.getInstalledApplications(PackageManager.GET_META_DATA)
+            } catch (_: Exception) {
+                emptyList()
+            }
+            installed.forEach { info ->
+                val pkg = info.packageName
+                if (pkg == context.packageName) return@forEach
+                val suspended = try {
+                    dpm.isPackageSuspended(admin, pkg)
+                } catch (_: Exception) {
+                    false
+                }
+                if (!suspended) return@forEach
+                try {
+                    dpm.setUninstallBlocked(admin, pkg, true)
+                    SettingsStore.setAutoUninstallBlocked(pkg, true)
+                } catch (e: Exception) {
+                    android.util.Log.w(
+                        "DeviceOwnerManager",
+                        "auto uninstall-block failed for $pkg",
+                        e,
+                    )
+                }
+            }
+        } else {
+            SettingsStore.autoUninstallBlockedPackages().toList().forEach { pkg ->
+                try {
+                    dpm.setUninstallBlocked(admin, pkg, false)
+                    SettingsStore.setAutoUninstallBlocked(pkg, false)
+                } catch (e: Exception) {
+                    android.util.Log.w(
+                        "DeviceOwnerManager",
+                        "auto uninstall-unblock failed for $pkg",
+                        e,
+                    )
+                }
+            }
+        }
+        return SettingsStore.isAutoBlockUninstallSuspended()
     }
 
     // ------------------------------------------------------------ user restrictions (F3)
@@ -1118,6 +1214,85 @@ object DeviceOwnerManager {
         return result.sortedBy { (it["label"] as String).lowercase() }
     }
 
+    /**
+     * All installed torrent clients (Batch F, item 4), ported in
+     * structure from DeChainer's `BrowserRestrictionsManager.getPossibleTorrentApps`
+     * (Apache-2.0, warleysr/dechainer) with Azm naming.
+     *
+     * Two discovery passes, de-duplicated by package:
+     *  1. Magnet links: the `magnet:` scheme is uniquely used by
+     *     torrent clients;
+     *  2. Torrent files: an activity that handles
+     *     `application/x-bittorrent` or a `.torrent` data path — with
+     *     the original's strictness: generic file handlers that merely
+     *     declare wildcards are excluded, so a file manager or a
+     *     browser that opens any file is never mistaken for a torrent
+     *     client.
+     *
+     * Each entry carries `packageName` and `label` (no icon — the
+     * torrent card lists names only). Azm itself is never listed.
+     */
+    fun getPossibleTorrentApps(context: Context): List<Map<String, Any?>> {
+        val pm = context.packageManager
+
+        // 1. Magnet links: magnet scheme is uniquely used by torrent clients
+        val magnetIntent = Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse("magnet:?xt=urn:btih:1234567890ABCDEF"),
+        )
+        val magnetHandlers = pm.queryIntentActivities(
+            magnetIntent,
+            PackageManager.MATCH_ALL or PackageManager.GET_RESOLVED_FILTER,
+        ).mapNotNull { it.activityInfo?.packageName }
+
+        // 2. Torrent files: must specifically handle
+        // "application/x-bittorrent" or the ".torrent" extension.
+        val torrentIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(
+                Uri.parse("content://dummy/file.torrent"),
+                "application/x-bittorrent",
+            )
+        }
+        val torrentHandlers = pm.queryIntentActivities(
+            torrentIntent,
+            PackageManager.MATCH_ALL or PackageManager.GET_RESOLVED_FILTER,
+        ).filter { resolveInfo ->
+            val filter = resolveInfo.filter ?: return@filter false
+
+            // Explicit MIME type application/x-bittorrent (not */* or application/*)
+            val hasExplicitMime = filter.typesIterator()?.asSequence()?.any { type ->
+                type.equals("application/x-bittorrent", ignoreCase = true)
+            } == true
+
+            // Explicit .torrent file extension in data path
+            val hasTorrentPath = (0 until filter.countDataPaths()).any { i ->
+                val path = filter.getDataPath(i)
+                path.path.endsWith(".torrent", ignoreCase = true)
+            }
+
+            val hasMagnetScheme = filter.hasDataScheme("magnet")
+
+            hasExplicitMime || hasTorrentPath || hasMagnetScheme
+        }.mapNotNull { it.activityInfo?.packageName }
+
+        val packages = (magnetHandlers + torrentHandlers).toSet()
+        return packages
+            .filter { it != context.packageName }
+            .map { pkg ->
+                val label = try {
+                    pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+                } catch (_: Exception) {
+                    pkg
+                }
+                mapOf<String, Any?>("packageName" to pkg, "label" to label)
+            }
+            .sortedBy { (it["label"] as String).lowercase() }
+    }
+
+    /** Membership check against [getPossibleTorrentApps]. */
+    fun isTorrentApp(context: Context, packageName: String): Boolean =
+        getPossibleTorrentApps(context).any { it["packageName"] == packageName }
+
     private fun iconBase64(pm: PackageManager, packageName: String): String? = try {
         val drawable = pm.getApplicationIcon(packageName)
         val size = 96
@@ -1234,6 +1409,26 @@ object DeviceOwnerManager {
             )
         }
         return getPrivateDns(context)
+    }
+
+    /** Clears any specified-host Private DNS (Batch DNS "off" side):
+     * back to opportunistic, verified by re-reading the mode. */
+    fun resetPrivateDns(context: Context): Map<String, Any?> {
+        requireOwner(context)
+        val dpm = dpm(context)
+        val admin = adminComponent(context)
+        try {
+            dpm.setGlobalPrivateDnsModeOpportunistic(admin)
+        } catch (e: Exception) {
+            throw PrivException.dpmFailed("setGlobalPrivateDnsModeOpportunistic failed", e)
+        }
+        val after = getPrivateDns(context)
+        if (after["mode"] == "PRIVATE_DNS_MODE_PROVIDER_HOSTNAME_SPECIFIED") {
+            throw PrivException.dpmFailed(
+                "Private DNS is still in specified-host mode after reset",
+            )
+        }
+        return after
     }
 
     fun getPrivateDns(context: Context): Map<String, Any?> {
