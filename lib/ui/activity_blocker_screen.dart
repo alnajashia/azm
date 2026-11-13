@@ -127,6 +127,40 @@ class _ActivityBlockerScreenState extends State<ActivityBlockerScreen> {
     await _saveBlocked(next);
   }
 
+  /// v1.0.1 follow-up: block the whole app — every activity it
+  /// declares, not just the ones the service already saw. The
+  /// protected ones are filtered client-side first, because the
+  /// native side refuses the entire save if any entry is protected.
+  Future<void> _blockWholeApp(String packageName) async {
+    setState(() => _busy = true);
+    try {
+      final all =
+          await widget.controller.channel.getAppActivities(packageName);
+      final blockable = all
+          .where((c) => !_looksProtected(c))
+          .toSet()
+          .difference(_blocked?.toSet() ?? const {})
+          .toList();
+      if (!mounted) return;
+      if (blockable.isEmpty) {
+        showInfoSnackBar(context, context.l10n.noBlockableActivities);
+        return;
+      }
+      final next = {...?_blocked, ...blockable}.toList()..sort();
+      await _saveBlocked(next);
+      if (mounted) {
+        showInfoSnackBar(
+          context,
+          context.l10n.blockedWholeApp(blockable.length),
+        );
+      }
+    } on Object catch (e) {
+      if (mounted) await showErrorCard(context, e);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   /// v1.0.1: pick the app first (search + system-apps toggle, the
   /// shared picker), then pick one of its recently seen activities —
   /// or type a class name. The old flow was a bare text field that
@@ -145,6 +179,7 @@ class _ActivityBlockerScreenState extends State<ActivityBlockerScreen> {
         .toList();
     final controller = TextEditingController();
     String? error;
+    var blockWhole = false;
     final saved = await showDialog<String>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -184,6 +219,17 @@ class _ActivityBlockerScreenState extends State<ActivityBlockerScreen> {
                   ),
                 const SizedBox(height: 12),
               ],
+              // Block the whole app at once — every activity it
+              // declares (not just the seen ones).
+              FilledButton.icon(
+                onPressed: () {
+                  blockWhole = true;
+                  Navigator.pop(dialogContext);
+                },
+                icon: const Icon(Icons.block_outlined),
+                label: Text(dialogContext.l10n.blockEntireApp),
+              ),
+              const SizedBox(height: 12),
               Text(dialogContext.l10n.addActivityBody),
               const SizedBox(height: 12),
               TextField(
@@ -228,6 +274,10 @@ class _ActivityBlockerScreenState extends State<ActivityBlockerScreen> {
         ),
       ),
     );
+    if (blockWhole) {
+      await _blockWholeApp(packageName);
+      return;
+    }
     if (saved == null || !mounted) return;
     await _blockActivity(saved);
   }
