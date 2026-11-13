@@ -369,7 +369,7 @@ void main() {
         );
         expect(
           find.text(
-            'Device Owner was cleared, but the system has not finished settling all teardown steps. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:',
+            'The teardown did not finish within the time limit, so its outcome is unverified — Device Owner may still be active. Do NOT uninstall yet, or the device may experience issues. The following checks are unverified:',
           ),
           findsOneWidget,
         );

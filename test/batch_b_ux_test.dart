@@ -432,7 +432,7 @@ void main() {
       expect(find.text('ABCD EFGH IJKL MNOP'), findsOneWidget);
     });
 
-    testWidgets('ScratchCard reveals via pan gesture erasing >= 60%',
+    testWidgets('ScratchCard reveals via one quick swipe (threshold 20%)',
         (tester) async {
       bool revealed = false;
 
@@ -460,17 +460,15 @@ void main() {
       expect(revealed, isFalse);
       expect(find.text('ABCD EFGH IJKL MNOP'), findsNothing);
 
-      // Sweep finger back and forth across the card to erase >= 60%
+      // Batch F, item 2: one horizontal swipe across the middle must
+      // reveal — the old 60% threshold forced scrubbing most of the card.
       final cardCenter = tester.getCenter(find.byType(ScratchCard));
       final gesture = await tester.startGesture(
-        cardCenter - const Offset(120, 50),
+        cardCenter - const Offset(120, 0),
       );
-
-      for (double y = -50; y <= 50; y += 10) {
-        for (double x = -120; x <= 120; x += 15) {
-          await gesture.moveTo(cardCenter + Offset(x, y));
-          await tester.pump(const Duration(milliseconds: 2));
-        }
+      for (double x = -120; x <= 120; x += 15) {
+        await gesture.moveTo(cardCenter + Offset(x, 0));
+        await tester.pump(const Duration(milliseconds: 2));
       }
       await gesture.up();
       await tester.pumpAndSettle();
