@@ -236,7 +236,9 @@ void main() {
         case 'getColourModesStatus':
           return fakeColourStatus;
         case 'syncColourModes':
-          return {'ok': true};
+          // The real sync only runs while the service instance
+          // exists; a stopped service is a silent no-op (v1.0.1).
+          return {'ok': fakeColourStatus['accessibilityServiceEnabled']};
         case 'grantWriteSecureSettings':
           return {'granted': true};
         case 'setAccessibilityEnabled':
@@ -449,7 +451,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // v1.0.1: the add flow picks the app first (search + system
+      // toggle), then the activity.
       await tester.tap(find.byIcon(Icons.add_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Block an activity'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Example'),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byType(TextField),
@@ -463,7 +475,7 @@ void main() {
         findsOneWidget,
       );
       // The dialog stays open and nothing was written.
-      expect(find.text('Block an activity'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
       expect(
         calls.where((c) => c.method == 'setBlockedActivities'),
         isEmpty,
@@ -679,6 +691,76 @@ void main() {
       );
       expect(tester.widget<Switch>(find.byType(Switch).at(1)).value, isFalse);
       controller.session.end();
+    });
+
+    testWidgets(
+        'v1.0.1: switching a mode on with the service off asks to '
+        'enable it and saves nothing', (tester) async {
+      fakeColourStatus['accessibilityServiceEnabled'] = false;
+      final controller = makeController();
+      await tester.pumpWidget(
+        buildTestApp(
+          child: ColourModesScreen(controller: controller),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Night light is off in the default config; its switch is the
+      // fourth Switch (master, grayscale, the grayscale card's
+      // "apply during focus" switch, night light).
+      final nightLightSwitch = find.byType(Switch).at(3);
+      expect(tester.widget<Switch>(nightLightSwitch).value, isFalse);
+      await tester.tap(nightLightSwitch);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Accessibility service is off'), findsOneWidget);
+      expect(
+        calls.where((c) => c.method == 'setColourModesConfig'),
+        isEmpty,
+      );
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets(
+        'v1.0.1: a slider change with the service off saves but '
+        'says the sync did not apply', (tester) async {
+      fakeColourStatus['accessibilityServiceEnabled'] = false;
+      fakeColourConfig['modes'] = ['EXTRA_DIM'];
+      fakeColourConfig['extraDimLevel'] = 50;
+      final controller = makeController();
+      await tester.pumpWidget(
+        buildTestApp(
+          child: ColourModesScreen(controller: controller),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final slider = find.byType(Slider);
+      expect(slider, findsOneWidget);
+      await tester.drag(slider, const Offset(100, 0));
+      await tester.pumpAndSettle();
+
+      final saveCalls = calls.where(
+        (c) => c.method == 'setColourModesConfig',
+      );
+      expect(saveCalls, hasLength(1));
+      expect(
+        (saveCalls.single.arguments['extraDimLevel'] as int),
+        greaterThan(50),
+      );
+      // The same text also sits in the status card, so assert the
+      // snackbar specifically.
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.text(
+            'Accessibility service is off — colour modes cannot apply. '
+            'Turn it on below.',
+          ),
+        ),
+        findsOneWidget,
+      );
     });
   });
 
