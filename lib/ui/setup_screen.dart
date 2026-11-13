@@ -41,7 +41,7 @@ class SetupScreen extends StatefulWidget {
 
 /// This app's own package name, for telling "we are the current owner"
 /// apart from "*another* app is the current owner" in diagnostics.
-const String _ownPackage = 'io.github.alnajashia.azm';
+const String _ownPackage = 'com.alnajashia.azm';
 
 class _SetupScreenState extends State<SetupScreen> {
   ShizukuStatus? _shizuku;
