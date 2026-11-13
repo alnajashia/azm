@@ -20,7 +20,7 @@
 - **100% On-Device Execution:** Zero cloud servers, zero external backends, zero accounts, and zero telemetry. Your data, rules, and schedules never leave your hardware.
 - **Uncompromising Self-Control:** Rules and restrictions are designed to be tamper-resistant. Once active, barriers cannot be impulsively dismissed or bypassed without dedicated cooling-off rituals or the physical paper recovery key.
 - **Setup-Time Privilege Only:** [Shizuku](https://shizuku.rikka.app/) is utilized strictly as a one-time provisioning mechanism during initial setup to grant Device Owner privileges and permissions. Once provisioned, Azm operates fully autonomously and requires no background Shizuku daemon.
-- **Privacy & Security First:** Recovery codes are never stored in plaintext. They are protected using a salted, hardware-backed PBKDF2 cryptographic derivation.
+- **Privacy & Security First:** Recovery codes are never stored in plaintext. They are protected using a salted PBKDF2 cryptographic derivation.
 
 ---
 
@@ -49,9 +49,11 @@
 ### Accessibility Enforcement Engine
 - **Tamper Reversion:** Continuous monitoring to safeguard essential accessibility services against unauthorized termination.
 - **Proactive & Passive Content Guard:** Keyword filtering and on-device text scanning to keep apps aligned with your self-control goals.
+- **Colour Modes:** Grayscale, night light, extra dim and colour inversion enforced at the system level on schedules, per app, and during focus sessions — with a recovery-gated lock against loosening and automatic release on removal, so the phone is never left grey with no way to switch it off.
 
 ### Self-Control Rituals & Gates
 - **PBKDF2 Paper Recovery Key:** An unrecoverable 16-character recovery key designed to be written down on physical paper and stored securely. Modifying protected settings requires a deliberate physical friction ritual.
+- **Scratch-to-Reveal Recovery Key:** At first launch the paper code stays hidden under a scratch cover until revealed, with a screen-reader alternative, and screenshots are blocked while it is shown.
 - **Timed Recovery Sessions:** Emergency loosening sessions expire automatically after 10 minutes.
 - **Focus & Discipline Challenges:** Mathematical drills and typing friction challenges ensure intentionality before sensitive restrictions can be altered.
 - **Focus (Pomodoro) Sessions:** Deep-work cycles with strict enforcement and break timers.
