@@ -138,8 +138,16 @@ class PrivilegedChannelHandler(
             // order: the paper recovery code opens every lock, so a
             // live recovery session (correct code verified < 10 min
             // ago on both clocks — see RecoveryStore) bypasses the
-            // seal entirely. Without a session, the seal still refuses.
-            if (!RecoveryStore.isRecoverySessionActive(appContext)) {
+            // seal entirely. Batch E review finding F-E2-1: a filed
+            // forced removal whose 24-hour countdown is COMPLETE
+            // bypasses it too — the 24-hour wait is itself the
+            // anti-impulse proof, so a fresh seal (e.g. a focus session
+            // started in the countdown's last minutes) must not strand
+            // the user at the finish line. Without a session AND
+            // without a due countdown, the seal still refuses.
+            if (!RecoveryStore.isRecoverySessionActive(appContext) &&
+                !RecoveryStore.isForcedRemovalDue(appContext)
+            ) {
                 SealRules.firstActiveSeal(appContext)?.let { throw PrivException.sealed(it) }
             }
             // v1.0.5 fix #6: the ordered teardown report (runs here, on
