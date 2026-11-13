@@ -2,6 +2,7 @@ package com.alnajashia.azm.channel
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -515,6 +516,22 @@ class PrivilegedChannelHandler(
                         "timestamp" to entry.timestamp,
                     )
                 },
+            )
+        }
+        "getAppActivities" -> {
+            // v1.0.1: every activity an app declares, for "block the
+            // whole app" (the seen-activities log only knows activities
+            // the service already watched). The caller filters the
+            // protected ones client-side before saving.
+            val pkg = call.reqString("packageName")
+            @Suppress("DEPRECATION")
+            val info = appContext.packageManager.getPackageInfo(
+                pkg,
+                PackageManager.GET_ACTIVITIES,
+            )
+            mapOf(
+                "activities" to
+                    (info.activities?.map { it.name } ?: emptyList<String>()),
             )
         }
         "getSuspensionLogs" -> mapOf(
