@@ -1855,7 +1855,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noSupportingBrowser =>
-      'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).';
+      'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.';
 
   @override
   String get blocklists => 'Blocklists';
@@ -2687,7 +2687,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noCapableBrowser =>
-      'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).';
+      'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.';
 
   @override
   String get blocklistsSection => 'Blocklists';

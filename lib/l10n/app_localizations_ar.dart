@@ -1836,7 +1836,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noSupportingBrowser =>
-      'لا يصرّح أي متصفح مثبّت بـ URLBlocklist في قيوده المُدارة، فلا توجد سياسة لدفعها. المتصفحات غير الداعمة تُعالج بقواعد التعليق (التعليق التلقائي v1.1).';
+      'لا يصرّح أي متصفح مثبّت بـ URLBlocklist في قيوده المُدارة، فلا توجد سياسة لدفعها. المتصفحات غير الداعمة تُعالج بقواعد التعليق.';
 
   @override
   String get blocklists => 'قوائم الحظر';
@@ -2663,7 +2663,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noCapableBrowser =>
-      'لا يعلن أي متصفح مثبّت عن URLBlocklist في قيوده المُدارة، فلا يوجد ما تُدفع إليه السياسة. المتصفحات غير الداعمة تُعالج بقواعد التعليق (التعليق التلقائي في v1.1).';
+      'لا يعلن أي متصفح مثبّت عن URLBlocklist في قيوده المُدارة، فلا يوجد ما تُدفع إليه السياسة. المتصفحات غير الداعمة تُعالج بقواعد التعليق.';
 
   @override
   String get blocklistsSection => 'قوائم الحظر';

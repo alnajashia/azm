@@ -966,7 +966,7 @@
     }
   },
   "supportingBrowsers": "Supporting browsers",
-  "noSupportingBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).",
+  "noSupportingBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.",
   "blocklists": "Blocklists",
   "noBlocklists": "No blocklists yet. Create one to start blocking sites.",
   "sitesCount": "{count} site(s)",
@@ -1533,7 +1533,7 @@
     }
   },
   "ownerStillActiveMsg": "Device Owner is still active after removal",
-  "noCapableBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).",
+  "noCapableBrowser": "No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.",
   "blocklistsSection": "Blocklists",
   "noBlocklistsYet": "No blocklists yet. Create one to start blocking sites.",
   "usageWarningsBody": "Each stage warns once, the configured number of minutes before an app's daily limit runs out. Stages are stored for the Accessibility Service to fire; notification delivery depends on the native notifier.",

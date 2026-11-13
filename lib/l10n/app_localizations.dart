@@ -3233,7 +3233,7 @@ abstract class AppLocalizations {
   /// No description provided for @noSupportingBrowser.
   ///
   /// In en, this message translates to:
-  /// **'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).'**
+  /// **'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.'**
   String get noSupportingBrowser;
 
   /// No description provided for @blocklists.
@@ -4655,7 +4655,7 @@ abstract class AppLocalizations {
   /// No description provided for @noCapableBrowser.
   ///
   /// In en, this message translates to:
-  /// **'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules (v1.1 auto-suspension).'**
+  /// **'No installed browser declares URLBlocklist in its managed restrictions, so there is nothing to push policy to. Browsers without support are handled by suspension rules.'**
   String get noCapableBrowser;
 
   /// No description provided for @blocklistsSection.
