@@ -251,6 +251,17 @@ void main() {
           return {'activities': fakeBlockedActivities};
         case 'getAccessedActivities':
           return {'activities': fakeAccessedActivities};
+        case 'getAppActivities':
+          // v1.0.1 follow-up: the example app declares three
+          // activities — one of them the launcher, which must be
+          // filtered out client-side.
+          return {
+            'activities': [
+              'com.example.app.MainActivity',
+              'com.example.app.SecondActivity',
+              'com.example.app.LauncherActivity',
+            ],
+          };
         default:
           return null;
       }
@@ -480,6 +491,44 @@ void main() {
         calls.where((c) => c.method == 'setBlockedActivities'),
         isEmpty,
       );
+    });
+
+    testWidgets('blocking the whole app saves every non-protected activity',
+        (tester) async {
+      await tester.pumpWidget(
+        buildTestApp(
+          child: ActivityBlockerScreen(controller: makeController()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.add_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Example'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // v1.0.1 follow-up: one tap blocks the whole app.
+      // (find.text, not widgetWithText: FilledButton.icon's label
+      // is a plain Text descendant; the text itself is the handle.)
+      await tester.tap(find.text('Block entire app'));
+      await tester.pumpAndSettle();
+
+      final saveCalls = calls.where(
+        (c) => c.method == 'setBlockedActivities',
+      );
+      expect(saveCalls, hasLength(1));
+      final saved = saveCalls.first.arguments['activities'] as List;
+      expect(saved, contains('com.example.app.MainActivity'));
+      expect(saved, contains('com.example.app.SecondActivity'));
+      // The launcher activity is protected and must be filtered out.
+      expect(saved, isNot(contains('com.example.app.LauncherActivity')));
+      // The already-blocked activity stays.
+      expect(saved, contains('com.example.app.BadActivity'));
+      expect(find.text('Blocked 2 activities of this app.'), findsOneWidget);
     });
 
     testWidgets('removing a block goes through confirm + gate',
