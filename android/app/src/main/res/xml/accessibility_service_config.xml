@@ -8,7 +8,7 @@
     android:accessibilityFeedbackType="feedbackSpoken"
     android:accessibilityFlags="flagIncludeNotImportantViews|flagRetrieveInteractiveWindows"
     android:notificationTimeout="100"
-    android:settingsActivity="io.github.alnajashia.azm.MainActivity"
+    android:settingsActivity="com.alnajashia.azm.MainActivity"
     android:canRetrieveWindowContent="true"
     android:description="@string/accessibility_description"
     android:canTakeScreenshot="true"
