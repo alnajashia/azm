@@ -23,7 +23,11 @@ import com.alnajashia.azm.data.SettingsStore
 import com.alnajashia.azm.data.VisualBlockingSettings
 import com.alnajashia.azm.data.SuspensionReason
 import com.alnajashia.azm.deviceowner.DeviceOwnerManager
+import com.alnajashia.azm.focus.FocusSchedule
+import com.alnajashia.azm.focus.FocusScheduleManager
+import com.alnajashia.azm.focus.FocusScheduleStorage
 import com.alnajashia.azm.focus.FocusSessionStore
+import com.alnajashia.azm.lockdown.LockdownStore
 import com.alnajashia.azm.security.RecoveryStore
 import com.alnajashia.azm.shizuku.ShizukuGateway
 import com.alnajashia.azm.shizuku.ShizukuProvisioning
@@ -36,7 +40,7 @@ import java.util.concurrent.Executors
  * EventChannel `azm/privileged/events`, all 25 contract methods plus
  * the §8 enforcement-config extension methods (`get/setTimeLimit`,
  * `get/setTimeWindows`, `get/setGroups`, `get/setBlockedWords`,
- * `setPassiveWords`, `get/clearSuspensionLogs`, `get/setSetting`,
+ * `setPassiveWords`, `setWordAssignments` (Batch H merged write),
  * `generateRecoveryCode`) added when the Dart layer was built — §8.3 requires
  * channel-mediated SettingsStore writes, and the first Kotlin pass exposed
  * none of them, which made the Dart editors unable to persist anything.
@@ -63,6 +67,10 @@ class PrivilegedChannelHandler(
 
     @Volatile
     private var eventSink: EventChannel.EventSink? = null
+
+    // Tetris sounds (Batch I-C): one SoundPool for the challenge's
+    // lifetime; created on first load, released by the view's dispose.
+    private var tetrisSounds: com.alnajashia.azm.challenges.TetrisSounds? = null
 
     fun attach() {
         methodChannel.setMethodCallHandler(this)
@@ -408,6 +416,53 @@ class PrivilegedChannelHandler(
             FocusSessionStore.stop(appContext)
             null
         }
+        // Focus schedules (Batch I-A, item 13) — the whole list is
+        // the unit of write, like setGroups. Saving re-arms the alarm
+        // via FocusScheduleStorage.
+        "getFocusSchedules" -> mapOf(
+            "schedules" to FocusScheduleStorage.getSchedules(appContext).map { it.toMap() },
+            "canScheduleExactAlarms" to FocusScheduleManager.canScheduleExactAlarms(appContext),
+        )
+        "setFocusSchedules" -> {
+            val raw = call.argument<List<Map<String, Any?>>>("schedules")
+                ?: throw IllegalArgumentException("schedules is required")
+            val schedules = raw.mapNotNull { FocusSchedule.fromMap(it) }
+            FocusScheduleStorage.saveSchedules(appContext, schedules)
+            mapOf(
+                "schedules" to FocusScheduleStorage.getSchedules(appContext).map { it.toMap() },
+                "canScheduleExactAlarms" to
+                    FocusScheduleManager.canScheduleExactAlarms(appContext),
+            )
+        }
+        "openExactAlarmSettings" -> {
+            FocusScheduleManager.openExactAlarmSettings(appContext)
+            null
+        }
+        // Full-phone lockdown (Batch I-B, item 14). The config list
+        // is the unit of write, like setGroups/setFocusSchedules.
+        // startLockdown takes the full lockdown map (one-shots are
+        // transient and are NOT saved in the config list); endLockdown
+        // is idempotent. Both return the fresh state.
+        "getLockdownState" -> LockdownStore.stateMap(appContext)
+        "setLockdowns" -> {
+            val raw = call.argument<List<Map<String, Any?>>>("lockdowns")
+                ?: throw IllegalArgumentException("lockdowns is required")
+            val lockdowns = raw.mapNotNull { LockdownStore.Lockdown.fromMap(it) }
+            LockdownStore.saveLockdowns(appContext, lockdowns)
+            LockdownStore.stateMap(appContext)
+        }
+        "startLockdown" -> {
+            val raw = call.argument<Map<String, Any?>>("lockdown")
+                ?: throw IllegalArgumentException("lockdown is required")
+            val lockdown = LockdownStore.Lockdown.fromMap(raw)
+                ?: throw IllegalArgumentException("lockdown is invalid")
+            LockdownStore.start(appContext, lockdown)
+            LockdownStore.stateMap(appContext)
+        }
+        "endLockdown" -> {
+            LockdownStore.end(appContext)
+            LockdownStore.stateMap(appContext)
+        }
         // Notification permission (F12/F25 notifications)
         "hasNotificationPermission" -> mapOf(
             "granted" to FocusSessionStore.hasNotificationPermission(appContext),
@@ -428,6 +483,30 @@ class PrivilegedChannelHandler(
             "matches" to RecoveryStore.verifyCode(appContext, call.reqString("code")),
         )
         "isRecoveryCodeSet" -> mapOf("isSet" to RecoveryStore.isSet(appContext))
+        // Tetris sounds (Batch I-C): a SoundPool player, ported from
+        // Dechainer's TetrisSounds — the ringer-mode check lives in
+        // play(), like the original.
+        "loadTetrisSounds" -> {
+            if (tetrisSounds == null) {
+                tetrisSounds = com.alnajashia.azm.challenges.TetrisSounds(appContext)
+            }
+            tetrisSounds!!.load()
+            mapOf("loaded" to true)
+        }
+        "playTetrisSound" -> {
+            val sound = runCatching {
+                com.alnajashia.azm.challenges.TetrisSound.valueOf(
+                    call.reqString("name").uppercase(),
+                )
+            }.getOrNull()
+            if (sound != null) tetrisSounds?.play(sound)
+            mapOf("played" to (sound != null))
+        }
+        "releaseTetrisSounds" -> {
+            tetrisSounds?.release()
+            tetrisSounds = null
+            mapOf("released" to true)
+        }
         "generateRecoveryCode" -> mapOf("code" to RecoveryStore.generateCode())
         // Enforcement config (ARCH §8) — SettingsStore, read by the Accessibility Service.
         // These methods were missing from the first Kotlin pass although §8.3
@@ -500,6 +579,44 @@ class PrivilegedChannelHandler(
                 call.reqString("packageName"),
                 call.reqStringList("words").toSet(),
             )
+            blockedWordsPayload()
+        }
+        // Batch H, item 10: the merged write — one assignment list
+        // replaces the two parallel writers above (kept as adapters).
+        // Batch J: one row per word — targets are packageNames and/or
+        // groupIds, modes is a list. The old Batch H shape (single
+        // packageName / mode strings) is still accepted.
+        "setWordAssignments" -> {
+            val raw = call.argument<List<*>>("assignments")
+                ?: throw PrivException.invalidArgument("Missing or invalid argument: assignments")
+            val assignments = raw.mapNotNull { entry ->
+                val m = entry as? Map<*, *> ?: return@mapNotNull null
+                val word = (m["word"] as? String)?.trim().orEmpty()
+                if (word.isEmpty()) return@mapNotNull null
+                val pkgs = when (val p = m["packageNames"] ?: m["packageName"]) {
+                    is List<*> -> p.mapNotNull { (it as? String)?.trim()?.takeIf { s -> s.isNotEmpty() } }
+                    is String -> listOf(p.trim()).filter { it.isNotEmpty() }
+                    else -> emptyList()
+                }
+                val groups = when (val g = m["groupIds"] ?: m["groupId"]) {
+                    is List<*> -> g.mapNotNull { (it as? String)?.trim()?.takeIf { s -> s.isNotEmpty() } }
+                    is String -> listOf(g.trim()).filter { it.isNotEmpty() }
+                    else -> emptyList()
+                }
+                val modeStrings = when (val mo = m["modes"] ?: m["mode"]) {
+                    is List<*> -> mo.mapNotNull { it as? String }
+                    is String -> listOf(mo)
+                    else -> emptyList()
+                }
+                if (modeStrings.any { it != "active" && it != "passive" }) {
+                    throw PrivException.invalidArgument("Word assignment mode must be active or passive")
+                }
+                val modes = modeStrings.toSet()
+                if (pkgs.isEmpty() && groups.isEmpty()) return@mapNotNull null
+                if (modes.isEmpty()) return@mapNotNull null
+                SettingsStore.WordAssignment(word, pkgs, groups, modes)
+            }
+            SettingsStore.setWordAssignments(assignments)
             blockedWordsPayload()
         }
         // Activity blocker (Batch C, C2 — audit item 7): the store
@@ -728,6 +845,10 @@ class PrivilegedChannelHandler(
             "platformNightLight" to ColourModesController.platformNightLight,
             "extraDimAvailable" to ColourMode.EXTRA_DIM.isAvailable,
             "grayscaleSupported" to grayscaleSupported,
+            // Batch G, item 4: the keys the last enforce could not
+            // verify as written — the UI shows them instead of
+            // claiming the mode applied.
+            "failedKeys" to failed.toList(),
         )
     }
 
@@ -788,6 +909,17 @@ class PrivilegedChannelHandler(
         "targetPackages" to SettingsStore.wordTargetPackages().toList(),
         "passiveWords" to SettingsStore.passiveWordPackages()
             .associateWith { SettingsStore.passiveWordsFor(it).toList() },
+        // Batch H, item 10: the merged assignment table — the one
+        // canonical store both views read. Batch J: one row per word,
+        // with its apps, groups, and modes.
+        "assignments" to SettingsStore.wordAssignments().map {
+            mapOf(
+                "word" to it.word,
+                "packageNames" to it.packageNames,
+                "groupIds" to it.groupIds,
+                "modes" to it.modes.sorted(),
+            )
+        },
     )
 
     // ------------------------------------------------------------ argument validation
