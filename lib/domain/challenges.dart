@@ -6,6 +6,11 @@
 /// value exists so stored configs round-trip, but the runner treats it as
 /// unavailable and the selection UI labels it as such — never as playable.
 ///
+/// UPDATE (Batch I-C, item 2): Tetris IS implemented now — the engine
+/// below (`TetrisGame`) and the UI in `lib/ui/tetris_challenge.dart`.
+/// `isAvailableInV1` returns true for every type; the v1.1 comment above
+/// is kept as history only.
+///
 /// Reading passages below are a small ORIGINAL sample set written for this
 /// rebuild plus user-supplied custom phrases. The original app bundles a
 /// 423-line corpus of Bible/Quran/quote texts; that corpus is not copied.
@@ -24,7 +29,9 @@ extension ChallengeTypeInfo on ChallengeType {
       };
 
   /// Tetris has no v1 implementation (full game engine, ARCH §6.2).
-  bool get isAvailableInV1 => this != ChallengeType.tetris;
+  ///
+  /// UPDATE (Batch I-C): implemented — see `TetrisGame` below.
+  bool get isAvailableInV1 => true;
 }
 
 // --------------------------------------------------------------------- Math
@@ -404,5 +411,353 @@ class ReadingChallenge {
     _passageIndex = 0;
     _elapsed = Duration.zero;
     _loadPassage();
+  }
+}
+
+// --------------------------------------------------------------------- Tetris
+
+/// Tetris (Batch I-C, item 2): a line-by-line port of Dechainer's
+/// `TetrisGame` (`screens/challenges/TetrisChallenge.kt`, Apache-2.0).
+/// Pure Dart, no Flutter dependency — the UI lives in
+/// `lib/ui/tetris_challenge.dart`.
+///
+/// Board 8 columns × 20 rows (narrower than classic 10-wide —
+/// deliberate: faster play, fits a phone in portrait). 7 tetrominoes,
+/// 7-bag randomiser, wall kicks (0, −1, +1, −2, +2), gravity
+/// `1000ms − (level−1)×50ms` (floor 200ms), lock delay 500ms (max 15
+/// resets), ghost piece, line-clear animation (320ms), top-out
+/// animation (520ms).
+///
+/// No game over: topping out just clears the board and respawns.
+/// No score or lines requirement — the challenge is TIME ONLY (the
+/// widget counts active play; see `TetrisChallengeView`).
+///
+/// Colours: the engine stores the tetromino ordinal in the board
+/// (like the original); the UI maps ordinals to colours. `lines` is
+/// a plain public field (the original keeps it private-set) so tests
+/// can set up a level directly; the UI only reads it.
+enum TetrisGameEvent { move, rotate, lock, hardDrop, linesCleared, levelUp, topOut }
+
+/// `(event, count)` — `count` is the lines cleared for
+/// [TetrisGameEvent.linesCleared] and the new level for
+/// [TetrisGameEvent.levelUp]; 0 for the rest.
+typedef TetrisGameEventHandler = void Function(TetrisGameEvent event, int count);
+
+enum Tetromino {
+  i(4, [(0, 1), (1, 1), (2, 1), (3, 1)]),
+  o(2, [(0, 0), (1, 0), (0, 1), (1, 1)]),
+  t(3, [(1, 0), (0, 1), (1, 1), (2, 1)]),
+  s(3, [(1, 0), (2, 0), (0, 1), (1, 1)]),
+  z(3, [(0, 0), (1, 0), (1, 1), (2, 1)]),
+  j(3, [(0, 0), (0, 1), (1, 1), (2, 1)]),
+  l(3, [(2, 0), (0, 1), (1, 1), (2, 1)]);
+
+  const Tetromino(this.boxSize, this.cells);
+  final int boxSize;
+  final List<(int, int)> cells;
+
+  /// The cells for a rotation (0..3), rotated clockwise like the
+  /// original: `(x, y) -> (boxSize - 1 - y, x)`, applied `rotation` times.
+  List<(int, int)> rotatedCells(int rotation) {
+    var result = cells;
+    for (var i = 0; i < rotation % 4; i++) {
+      result = [for (final (x, y) in result) (boxSize - 1 - y, x)];
+    }
+    return result;
+  }
+}
+
+class TetrisPiece {
+  const TetrisPiece(this.type, this.rotation, this.x, this.y);
+  final Tetromino type;
+  final int rotation;
+  final int x;
+  final int y;
+
+  List<(int, int)> cells() => [
+        for (final (cx, cy) in type.rotatedCells(rotation)) (x + cx, y + cy),
+      ];
+
+  TetrisPiece copyWith({Tetromino? type, int? rotation, int? x, int? y}) =>
+      TetrisPiece(
+        type ?? this.type,
+        rotation ?? this.rotation,
+        x ?? this.x,
+        y ?? this.y,
+      );
+}
+
+/// One drop-trail column: the piece's lowest cell in the column fell
+/// from [fromY] to [toY]; [colorIndex] is the tetromino ordinal.
+class TetrisDropTrail {
+  const TetrisDropTrail(this.x, this.fromY, this.toY, this.colorIndex);
+  final int x;
+  final int fromY;
+  final int toY;
+  final int colorIndex;
+}
+
+class TetrisGame {
+  TetrisGame({Random? random, TetrisGameEventHandler? onEvent})
+      : _random = random ?? Random(),
+        _onEvent = onEvent {
+    _next = _nextFromBag();
+    _spawnNext();
+  }
+
+  static const cols = 8;
+  static const rows = 20;
+  static const empty = -1;
+  static const linesPerLevel = 10;
+  static const lockDelayMs = 500;
+  static const maxLockResets = 15;
+  static const clearAnimationMs = 320;
+  static const topOutAnimationMs = 520;
+  static const lockFlashMs = 180;
+  static const dropTrailMs = 220;
+  static const levelBannerMs = 1300;
+
+  /// The original's `Long.MIN_VALUE / 2` sentinel for "never happened".
+  static const _longAgo = -1 << 62;
+
+  final Random _random;
+  final TetrisGameEventHandler? _onEvent;
+
+  final List<int> board = List.filled(cols * rows, empty);
+  final List<Tetromino> _bag = [];
+
+  TetrisPiece? _current;
+  TetrisPiece? get current => _current;
+
+  late Tetromino _next;
+  Tetromino get next => _next;
+
+  int lines = 0;
+  int get level => lines ~/ linesPerLevel + 1;
+
+  int _clock = 0;
+  int get clock => _clock;
+  int _revision = 0;
+  int get revision => _revision;
+
+  List<int> _clearingRows = [];
+  List<int> get clearingRows => _clearingRows;
+  int _clearStartedAt = 0;
+  int get clearStartedAt => _clearStartedAt;
+  int? _topOutStartedAt;
+  int? get topOutStartedAt => _topOutStartedAt;
+  List<(int, int)> _lockFlashCells = [];
+  List<(int, int)> get lockFlashCells => _lockFlashCells;
+  int _lockFlashAt = _longAgo;
+  int get lockFlashAt => _lockFlashAt;
+  List<TetrisDropTrail> _dropTrails = [];
+  List<TetrisDropTrail> get dropTrails => _dropTrails;
+  int _dropTrailAt = _longAgo;
+  int get dropTrailAt => _dropTrailAt;
+  int _levelUpAt = _longAgo;
+  int get levelUpAt => _levelUpAt;
+
+  int _sinceGravity = 0;
+  int _lockElapsed = 0;
+  int _lockResets = 0;
+
+  int get gravityIntervalMs => max(200, 1000 - (level - 1) * 50);
+
+  Tetromino _nextFromBag() {
+    if (_bag.isEmpty) {
+      _bag.addAll([...Tetromino.values]..shuffle(_random));
+    }
+    return _bag.removeAt(0);
+  }
+
+  bool _fits(TetrisPiece piece) => piece.cells().every(
+        (c) =>
+            c.$1 >= 0 &&
+            c.$1 < cols &&
+            c.$2 >= 0 &&
+            c.$2 < rows &&
+            board[c.$2 * cols + c.$1] == empty,
+      );
+
+  bool _tryMove(TetrisPiece piece) {
+    if (!_fits(piece)) return false;
+    _current = piece;
+    if (_lockElapsed > 0 && _lockResets < maxLockResets) {
+      _lockElapsed = 0;
+      _lockResets++;
+    }
+    _revision++;
+    return true;
+  }
+
+  void update(int deltaMs) {
+    _clock += deltaMs;
+    if (_clearingRows.isNotEmpty) {
+      if (_clock - _clearStartedAt >= clearAnimationMs) _finishClear();
+      return;
+    }
+    final topOutAt = _topOutStartedAt;
+    if (topOutAt != null) {
+      if (_clock - topOutAt >= topOutAnimationMs) _finishTopOut();
+      return;
+    }
+    final piece = _current;
+    if (piece == null) return;
+    final below = piece.copyWith(y: piece.y + 1);
+    if (_fits(below)) {
+      _lockElapsed = 0;
+      _sinceGravity += deltaMs;
+      if (_sinceGravity >= gravityIntervalMs) {
+        _sinceGravity = 0;
+        _tryMove(below);
+      }
+    } else {
+      _lockElapsed += deltaMs;
+      if (_lockElapsed >= lockDelayMs) _lock(hardDrop: false);
+    }
+  }
+
+  void moveLeft() => _shift(-1);
+  void moveRight() => _shift(1);
+
+  void _shift(int dx) {
+    final piece = _current;
+    if (piece == null) return;
+    if (_tryMove(piece.copyWith(x: piece.x + dx))) {
+      _onEvent?.call(TetrisGameEvent.move, 0);
+    }
+  }
+
+  void rotate() {
+    final piece = _current;
+    if (piece == null) return;
+    final rotated = piece.copyWith(rotation: (piece.rotation + 1) % 4);
+    for (final kick in [0, -1, 1, -2, 2]) {
+      if (_tryMove(rotated.copyWith(x: rotated.x + kick))) {
+        _onEvent?.call(TetrisGameEvent.rotate, 0);
+        return;
+      }
+    }
+  }
+
+  void softDrop() {
+    final piece = _current;
+    if (piece == null) return;
+    if (_tryMove(piece.copyWith(y: piece.y + 1))) _sinceGravity = 0;
+  }
+
+  void hardDrop() {
+    final piece = _current;
+    if (piece == null) return;
+    final landing = ghost();
+    if (landing == null) return;
+    final trails = <TetrisDropTrail>[];
+    final byColumn = <int, List<int>>{};
+    for (final (x, y) in piece.cells()) {
+      (byColumn[x] ??= []).add(y);
+    }
+    for (final entry in byColumn.entries) {
+      final landingY = landing
+          .cells()
+          .where((c) => c.$1 == entry.key)
+          .map((c) => c.$2)
+          .reduce(min);
+      final fromY = entry.value.reduce(min);
+      if (landingY > fromY) {
+        trails.add(TetrisDropTrail(entry.key, fromY, landingY, piece.type.index));
+      }
+    }
+    _dropTrails = trails;
+    _dropTrailAt = _clock;
+    _current = landing;
+    _lock(hardDrop: true);
+  }
+
+  TetrisPiece? ghost() {
+    final start = _current;
+    if (start == null) return null;
+    var piece = start;
+    while (_fits(piece.copyWith(y: piece.y + 1))) {
+      piece = piece.copyWith(y: piece.y + 1);
+    }
+    return piece;
+  }
+
+  void _lock({required bool hardDrop}) {
+    final piece = _current;
+    if (piece == null) return;
+    for (final (x, y) in piece.cells()) {
+      board[y * cols + x] = piece.type.index;
+    }
+    _lockFlashCells = piece.cells();
+    _lockFlashAt = _clock;
+    _current = null;
+
+    final full = [
+      for (var row = 0; row < rows; row++)
+        if (List.generate(cols, (col) => board[row * cols + col])
+            .every((v) => v != empty))
+          row,
+    ];
+    if (full.isNotEmpty) {
+      _clearingRows = full;
+      _clearStartedAt = _clock;
+      _onEvent?.call(TetrisGameEvent.linesCleared, full.length);
+    } else {
+      _onEvent?.call(
+        hardDrop ? TetrisGameEvent.hardDrop : TetrisGameEvent.lock,
+        0,
+      );
+      _spawnNext();
+    }
+    _revision++;
+  }
+
+  void _finishClear() {
+    final levelBefore = level;
+    var writeRow = rows - 1;
+    for (var row = rows - 1; row >= 0; row--) {
+      if (_clearingRows.contains(row)) continue;
+      if (writeRow != row) {
+        for (var col = 0; col < cols; col++) {
+          board[writeRow * cols + col] = board[row * cols + col];
+        }
+      }
+      writeRow--;
+    }
+    for (var row = writeRow; row >= 0; row--) {
+      for (var col = 0; col < cols; col++) {
+        board[row * cols + col] = empty;
+      }
+    }
+    lines += _clearingRows.length;
+    _clearingRows = [];
+    if (level > levelBefore) {
+      _levelUpAt = _clock;
+      _onEvent?.call(TetrisGameEvent.levelUp, level);
+    }
+    _spawnNext();
+  }
+
+  void _finishTopOut() {
+    board.fillRange(0, board.length, empty);
+    _topOutStartedAt = null;
+    _spawnNext();
+  }
+
+  void _spawnNext() {
+    final type = _next;
+    _next = _nextFromBag();
+    final spawned = TetrisPiece(type, 0, (cols - type.boxSize) ~/ 2, 0);
+    _sinceGravity = 0;
+    _lockElapsed = 0;
+    _lockResets = 0;
+    if (_fits(spawned)) {
+      _current = spawned;
+    } else {
+      _topOutStartedAt = _clock;
+      _onEvent?.call(TetrisGameEvent.topOut, 0);
+    }
+    _revision++;
   }
 }

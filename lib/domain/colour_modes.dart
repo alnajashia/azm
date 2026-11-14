@@ -105,6 +105,12 @@ class ColourModesConfig {
     this.nightLightTemperature = 3200,
     this.nightLightIntensity = 5,
     this.extraDimLevel = 50,
+    // Batch G, item 4: on devices whose framework ignores the
+    // platform extra-dim keys (the user's Android 12 Transsion
+    // phone), Azm dims with its own overlay instead of the system
+    // setting. Default off — the platform path is preferred where
+    // it works.
+    this.extraDimUseOverlay = false,
     this.applyDuringFocus = false,
   });
 
@@ -120,6 +126,7 @@ class ColourModesConfig {
   final int nightLightTemperature;
   final int nightLightIntensity;
   final int extraDimLevel;
+  final bool extraDimUseOverlay;
   final bool applyDuringFocus;
 
   List<TimeWindowModel> windowsFor(ColourMode mode) => windows[mode] ?? const [];
@@ -189,6 +196,7 @@ class ColourModesConfig {
           (m['nightLightTemperature'] as num?)?.toInt() ?? 3200,
       nightLightIntensity: (m['nightLightIntensity'] as num?)?.toInt() ?? 5,
       extraDimLevel: (m['extraDimLevel'] as num?)?.toInt() ?? 50,
+      extraDimUseOverlay: m['extraDimUseOverlay'] as bool? ?? false,
       applyDuringFocus: m['applyDuringFocus'] as bool? ?? false,
     );
   }
@@ -215,6 +223,7 @@ class ColourModesConfig {
     'nightLightTemperature': nightLightTemperature,
     'nightLightIntensity': nightLightIntensity,
     'extraDimLevel': extraDimLevel,
+    'extraDimUseOverlay': extraDimUseOverlay,
     'applyDuringFocus': applyDuringFocus,
   };
 
@@ -228,6 +237,7 @@ class ColourModesConfig {
     int? nightLightTemperature,
     int? nightLightIntensity,
     int? extraDimLevel,
+    bool? extraDimUseOverlay,
     bool? applyDuringFocus,
   }) => ColourModesConfig(
     enabled: enabled ?? this.enabled,
@@ -239,6 +249,7 @@ class ColourModesConfig {
     nightLightTemperature: nightLightTemperature ?? this.nightLightTemperature,
     nightLightIntensity: nightLightIntensity ?? this.nightLightIntensity,
     extraDimLevel: extraDimLevel ?? this.extraDimLevel,
+    extraDimUseOverlay: extraDimUseOverlay ?? this.extraDimUseOverlay,
     applyDuringFocus: applyDuringFocus ?? this.applyDuringFocus,
   );
 }
@@ -262,6 +273,11 @@ class ColourModesStatus {
     required this.platformNightLight,
     required this.extraDimAvailable,
     required this.grayscaleSupported,
+    // Batch G, item 4: the secure keys the last enforce could not
+    // verify as written (empty = everything applied). Surfaced in
+    // the status card so a rejected write is visible instead of
+    // the toggle showing ON while nothing changed.
+    this.failedKeys = const {},
   });
 
   final bool enabled;
@@ -273,6 +289,25 @@ class ColourModesStatus {
   final bool platformNightLight;
   final bool extraDimAvailable;
   final bool grayscaleSupported;
+  final Set<String> failedKeys;
+
+  /// The colour modes whose secure keys failed to apply, derived
+  /// from [failedKeys] by secure-setting name prefix.
+  Set<ColourMode> get failedModes {
+    final modes = <ColourMode>{};
+    for (final key in failedKeys) {
+      if (key.startsWith('reduce_bright_colors')) {
+        modes.add(ColourMode.extraDim);
+      } else if (key.startsWith('accessibility_display_daltonizer')) {
+        modes.add(ColourMode.grayscale);
+      } else if (key.startsWith('night_display')) {
+        modes.add(ColourMode.nightLight);
+      } else if (key == 'accessibility_display_inversion_enabled') {
+        modes.add(ColourMode.inversion);
+      }
+    }
+    return modes;
+  }
 
   bool isLocked(ColourMode mode) => locked[mode] ?? false;
 
@@ -324,6 +359,11 @@ class ColourModesStatus {
       platformNightLight: m['platformNightLight'] as bool? ?? true,
       extraDimAvailable: m['extraDimAvailable'] as bool? ?? false,
       grayscaleSupported: m['grayscaleSupported'] as bool? ?? false,
+      failedKeys:
+          (m['failedKeys'] as List?)
+              ?.map((e) => e.toString())
+              .toSet() ??
+          const {},
     );
   }
 }
