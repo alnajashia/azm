@@ -1,14 +1,15 @@
-/// Challenge screens (F22, v1 subset): Math, Words, Reading. Tetris is
-/// v1.1 and is never presented as playable — see the selection UI in the
-/// Impulse Lock screen, which labels it unavailable.
+/// Challenge screens (F22): Math, Words, Reading and Tetris (Batch
+/// I-C, item 2 — Tetris was v1.1 until then).
 library;
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/tetris_sounds.dart';
 import '../domain/challenges.dart';
 import '../l10n/l10n.dart';
+import 'tetris_challenge.dart';
 
 class MathChallengeView extends StatefulWidget {
   const MathChallengeView({super.key, required this.onComplete});
@@ -318,18 +319,29 @@ class _ReadingChallengeViewState extends State<ReadingChallengeView> {
 
 /// Runs the selected challenges one after another (enum order, as in the
 /// original's ChallengeRunner) and calls [onAllComplete] at the end.
-/// Unavailable types (Tetris, v1.1) are skipped with an honest notice.
+/// [tetrisMinutes] / [tetrisSoundOn] are the Tetris settings the
+/// Impulse Lock screen loads from the config; [tetrisSounds] is the
+/// native SoundPool player; the sound toggle inside the game reports
+/// back through [onTetrisSoundChanged].
 class ChallengeRunnerView extends StatefulWidget {
   const ChallengeRunnerView({
     super.key,
     required this.types,
     required this.customPhrases,
     required this.onAllComplete,
+    this.tetrisMinutes = 3,
+    this.tetrisSoundOn = true,
+    required this.tetrisSounds,
+    this.onTetrisSoundChanged,
   });
 
   final List<ChallengeType> types;
   final List<String> customPhrases;
   final VoidCallback onAllComplete;
+  final int tetrisMinutes;
+  final bool tetrisSoundOn;
+  final TetrisSounds tetrisSounds;
+  final ValueChanged<bool>? onTetrisSoundChanged;
 
   @override
   State<ChallengeRunnerView> createState() => _ChallengeRunnerViewState();
@@ -346,8 +358,6 @@ class _ChallengeRunnerViewState extends State<ChallengeRunnerView> {
     _queue = sorted.where((t) => t.isAvailableInV1).toList();
   }
 
-  bool get _skippedTetris => widget.types.contains(ChallengeType.tetris);
-
   void _next() {
     setState(() => _index++);
     if (_index >= _queue.length) widget.onAllComplete();
@@ -359,11 +369,6 @@ class _ChallengeRunnerViewState extends State<ChallengeRunnerView> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_skippedTetris)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(context.l10n.tetrisSkippedNote),
-          ),
         if (_queue.isEmpty)
           FilledButton(
             onPressed: widget.onAllComplete,
@@ -377,7 +382,13 @@ class _ChallengeRunnerViewState extends State<ChallengeRunnerView> {
                 onComplete: _next,
                 customPhrases: widget.customPhrases,
               ),
-            ChallengeType.tetris => const SizedBox.shrink(), // filtered above
+            ChallengeType.tetris => TetrisChallengeView(
+                minutes: widget.tetrisMinutes,
+                soundOn: widget.tetrisSoundOn,
+                onSoundChanged: widget.onTetrisSoundChanged ?? (_) {},
+                sounds: widget.tetrisSounds,
+                onComplete: _next,
+              ),
           },
       ],
     );

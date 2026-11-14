@@ -28,12 +28,14 @@ import 'package:flutter/material.dart';
 import '../app_controller.dart';
 import '../data/config_store.dart';
 import '../data/privileged_channel.dart';
+import '../data/tetris_sounds.dart';
 import '../domain/challenges.dart';
 import '../domain/focus.dart';
 import '../domain/recovery.dart';
 import '../l10n/l10n.dart';
 import 'challenges_ui.dart';
 import 'common.dart';
+import 'lockdown_screen.dart';
 import 'recovery_ui.dart';
 
 /// Localized display name for a challenge type (the domain enum's
@@ -62,6 +64,11 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
   List<ChallengeType> _challenges = const [];
   List<String> _customPhrases = const [];
   bool _shuffle = false;
+  // Tetris (Batch I-C, item 2): loaded failure-tolerantly — the
+  // defaults (3 minutes, sound on) apply when a read fails, so a
+  // settings-read failure never blocks the screen.
+  int _tetrisMinutes = ConfigStore.tetrisDefaultMinutes;
+  bool _tetrisSoundOn = true;
   List<InstalledApp>? _apps;
   Object? _error;
   Timer? _ticker;
@@ -88,6 +95,16 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
       final phrases = await widget.controller.config.getCustomReadingPhrases();
       final shuffle = await widget.controller.config.getShuffleKeyboard();
       final apps = await widget.controller.channel.listInstalledApps();
+      int tetrisMinutes = ConfigStore.tetrisDefaultMinutes;
+      bool tetrisSoundOn = true;
+      try {
+        tetrisMinutes =
+            await widget.controller.config.getTetrisMinutes();
+      } catch (_) {}
+      try {
+        tetrisSoundOn =
+            await widget.controller.config.isTetrisSoundEnabled();
+      } catch (_) {}
       if (mounted) {
         setState(() {
           _config = config;
@@ -95,6 +112,8 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
           _customPhrases = phrases;
           _shuffle = shuffle;
           _apps = apps;
+          _tetrisMinutes = tetrisMinutes;
+          _tetrisSoundOn = tetrisSoundOn;
         });
       }
     } catch (e) {
@@ -117,6 +136,18 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
     }
   }
 
+  /// Tetris "Time to play" (Batch I-C, item 2): persists the slider
+  /// value; a failure surfaces instead of silently keeping the old
+  /// value on screen.
+  Future<void> _saveTetrisMinutes(int minutes) async {
+    try {
+      await widget.controller.config.setTetrisMinutes(minutes);
+      if (mounted) setState(() => _tetrisMinutes = minutes);
+    } catch (e) {
+      if (mounted) await showErrorCard(context, e);
+    }
+  }
+
   /// The challenge early-end (v1.0.5 audit H-1): runs the challenges
   /// the user selected for Impulse Lock — and ONLY those — and, when
   /// all complete, ends the lock through the controller's shared
@@ -126,8 +157,9 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
     final available =
         _challenges.where((t) => t.isAvailableInV1).toList();
     if (available.isEmpty) {
-      // A selection of only unavailable (v1.1) types must not end the
-      // lock by "completing" zero challenges.
+      // An empty selection must not end the lock by "completing"
+      // zero challenges (the selection UI forces at least Math, so
+      // this is a safety net, not a reachable path).
       await showErrorCard(
         context,
         PrivilegedException('UNAVAILABLE', context.l10n.challengeUnavailableNote),
@@ -152,6 +184,21 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                   types: available,
                   customPhrases: _customPhrases,
                   onAllComplete: () => Navigator.pop(dialogContext, true),
+                  tetrisMinutes: _tetrisMinutes,
+                  tetrisSoundOn: _tetrisSoundOn,
+                  tetrisSounds:
+                      TetrisSounds(widget.controller.channel),
+                  onTetrisSoundChanged: (v) async {
+                    try {
+                      await widget.controller.config
+                          .setTetrisSoundEnabled(v);
+                      if (mounted) {
+                        setState(() => _tetrisSoundOn = v);
+                      }
+                    } catch (e) {
+                      if (mounted) await showErrorCard(context, e);
+                    }
+                  },
                 ),
               ],
             ),
@@ -225,6 +272,20 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(context.l10n.cancel),
+            ),
+            // Batch J: select-all for this app picker.
+            selectAllAction(
+              l10n: context.l10n,
+              allSelected: _apps!.isNotEmpty &&
+                  _apps!.every((a) => selected.contains(a.packageName)),
+              enabled: _apps!.isNotEmpty,
+              onPressed: () => setLocal(() {
+                if (_apps!.every((a) => selected.contains(a.packageName))) {
+                  selected.clear();
+                } else {
+                  selected.addAll(_apps!.map((a) => a.packageName));
+                }
+              }),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, selected.toList()),
@@ -377,7 +438,19 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                           config.suspendApps.map(_labelFor).take(3).join(', '),
                         ),
                         trailing: const Icon(Icons.edit_outlined),
-                        onTap: sessionActive ? _pickSuspendApps : null,
+                        // Batch G, item 11: the app picker is available
+                        // ONLY in "timer + suspend" mode. In "timer only"
+                        // the saved list is ignored by enforcement
+                        // (AppController.startImpulseLock records it only
+                        // for timerAndSuspend), so offering the picker
+                        // there let the user pick apps that would never
+                        // be suspended.
+                        onTap:
+                            sessionActive &&
+                                    config.action ==
+                                        ImpulseAction.timerAndSuspend
+                                ? _pickSuspendApps
+                                : null,
                       ),
                     ],
                   ),
@@ -421,6 +494,34 @@ class _ImpulseLockScreenState extends State<ImpulseLockScreen> {
                                 }
                               : null,
                         ),
+                      // Tetris (Batch I-C, item 2): "Time to play" — how
+                      // long the user must actively play (1–15 min,
+                      // default 3, the evidence-based dose). Shown only
+                      // while Tetris is selected. Saved when the drag
+                      // ends, not per tick.
+                      if (_challenges.contains(ChallengeType.tetris)) ...[
+                        ListTile(
+                          title: Text(l10n.tetrisDuration),
+                          subtitle:
+                              Text(l10n.tetrisMinutes(_tetrisMinutes)),
+                        ),
+                        Slider(
+                          min: ConfigStore.tetrisMinMinutes.toDouble(),
+                          max: ConfigStore.tetrisMaxMinutes.toDouble(),
+                          divisions: ConfigStore.tetrisMaxMinutes -
+                              ConfigStore.tetrisMinMinutes,
+                          value: _tetrisMinutes.toDouble(),
+                          label: l10n.tetrisMinutes(_tetrisMinutes),
+                          onChanged: sessionActive
+                              ? (v) {
+                                  setState(
+                                    () => _tetrisMinutes = v.round(),
+                                  );
+                                }
+                              : null,
+                          onChangeEnd: (v) => _saveTetrisMinutes(v.round()),
+                        ),
+                      ],
                       SwitchListTile(
                         title: Text(l10n.shuffledKeypad),
                         subtitle: Text(l10n.shuffledKeypadSub),
@@ -537,11 +638,14 @@ class FocusModeScreen extends StatefulWidget {
   State<FocusModeScreen> createState() => _FocusModeScreenState();
 }
 
-class _FocusModeScreenState extends State<FocusModeScreen> {
+class _FocusModeScreenState extends State<FocusModeScreen>
+    with WidgetsBindingObserver {
   FocusConfig? _config;
   FocusSession? _session;
   List<InstalledApp>? _apps;
   List<AppGroupModel>? _groups;
+  List<FocusSchedule>? _schedules;
+  bool _canScheduleExactAlarms = true;
   Object? _error;
   Timer? _ticker;
   StreamSubscription<PrivilegedEvent>? _eventSub;
@@ -549,6 +653,7 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
     // The native session emits a phase-change event at every phase
     // boundary; mirror the new state when one arrives.
@@ -559,7 +664,16 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Returning from the exact-alarm settings page (or the reminder
+    // activity) may have changed the schedules or the permission —
+    // re-read both instead of showing a stale banner.
+    if (state == AppLifecycleState.resumed) _loadSchedules();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
     _eventSub?.cancel();
     super.dispose();
@@ -590,6 +704,24 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
       if (mounted) setState(() => _groups = groups);
     } catch (_) {
       // Ignored: see above.
+    }
+    await _loadSchedules();
+  }
+
+  /// Schedules are advisory like groups: a failure shows an error
+  /// banner state (empty list + exact-alarms assumed on) instead of
+  /// taking the screen down.
+  Future<void> _loadSchedules() async {
+    try {
+      final state = await widget.controller.channel.getFocusSchedules();
+      if (mounted) {
+        setState(() {
+          _schedules = state.schedules;
+          _canScheduleExactAlarms = state.canScheduleExactAlarms;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _schedules = const []);
     }
   }
 
@@ -1058,15 +1190,380 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
                 trailing: const Icon(Icons.edit_outlined),
                 onTap: _pickRestrictions,
               ),
-              UnavailableTile(
-                icon: Icons.schedule_send_outlined,
-                title: l10n.focusSchedulesTitle,
-                note: l10n.focusSchedulesNote,
+            ],
+          ),
+          const SizedBox(height: 12),
+          _schedulesCard(context, l10n),
+          const SizedBox(height: 12),
+          // Full-phone lockdown (Batch I-B, item 14): its own screen
+          // — one-shot durations, recurring windows, both tiers.
+          SectionCard(
+            title: l10n.lockdownTitle,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.lock_outlined),
+                title: Text(l10n.lockdownTitle),
+                subtitle: Text(l10n.lockdownEntrySub),
+                trailing: const Icon(Icons.chevron_right_outlined),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        LockdownScreen(controller: widget.controller),
+                  ),
+                ),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  /// Focus schedules (Batch I-A, item 13): the v1.1 placeholder
+  /// replaced by the real card — list, exact-alarm banner, add button.
+  Widget _schedulesCard(BuildContext context, AppLocalizations l10n) {
+    final schedules = _schedules;
+    final dayNames = _dayNames(l10n);
+    return SectionCard(
+      title: l10n.focusSchedulesTitle,
+      children: [
+        if (!_canScheduleExactAlarms)
+          ListTile(
+            leading: const Icon(Icons.warning_amber_outlined),
+            title: Text(l10n.focusScheduleExactAlarmOff),
+            trailing: TextButton(
+              onPressed: () async {
+                await widget.controller.channel.openExactAlarmSettings();
+              },
+              child: Text(l10n.focusScheduleOpenSettings),
+            ),
+          ),
+        if (schedules == null)
+          const ListTile(
+            leading: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            title: Text('…'),
+          )
+        else if (schedules.isEmpty)
+          ListTile(title: Text(l10n.focusSchedulesEmpty))
+        else
+          for (final schedule in schedules)
+            ListTile(
+              title: Text(
+                schedule.label.isEmpty
+                    ? schedule.formattedTime
+                    : '${schedule.formattedTime} · ${schedule.label}',
+              ),
+              subtitle: Text(
+                [
+                  schedule.daysSummary(
+                    everyDay: l10n.focusScheduleDaysEveryDay,
+                    weekdays: l10n.focusScheduleDaysWeekdays,
+                    weekend: l10n.focusScheduleDaysWeekend,
+                    dayNames: dayNames,
+                  ),
+                  schedule.autoStart
+                      ? l10n.focusScheduleAutoStartBadge
+                      : l10n.focusScheduleRemindBadge,
+                  if (schedule.remindMinutesBefore > 0)
+                    l10n.focusScheduleRemindMinutes(
+                      schedule.remindMinutesBefore,
+                    ),
+                ].join(' · '),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Switch(
+                    value: schedule.enabled,
+                    onChanged: (v) async {
+                      final current = _schedules ?? const [];
+                      final next = current
+                          .map(
+                            (s) => s.id == schedule.id
+                                ? s.copyWith(enabled: v)
+                                : s,
+                          )
+                          .toList();
+                      await _saveSchedules(
+                        next,
+                        loosening: _schedulesChangeNeedsCode(current, next),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outlined),
+                    tooltip: l10n.delete,
+                    onPressed: () => _deleteSchedule(schedule),
+                  ),
+                ],
+              ),
+              onTap: () => _editSchedule(schedule),
+            ),
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: FilledButton.icon(
+            onPressed: () => _editSchedule(null),
+            icon: const Icon(Icons.add_outlined),
+            label: Text(l10n.focusScheduleAdd),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<String> _dayNames(AppLocalizations l10n) => [
+        l10n.dayMon,
+        l10n.dayTue,
+        l10n.dayWed,
+        l10n.dayThu,
+        l10n.dayFri,
+        l10n.daySat,
+        l10n.daySun,
+      ];
+
+  /// Saves a schedule list, routing code-gated changes through the
+  /// recovery gate first — the same rule the focus config uses:
+  /// anything that ADDS automatic enforcement (a new or newly enabled
+  /// auto-start schedule) or REMOVES it (deleting, disabling, or
+  /// switching off auto-start on one) needs the paper code. Plain
+  /// reminder-only schedules are free, and so are time/day/label
+  /// edits — they change when Azm reminds, not whether it enforces.
+  Future<void> _saveSchedules(
+    List<FocusSchedule> next, {
+    required bool loosening,
+  }) async {
+    Future<void> save() async {
+      try {
+        final state = await widget.controller.channel.setFocusSchedules(next);
+        if (mounted) {
+          setState(() {
+            _schedules = state.schedules;
+            _canScheduleExactAlarms = state.canScheduleExactAlarms;
+          });
+        }
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
+    }
+
+    if (loosening) {
+      await runLoosening(context, widget.controller, save);
+    } else {
+      await save();
+    }
+  }
+
+  /// True when the change touches an auto-start schedule's enforcement:
+  /// deleting one, disabling one, switching its auto-start off, or
+  /// adding/enabling a new auto-start one. Reminder-only schedules
+  /// never enforce, so their changes are free.
+  bool _schedulesChangeNeedsCode(
+    List<FocusSchedule> oldList,
+    List<FocusSchedule> nextList,
+  ) {
+    final oldById = {for (final s in oldList) s.id: s};
+    final nextById = {for (final s in nextList) s.id: s};
+    for (final entry in oldById.entries) {
+      final next = nextById[entry.key];
+      final wasEnforcing = entry.value.enabled && entry.value.autoStart;
+      if (next == null) {
+        if (wasEnforcing) return true;
+        continue;
+      }
+      if (wasEnforcing != (next.enabled && next.autoStart)) return true;
+    }
+    for (final entry in nextById.entries) {
+      if (!oldById.containsKey(entry.key) &&
+          entry.value.enabled &&
+          entry.value.autoStart) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _deleteSchedule(FocusSchedule schedule) async {
+    final current = _schedules ?? const [];
+    final next = current.where((s) => s.id != schedule.id).toList();
+    await _saveSchedules(
+      next,
+      loosening: _schedulesChangeNeedsCode(current, next),
+    );
+  }
+
+  /// Schedule editor: time picker + day chips (with Weekdays / Every
+  /// day quick chips, as in the original's `FocusScheduleDialog`) +
+  /// label + auto-start switch + pre-reminder choice. A new schedule
+  /// defaults to Mon–Fri 08:00, the original's default.
+  Future<void> _editSchedule(FocusSchedule? existing) async {
+    final l10n = context.l10n;
+    final dayNames = _dayNames(l10n);
+    var hour = existing?.hour ?? 8;
+    var minute = existing?.minute ?? 0;
+    var days = {...(existing?.daysOfWeek ?? {1, 2, 3, 4, 5})};
+    var autoStart = existing?.autoStart ?? false;
+    // Only 0/5/10 are offered; normalize any foreign stored value.
+    var remind = switch (existing?.remindMinutesBefore) {
+      5 => 5,
+      10 => 10,
+      _ => 0,
+    };
+    // Intentionally not disposed after the dialog returns (Batch H
+    // lesson: disposing while the route animates out crashes).
+    final labelController = TextEditingController(text: existing?.label ?? '');
+    final result = await showDialog<FocusSchedule>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setLocal) {
+          final time = TimeOfDay(hour: hour, minute: minute);
+          return AlertDialog(
+            title: Text(
+              existing == null
+                  ? l10n.focusScheduleAdd
+                  : l10n.focusScheduleEdit,
+            ),
+            content: SizedBox(
+              width: 360,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.focusScheduleTime),
+                      trailing: TextButton(
+                        onPressed: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: time,
+                          );
+                          if (picked != null) {
+                            setLocal(() {
+                              hour = picked.hour;
+                              minute = picked.minute;
+                            });
+                          }
+                        },
+                        child: Text(time.format(context)),
+                      ),
+                    ),
+                    TextField(
+                      controller: labelController,
+                      decoration: InputDecoration(
+                        labelText: l10n.focusScheduleLabel,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(l10n.focusScheduleDays),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (var d = 1; d <= 7; d++)
+                          FilterChip(
+                            label: Text(dayNames[d - 1]),
+                            selected: days.contains(d),
+                            onSelected: (v) => setLocal(() {
+                              if (v) {
+                                days.add(d);
+                              } else {
+                                days.remove(d);
+                              }
+                            }),
+                          ),
+                        ActionChip(
+                          label: Text(l10n.focusScheduleWeekdays),
+                          onPressed: () =>
+                              setLocal(() => days = {1, 2, 3, 4, 5}),
+                        ),
+                        ActionChip(
+                          label: Text(l10n.focusScheduleAllDays),
+                          onPressed: () => setLocal(
+                            () => days = {1, 2, 3, 4, 5, 6, 7},
+                          ),
+                        ),
+                      ],
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.focusScheduleAutoStart),
+                      subtitle: Text(l10n.focusScheduleAutoStartSub),
+                      value: autoStart,
+                      onChanged: (v) => setLocal(() => autoStart = v),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(l10n.focusScheduleRemindBefore),
+                    const SizedBox(height: 6),
+                    SegmentedButton<int>(
+                      segments: [
+                        ButtonSegment(
+                          value: 0,
+                          label: Text(l10n.focusScheduleRemindNone),
+                        ),
+                        ButtonSegment(
+                          value: 5,
+                          label: Text(l10n.focusScheduleRemindMinutes(5)),
+                        ),
+                        ButtonSegment(
+                          value: 10,
+                          label: Text(l10n.focusScheduleRemindMinutes(10)),
+                        ),
+                      ],
+                      selected: {remind},
+                      onSelectionChanged: (s) =>
+                          setLocal(() => remind = s.first),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: days.isEmpty
+                    ? null
+                    : () => Navigator.pop(
+                          context,
+                          FocusSchedule(
+                            id: existing?.id ??
+                                'schedule-${DateTime.now().microsecondsSinceEpoch}',
+                            daysOfWeek: days,
+                            hour: hour,
+                            minute: minute,
+                            enabled: existing?.enabled ?? true,
+                            autoStart: autoStart,
+                            remindMinutesBefore: remind,
+                            label: labelController.text.trim(),
+                          ),
+                        ),
+                child: Text(l10n.save),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (result == null) return;
+    final current = _schedules ?? const [];
+    final next = [
+      ...current.where((s) => s.id != result.id),
+      result,
+    ]..sort((a, b) {
+        final byTime = (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute);
+        return byTime != 0 ? byTime : a.label.compareTo(b.label);
+      });
+    await _saveSchedules(
+      next,
+      loosening: _schedulesChangeNeedsCode(current, next),
     );
   }
 
@@ -1160,6 +1657,20 @@ class _FocusModeScreenState extends State<FocusModeScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(context.l10n.cancel),
+            ),
+            // Batch J: select-all for this group picker.
+            selectAllAction(
+              l10n: context.l10n,
+              allSelected: groups.isNotEmpty &&
+                  groups.every((g) => selected.contains(g.id)),
+              enabled: groups.isNotEmpty,
+              onPressed: () => setLocal(() {
+                if (groups.every((g) => selected.contains(g.id))) {
+                  selected.clear();
+                } else {
+                  selected.addAll(groups.map((g) => g.id));
+                }
+              }),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, selected.toList()),

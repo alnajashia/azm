@@ -34,19 +34,29 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
 
   // DNS protection (Batch DNS): persisted selection + verified native
   // state. The shortcut card below the browsers scrolls to the full
-  // DNS card below the blocklists.
+  // DNS card below the blocklists. (DNS batch, 2026-11-14: the card
+  // is now the ONE DNS place — the Config-tab dialog is retired —
+  // with an optional provider list, the real failure reason, and
+  // automatic retry on HOST_NOT_SERVING.)
   DnsProtection? _dns;
   PrivateDnsState? _dnsState;
   bool _dnsBusy = false;
   final _dnsCardKey = GlobalKey();
   final _dnsIdController = TextEditingController();
+  final _dnsCustomController = TextEditingController();
 
-  // Torrent apps (Batch F, item 4): detected clients + the native
-  // block-torrents flag. The flag lives natively (SettingsStore) so
-  // the install hook (AzmApplication) can read it with the UI closed.
-  List<({String packageName, String label})>? _torrentApps;
-  bool? _blockTorrents;
-  bool _torrentBusy = false;
+  /// The last selection an apply was attempted with (it may differ
+  /// from [_dns] when the apply failed — [_dns] only ever holds a
+  /// verified state). The inline Retry button re-applies this one.
+  DnsProtection? _dnsPending;
+
+  /// The mapped failure message of the last DNS apply, shown inline
+  /// under the provider list with a Retry button; null when the last
+  /// apply succeeded (or none was attempted).
+  String? _dnsError;
+
+  /// True while an apply is inside its automatic retry loop.
+  bool _dnsRetrying = false;
 
   @override
   void initState() {
@@ -57,6 +67,7 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
   @override
   void dispose() {
     _dnsIdController.dispose();
+    _dnsCustomController.dispose();
     super.dispose();
   }
 
@@ -83,15 +94,6 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       try {
         dnsState = await widget.controller.channel.getPrivateDns();
       } catch (_) {}
-      // Batch F, item 4: detected torrent clients + the native flag.
-      List<({String packageName, String label})>? torrentApps;
-      bool? blockTorrents;
-      try {
-        torrentApps = await widget.controller.channel.getTorrentApps();
-      } catch (_) {}
-      try {
-        blockTorrents = await widget.controller.channel.isBlockTorrentsEnabled();
-      } catch (_) {}
       if (mounted) {
         setState(() {
           _lists = lists;
@@ -99,10 +101,33 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
           _error = browserError;
           _dns = dns;
           _dnsState = dnsState;
-          if (dns != null) _dnsIdController.text = dns.nextDnsConfigId;
-          _torrentApps = torrentApps;
-          _blockTorrents = blockTorrents;
+          if (dns != null) {
+            _dnsIdController.text = dns.nextDnsConfigId;
+            _dnsCustomController.text = dns.customHostname;
+          }
         });
+      }
+      // DNS batch: adopt the LIVE host when the saved prefs disagree
+      // with the device — a host set by the retired Config-tab dialog
+      // (which never persisted) or from outside the app. The device
+      // already enforces that host, so adopting only records the
+      // truth; it changes no enforcement and needs no gate.
+      if (dnsState != null && dnsState.isSpecifiedHost) {
+        final live = DnsProtection.fromLiveHost(dnsState.hostname);
+        if (dns == null || !dns.enabled || dns.hostname != live.hostname) {
+          try {
+            await widget.controller.config.setDnsProtection(live);
+            if (mounted) {
+              setState(() {
+                _dns = live;
+                _dnsIdController.text = live.nextDnsConfigId;
+                _dnsCustomController.text = live.customHostname;
+              });
+            }
+          } catch (_) {
+            // Best-effort: the card still shows the live host below.
+          }
+        }
       }
     } catch (e) {
       if (mounted) setState(() => _error = e);
@@ -211,70 +236,69 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
     }
   }
 
-  /// The torrent switch (Batch F, item 4). Enabling is a tightening
-  /// (direct): the native flag is set first, then every detected
-  /// torrent client is suspended with reason TORRENT_APP and the
-  /// suspended set is saved — so disabling later unsuspends exactly
-  /// the apps this toggle blocked. Disabling is a loosening
-  /// (recovery-gated). New installs while enabled are suspended by
-  /// the AzmApplication install hook, not here.
-  Future<void> _toggleTorrents(bool enabled) async {
-    Future<void> apply() async {
-      setState(() => _torrentBusy = true);
-      try {
-        // Channel first, prefs only after the verified native reply.
-        final verified =
-            await widget.controller.channel.setBlockTorrents(enabled);
-        final apps = _torrentApps ?? const [];
-        if (verified) {
-          final suspended = <String>{};
-          if (apps.isNotEmpty) {
-            final results = await widget.controller.channel.setAppSuspended(
-              apps.map((a) => a.packageName).toList(),
-              true,
-              reason: 'TORRENT_APP',
-            );
-            suspended.addAll(
-              results.where((r) => r.isSuspended).map((r) => r.packageName),
-            );
-          }
-          await widget.controller.config.setTorrentBlockedPackages(suspended);
-          if (mounted) {
-            setState(() => _blockTorrents = true);
-            showInfoSnackBar(
-              context,
-              context.l10n.torrentBlockedMsg(suspended.length),
-            );
-          }
-        } else {
-          final blocked =
-              await widget.controller.config.getTorrentBlockedPackages();
-          if (blocked.isNotEmpty) {
-            await widget.controller.channel.setAppSuspended(
-              blocked.toList(),
-              false,
-            );
-          }
-          await widget.controller.config.setTorrentBlockedPackages(const {});
-          if (mounted) {
-            setState(() => _blockTorrents = false);
-            showInfoSnackBar(context, context.l10n.torrentUnblockedMsg);
-          }
-        }
-      } finally {
-        if (mounted) setState(() => _torrentBusy = false);
+  /// Maps a DNS-apply failure to the message the user sees: the REAL
+  /// reason, not a generic "failed". The native side surfaces the DPM
+  /// result code as `verifiedState` (2 = HOST_NOT_SERVING, 1 =
+  /// FAILURE); a timeout is its own message; anything else carries
+  /// the numeric code so the failure is never anonymous.
+  String _dnsFailureMessage(Object e, AppLocalizations l10n) {
+    if (e is TimeoutException) return l10n.dnsApplyTimeout;
+    if (e is PrivilegedException) {
+      final code = e.details['verifiedState'];
+      if (code == 2 || e.message.contains('result code 2')) {
+        return l10n.dnsNotServing;
       }
+      if (code is num) return l10n.dnsApplyFailedCode(code.toInt());
+      return l10n.dnsApplyFailed;
     }
+    return l10n.dnsApplyFailed;
+  }
 
-    if (enabled) {
-      try {
-        await apply();
-      } catch (e) {
-        if (mounted) await showErrorCard(context, e);
-      }
-    } else {
-      await runLoosening(context, widget.controller, apply);
+  /// True when the failure is the DPM "host not serving" result — the
+  /// retryable one (the system often reports it for a while after
+  /// provisioning, then the same host applies fine).
+  bool _isHostNotServing(Object e) {
+    if (e is PrivilegedException) {
+      return e.details['verifiedState'] == 2 ||
+          e.message.contains('result code 2');
     }
+    return false;
+  }
+
+  /// One channel apply with automatic retry on HOST_NOT_SERVING: up to
+  /// 4 attempts (delays 2s/5s/8s, 20s timeout each) — the "fails at
+  /// first, works after a while" case from item 3. Disabling (reset
+  /// to opportunistic) never retries: it sets no host, so the code
+  /// cannot apply to it. Any other failure returns at once. Throws
+  /// the last failure.
+  Future<PrivateDnsState> _applyDnsWithRetry(DnsProtection next) async {
+    if (!next.enabled) {
+      return widget.controller.channel
+          .resetPrivateDns()
+          .timeout(const Duration(seconds: 20));
+    }
+    const delays = [
+      Duration.zero,
+      Duration(seconds: 2),
+      Duration(seconds: 5),
+      Duration(seconds: 8),
+    ];
+    Object? lastError;
+    for (var i = 0; i < delays.length; i++) {
+      if (i > 0) {
+        if (mounted) setState(() => _dnsRetrying = true);
+        await Future.delayed(delays[i]);
+      }
+      try {
+        return await widget.controller.channel
+            .setPrivateDns(next.hostname!)
+            .timeout(const Duration(seconds: 20));
+      } catch (e) {
+        lastError = e;
+        if (!_isHostNotServing(e)) rethrow;
+      }
+    }
+    throw lastError!;
   }
 
   /// Applies a DNS-protection selection: the channel call runs FIRST
@@ -282,31 +306,42 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
   /// so the saved flag can never claim a state the device is not in.
   /// Enabling is a tightening (direct); disabling is a loosening
   /// (recovery-gated, like unsuspending a browser).
+  ///
+  /// On failure the mapped reason is shown INLINE under the provider
+  /// list (with a Retry button) instead of a one-shot error dialog —
+  /// the dialog's generic message is what hid the cause in item 3.
   Future<void> _applyDns(DnsProtection next) async {
     if (_dnsBusy) return;
     if (next.enabled && !next.isValid) {
       if (mounted) {
-        showInfoSnackBar(context, context.l10n.dnsInvalidConfigId);
+        showInfoSnackBar(
+          context,
+          next.provider == DnsProvider.custom
+              ? context.l10n.dnsInvalidHostname
+              : context.l10n.dnsInvalidConfigId,
+        );
       }
       return;
     }
 
     Future<void> apply() async {
-      setState(() => _dnsBusy = true);
+      if (!mounted) return;
+      _dnsPending = next;
+      setState(() {
+        _dnsBusy = true;
+        _dnsError = null;
+        _dnsRetrying = false;
+      });
       try {
-        final PrivateDnsState state;
-        if (!next.enabled) {
-          state = await widget.controller.channel.resetPrivateDns();
-        } else {
-          state = await widget.controller.channel.setPrivateDns(
-            next.hostname!,
-          );
-        }
+        final state = await _applyDnsWithRetry(next);
         await widget.controller.config.setDnsProtection(next);
         if (mounted) {
           setState(() {
             _dns = next;
             _dnsState = state;
+            _dnsPending = null;
+            _dnsError = null;
+            _dnsRetrying = false;
           });
           showInfoSnackBar(
             context,
@@ -316,7 +351,12 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
           );
         }
       } catch (e) {
-        if (mounted) await showErrorCard(context, e);
+        if (mounted) {
+          setState(() {
+            _dnsError = _dnsFailureMessage(e, context.l10n);
+            _dnsRetrying = false;
+          });
+        }
       } finally {
         if (mounted) setState(() => _dnsBusy = false);
       }
@@ -327,6 +367,13 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
     } else {
       await apply();
     }
+  }
+
+  /// Re-applies the selection the last apply attempted (the inline
+  /// Retry button). Falls back to the current verified selection.
+  Future<void> _retryDns() async {
+    final pending = _dnsPending ?? _dns ?? const DnsProtection();
+    await _applyDns(pending);
   }
 
   Future<void> _toggleDns(bool value) async {
@@ -362,6 +409,31 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       if (mounted) setState(() => _dns = next);
     }
   }
+
+  /// Custom DNS hostname, applied on submit: while protection is on
+  /// with Custom it re-applies at once; otherwise it only persists.
+  /// An invalid hostname is refused (with the reason) so the saved
+  /// selection can never name a hostname that does not exist.
+  Future<void> _submitDnsCustomHost(String value) async {
+    final current = _dns ?? const DnsProtection();
+    final next = current.copyWith(customHostname: value.trim());
+    if (next.enabled && next.provider == DnsProvider.custom) {
+      await _applyDns(next);
+    } else {
+      await widget.controller.config.setDnsProtection(next);
+      if (mounted) setState(() => _dns = next);
+    }
+  }
+
+  /// The display name of a provider for the shortcut-card subtitle.
+  String _dnsProviderName(DnsProvider provider, AppLocalizations l10n) =>
+      switch (provider) {
+        DnsProvider.nextdns => l10n.dnsProviderNextdns,
+        DnsProvider.cleanBrowsing => l10n.dnsProviderCleanbrowsing,
+        DnsProvider.cloudflare => l10n.dnsProviderCloudflare,
+        DnsProvider.adguard => l10n.dnsProviderAdguard,
+        DnsProvider.custom => l10n.dnsCustom,
+      };
 
   Future<void> _editList(BlockedList? existing) async {
     final titleC = TextEditingController(text: existing?.title ?? '');
@@ -541,43 +613,9 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                         ),
                   ],
                 ),
-                // Batch F, item 4: block torrent apps — one switch
-                // suspends every detected torrent client now and arms
-                // the install hook for later ones (AzmApplication).
-                const SizedBox(height: 12),
-                SectionCard(
-                  title: l10n.torrentTitle,
-                  children: [
-                    SwitchListTile(
-                      title: Text(l10n.torrentTitle),
-                      subtitle: Text(l10n.torrentSub),
-                      value: _blockTorrents ?? false,
-                      onChanged: _torrentBusy || _blockTorrents == null
-                          ? null
-                          : _toggleTorrents,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: _torrentApps == null
-                          ? Text(l10n.loadingShort)
-                          : _torrentApps!.isEmpty
-                              ? Text(l10n.torrentDetectedNone)
-                              : Text(
-                                  l10n.torrentDetectedCount(
-                                    _torrentApps!.length,
-                                  ),
-                                ),
-                    ),
-                    if (_torrentApps != null)
-                      for (final a in _torrentApps!)
-                        ListTile(
-                          leading:
-                              const Icon(Icons.file_download_outlined),
-                          title: Text(a.label),
-                          subtitle: Text(a.packageName),
-                        ),
-                  ],
-                ),
+                // Batch G, item 6: the torrent card moved to the
+                // Config tab (Settings) — torrent clients have
+                // nothing to do with browsers.
                 // Batch DNS: compact shortcut to the full DNS card
                 // below the blocklists — the state at a glance, one
                 // tap scrolls to the controls.
@@ -590,7 +628,7 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                       _dns == null
                           ? ''
                           : _dns!.enabled
-                              ? '${l10n.dnsProtectionEnabled} — ${_dns!.provider == DnsProvider.nextdns ? l10n.dnsProviderNextdns : l10n.dnsProviderCleanbrowsing}'
+                              ? '${l10n.dnsProtectionEnabled} — ${_dnsProviderName(_dns!.provider, l10n)}'
                               : l10n.dnsProtectionDisabled,
                     ),
                     trailing: TextButton(
@@ -748,9 +786,88 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
                                 Text(l10n.dnsProviderCleanbrowsingNote),
                             value: DnsProvider.cleanBrowsing,
                           ),
+                          RadioListTile<DnsProvider>(
+                            title: Text(l10n.dnsProviderCloudflare),
+                            subtitle:
+                                Text(l10n.dnsProviderCloudflareNote),
+                            value: DnsProvider.cloudflare,
+                          ),
+                          RadioListTile<DnsProvider>(
+                            title: Text(l10n.dnsProviderAdguard),
+                            subtitle: Text(l10n.dnsProviderAdguardNote),
+                            value: DnsProvider.adguard,
+                          ),
+                          RadioListTile<DnsProvider>(
+                            title: Text(l10n.dnsCustom),
+                            subtitle: Text(l10n.dnsProviderCustomNote),
+                            value: DnsProvider.custom,
+                          ),
+                          if ((_dns?.provider ??
+                                      DnsProvider.cleanBrowsing) ==
+                                  DnsProvider.custom)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                0,
+                                16,
+                                8,
+                              ),
+                              child: TextField(
+                                controller: _dnsCustomController,
+                                decoration: InputDecoration(
+                                  labelText: l10n.dnsHostnameLabel,
+                                  hintText: l10n.dnsHostnameHint,
+                                  helperText:
+                                      _dnsCustomController.text.trim().isEmpty
+                                      ? null
+                                      : _dnsCustomController.text.trim(),
+                                  errorText:
+                                      _dnsCustomController.text.isNotEmpty &&
+                                          !DnsProtection.isValidCustomHostname(
+                                            _dnsCustomController.text.trim(),
+                                          )
+                                      ? l10n.dnsInvalidHostname
+                                      : null,
+                                ),
+                                enabled: !_dnsBusy,
+                                onChanged: (_) => setState(() {}),
+                                onSubmitted: _submitDnsCustomHost,
+                              ),
+                            ),
                         ],
                       ),
                     ),
+                    // The last apply's real failure reason, with a
+                    // Retry button (the one-shot error dialog's generic
+                    // message is what hid the cause in item 3).
+                    if (_dnsRetrying)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: Text(l10n.dnsRetrying),
+                      ),
+                    if (_dnsError != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _dnsError!,
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.error,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _dnsBusy ? null : _retryDns,
+                              child: Text(l10n.dnsRetryApply),
+                            ),
+                          ],
+                        ),
+                      ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                       child: Text(l10n.dnsProtectionNote),
@@ -785,15 +902,14 @@ class BlockedWordsScreen extends StatefulWidget {
   State<BlockedWordsScreen> createState() => _BlockedWordsScreenState();
 }
 
+enum _BlockedWordsView { byApp, byWord }
+
 class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
   BlockedWordsState? _state;
   List<InstalledApp>? _apps;
+  List<AppGroupModel>? _groups;
   Object? _error;
-
-  /// The active list's read-only field (Dechainer parity): one
-  /// controller owned by the state, re-synced in build — never a fresh
-  /// controller per build (that would leak one per rebuild).
-  final _activeWordsController = TextEditingController();
+  var _view = _BlockedWordsView.byApp;
 
   @override
   void initState() {
@@ -801,20 +917,23 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
     _load();
   }
 
-  @override
-  void dispose() {
-    _activeWordsController.dispose();
-    super.dispose();
-  }
-
   Future<void> _load() async {
     try {
       final state = await widget.controller.channel.getBlockedWords();
       final apps = await widget.controller.channel.listInstalledApps();
+      // Groups are nice-to-have here (names + expansion): a failure
+      // to load them must not break the whole screen.
+      List<AppGroupModel> groups = const [];
+      try {
+        groups = await widget.controller.channel.getGroups();
+      } catch (_) {
+        groups = const [];
+      }
       if (mounted) {
         setState(() {
           _state = state;
           _apps = apps;
+          _groups = groups;
         });
       }
     } catch (e) {
@@ -825,59 +944,26 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
   String _labelFor(String pkg) =>
       _apps?.where((a) => a.packageName == pkg).firstOrNull?.label ?? pkg;
 
-  Future<void> _editWords() async {
-    final controller = TextEditingController(text: _state!.words.join('\n'));
-    final saved = await showDialog<List<String>>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogContext.l10n.activeBlockingWords),
-        content: TextField(
-          controller: controller,
-          maxLines: 8,
-          decoration: InputDecoration(
-            hintText: dialogContext.l10n.wordHint,
-            labelText: dialogContext.l10n.oneWordPerLine,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(dialogContext.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              controller.text
-                  .split('\n')
-                  .map((s) => s.trim())
-                  .where((s) => s.isNotEmpty)
-                  .toList(),
-            ),
-            child: Text(dialogContext.l10n.save),
-          ),
-        ],
-      ),
-    );
-    if (saved == null) return;
-    final loosening =
-        saved.length < _state!.words.length ||
-        !_state!.words.every(saved.contains);
+  String _groupName(String id) =>
+      _groups?.where((g) => g.id == id).firstOrNull?.name ?? id;
+
+  /// Persists a whole new assignment table. [loosens] follows the
+  /// standing gates: removing coverage or activating blocking in a
+  /// new place goes through the paper-code session; tightening is
+  /// direct (but a channel error still surfaces, never swallowed).
+  Future<void> _saveAssignments(
+    List<WordAssignment> next, {
+    required bool loosens,
+  }) async {
     Future<void> save() async {
-      final s = await widget.controller.channel.setBlockedWords(
-        saved,
-        _state!.targetPackages,
-      );
+      final s = await widget.controller.channel.setWordAssignments(next);
       if (mounted) setState(() => _state = s);
     }
 
     if (!mounted) return;
-    if (loosening) {
+    if (loosens) {
       await runLoosening(context, widget.controller, save);
     } else {
-      // Tightening saves surface failures too (v1.0.5 audit C-M3):
-      // runLoosening already snackbars gated saves; the direct path
-      // must not let a channel error escape unhandled.
       try {
         await save();
       } catch (e) {
@@ -886,117 +972,535 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
     }
   }
 
-  Future<void> _pickTargets() async {
-    final result = await showAppPicker(
+  /// One word row in the app dialog: the word, its Typed / On-screen
+  /// mode chips, and a delete button. [subtitle] names the word's
+  /// other targets when it also applies elsewhere — the chips edit
+  /// the word's modes everywhere, so the row must say so.
+  Widget _modeRow({
+    required AppLocalizations l10n,
+    required String title,
+    String? subtitle,
+    required Set<WordBlockMode> modes,
+    required void Function(WordBlockMode mode, bool selected) onMode,
+    required VoidCallback onDelete,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text(title)),
+            IconButton(
+              icon: const Icon(Icons.delete_outlined),
+              onPressed: onDelete,
+            ),
+          ],
+        ),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        Wrap(
+          spacing: 8,
+          children: [
+            for (final mode in WordBlockMode.values)
+              FilterChip(
+                label: Text(
+                  mode == WordBlockMode.active
+                      ? l10n.wordModeActive
+                      : l10n.wordModePassive,
+                ),
+                selected: modes.contains(mode),
+                onSelected: (v) => onMode(mode, v),
+              ),
+          ],
+        ),
+        const Divider(),
+      ],
+    );
+  }
+
+  /// Edits one app's words (words-per-app direction). A newly added
+  /// word starts with BOTH modes on — "block this word in this app"
+  /// — and the chips let the user narrow it down.
+  ///
+  /// Batch J: the modes are per WORD, not per app, so the chips edit
+  /// the word's modes everywhere it applies. A word that also
+  /// targets other apps or groups says so under its row. A word that
+  /// covers this app only through a group is shown read-only with
+  /// the group named; tapping it jumps to the word editor.
+  Future<void> _editAppWords(String packageName) async {
+    final l10n = context.l10n;
+    final s = _state!;
+    final groups = _groups ?? const [];
+    final oldCoverage = appWordCoverage(s.assignments, packageName, groups);
+    // Direct words (editable chips) and words covering this app only
+    // through a group (read-only rows with the group named).
+    final modes = <String, Set<WordBlockMode>>{};
+    final viaGroups = <String, List<String>>{};
+    for (final a in s.assignments) {
+      final direct = a.packageNames.contains(packageName);
+      final names = a.coveringGroupNames(packageName, groups);
+      if (direct) {
+        (modes[a.word] ??= {}).addAll(a.modes);
+      }
+      if (names.isNotEmpty) {
+        viaGroups[a.word] = names;
+      }
+    }
+    String? jumpToWord;
+    final addController = TextEditingController();
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          void addWord() {
+            final word = addController.text.trim();
+            if (word.isEmpty || modes.containsKey(word)) return;
+            setDialogState(() {
+              modes[word] = {
+                WordBlockMode.active,
+                WordBlockMode.passive,
+              };
+              addController.clear();
+            });
+          }
+
+          // Other apps a word targets, for the honest subtitle under
+          // its row (groups are shown by the via-note instead).
+          String? otherTargets(String word) {
+            final entry = s.forWord(word).firstOrNull;
+            if (entry == null) return null;
+            final names = [
+              for (final p in entry.packageNames)
+                if (p != packageName) _labelFor(p),
+            ];
+            if (names.isEmpty) return null;
+            return l10n.blockedWordsAlsoTargets(names.join(', '));
+          }
+
+          String? subtitleFor(String word) {
+            final parts = <String>[];
+            final via = viaGroups[word];
+            if (via != null) {
+              parts.add(l10n.blockedWordsViaGroup(via.join(', ')));
+            }
+            final other = otherTargets(word);
+            if (other != null) parts.add(other);
+            return parts.isEmpty ? null : parts.join(' · ');
+          }
+
+          return AlertDialog(
+            // Dechainer parity: the per-app dialog is titled with the
+            // app's name alone, exactly like the original.
+            title: Text(_labelFor(packageName)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.blockedWordsIntro),
+                  const SizedBox(height: 12),
+                  for (final word in modes.keys.toList()..sort())
+                    _modeRow(
+                      l10n: l10n,
+                      title: word,
+                      subtitle: subtitleFor(word),
+                      modes: modes[word]!,
+                      onMode: (mode, selected) => setDialogState(() {
+                        if (selected) {
+                          modes[word]!.add(mode);
+                        } else {
+                          modes[word]!.remove(mode);
+                        }
+                      }),
+                      onDelete: () =>
+                          setDialogState(() => modes.remove(word)),
+                    ),
+                  for (final word in (viaGroups.keys.toList()..sort())
+                      .where((w) => !modes.containsKey(w)))
+                    ListTile(
+                      title: Text(word),
+                      subtitle: Text(
+                        l10n.blockedWordsViaGroup(
+                          viaGroups[word]!.join(', '),
+                        ),
+                      ),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () {
+                        jumpToWord = word;
+                        Navigator.pop(dialogContext, false);
+                      },
+                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: addController,
+                          decoration: InputDecoration(
+                            hintText: l10n.wordHint,
+                            labelText: l10n.blockedWordsAddWord,
+                            border: const OutlineInputBorder(),
+                          ),
+                          onSubmitted: (_) => addWord(),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add_outlined),
+                        onPressed: addWord,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.save),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    // NOTE: intentionally not disposed here — disposing while the
+    // dialog route is still animating out re-attaches listeners to a
+    // dead controller ("used after being disposed"). The old
+    // per-dialog controllers were never disposed either.
+    if (!mounted) return;
+    if (jumpToWord != null) {
+      await _editWordTargets(jumpToWord!);
+      return;
+    }
+    if (saved != true) return;
+    // Rebuild the table: this app's direct coverage follows the
+    // dialog; every other row is untouched. Removing the app from a
+    // row keeps the row when groups still cover it.
+    final next = <WordAssignment>[];
+    final handled = <String>{};
+    for (final a in s.assignments) {
+      final dialogModes = modes[a.word];
+      final isDirect = a.packageNames.contains(packageName);
+      if (!isDirect && dialogModes == null) {
+        next.add(a);
+        continue;
+      }
+      handled.add(a.word);
+      final remainingPkgs =
+          a.packageNames.where((p) => p != packageName).toList();
+      if (dialogModes == null || dialogModes.isEmpty) {
+        // Direct coverage removed (word deleted in the dialog).
+        if (a.groupIds.isNotEmpty) {
+          next.add(
+            WordAssignment(
+              word: a.word,
+              packageNames: remainingPkgs,
+              groupIds: a.groupIds,
+              modes: a.modes,
+            ),
+          );
+        }
+        // Else the row is gone entirely.
+      } else {
+        next.add(
+          WordAssignment(
+            word: a.word,
+            packageNames: [...remainingPkgs, packageName],
+            groupIds: a.groupIds,
+            modes: dialogModes,
+          ),
+        );
+      }
+    }
+    // Words added in the dialog are new rows for this app alone.
+    for (final word in modes.keys) {
+      if (!handled.contains(word)) {
+        next.add(
+          WordAssignment(
+            word: word,
+            packageNames: [packageName],
+            modes: modes[word]!,
+          ),
+        );
+      }
+    }
+    await _saveAssignments(
+      next,
+      loosens: appCoverageChangeLoosens(
+        oldCoverage,
+        appWordCoverage(next, packageName, groups),
+      ),
+    );
+  }
+
+  /// Edits one word's targets (apps-per-word direction, Batch J):
+  /// one word, any mix of apps and groups, and its modes. The mode
+  /// chips sit at the top because they apply to ALL of the word's
+  /// targets. Removing every target drops the word entirely.
+  Future<void> _editWordTargets(String word) async {
+    final l10n = context.l10n;
+    final s = _state!;
+    final oldRow = s.forWord(word).firstOrNull;
+    final oldForWord = oldRow == null ? const <WordAssignment>[] : [oldRow];
+    var modes = {...?oldRow?.modes};
+    var packageNames = [...?oldRow?.packageNames];
+    var groupIds = [...?oldRow?.groupIds];
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(l10n.blockedWordsTargetsForWord(word)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.blockedWordsIntro),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final mode in WordBlockMode.values)
+                      FilterChip(
+                        label: Text(
+                          mode == WordBlockMode.active
+                              ? l10n.wordModeActive
+                              : l10n.wordModePassive,
+                        ),
+                        selected: modes.contains(mode),
+                        onSelected: (v) => setDialogState(() {
+                          if (v) {
+                            modes.add(mode);
+                          } else {
+                            modes.remove(mode);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.blockedWordsAppsTitle,
+                  style: Theme.of(dialogContext).textTheme.titleSmall,
+                ),
+                for (final pkg in packageNames.toList()
+                  ..sort((a, b) => _labelFor(a).compareTo(_labelFor(b))))
+                  ListTile(
+                    title: Text(_labelFor(pkg)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outlined),
+                      onPressed: () => setDialogState(
+                        () => packageNames.remove(pkg),
+                      ),
+                    ),
+                  ),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final picked = await showAppPicker(
+                        context: dialogContext,
+                        channel: widget.controller.channel,
+                        title: l10n.blockedWordsAddApp,
+                        initialSelected: packageNames.toSet(),
+                        preloadedApps: _apps,
+                      );
+                      if (picked == null) return;
+                      setDialogState(
+                        () => packageNames = picked.toList()
+                          ..sort(
+                            (a, b) => _labelFor(a).compareTo(_labelFor(b)),
+                          ),
+                      );
+                    },
+                    icon: const Icon(Icons.add_outlined),
+                    label: Text(l10n.blockedWordsAddApp),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.blockedWordsGroupsTitle,
+                  style: Theme.of(dialogContext).textTheme.titleSmall,
+                ),
+                for (final id in groupIds.toList()
+                  ..sort((a, b) => _groupName(a).compareTo(_groupName(b))))
+                  ListTile(
+                    title: Text(_groupName(id)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outlined),
+                      onPressed: () =>
+                          setDialogState(() => groupIds.remove(id)),
+                    ),
+                  ),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final picked = await _pickWordGroups(
+                        dialogContext,
+                        groupIds.toSet(),
+                      );
+                      if (picked == null) return;
+                      setDialogState(() => groupIds = picked.toList());
+                    },
+                    icon: const Icon(Icons.add_outlined),
+                    label: Text(l10n.blockedWordsAddGroup),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(l10n.save),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (saved != true || !mounted) return;
+    final nextRow = (packageNames.isEmpty && groupIds.isEmpty) ||
+            modes.isEmpty
+        ? null
+        : WordAssignment(
+            word: word,
+            packageNames: packageNames,
+            groupIds: groupIds,
+            modes: modes,
+          );
+    final next = [
+      for (final a in s.assignments)
+        if (a.word != word) a,
+      if (nextRow != null) nextRow,
+    ];
+    await _saveAssignments(
+      next,
+      loosens: wordAssignmentsChangeLoosens(
+        oldForWord,
+        nextRow == null ? const [] : [nextRow],
+      ),
+    );
+  }
+
+  /// Multi-select group picker for the word editor, with select-all
+  /// (Batch J). Returns the full selected set, or null on cancel.
+  Future<Set<String>?> _pickWordGroups(
+    BuildContext dialogContext,
+    Set<String> initialSelected,
+  ) async {
+    final l10n = context.l10n;
+    final groups = _groups ?? const [];
+    var selected = Set<String>.from(initialSelected);
+    return showDialog<Set<String>>(
+      context: dialogContext,
+      builder: (groupDialogContext) => StatefulBuilder(
+        builder: (groupDialogContext, setGroupState) => AlertDialog(
+          title: Text(l10n.blockedWordsGroupsTitle),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final group in groups)
+                  CheckboxListTile(
+                    title: Text(group.name),
+                    value: selected.contains(group.id),
+                    onChanged: (v) => setGroupState(() {
+                      if (v == true) {
+                        selected.add(group.id);
+                      } else {
+                        selected.remove(group.id);
+                      }
+                    }),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(groupDialogContext).pop(),
+              child: Text(l10n.cancel),
+            ),
+            selectAllAction(
+              l10n: l10n,
+              allSelected:
+                  groups.isNotEmpty &&
+                  groups.every((g) => selected.contains(g.id)),
+              enabled: groups.isNotEmpty,
+              onPressed: () => setGroupState(() {
+                if (groups.every((g) => selected.contains(g.id))) {
+                  selected.clear();
+                } else {
+                  selected.addAll(groups.map((g) => g.id));
+                }
+              }),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(groupDialogContext).pop(selected),
+              child: Text(l10n.save),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addApp() async {
+    final groups = _groups ?? const [];
+    final listed = {
+      for (final a in _state!.assignments) ...a.expandedPackages(groups),
+    };
+    final candidates = (_apps ?? const [])
+        .where((a) => !listed.contains(a.packageName))
+        .toList();
+    if (candidates.isEmpty) {
+      showInfoSnackBar(context, context.l10n.blockedWordsNoMoreApps);
+      return;
+    }
+    final picked = await showAppPicker(
       context: context,
       channel: widget.controller.channel,
-      title: context.l10n.appsWhereWordsBlock,
-      initialSelected: _state!.targetPackages.toSet(),
-      preloadedApps: _apps,
+      title: context.l10n.blockedWordsAddApp,
+      singleSelect: true,
+      preloadedApps: candidates,
     );
-    if (result == null || !mounted) return;
-    final list = result.toList();
-    // ANY change to the target set is recovery-gated: removing a target
-    // loosens (F23), and ADDING one ACTIVATES word blocking inside an
-    // app that did not have it (user directive, v1.0.4 audit).
-    final changed =
-        list.length != _state!.targetPackages.length ||
-        !_state!.targetPackages.every(list.contains);
-    Future<void> save() async {
-      final s = await widget.controller.channel.setBlockedWords(
-        _state!.words,
-        list,
-      );
-      if (mounted) setState(() => _state = s);
-    }
-
-    if (!mounted) return;
-    if (changed) {
-      await runLoosening(context, widget.controller, save);
-    } else {
-      await save();
-    }
+    if (picked == null || picked.isEmpty || !mounted) return;
+    await _editAppWords(picked.first);
   }
 
-  Future<void> _editPassive(String packageName) async {
-    final current = _state!.passiveWords[packageName] ?? const [];
-    final controller = TextEditingController(text: current.join('\n'));
-    final saved = await showDialog<List<String>>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        // Dechainer parity (item 3): the per-app dialog is titled
-        // with the app's name alone, exactly like the original.
-        title: Text(_labelFor(packageName)),
-        content: TextField(
-          controller: controller,
-          maxLines: 8,
-          decoration: InputDecoration(
-            hintText: dialogContext.l10n.wordHint,
-            labelText: dialogContext.l10n.oneWordPerLine,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(dialogContext.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              controller.text
-                  .split('\n')
-                  .map((s) => s.trim())
-                  .where((s) => s.isNotEmpty)
-                  .toList(),
-            ),
-            child: Text(dialogContext.l10n.save),
-          ),
-        ],
-      ),
-    );
-    if (saved == null) return;
-    final loosening =
-        saved.length < current.length || !current.every(saved.contains);
-    // Creating a per-app list where none existed ACTIVATES on-screen
-    // word blocking for that app — code-gated (user directive, v1.0.4
-    // audit), like the loosening direction already was.
-    final creating = !_state!.passiveWords.containsKey(packageName);
-    Future<void> save() async {
-      final s = await widget.controller.channel.setPassiveWords(
-        packageName,
-        saved,
-      );
-      if (mounted) setState(() => _state = s);
-    }
-
-    if (!mounted) return;
-    if (loosening || creating) {
-      await runLoosening(context, widget.controller, save);
-    } else {
-      try {
-        await save();
-      } catch (e) {
-        if (mounted) await showErrorCard(context, e);
-      }
-    }
+  String _appSubtitle(AppLocalizations l10n, List<WordAssignment> forApp) {
+    final words = {for (final a in forApp) a.word}.length;
+    final modes = {for (final a in forApp) ...a.modes};
+    if (modes.isEmpty) return l10n.wordsCount(words);
+    final modeLabel = modes.length == 2
+        ? '${l10n.wordModeActive} + ${l10n.wordModePassive}'
+        : modes.first == WordBlockMode.active
+        ? l10n.wordModeActive
+        : l10n.wordModePassive;
+    return '${l10n.wordsCount(words)} · $modeLabel';
   }
 
-  /// Deletes a per-app (passive) word list — Dechainer's trash icon on
-  /// each passive row. Clearing the list removes the entry natively
-  /// (an empty set is deleted, not stored), so the row disappears.
-  /// Removing blocking is a loosening, so the delete is recovery-gated.
-  Future<void> _deletePassive(String packageName) async {
-    Future<void> apply() async {
-      final s = await widget.controller.channel.setPassiveWords(
-        packageName,
-        const [],
-      );
-      if (mounted) setState(() => _state = s);
+  /// By-word row subtitle: how many apps and groups the word targets.
+  String _wordSubtitle(AppLocalizations l10n, WordAssignment a) {
+    final parts = <String>[l10n.targetAppsCount(a.packageNames.length)];
+    if (a.groupIds.isNotEmpty) {
+      parts.add(l10n.targetGroupsCount(a.groupIds.length));
     }
-
-    if (!mounted) return;
-    await runLoosening(context, widget.controller, apply);
+    return parts.join(' · ');
   }
 
   @override
@@ -1015,6 +1519,13 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
       );
     }
     final s = _state!;
+    final groups = _groups ?? const [];
+    final appsWithWords = {
+      for (final a in s.assignments) ...a.expandedPackages(groups),
+    }.toList()..sort((a, b) => _labelFor(a).compareTo(_labelFor(b)));
+    final words = {
+      for (final a in s.assignments) a.word,
+    }.toList()..sort();
     return Scaffold(
       appBar: AppBar(title: Text(l10n.blockedWords)),
       body: ListView(
@@ -1022,117 +1533,87 @@ class _BlockedWordsScreenState extends State<BlockedWordsScreen> {
         children: [
           // v1.0.5 UX (user directive): titled card groups.
           SectionCard(
-            title: l10n.activeBlockingSection,
+            title: l10n.blockedWords,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                child: Text(l10n.activeBlockingBody),
-              ),
-              ListTile(
-                title: Text(l10n.wordsCount(s.words.length)),
-                subtitle: Text(s.words.take(5).join(', ')),
-                trailing: const Icon(Icons.edit_outlined),
-                onTap: _editWords,
-              ),
-              // Dechainer parity (item 3): the active list itself is
-              // shown as a read-only multi-line field (placeholder +
-              // "one word per line"), not only as a count.
-              Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: TextField(
-                  controller: _activeWordsController
-                    ..text = s.words.join('\n'),
-                  readOnly: true,
-                  maxLines: 6,
-                  decoration: InputDecoration(
-                    hintText: l10n.wordHint,
-                    helperText: l10n.oneWordPerLine,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
+                child: Text(l10n.blockedWordsIntro),
               ),
-              ListTile(
-                title: Text(l10n.targetAppsCount(s.targetPackages.length)),
-                subtitle: Text(
-                  s.targetPackages.map(_labelFor).take(3).join(', '),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: SegmentedButton<_BlockedWordsView>(
+                  segments: [
+                    ButtonSegment(
+                      value: _BlockedWordsView.byApp,
+                      label: Text(l10n.blockedWordsByApp),
+                    ),
+                    ButtonSegment(
+                      value: _BlockedWordsView.byWord,
+                      label: Text(l10n.blockedWordsByWord),
+                    ),
+                  ],
+                  selected: {_view},
+                  onSelectionChanged: (v) =>
+                      setState(() => _view = v.first),
                 ),
-                trailing: const Icon(Icons.edit_outlined),
-                onTap: _pickTargets,
               ),
             ],
           ),
           const SizedBox(height: 12),
-          SectionCard(
-            title: l10n.passiveBlockingSection,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                child: Text(l10n.passiveBlockingBody),
-              ),
-              if (s.passiveWords.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Text(l10n.noPerAppLists),
-                )
-              else
-                for (final entry in s.passiveWords.entries)
-                  ListTile(
-                    leading: const Icon(Icons.android_outlined),
-                    title: Text(_labelFor(entry.key)),
-                    subtitle: Text(l10n.wordsCount(entry.value.length)),
-                    // Dechainer parity (item 3): each passive row has
-                    // an edit pencil AND a delete trash icon.
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          onPressed: () => _editPassive(entry.key),
+          if (_view == _BlockedWordsView.byApp)
+            SectionCard(
+              title: l10n.blockedWordsByApp,
+              children: [
+                if (appsWithWords.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: Text(l10n.blockedWordsNoApps),
+                  )
+                else
+                  for (final pkg in appsWithWords)
+                    ListTile(
+                      leading: const Icon(Icons.android_outlined),
+                      title: Text(_labelFor(pkg)),
+                      subtitle: Text(
+                        _appSubtitle(
+                          l10n,
+                          s.forApp(pkg, groups: groups),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outlined),
-                          onPressed: () => _deletePassive(entry.key),
-                        ),
-                      ],
+                      ),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () => _editAppWords(pkg),
                     ),
-                    onTap: () => _editPassive(entry.key),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: _addApp,
+                    icon: const Icon(Icons.add_outlined),
+                    label: Text(l10n.blockedWordsAddApp),
                   ),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    // Dechainer parity (item 3): a passive list can be
-                    // created for ANY installed app — not only the
-                    // active targets. The v1 restriction ("add target
-                    // apps first") is gone: the original's Passive
-                    // section works with "No apps selected" in Active.
-                    final listed = s.passiveWords.keys.toSet();
-                    final candidates = (_apps ?? const [])
-                        .where((a) => !listed.contains(a.packageName))
-                        .toList();
-                    if (candidates.isEmpty) {
-                      showInfoSnackBar(
-                        context,
-                        l10n.noMoreAppsForPassive,
-                      );
-                      return;
-                    }
-                    final picked = await showAppPicker(
-                      context: context,
-                      channel: widget.controller.channel,
-                      title: l10n.addPerAppList,
-                      singleSelect: true,
-                      preloadedApps: candidates,
-                    );
-                    if (picked == null || picked.isEmpty) return;
-                    await _editPassive(picked.first);
-                  },
-                  icon: const Icon(Icons.add_outlined),
-                  label: Text(l10n.addPerAppList),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            SectionCard(
+              title: l10n.blockedWordsByWord,
+              children: [
+                if (words.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: Text(l10n.blockedWordsNoWords),
+                  )
+                else
+                  for (final word in words)
+                    ListTile(
+                      title: Text(word),
+                      subtitle: Text(
+                        _wordSubtitle(l10n, s.forWord(word).first),
+                      ),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () => _editWordTargets(word),
+                    ),
+              ],
+            ),
         ],
       ),
     );
