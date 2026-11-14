@@ -105,8 +105,12 @@ class AzmAccessibilityService : AccessibilityService() {
     private var lastActiveTypedText: String = ""
     private var lastCheckDate: String = LocalDate.now().toString()
 
-    private var targetPackages: Set<String> = emptySet()
-    private var forbiddenPatterns: Map<String, Regex> = emptyMap()
+    // Batch H, item 10: active (typed-word) patterns are per package
+    // now — typing word W in app A blocks only when (W, A, active)
+    // is assigned. The old global word list + target set would
+    // over-block (W typed in ANY target app, even one where W was
+    // never assigned).
+    private var activeForbiddenPatterns: Map<String, Map<String, Regex>> = emptyMap()
     private var passiveForbiddenPatterns: Map<String, Map<String, Regex>> = emptyMap()
 
     // Staged usage warnings (F12), mirroring the original's fields
@@ -134,6 +138,7 @@ class AzmAccessibilityService : AccessibilityService() {
     private var colourModesForegroundPackage: String? = null
     private var colourModesAppliedModes: Set<ColourMode> = emptySet()
     private var nightLightOverlay: NightLightOverlay? = null
+    private var extraDimOverlay: ExtraDimOverlay? = null
 
     // Visual blocking (F16/F17, v1.0.6), mirroring the original's
     // fields (DechainerAccessibilityService.kt:115-156): a settings
@@ -250,6 +255,23 @@ class AzmAccessibilityService : AccessibilityService() {
                 nightLightOverlay?.show(settings.nightLightTemperature, settings.nightLightIntensity)
             } else {
                 nightLightOverlay?.hide()
+            }
+            // Extra-dim overlay (Batch G, item 4): the fallback when
+            // the platform reduce_bright_colors keys cannot do the
+            // job — either the user chose it (extraDimUseOverlay, for
+            // devices whose framework ignores the keys) or the last
+            // enforce failed to verify them. Never shown alongside a
+            // working platform path, so there is no double-dimming.
+            val extraDimFailed = ColourModesController.lastVerifyFailed.any {
+                it.startsWith("reduce_bright_colors")
+            }
+            if (ColourMode.EXTRA_DIM in modes &&
+                (settings.extraDimUseOverlay || extraDimFailed)
+            ) {
+                if (extraDimOverlay == null) extraDimOverlay = ExtraDimOverlay(this)
+                extraDimOverlay?.show(settings.extraDimLevel)
+            } else {
+                extraDimOverlay?.hide()
             }
             // Re-arm the boundary timer for the next window start/end.
             handler.removeCallbacks(colourModesSyncRunnable)
@@ -509,6 +531,8 @@ class AzmAccessibilityService : AccessibilityService() {
         ColourModesController.release(applicationContext)
         nightLightOverlay?.hide()
         nightLightOverlay = null
+        extraDimOverlay?.hide()
+        extraDimOverlay = null
         AzmState.accessibilityServiceRunning = false
 
         // F28 — fail closed on accessibility loss, unless this disable was
@@ -704,11 +728,23 @@ class AzmAccessibilityService : AccessibilityService() {
     // ---------------------------------------------------------------- word blocking (F14/F15)
 
     private fun updateForbiddenPatterns() {
-        targetPackages = SettingsStore.wordTargetPackages()
-        forbiddenPatterns = SettingsStore.blockedWords().associateWith { wordPattern(it) }
-        passiveForbiddenPatterns = SettingsStore.passiveWordPackages().associateWith { pkg ->
-            SettingsStore.passiveWordsFor(pkg).associateWith { wordPattern(it) }
+        // Batch J, item 10: one row per word with apps and/or groups.
+        // A group target expands to every member app, so the per-app
+        // pattern maps below are built from the expanded coverage.
+        val groups = SettingsStore.groups()
+        val assignments = SettingsStore.wordAssignments()
+        fun build(mode: String): Map<String, Map<String, Regex>> {
+            val perPkg = mutableMapOf<String, MutableMap<String, Regex>>()
+            for (a in assignments) {
+                if (mode !in a.modes) continue
+                for (pkg in a.expandedPackages(groups)) {
+                    perPkg.getOrPut(pkg) { mutableMapOf() }[a.word] = wordPattern(a.word)
+                }
+            }
+            return perPkg
         }
+        activeForbiddenPatterns = build("active")
+        passiveForbiddenPatterns = build("passive")
     }
 
     /**
@@ -723,8 +759,11 @@ class AzmAccessibilityService : AccessibilityService() {
             RegexOption.IGNORE_CASE,
         )
 
-    private fun checkForbiddenWord(text: String): String? {
-        for ((word, regex) in forbiddenPatterns) {
+    private fun checkForbiddenWord(
+        text: String,
+        patterns: Map<String, Regex>,
+    ): String? {
+        for ((word, regex) in patterns) {
             if (regex.containsMatchIn(text)) return word
         }
         return null
@@ -748,7 +787,7 @@ class AzmAccessibilityService : AccessibilityService() {
      */
     private fun checkActiveBlocking() {
         val pkg = currentPackage ?: return
-        if (pkg !in targetPackages) return
+        val patterns = activeForbiddenPatterns[pkg] ?: return
         val extraction = extractEditableFieldsTextAndFocus()
         if (extraction.isTyping) {
             wasTypingActively = true
@@ -759,7 +798,7 @@ class AzmAccessibilityService : AccessibilityService() {
         wasTypingActively = false
         val text = extraction.text.ifBlank { lastActiveTypedText }
         lastActiveTypedText = ""
-        val forbiddenWord = checkForbiddenWord(text) ?: return
+        val forbiddenWord = checkForbiddenWord(text, patterns) ?: return
         performGlobalAction(GLOBAL_ACTION_BACK)
         showBlockedWordActivity(forbiddenWord)
         // Seal rules (Phase D): recorded natively at detection time.
