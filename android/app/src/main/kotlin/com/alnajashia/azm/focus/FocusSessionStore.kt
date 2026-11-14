@@ -22,6 +22,7 @@ import android.provider.Settings
 import android.util.Log
 import com.alnajashia.azm.data.AzmState
 import com.alnajashia.azm.data.SettingsStore
+import com.alnajashia.azm.data.SuspensionClaims
 import com.alnajashia.azm.data.SuspensionReason
 import com.alnajashia.azm.deviceowner.AzmDeviceAdminReceiver
 import com.alnajashia.azm.notifications.FocusReceiver
@@ -484,7 +485,18 @@ object FocusSessionStore {
         val claimed = getActiveSuspension()
 
         val dropped = claimed - targets
-        if (dropped.isNotEmpty()) release(context, dropped)
+        if (dropped.isNotEmpty()) {
+            // Batch I-B: never release a package another tracked
+            // feature (the lockdown) claims.
+            release(
+                context,
+                SuspensionClaims.releasableBy(
+                    context,
+                    SuspensionClaims.REASON_FOCUS,
+                    dropped,
+                ),
+            )
+        }
 
         val toClaim = targets.filter { pkg -> pkg in claimed || !isSuspended(dpm, admin, pkg) }
         val failed = if (toClaim.isEmpty()) {
@@ -503,13 +515,23 @@ object FocusSessionStore {
             SettingsStore.logSuspension(pkg, SuspensionReason.FOCUS_MODE)
         }
         edit { putStringSet(KEY_ACTIVE_SUSPENSION, nowClaimed) }
+        // Batch I-B: mirror the claim set into the shared registry,
+        // so the lockdown never releases a focus session's apps.
+        SuspensionClaims.claimPackages(context, SuspensionClaims.REASON_FOCUS, nowClaimed)
         if (failed.isNotEmpty()) Log.w(TAG, "Focus mode: could not suspend ${failed.joinToString()}")
     }
 
     private fun releaseSuspension(context: Context) {
         val claimed = getActiveSuspension()
+        SuspensionClaims.clearPackages(context, SuspensionClaims.REASON_FOCUS)
         edit { remove(KEY_ACTIVE_SUSPENSION) }
-        if (claimed.isNotEmpty()) release(context, claimed)
+        // Batch I-B: release only what no other tracked feature claims.
+        val releasable = SuspensionClaims.releasableBy(
+            context,
+            SuspensionClaims.REASON_FOCUS,
+            claimed,
+        )
+        if (releasable.isNotEmpty()) release(context, releasable)
     }
 
     private fun release(context: Context, packages: Set<String>) {
@@ -546,7 +568,13 @@ object FocusSessionStore {
         // Clear restrictions that were deselected while the session was running
         val dropped = claimed - configured
         if (dropped.isNotEmpty()) {
-            dropped.forEach { key ->
+            // Batch I-B: never clear a restriction another tracked
+            // feature (the lockdown) claims.
+            SuspensionClaims.releasableRestrictions(
+                context,
+                SuspensionClaims.REASON_FOCUS,
+                dropped,
+            ).forEach { key ->
                 runCatching { dpm.clearUserRestriction(admin, key) }
             }
         }
@@ -570,10 +598,14 @@ object FocusSessionStore {
 
         val nowClaimed = (claimed - dropped) + newlyClaimed
         edit { putStringSet(KEY_ACTIVE_RESTRICTIONS, nowClaimed) }
+        // Batch I-B: mirror the claim set into the shared registry,
+        // so the lockdown never clears a focus session's restriction.
+        SuspensionClaims.claimRestrictions(context, SuspensionClaims.REASON_FOCUS, nowClaimed)
     }
 
     private fun releaseRestrictions(context: Context) {
         val claimed = getActiveRestrictions()
+        SuspensionClaims.clearRestrictions(context, SuspensionClaims.REASON_FOCUS)
         edit { remove(KEY_ACTIVE_RESTRICTIONS) }
         if (claimed.isEmpty()) return
 
@@ -581,7 +613,12 @@ object FocusSessionStore {
         val admin = admin(context)
         if (!dpm.isDeviceOwnerApp(admin.packageName)) return
 
-        claimed.forEach { key ->
+        // Batch I-B: clear only what no other tracked feature claims.
+        SuspensionClaims.releasableRestrictions(
+            context,
+            SuspensionClaims.REASON_FOCUS,
+            claimed,
+        ).forEach { key ->
             runCatching { dpm.clearUserRestriction(admin, key) }
                 .onFailure { Log.w(TAG, "Focus mode: could not clear user restriction $key", it) }
         }
