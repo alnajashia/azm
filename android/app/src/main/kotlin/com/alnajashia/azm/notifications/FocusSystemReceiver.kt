@@ -79,9 +79,7 @@ class FocusReceiver : BroadcastReceiver() {
  *  - **no phase but orphaned claims** (session data lost) — sync releases
  *    the recorded suspension/restriction claims.
  *
- * The original also reschedules `FocusScheduleManager` here; ours has no
- * native schedule engine (focus schedules are not ported), so there is
- * nothing to reschedule.
+ * It also re-arms the focus-schedule alarms (Batch I-A).
  */
 class FocusSystemReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -94,6 +92,16 @@ class FocusSystemReceiver : BroadcastReceiver() {
             Intent.ACTION_TIMEZONE_CHANGED,
             "android.intent.action.TIME_SET" -> {
                 FocusSessionStore.sync(context)
+                // Batch I-A: re-arm the focus-schedule alarms too
+                // (the original reschedules FocusScheduleManager here;
+                // the Dechainer snapshot's class file for this receiver
+                // was absent, so this call is Azm's own — see the
+                // focus-schedules regression tests).
+                com.alnajashia.azm.focus.FocusScheduleManager.reschedule(context)
+                // Batch I-B: a lockdown that outlives a reboot or a
+                // force-stop re-applies here (and its window alarms
+                // re-arm with it).
+                com.alnajashia.azm.lockdown.LockdownStore.sync(context)
             }
         }
     }
