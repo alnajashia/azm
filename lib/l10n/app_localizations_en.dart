@@ -575,10 +575,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readingNextPassage => 'Next passage';
 
   @override
-  String get tetrisSkippedNote =>
-      'Note: the Tetris challenge is not available in this version (v1.1) and was skipped — it was not simulated.';
-
-  @override
   String get passageOnWaiting => 'On waiting';
 
   @override
@@ -604,6 +600,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get challengeTetris => 'Tetris';
+
+  @override
+  String get tetrisDuration => 'Time to play';
+
+  @override
+  String tetrisMinutes(int n) {
+    return '$n min';
+  }
+
+  @override
+  String get tetrisNext => 'Next';
+
+  @override
+  String tetrisLines(int n) {
+    return 'Lines: $n';
+  }
+
+  @override
+  String tetrisLevel(int n) {
+    return 'Level $n';
+  }
+
+  @override
+  String get tetrisPaused =>
+      'Paused — touch the board or a button to play. Time only counts while you play.';
+
+  @override
+  String get tetrisSoundOn => 'Turn sound off';
+
+  @override
+  String get tetrisSoundOff => 'Turn sound on';
+
+  @override
+  String get tetrisContinue => 'Continue';
+
+  @override
+  String get tetrisMoveLeft => 'Move left';
+
+  @override
+  String get tetrisMoveRight => 'Move right';
+
+  @override
+  String get tetrisRotate => 'Rotate';
+
+  @override
+  String get tetrisSoftDrop => 'Move down';
+
+  @override
+  String get tetrisHardDrop => 'Drop';
 
   @override
   String get challengeReading => 'Reflective reading';
@@ -872,6 +917,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get blockedWordsSub => 'Active and per-app on-screen word blocking';
 
   @override
+  String get blockedWordsByApp => 'By app';
+
+  @override
+  String get blockedWordsByWord => 'By word';
+
+  @override
+  String get blockedWordsIntro =>
+      'Each word targets apps, groups, or both, in two modes: Typed blocks when the word is typed in a target; On screen blocks when it appears on screen.';
+
+  @override
+  String get wordModeActive => 'Typed';
+
+  @override
+  String get wordModePassive => 'On screen';
+
+  @override
+  String get blockedWordsAddWord => 'Add word';
+
+  @override
+  String get blockedWordsAddApp => 'Add app';
+
+  @override
+  String get blockedWordsNoApps => 'No apps have word lists yet.';
+
+  @override
+  String get blockedWordsNoWords => 'No words yet.';
+
+  @override
+  String blockedWordsTargetsForWord(String word) {
+    return 'Targets — $word';
+  }
+
+  @override
+  String get blockedWordsAppsTitle => 'Apps';
+
+  @override
+  String get blockedWordsGroupsTitle => 'Groups';
+
+  @override
+  String get blockedWordsAddGroup => 'Add group';
+
+  @override
+  String blockedWordsViaGroup(String groups) {
+    return 'via $groups';
+  }
+
+  @override
+  String blockedWordsAlsoTargets(String targets) {
+    return 'Also: $targets';
+  }
+
+  @override
+  String get blockedWordsNoMoreApps => 'Every installed app is already listed';
+
+  @override
   String get impulseLock => 'Impulse lock';
 
   @override
@@ -943,6 +1043,33 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dnsProviderCleanbrowsingNote =>
       'Adult content and proxies, no account needed';
+
+  @override
+  String get dnsProviderCloudflare => 'Cloudflare (Family filter)';
+
+  @override
+  String get dnsProviderCloudflareNote =>
+      'Blocks malware and adult content, no account needed';
+
+  @override
+  String get dnsProviderAdguard => 'AdGuard DNS (Family filter)';
+
+  @override
+  String get dnsProviderAdguardNote => 'Adult content, no account needed';
+
+  @override
+  String get dnsProviderCustomNote => 'Your own DNS hostname';
+
+  @override
+  String get dnsRetryApply => 'Retry';
+
+  @override
+  String get dnsRetrying => 'Host unreachable — retrying automatically…';
+
+  @override
+  String dnsApplyFailedCode(int code) {
+    return 'Failed to apply the private DNS host (error code $code).';
+  }
 
   @override
   String get dnsConfigIdLabel => 'NextDNS configuration ID';
@@ -1180,6 +1307,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get colourModesStatusOff => 'Off.';
 
   @override
+  String colourModesStatusVerifyFailed(String modes) {
+    return 'The system did not apply: $modes — the setting was rejected or ignored.';
+  }
+
+  @override
   String get colourModesEnableTitle => 'Colour modes';
 
   @override
@@ -1275,6 +1407,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String extraDimLevel(int value) {
     return 'Dim level: $value';
   }
+
+  @override
+  String get extraDimUseOverlayTitle => 'Use Azm\'s own dimming';
+
+  @override
+  String get extraDimUseOverlaySub =>
+      'For devices where the system\'s extra dim does nothing — Azm dims the screen itself instead.';
 
   @override
   String colourWindowsLabel(String windows) {
@@ -1897,6 +2036,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sealTriggerFocusRunning => 'A focus session is running';
 
   @override
+  String get sealTriggerLockdownRunning => 'A full-phone lockdown is running';
+
+  @override
   String get sealTriggerVisual =>
       'Inappropriate content is detected in a chosen app';
 
@@ -1904,10 +2046,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sealTriggerWord => 'A banned word is detected in a chosen app';
 
   @override
-  String get sealApp => 'App';
+  String get sealChooseApp => 'Choose an app';
 
   @override
-  String get sealChooseApp => 'Choose an app';
+  String get sealGroup => 'Group';
+
+  @override
+  String get sealApps => 'Apps';
+
+  @override
+  String get sealNoGroup => 'No group';
 
   @override
   String get sealDuration => 'Seal lasts';
@@ -1974,9 +2122,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removalStepClearOwner => 'Remove Device Owner';
 
   @override
-  String get dnsSettingsTitle => 'Private DNS settings';
-
-  @override
   String get dnsCustom => 'Custom';
 
   @override
@@ -1990,22 +2135,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apply => 'Apply';
-
-  @override
-  String get dnsTimeoutError =>
-      'Applying the DNS host timed out. Check the current DNS state before retrying.';
-
-  @override
-  String get dnsNotServingError =>
-      'The chosen DNS host is not serving. Pick another host.';
-
-  @override
-  String get dnsApplyFailedError => 'Failed to apply the private DNS host.';
-
-  @override
-  String dnsAppliedVerified(String host) {
-    return 'Private DNS forced to $host (verified).';
-  }
 
   @override
   String get newBlocklist => 'New blocklist';
@@ -2050,28 +2179,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadingBlocklists => 'Loading blocklists…';
 
   @override
-  String get activeBlockingWords => 'Active blocking words';
-
-  @override
-  String get oneWordPerLine => 'One word or phrase per line';
-
-  @override
-  String get appsWhereWordsBlock => 'Apps where active words block';
-
-  @override
   String onScreenWordsFor(String app) {
     return 'On-screen words for $app';
   }
 
   @override
   String get loadingBlockedWords => 'Loading blocked words…';
-
-  @override
-  String get activeBlockingSection => 'Active blocking (F14)';
-
-  @override
-  String get activeBlockingBody =>
-      'When a word is present in the text field of a chosen app and typing ends, the app is backed out of and a block screen shows.';
 
   @override
   String wordsCount(int count) {
@@ -2084,28 +2197,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get passiveBlockingSection => 'Passive blocking (F15)';
-
-  @override
-  String get passiveBlockingBody =>
-      'Words appearing anywhere on screen in a specific app.';
-
-  @override
-  String get noPerAppLists => 'No per-app lists yet.';
+  String targetGroupsCount(int count) {
+    return '$count group(s)';
+  }
 
   @override
   String get addTargetAppsFirst =>
       'Add target apps above first — passive lists attach to them in v1.';
 
   @override
-  String get addPerAppList => 'Add per-app list';
-
-  @override
   String get wordHint => 'e.g., pussy';
-
-  @override
-  String get noMoreAppsForPassive =>
-      'Every installed app already has a passive list';
 
   @override
   String get loadingWarningStages => 'Loading warning stages…';
@@ -2377,8 +2478,177 @@ class AppLocalizationsEn extends AppLocalizations {
   String get focusSchedulesTitle => 'Focus schedules & reminders';
 
   @override
-  String get focusSchedulesNote =>
-      'Scheduled auto-start sessions are not in this version.';
+  String get focusSchedulesEmpty =>
+      'No schedules yet — add one to start focus on time.';
+
+  @override
+  String get focusScheduleAdd => 'Add schedule';
+
+  @override
+  String get focusScheduleEdit => 'Edit schedule';
+
+  @override
+  String get focusScheduleTime => 'Time';
+
+  @override
+  String get focusScheduleDays => 'Days';
+
+  @override
+  String get focusScheduleWeekdays => 'Weekdays';
+
+  @override
+  String get focusScheduleAllDays => 'Every day';
+
+  @override
+  String get focusScheduleLabel => 'Label (optional)';
+
+  @override
+  String get focusScheduleAutoStart => 'Start automatically';
+
+  @override
+  String get focusScheduleAutoStartSub =>
+      'Starts the session at the time. Off: shows a reminder instead.';
+
+  @override
+  String get focusScheduleAutoStartBadge => 'Auto-start';
+
+  @override
+  String get focusScheduleRemindBadge => 'Reminder';
+
+  @override
+  String get focusScheduleRemindBefore => 'Remind before';
+
+  @override
+  String get focusScheduleRemindNone => 'No reminder';
+
+  @override
+  String focusScheduleRemindMinutes(int n) {
+    return '$n min before';
+  }
+
+  @override
+  String get focusScheduleDaysEveryDay => 'Every day';
+
+  @override
+  String get focusScheduleDaysWeekdays => 'Weekdays';
+
+  @override
+  String get focusScheduleDaysWeekend => 'Weekend';
+
+  @override
+  String get focusScheduleExactAlarmOff =>
+      'Exact alarms are off — schedules may start late.';
+
+  @override
+  String get focusScheduleOpenSettings => 'Open settings';
+
+  @override
+  String get lockdownTitle => 'Full-phone lockdown';
+
+  @override
+  String get lockdownEntrySub =>
+      'One-shot durations, recurring windows, two levels';
+
+  @override
+  String get lockdownActive => 'Lockdown active';
+
+  @override
+  String lockdownEndsAt(String time) {
+    return 'Ends at $time';
+  }
+
+  @override
+  String lockdownClaimed(int n) {
+    return '$n app(s) suspended';
+  }
+
+  @override
+  String get lockdownEndEarly => 'End lockdown early';
+
+  @override
+  String get lockdownStartTitle => 'Start a lockdown';
+
+  @override
+  String get lockdownDuration => 'Duration (minutes)';
+
+  @override
+  String get lockdownScope => 'Applies to';
+
+  @override
+  String get lockdownScopeAll => 'Whole phone';
+
+  @override
+  String get lockdownScopeApps => 'Chosen apps';
+
+  @override
+  String get lockdownScopeGroups => 'Chosen groups';
+
+  @override
+  String get lockdownChooseApps => 'Choose apps';
+
+  @override
+  String get lockdownChooseGroups => 'Choose groups';
+
+  @override
+  String get lockdownNoApps => 'No apps chosen';
+
+  @override
+  String get lockdownNoGroups => 'No groups chosen';
+
+  @override
+  String get lockdownTier1 => 'Level 1 — Suspend everything';
+
+  @override
+  String get lockdownTier1Sub =>
+      'Suspends the chosen apps and locks the phone now. The home screen stays, with greyed-out icons.';
+
+  @override
+  String get lockdownTier2 => 'Level 2 — Strict kiosk';
+
+  @override
+  String get lockdownTier2Sub =>
+      'Hides everything — only Azm\'s countdown is visible. No Home or Recents. Emergency calls still work.';
+
+  @override
+  String get lockdownTier1Badge => 'Suspend';
+
+  @override
+  String get lockdownStrictBadge => 'Strict';
+
+  @override
+  String get lockdownLimitsNote =>
+      'Powering the phone off cannot be prevented — the lockdown re-applies after reboot. The emergency dialer stays reachable.';
+
+  @override
+  String get lockdownLabel => 'Label (optional)';
+
+  @override
+  String get lockdownStart => 'Start lockdown';
+
+  @override
+  String get lockdownWindowsTitle => 'Recurring windows';
+
+  @override
+  String get lockdownWindowsEmpty => 'No recurring windows yet.';
+
+  @override
+  String get lockdownWindowAdd => 'Add window';
+
+  @override
+  String get lockdownWindowEdit => 'Edit window';
+
+  @override
+  String get lockdownWindowStart => 'Starts';
+
+  @override
+  String get lockdownWindowEnd => 'Ends';
+
+  @override
+  String get lockdownExactAlarmOff =>
+      'Exact alarms are off — windows may start late.';
+
+  @override
+  String get delete => 'Delete';
 
   @override
   String get appsToSuspendWhileFocusing => 'Apps to suspend while focusing';
@@ -2440,6 +2710,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get includeSystemApps => 'Include system apps';
+
+  @override
+  String get selectAllApps => 'Select all';
+
+  @override
+  String get deselectAllApps => 'Deselect all';
 
   @override
   String get appGroups => 'App groups';

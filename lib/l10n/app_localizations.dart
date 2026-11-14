@@ -1064,12 +1064,6 @@ abstract class AppLocalizations {
   /// **'Next passage'**
   String get readingNextPassage;
 
-  /// No description provided for @tetrisSkippedNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Note: the Tetris challenge is not available in this version (v1.1) and was skipped — it was not simulated.'**
-  String get tetrisSkippedNote;
-
   /// No description provided for @passageOnWaiting.
   ///
   /// In en, this message translates to:
@@ -1123,6 +1117,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tetris'**
   String get challengeTetris;
+
+  /// No description provided for @tetrisDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to play'**
+  String get tetrisDuration;
+
+  /// No description provided for @tetrisMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} min'**
+  String tetrisMinutes(int n);
+
+  /// No description provided for @tetrisNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get tetrisNext;
+
+  /// No description provided for @tetrisLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Lines: {n}'**
+  String tetrisLines(int n);
+
+  /// No description provided for @tetrisLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {n}'**
+  String tetrisLevel(int n);
+
+  /// No description provided for @tetrisPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused — touch the board or a button to play. Time only counts while you play.'**
+  String get tetrisPaused;
+
+  /// No description provided for @tetrisSoundOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn sound off'**
+  String get tetrisSoundOn;
+
+  /// No description provided for @tetrisSoundOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn sound on'**
+  String get tetrisSoundOff;
+
+  /// No description provided for @tetrisContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get tetrisContinue;
+
+  /// No description provided for @tetrisMoveLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Move left'**
+  String get tetrisMoveLeft;
+
+  /// No description provided for @tetrisMoveRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Move right'**
+  String get tetrisMoveRight;
+
+  /// No description provided for @tetrisRotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate'**
+  String get tetrisRotate;
+
+  /// No description provided for @tetrisSoftDrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get tetrisSoftDrop;
+
+  /// No description provided for @tetrisHardDrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop'**
+  String get tetrisHardDrop;
 
   /// No description provided for @challengeReading.
   ///
@@ -1574,6 +1652,102 @@ abstract class AppLocalizations {
   /// **'Active and per-app on-screen word blocking'**
   String get blockedWordsSub;
 
+  /// No description provided for @blockedWordsByApp.
+  ///
+  /// In en, this message translates to:
+  /// **'By app'**
+  String get blockedWordsByApp;
+
+  /// No description provided for @blockedWordsByWord.
+  ///
+  /// In en, this message translates to:
+  /// **'By word'**
+  String get blockedWordsByWord;
+
+  /// No description provided for @blockedWordsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Each word targets apps, groups, or both, in two modes: Typed blocks when the word is typed in a target; On screen blocks when it appears on screen.'**
+  String get blockedWordsIntro;
+
+  /// No description provided for @wordModeActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Typed'**
+  String get wordModeActive;
+
+  /// No description provided for @wordModePassive.
+  ///
+  /// In en, this message translates to:
+  /// **'On screen'**
+  String get wordModePassive;
+
+  /// No description provided for @blockedWordsAddWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Add word'**
+  String get blockedWordsAddWord;
+
+  /// No description provided for @blockedWordsAddApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Add app'**
+  String get blockedWordsAddApp;
+
+  /// No description provided for @blockedWordsNoApps.
+  ///
+  /// In en, this message translates to:
+  /// **'No apps have word lists yet.'**
+  String get blockedWordsNoApps;
+
+  /// No description provided for @blockedWordsNoWords.
+  ///
+  /// In en, this message translates to:
+  /// **'No words yet.'**
+  String get blockedWordsNoWords;
+
+  /// No description provided for @blockedWordsTargetsForWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Targets — {word}'**
+  String blockedWordsTargetsForWord(String word);
+
+  /// No description provided for @blockedWordsAppsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps'**
+  String get blockedWordsAppsTitle;
+
+  /// No description provided for @blockedWordsGroupsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get blockedWordsGroupsTitle;
+
+  /// No description provided for @blockedWordsAddGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Add group'**
+  String get blockedWordsAddGroup;
+
+  /// No description provided for @blockedWordsViaGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'via {groups}'**
+  String blockedWordsViaGroup(String groups);
+
+  /// No description provided for @blockedWordsAlsoTargets.
+  ///
+  /// In en, this message translates to:
+  /// **'Also: {targets}'**
+  String blockedWordsAlsoTargets(String targets);
+
+  /// No description provided for @blockedWordsNoMoreApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Every installed app is already listed'**
+  String get blockedWordsNoMoreApps;
+
   /// No description provided for @impulseLock.
   ///
   /// In en, this message translates to:
@@ -1705,6 +1879,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Adult content and proxies, no account needed'**
   String get dnsProviderCleanbrowsingNote;
+
+  /// No description provided for @dnsProviderCloudflare.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare (Family filter)'**
+  String get dnsProviderCloudflare;
+
+  /// No description provided for @dnsProviderCloudflareNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks malware and adult content, no account needed'**
+  String get dnsProviderCloudflareNote;
+
+  /// No description provided for @dnsProviderAdguard.
+  ///
+  /// In en, this message translates to:
+  /// **'AdGuard DNS (Family filter)'**
+  String get dnsProviderAdguard;
+
+  /// No description provided for @dnsProviderAdguardNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Adult content, no account needed'**
+  String get dnsProviderAdguardNote;
+
+  /// No description provided for @dnsProviderCustomNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own DNS hostname'**
+  String get dnsProviderCustomNote;
+
+  /// No description provided for @dnsRetryApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get dnsRetryApply;
+
+  /// No description provided for @dnsRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Host unreachable — retrying automatically…'**
+  String get dnsRetrying;
+
+  /// No description provided for @dnsApplyFailedCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to apply the private DNS host (error code {code}).'**
+  String dnsApplyFailedCode(int code);
 
   /// No description provided for @dnsConfigIdLabel.
   ///
@@ -2096,6 +2318,12 @@ abstract class AppLocalizations {
   /// **'Off.'**
   String get colourModesStatusOff;
 
+  /// No description provided for @colourModesStatusVerifyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The system did not apply: {modes} — the setting was rejected or ignored.'**
+  String colourModesStatusVerifyFailed(String modes);
+
   /// No description provided for @colourModesEnableTitle.
   ///
   /// In en, this message translates to:
@@ -2257,6 +2485,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dim level: {value}'**
   String extraDimLevel(int value);
+
+  /// No description provided for @extraDimUseOverlayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Azm\'s own dimming'**
+  String get extraDimUseOverlayTitle;
+
+  /// No description provided for @extraDimUseOverlaySub.
+  ///
+  /// In en, this message translates to:
+  /// **'For devices where the system\'s extra dim does nothing — Azm dims the screen itself instead.'**
+  String get extraDimUseOverlaySub;
 
   /// No description provided for @colourWindowsLabel.
   ///
@@ -3284,6 +3524,12 @@ abstract class AppLocalizations {
   /// **'A focus session is running'**
   String get sealTriggerFocusRunning;
 
+  /// No description provided for @sealTriggerLockdownRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'A full-phone lockdown is running'**
+  String get sealTriggerLockdownRunning;
+
   /// No description provided for @sealTriggerVisual.
   ///
   /// In en, this message translates to:
@@ -3296,17 +3542,29 @@ abstract class AppLocalizations {
   /// **'A banned word is detected in a chosen app'**
   String get sealTriggerWord;
 
-  /// No description provided for @sealApp.
-  ///
-  /// In en, this message translates to:
-  /// **'App'**
-  String get sealApp;
-
   /// No description provided for @sealChooseApp.
   ///
   /// In en, this message translates to:
   /// **'Choose an app'**
   String get sealChooseApp;
+
+  /// No description provided for @sealGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get sealGroup;
+
+  /// No description provided for @sealApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps'**
+  String get sealApps;
+
+  /// No description provided for @sealNoGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'No group'**
+  String get sealNoGroup;
 
   /// No description provided for @sealDuration.
   ///
@@ -3422,12 +3680,6 @@ abstract class AppLocalizations {
   /// **'Remove Device Owner'**
   String get removalStepClearOwner;
 
-  /// No description provided for @dnsSettingsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Private DNS settings'**
-  String get dnsSettingsTitle;
-
   /// No description provided for @dnsCustom.
   ///
   /// In en, this message translates to:
@@ -3457,30 +3709,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apply'**
   String get apply;
-
-  /// No description provided for @dnsTimeoutError.
-  ///
-  /// In en, this message translates to:
-  /// **'Applying the DNS host timed out. Check the current DNS state before retrying.'**
-  String get dnsTimeoutError;
-
-  /// No description provided for @dnsNotServingError.
-  ///
-  /// In en, this message translates to:
-  /// **'The chosen DNS host is not serving. Pick another host.'**
-  String get dnsNotServingError;
-
-  /// No description provided for @dnsApplyFailedError.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to apply the private DNS host.'**
-  String get dnsApplyFailedError;
-
-  /// No description provided for @dnsAppliedVerified.
-  ///
-  /// In en, this message translates to:
-  /// **'Private DNS forced to {host} (verified).'**
-  String dnsAppliedVerified(String host);
 
   /// No description provided for @newBlocklist.
   ///
@@ -3554,24 +3782,6 @@ abstract class AppLocalizations {
   /// **'Loading blocklists…'**
   String get loadingBlocklists;
 
-  /// No description provided for @activeBlockingWords.
-  ///
-  /// In en, this message translates to:
-  /// **'Active blocking words'**
-  String get activeBlockingWords;
-
-  /// No description provided for @oneWordPerLine.
-  ///
-  /// In en, this message translates to:
-  /// **'One word or phrase per line'**
-  String get oneWordPerLine;
-
-  /// No description provided for @appsWhereWordsBlock.
-  ///
-  /// In en, this message translates to:
-  /// **'Apps where active words block'**
-  String get appsWhereWordsBlock;
-
   /// No description provided for @onScreenWordsFor.
   ///
   /// In en, this message translates to:
@@ -3583,18 +3793,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading blocked words…'**
   String get loadingBlockedWords;
-
-  /// No description provided for @activeBlockingSection.
-  ///
-  /// In en, this message translates to:
-  /// **'Active blocking (F14)'**
-  String get activeBlockingSection;
-
-  /// No description provided for @activeBlockingBody.
-  ///
-  /// In en, this message translates to:
-  /// **'When a word is present in the text field of a chosen app and typing ends, the app is backed out of and a block screen shows.'**
-  String get activeBlockingBody;
 
   /// No description provided for @wordsCount.
   ///
@@ -3608,23 +3806,11 @@ abstract class AppLocalizations {
   /// **'{count} target app(s)'**
   String targetAppsCount(int count);
 
-  /// No description provided for @passiveBlockingSection.
+  /// No description provided for @targetGroupsCount.
   ///
   /// In en, this message translates to:
-  /// **'Passive blocking (F15)'**
-  String get passiveBlockingSection;
-
-  /// No description provided for @passiveBlockingBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Words appearing anywhere on screen in a specific app.'**
-  String get passiveBlockingBody;
-
-  /// No description provided for @noPerAppLists.
-  ///
-  /// In en, this message translates to:
-  /// **'No per-app lists yet.'**
-  String get noPerAppLists;
+  /// **'{count} group(s)'**
+  String targetGroupsCount(int count);
 
   /// No description provided for @addTargetAppsFirst.
   ///
@@ -3632,23 +3818,11 @@ abstract class AppLocalizations {
   /// **'Add target apps above first — passive lists attach to them in v1.'**
   String get addTargetAppsFirst;
 
-  /// No description provided for @addPerAppList.
-  ///
-  /// In en, this message translates to:
-  /// **'Add per-app list'**
-  String get addPerAppList;
-
   /// No description provided for @wordHint.
   ///
   /// In en, this message translates to:
   /// **'e.g., pussy'**
   String get wordHint;
-
-  /// No description provided for @noMoreAppsForPassive.
-  ///
-  /// In en, this message translates to:
-  /// **'Every installed app already has a passive list'**
-  String get noMoreAppsForPassive;
 
   /// No description provided for @loadingWarningStages.
   ///
@@ -4118,11 +4292,323 @@ abstract class AppLocalizations {
   /// **'Focus schedules & reminders'**
   String get focusSchedulesTitle;
 
-  /// No description provided for @focusSchedulesNote.
+  /// No description provided for @focusSchedulesEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Scheduled auto-start sessions are not in this version.'**
-  String get focusSchedulesNote;
+  /// **'No schedules yet — add one to start focus on time.'**
+  String get focusSchedulesEmpty;
+
+  /// No description provided for @focusScheduleAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add schedule'**
+  String get focusScheduleAdd;
+
+  /// No description provided for @focusScheduleEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit schedule'**
+  String get focusScheduleEdit;
+
+  /// No description provided for @focusScheduleTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get focusScheduleTime;
+
+  /// No description provided for @focusScheduleDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get focusScheduleDays;
+
+  /// No description provided for @focusScheduleWeekdays.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekdays'**
+  String get focusScheduleWeekdays;
+
+  /// No description provided for @focusScheduleAllDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get focusScheduleAllDays;
+
+  /// No description provided for @focusScheduleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Label (optional)'**
+  String get focusScheduleLabel;
+
+  /// No description provided for @focusScheduleAutoStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start automatically'**
+  String get focusScheduleAutoStart;
+
+  /// No description provided for @focusScheduleAutoStartSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts the session at the time. Off: shows a reminder instead.'**
+  String get focusScheduleAutoStartSub;
+
+  /// No description provided for @focusScheduleAutoStartBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-start'**
+  String get focusScheduleAutoStartBadge;
+
+  /// No description provided for @focusScheduleRemindBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get focusScheduleRemindBadge;
+
+  /// No description provided for @focusScheduleRemindBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind before'**
+  String get focusScheduleRemindBefore;
+
+  /// No description provided for @focusScheduleRemindNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No reminder'**
+  String get focusScheduleRemindNone;
+
+  /// No description provided for @focusScheduleRemindMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} min before'**
+  String focusScheduleRemindMinutes(int n);
+
+  /// No description provided for @focusScheduleDaysEveryDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get focusScheduleDaysEveryDay;
+
+  /// No description provided for @focusScheduleDaysWeekdays.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekdays'**
+  String get focusScheduleDaysWeekdays;
+
+  /// No description provided for @focusScheduleDaysWeekend.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekend'**
+  String get focusScheduleDaysWeekend;
+
+  /// No description provided for @focusScheduleExactAlarmOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Exact alarms are off — schedules may start late.'**
+  String get focusScheduleExactAlarmOff;
+
+  /// No description provided for @focusScheduleOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get focusScheduleOpenSettings;
+
+  /// No description provided for @lockdownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full-phone lockdown'**
+  String get lockdownTitle;
+
+  /// No description provided for @lockdownEntrySub.
+  ///
+  /// In en, this message translates to:
+  /// **'One-shot durations, recurring windows, two levels'**
+  String get lockdownEntrySub;
+
+  /// No description provided for @lockdownActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Lockdown active'**
+  String get lockdownActive;
+
+  /// No description provided for @lockdownEndsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends at {time}'**
+  String lockdownEndsAt(String time);
+
+  /// No description provided for @lockdownClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} app(s) suspended'**
+  String lockdownClaimed(int n);
+
+  /// No description provided for @lockdownEndEarly.
+  ///
+  /// In en, this message translates to:
+  /// **'End lockdown early'**
+  String get lockdownEndEarly;
+
+  /// No description provided for @lockdownStartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a lockdown'**
+  String get lockdownStartTitle;
+
+  /// No description provided for @lockdownDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (minutes)'**
+  String get lockdownDuration;
+
+  /// No description provided for @lockdownScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to'**
+  String get lockdownScope;
+
+  /// No description provided for @lockdownScopeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole phone'**
+  String get lockdownScopeAll;
+
+  /// No description provided for @lockdownScopeApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Chosen apps'**
+  String get lockdownScopeApps;
+
+  /// No description provided for @lockdownScopeGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Chosen groups'**
+  String get lockdownScopeGroups;
+
+  /// No description provided for @lockdownChooseApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose apps'**
+  String get lockdownChooseApps;
+
+  /// No description provided for @lockdownChooseGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose groups'**
+  String get lockdownChooseGroups;
+
+  /// No description provided for @lockdownNoApps.
+  ///
+  /// In en, this message translates to:
+  /// **'No apps chosen'**
+  String get lockdownNoApps;
+
+  /// No description provided for @lockdownNoGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups chosen'**
+  String get lockdownNoGroups;
+
+  /// No description provided for @lockdownTier1.
+  ///
+  /// In en, this message translates to:
+  /// **'Level 1 — Suspend everything'**
+  String get lockdownTier1;
+
+  /// No description provided for @lockdownTier1Sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspends the chosen apps and locks the phone now. The home screen stays, with greyed-out icons.'**
+  String get lockdownTier1Sub;
+
+  /// No description provided for @lockdownTier2.
+  ///
+  /// In en, this message translates to:
+  /// **'Level 2 — Strict kiosk'**
+  String get lockdownTier2;
+
+  /// No description provided for @lockdownTier2Sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Hides everything — only Azm\'s countdown is visible. No Home or Recents. Emergency calls still work.'**
+  String get lockdownTier2Sub;
+
+  /// No description provided for @lockdownTier1Badge.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspend'**
+  String get lockdownTier1Badge;
+
+  /// No description provided for @lockdownStrictBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Strict'**
+  String get lockdownStrictBadge;
+
+  /// No description provided for @lockdownLimitsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Powering the phone off cannot be prevented — the lockdown re-applies after reboot. The emergency dialer stays reachable.'**
+  String get lockdownLimitsNote;
+
+  /// No description provided for @lockdownLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Label (optional)'**
+  String get lockdownLabel;
+
+  /// No description provided for @lockdownStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start lockdown'**
+  String get lockdownStart;
+
+  /// No description provided for @lockdownWindowsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring windows'**
+  String get lockdownWindowsTitle;
+
+  /// No description provided for @lockdownWindowsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recurring windows yet.'**
+  String get lockdownWindowsEmpty;
+
+  /// No description provided for @lockdownWindowAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add window'**
+  String get lockdownWindowAdd;
+
+  /// No description provided for @lockdownWindowEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit window'**
+  String get lockdownWindowEdit;
+
+  /// No description provided for @lockdownWindowStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get lockdownWindowStart;
+
+  /// No description provided for @lockdownWindowEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get lockdownWindowEnd;
+
+  /// No description provided for @lockdownExactAlarmOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Exact alarms are off — windows may start late.'**
+  String get lockdownExactAlarmOff;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
 
   /// No description provided for @appsToSuspendWhileFocusing.
   ///
@@ -4237,6 +4723,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Include system apps'**
   String get includeSystemApps;
+
+  /// No description provided for @selectAllApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get selectAllApps;
+
+  /// No description provided for @deselectAllApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get deselectAllApps;
 
   /// No description provided for @appGroups.
   ///

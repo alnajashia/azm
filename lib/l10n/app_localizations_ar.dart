@@ -567,10 +567,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get readingNextPassage => 'المقطع التالي';
 
   @override
-  String get tetrisSkippedNote =>
-      'ملاحظة: تحدي Tetris غير متاح في هذا الإصدار (v1.1) وتم تخطيه — لم يُحاكَ.';
-
-  @override
   String get passageOnWaiting => 'عن الانتظار';
 
   @override
@@ -596,6 +592,55 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get challengeTetris => 'Tetris';
+
+  @override
+  String get tetrisDuration => 'مدة اللعب';
+
+  @override
+  String tetrisMinutes(int n) {
+    return '$n دقيقة';
+  }
+
+  @override
+  String get tetrisNext => 'التالي';
+
+  @override
+  String tetrisLines(int n) {
+    return 'الأسطر: $n';
+  }
+
+  @override
+  String tetrisLevel(int n) {
+    return 'المستوى $n';
+  }
+
+  @override
+  String get tetrisPaused =>
+      'متوقف — المس اللوحة أو زرًا للعب. الوقت يُحتسب فقط أثناء اللعب.';
+
+  @override
+  String get tetrisSoundOn => 'كتم الصوت';
+
+  @override
+  String get tetrisSoundOff => 'تشغيل الصوت';
+
+  @override
+  String get tetrisContinue => 'متابعة';
+
+  @override
+  String get tetrisMoveLeft => 'تحريك لليسار';
+
+  @override
+  String get tetrisMoveRight => 'تحريك لليمين';
+
+  @override
+  String get tetrisRotate => 'تدوير';
+
+  @override
+  String get tetrisSoftDrop => 'تحريك للأسفل';
+
+  @override
+  String get tetrisHardDrop => 'إسقاط';
 
   @override
   String get challengeReading => 'قراءة تأملية';
@@ -861,6 +906,61 @@ class AppLocalizationsAr extends AppLocalizations {
   String get blockedWordsSub => 'حظر كلمات نشط وعلى الشاشة لكل تطبيق';
 
   @override
+  String get blockedWordsByApp => 'حسب التطبيق';
+
+  @override
+  String get blockedWordsByWord => 'حسب الكلمة';
+
+  @override
+  String get blockedWordsIntro =>
+      'كل كلمة تستهدف تطبيقات أو مجموعات أو كليهما، بوضعين: عند الكتابة يحظر عند كتابة الكلمة في هدف، وعلى الشاشة يحظر عند ظهورها على الشاشة.';
+
+  @override
+  String get wordModeActive => 'عند الكتابة';
+
+  @override
+  String get wordModePassive => 'على الشاشة';
+
+  @override
+  String get blockedWordsAddWord => 'إضافة كلمة';
+
+  @override
+  String get blockedWordsAddApp => 'إضافة تطبيق';
+
+  @override
+  String get blockedWordsNoApps => 'لا توجد تطبيقات لديها قوائم كلمات بعد.';
+
+  @override
+  String get blockedWordsNoWords => 'لا توجد كلمات بعد.';
+
+  @override
+  String blockedWordsTargetsForWord(String word) {
+    return 'الأهداف — $word';
+  }
+
+  @override
+  String get blockedWordsAppsTitle => 'التطبيقات';
+
+  @override
+  String get blockedWordsGroupsTitle => 'المجموعات';
+
+  @override
+  String get blockedWordsAddGroup => 'إضافة مجموعة';
+
+  @override
+  String blockedWordsViaGroup(String groups) {
+    return 'عبر $groups';
+  }
+
+  @override
+  String blockedWordsAlsoTargets(String targets) {
+    return 'أيضًا: $targets';
+  }
+
+  @override
+  String get blockedWordsNoMoreApps => 'كل التطبيقات المثبتة مدرجة بالفعل';
+
+  @override
   String get impulseLock => 'قفل النزوات';
 
   @override
@@ -932,6 +1032,34 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dnsProviderCleanbrowsingNote =>
       'محتوى البالغين والبروكسيات، بلا حساب';
+
+  @override
+  String get dnsProviderCloudflare => 'Cloudflare (فلتر العائلة)';
+
+  @override
+  String get dnsProviderCloudflareNote =>
+      'يحجب البرمجيات الخبيثة ومحتوى البالغين، بلا حساب';
+
+  @override
+  String get dnsProviderAdguard => 'AdGuard DNS (فلتر العائلة)';
+
+  @override
+  String get dnsProviderAdguardNote => 'محتوى البالغين، بلا حساب';
+
+  @override
+  String get dnsProviderCustomNote => 'اسم مضيف DNS خاص بك';
+
+  @override
+  String get dnsRetryApply => 'إعادة المحاولة';
+
+  @override
+  String get dnsRetrying =>
+      'تعذّر الوصول إلى المضيف — إعادة المحاولة تلقائيًا…';
+
+  @override
+  String dnsApplyFailedCode(int code) {
+    return 'فشل تطبيق مضيف DNS الخاص (رمز الخطأ $code).';
+  }
 
   @override
   String get dnsConfigIdLabel => 'رمز إعداد NextDNS';
@@ -1171,6 +1299,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get colourModesStatusOff => 'مغلقة.';
 
   @override
+  String colourModesStatusVerifyFailed(String modes) {
+    return 'النظام لم يطبّق: $modes — رُفض الإعداد أو تم تجاهله.';
+  }
+
+  @override
   String get colourModesEnableTitle => 'أوضاع الألوان';
 
   @override
@@ -1263,6 +1396,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String extraDimLevel(int value) {
     return 'مستوى التعتيم: $value';
   }
+
+  @override
+  String get extraDimUseOverlayTitle => 'استخدام تعتيم عزم نفسه';
+
+  @override
+  String get extraDimUseOverlaySub =>
+      'للأجهزة التي لا يعمل فيها التعتيم الإضافي للنظام — يقوم عزم بتعتيم الشاشة بنفسه.';
 
   @override
   String colourWindowsLabel(String windows) {
@@ -1882,16 +2022,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sealTriggerFocusRunning => 'جلسة تركيز جارية';
 
   @override
+  String get sealTriggerLockdownRunning => 'إغلاق كامل للهاتف جارٍ';
+
+  @override
   String get sealTriggerVisual => 'اكتشاف محتوى غير لائق في تطبيق مختار';
 
   @override
   String get sealTriggerWord => 'اكتشاف كلمة محظورة في تطبيق مختار';
 
   @override
-  String get sealApp => 'التطبيق';
+  String get sealChooseApp => 'اختر تطبيقًا';
 
   @override
-  String get sealChooseApp => 'اختر تطبيقًا';
+  String get sealGroup => 'المجموعة';
+
+  @override
+  String get sealApps => 'التطبيقات';
+
+  @override
+  String get sealNoGroup => 'بدون مجموعة';
 
   @override
   String get sealDuration => 'يستمر الختم';
@@ -1958,9 +2107,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get removalStepClearOwner => 'إزالة مالك الجهاز';
 
   @override
-  String get dnsSettingsTitle => 'إعدادات DNS الخاص';
-
-  @override
   String get dnsCustom => 'مخصص';
 
   @override
@@ -1974,21 +2120,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get apply => 'تطبيق';
-
-  @override
-  String get dnsTimeoutError =>
-      'انتهت مهلة تطبيق مضيف DNS. تحقق من حالة DNS الحالية قبل إعادة المحاولة.';
-
-  @override
-  String get dnsNotServingError => 'مضيف DNS المختار لا يخدم. اختر مضيفاً آخر.';
-
-  @override
-  String get dnsApplyFailedError => 'فشل تطبيق مضيف DNS الخاص.';
-
-  @override
-  String dnsAppliedVerified(String host) {
-    return 'فُرض DNS الخاص إلى $host (تم التحقق).';
-  }
 
   @override
   String get newBlocklist => 'قائمة حظر جديدة';
@@ -2033,28 +2164,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loadingBlocklists => 'جارٍ تحميل قوائم الحظر…';
 
   @override
-  String get activeBlockingWords => 'كلمات الحظر النشطة';
-
-  @override
-  String get oneWordPerLine => 'كلمة أو عبارة في كل سطر';
-
-  @override
-  String get appsWhereWordsBlock => 'التطبيقات التي تحظر فيها الكلمات النشطة';
-
-  @override
   String onScreenWordsFor(String app) {
     return 'كلمات الشاشة لتطبيق $app';
   }
 
   @override
   String get loadingBlockedWords => 'جارٍ تحميل الكلمات المحظورة…';
-
-  @override
-  String get activeBlockingSection => 'الحظر النشط (F14)';
-
-  @override
-  String get activeBlockingBody =>
-      'عندما توجد كلمة في حقل نص تطبيق مختار وتنتهي الكتابة، يخرج التطبيق منه وتظهر شاشة حظر.';
 
   @override
   String wordsCount(int count) {
@@ -2067,28 +2182,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get passiveBlockingSection => 'الحظر السلبي (F15)';
-
-  @override
-  String get passiveBlockingBody =>
-      'كلمات تظهر في أي مكان على الشاشة في تطبيق محدد.';
-
-  @override
-  String get noPerAppLists => 'لا توجد قوائم لكل تطبيق بعد.';
+  String targetGroupsCount(int count) {
+    return '$count مجموعة مستهدفة';
+  }
 
   @override
   String get addTargetAppsFirst =>
       'أضف التطبيقات المستهدفة أعلاه أولاً — القوائم السلبية ترتبط بها في v1.';
 
   @override
-  String get addPerAppList => 'إضافة قائمة لكل تطبيق';
-
-  @override
   String get wordHint => 'e.g., pussy';
-
-  @override
-  String get noMoreAppsForPassive =>
-      'كل التطبيقات المثبتة لديها قائمة سلبية بالفعل';
 
   @override
   String get loadingWarningStages => 'جارٍ تحميل مراحل التحذير…';
@@ -2361,8 +2464,176 @@ class AppLocalizationsAr extends AppLocalizations {
   String get focusSchedulesTitle => 'جداول التركيز والتذكيرات';
 
   @override
-  String get focusSchedulesNote =>
-      'الجلسات ذات البدء التلقائي المجدول ليست في هذا الإصدار.';
+  String get focusSchedulesEmpty =>
+      'لا توجد جداول بعد — أضف واحدًا لبدء التركيز في موعده.';
+
+  @override
+  String get focusScheduleAdd => 'إضافة جدول';
+
+  @override
+  String get focusScheduleEdit => 'تعديل الجدول';
+
+  @override
+  String get focusScheduleTime => 'الوقت';
+
+  @override
+  String get focusScheduleDays => 'الأيام';
+
+  @override
+  String get focusScheduleWeekdays => 'أيام العمل';
+
+  @override
+  String get focusScheduleAllDays => 'كل يوم';
+
+  @override
+  String get focusScheduleLabel => 'التسمية (اختياري)';
+
+  @override
+  String get focusScheduleAutoStart => 'يبدأ تلقائيًا';
+
+  @override
+  String get focusScheduleAutoStartSub =>
+      'يبدأ الجلسة في الموعد. عند الإيقاف: يظهر تذكير بدلًا من ذلك.';
+
+  @override
+  String get focusScheduleAutoStartBadge => 'بدء تلقائي';
+
+  @override
+  String get focusScheduleRemindBadge => 'تذكير';
+
+  @override
+  String get focusScheduleRemindBefore => 'تذكير قبل';
+
+  @override
+  String get focusScheduleRemindNone => 'بلا تذكير';
+
+  @override
+  String focusScheduleRemindMinutes(int n) {
+    return 'قبل $n د';
+  }
+
+  @override
+  String get focusScheduleDaysEveryDay => 'كل يوم';
+
+  @override
+  String get focusScheduleDaysWeekdays => 'أيام العمل';
+
+  @override
+  String get focusScheduleDaysWeekend => 'عطلة نهاية الأسبوع';
+
+  @override
+  String get focusScheduleExactAlarmOff =>
+      'التنبيهات الدقيقة متوقفة — قد تبدأ الجداول متأخرة.';
+
+  @override
+  String get focusScheduleOpenSettings => 'فتح الإعدادات';
+
+  @override
+  String get lockdownTitle => 'إغلاق الهاتف كليًا';
+
+  @override
+  String get lockdownEntrySub => 'مدد لمرة واحدة، ونوافذ متكررة، ومستويان';
+
+  @override
+  String get lockdownActive => 'الإغلاق مفعّل';
+
+  @override
+  String lockdownEndsAt(String time) {
+    return 'ينتهي في $time';
+  }
+
+  @override
+  String lockdownClaimed(int n) {
+    return '$n تطبيقًا موقوفًا';
+  }
+
+  @override
+  String get lockdownEndEarly => 'إنهاء الإغلاق مبكرًا';
+
+  @override
+  String get lockdownStartTitle => 'بدء إغلاق';
+
+  @override
+  String get lockdownDuration => 'المدة (بالدقائق)';
+
+  @override
+  String get lockdownScope => 'ينطبق على';
+
+  @override
+  String get lockdownScopeAll => 'الهاتف كله';
+
+  @override
+  String get lockdownScopeApps => 'تطبيقات مختارة';
+
+  @override
+  String get lockdownScopeGroups => 'مجموعات مختارة';
+
+  @override
+  String get lockdownChooseApps => 'اختيار التطبيقات';
+
+  @override
+  String get lockdownChooseGroups => 'اختيار المجموعات';
+
+  @override
+  String get lockdownNoApps => 'لم تُختر تطبيقات';
+
+  @override
+  String get lockdownNoGroups => 'لم تُختر مجموعات';
+
+  @override
+  String get lockdownTier1 => 'المستوى 1 — إيقاف كل شيء';
+
+  @override
+  String get lockdownTier1Sub =>
+      'يوقف التطبيقات المختارة ويقفل الهاتف فورًا. تبقى الشاشة الرئيسية بأيقونات باهتة.';
+
+  @override
+  String get lockdownTier2 => 'المستوى 2 — حصرية صارمة';
+
+  @override
+  String get lockdownTier2Sub =>
+      'يخفي كل شيء — لا يظهر إلا عدّاد عزم التنازلي. بلا زر رئيسية ولا تطبيقات حديثة. مكالمات الطوارئ ما زالت ممكنة.';
+
+  @override
+  String get lockdownTier1Badge => 'إيقاف';
+
+  @override
+  String get lockdownStrictBadge => 'صارم';
+
+  @override
+  String get lockdownLimitsNote =>
+      'لا يمكن منع إطفاء الهاتف — يعيد الإغلاق تطبيقه بعد إعادة التشغيل. ويبقى الاتصال بالطوارئ ممكنًا.';
+
+  @override
+  String get lockdownLabel => 'اسم (اختياري)';
+
+  @override
+  String get lockdownStart => 'بدء الإغلاق';
+
+  @override
+  String get lockdownWindowsTitle => 'نوافذ متكررة';
+
+  @override
+  String get lockdownWindowsEmpty => 'لا توجد نوافذ متكررة بعد.';
+
+  @override
+  String get lockdownWindowAdd => 'إضافة نافذة';
+
+  @override
+  String get lockdownWindowEdit => 'تعديل النافذة';
+
+  @override
+  String get lockdownWindowStart => 'يبدأ';
+
+  @override
+  String get lockdownWindowEnd => 'ينتهي';
+
+  @override
+  String get lockdownExactAlarmOff =>
+      'المنبهات الدقيقة متوقفة — قد تبدأ النوافذ متأخرة.';
+
+  @override
+  String get delete => 'حذف';
 
   @override
   String get appsToSuspendWhileFocusing => 'التطبيقات المُعلّقة أثناء التركيز';
@@ -2423,6 +2694,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get includeSystemApps => 'تضمين تطبيقات النظام';
+
+  @override
+  String get selectAllApps => 'تحديد الكل';
+
+  @override
+  String get deselectAllApps => 'إلغاء تحديد الكل';
 
   @override
   String get appGroups => 'مجموعات التطبيقات';

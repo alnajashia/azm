@@ -383,7 +383,6 @@
   },
   "readingFinish": "Finish",
   "readingNextPassage": "Next passage",
-  "tetrisSkippedNote": "Note: the Tetris challenge is not available in this version (v1.1) and was skipped — it was not simulated.",
   "passageOnWaiting": "On waiting",
   "passageOnFutureSelf": "On the future self",
   "passageOnAttention": "On attention",
@@ -393,6 +392,41 @@
   "challengeMath": "Math problems",
   "challengeWords": "Typing words",
   "challengeTetris": "Tetris",
+  "tetrisDuration": "Time to play",
+  "tetrisMinutes": "{n} min",
+  "@tetrisMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "tetrisNext": "Next",
+  "tetrisLines": "Lines: {n}",
+  "@tetrisLines": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "tetrisLevel": "Level {n}",
+  "@tetrisLevel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "tetrisPaused": "Paused — touch the board or a button to play. Time only counts while you play.",
+  "tetrisSoundOn": "Turn sound off",
+  "tetrisSoundOff": "Turn sound on",
+  "tetrisContinue": "Continue",
+  "tetrisMoveLeft": "Move left",
+  "tetrisMoveRight": "Move right",
+  "tetrisRotate": "Rotate",
+  "tetrisSoftDrop": "Move down",
+  "tetrisHardDrop": "Drop",
   "challengeReading": "Reflective reading",
   "checkingSetupState": "Checking setup state…",
   "iUnderstand": "I understand",
@@ -561,6 +595,43 @@
   "browserRestrictionsSub": "URL blocklists + SafeSearch on supporting browsers",
   "blockedWords": "Blocked words",
   "blockedWordsSub": "Active and per-app on-screen word blocking",
+  "blockedWordsByApp": "By app",
+  "blockedWordsByWord": "By word",
+  "blockedWordsIntro": "Each word targets apps, groups, or both, in two modes: Typed blocks when the word is typed in a target; On screen blocks when it appears on screen.",
+  "wordModeActive": "Typed",
+  "wordModePassive": "On screen",
+  "blockedWordsAddWord": "Add word",
+  "blockedWordsAddApp": "Add app",
+  "blockedWordsNoApps": "No apps have word lists yet.",
+  "blockedWordsNoWords": "No words yet.",
+  "blockedWordsTargetsForWord": "Targets — {word}",
+  "@blockedWordsTargetsForWord": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedWordsAppsTitle": "Apps",
+  "blockedWordsGroupsTitle": "Groups",
+  "blockedWordsAddGroup": "Add group",
+  "blockedWordsViaGroup": "via {groups}",
+  "@blockedWordsViaGroup": {
+    "placeholders": {
+      "groups": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedWordsAlsoTargets": "Also: {targets}",
+  "@blockedWordsAlsoTargets": {
+    "placeholders": {
+      "targets": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedWordsNoMoreApps": "Every installed app is already listed",
   "impulseLock": "Impulse lock",
   "impulseLockSub": "Panic lock, challenges, recovery keypad options",
   "focusMode": "Focus mode",
@@ -583,6 +654,21 @@
   "dnsProviderNextdnsNote": "Your own blocklist (managed in the NextDNS dashboard)",
   "dnsProviderCleanbrowsing": "CleanBrowsing (Family filter)",
   "dnsProviderCleanbrowsingNote": "Adult content and proxies, no account needed",
+  "dnsProviderCloudflare": "Cloudflare (Family filter)",
+  "dnsProviderCloudflareNote": "Blocks malware and adult content, no account needed",
+  "dnsProviderAdguard": "AdGuard DNS (Family filter)",
+  "dnsProviderAdguardNote": "Adult content, no account needed",
+  "dnsProviderCustomNote": "Your own DNS hostname",
+  "dnsRetryApply": "Retry",
+  "dnsRetrying": "Host unreachable — retrying automatically…",
+  "dnsApplyFailedCode": "Failed to apply the private DNS host (error code {code}).",
+  "@dnsApplyFailedCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
   "dnsConfigIdLabel": "NextDNS configuration ID",
   "dnsConfigIdHint": "e.g. abc123",
   "dnsConfigIdHostname": "Hostname: {id}.dns.nextdns.io",
@@ -690,6 +776,14 @@
   },
   "colourModesStatusIdle": "Enabled — no mode is active right now.",
   "colourModesStatusOff": "Off.",
+  "colourModesStatusVerifyFailed": "The system did not apply: {modes} — the setting was rejected or ignored.",
+  "@colourModesStatusVerifyFailed": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
   "colourModesEnableTitle": "Colour modes",
   "colourModesEnable": "Enable colour modes",
   "colourModesSummaryActive": "Active: {modes}",
@@ -745,6 +839,8 @@
     }
   },
   "extraDimLevel": "Dim level: {value}",
+  "extraDimUseOverlayTitle": "Use Azm's own dimming",
+  "extraDimUseOverlaySub": "For devices where the system's extra dim does nothing — Azm dims the screen itself instead.",
   "@extraDimLevel": {
     "placeholders": {
       "value": {
@@ -965,10 +1061,13 @@
   "sealTriggerAppBlocked": "A chosen app is blocked by Azm",
   "sealTriggerAppSuspended": "A chosen app is suspended by Azm",
   "sealTriggerFocusRunning": "A focus session is running",
+  "sealTriggerLockdownRunning": "A full-phone lockdown is running",
   "sealTriggerVisual": "Inappropriate content is detected in a chosen app",
   "sealTriggerWord": "A banned word is detected in a chosen app",
-  "sealApp": "App",
   "sealChooseApp": "Choose an app",
+  "sealGroup": "Group",
+  "sealApps": "Apps",
+  "sealNoGroup": "No group",
   "sealDuration": "Seal lasts",
   "sealDuration30m": "30 minutes",
   "sealDuration1h": "1 hour",
@@ -1012,23 +1111,11 @@
   "residueTitle": "Leftover restrictions detected",
   "residueBody": "Some restrictions set by Azm are still in force on this device. Azm no longer has the rights to remove them. To clean up, provision Azm as Device Owner again from the Status tab, then run Remove Device Owner once more.",
   "removalStepClearOwner": "Remove Device Owner",
-  "dnsSettingsTitle": "Private DNS settings",
   "dnsCustom": "Custom",
   "dnsHostnameLabel": "DNS hostname",
   "dnsHostnameHint": "dns.example.com",
   "dnsInvalidHostname": "Invalid DNS hostname",
   "apply": "Apply",
-  "dnsTimeoutError": "Applying the DNS host timed out. Check the current DNS state before retrying.",
-  "dnsNotServingError": "The chosen DNS host is not serving. Pick another host.",
-  "dnsApplyFailedError": "Failed to apply the private DNS host.",
-  "dnsAppliedVerified": "Private DNS forced to {host} (verified).",
-  "@dnsAppliedVerified": {
-    "placeholders": {
-      "host": {
-        "type": "String"
-      }
-    }
-  },
   "newBlocklist": "New blocklist",
   "editBlocklist": "Edit blocklist",
   "titleLabel": "Title",
@@ -1055,9 +1142,6 @@
   },
   "applyBlocklists": "Apply blocklists to browsers",
   "loadingBlocklists": "Loading blocklists…",
-  "activeBlockingWords": "Active blocking words",
-  "oneWordPerLine": "One word or phrase per line",
-  "appsWhereWordsBlock": "Apps where active words block",
   "onScreenWordsFor": "On-screen words for {app}",
   "@onScreenWordsFor": {
     "placeholders": {
@@ -1067,8 +1151,6 @@
     }
   },
   "loadingBlockedWords": "Loading blocked words…",
-  "activeBlockingSection": "Active blocking (F14)",
-  "activeBlockingBody": "When a word is present in the text field of a chosen app and typing ends, the app is backed out of and a block screen shows.",
   "wordsCount": "{count} word(s)",
   "@wordsCount": {
     "placeholders": {
@@ -1085,13 +1167,16 @@
       }
     }
   },
-  "passiveBlockingSection": "Passive blocking (F15)",
-  "passiveBlockingBody": "Words appearing anywhere on screen in a specific app.",
-  "noPerAppLists": "No per-app lists yet.",
+  "targetGroupsCount": "{count} group(s)",
+  "@targetGroupsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "addTargetAppsFirst": "Add target apps above first — passive lists attach to them in v1.",
-  "addPerAppList": "Add per-app list",
   "wordHint": "e.g., pussy",
-  "noMoreAppsForPassive": "Every installed app already has a passive list",
   "loadingWarningStages": "Loading warning stages…",
   "stagedWarningsTitle": "Staged warnings before a limit expires",
   "warningsBody": "Each stage warns once, the configured number of minutes before an app's daily limit runs out. Stages are stored for the Accessibility Service to fire; notification delivery depends on the native notifier.",
@@ -1260,7 +1345,80 @@
     }
   },
   "focusSchedulesTitle": "Focus schedules & reminders",
-  "focusSchedulesNote": "Scheduled auto-start sessions are not in this version.",
+  "focusSchedulesEmpty": "No schedules yet — add one to start focus on time.",
+  "focusScheduleAdd": "Add schedule",
+  "focusScheduleEdit": "Edit schedule",
+  "focusScheduleTime": "Time",
+  "focusScheduleDays": "Days",
+  "focusScheduleWeekdays": "Weekdays",
+  "focusScheduleAllDays": "Every day",
+  "focusScheduleLabel": "Label (optional)",
+  "focusScheduleAutoStart": "Start automatically",
+  "focusScheduleAutoStartSub": "Starts the session at the time. Off: shows a reminder instead.",
+  "focusScheduleAutoStartBadge": "Auto-start",
+  "focusScheduleRemindBadge": "Reminder",
+  "focusScheduleRemindBefore": "Remind before",
+  "focusScheduleRemindNone": "No reminder",
+  "focusScheduleRemindMinutes": "{n} min before",
+  "@focusScheduleRemindMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "focusScheduleDaysEveryDay": "Every day",
+  "focusScheduleDaysWeekdays": "Weekdays",
+  "focusScheduleDaysWeekend": "Weekend",
+  "focusScheduleExactAlarmOff": "Exact alarms are off — schedules may start late.",
+  "focusScheduleOpenSettings": "Open settings",
+  "lockdownTitle": "Full-phone lockdown",
+  "lockdownEntrySub": "One-shot durations, recurring windows, two levels",
+  "lockdownActive": "Lockdown active",
+  "lockdownEndsAt": "Ends at {time}",
+  "@lockdownEndsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "lockdownClaimed": "{n} app(s) suspended",
+  "@lockdownClaimed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lockdownEndEarly": "End lockdown early",
+  "lockdownStartTitle": "Start a lockdown",
+  "lockdownDuration": "Duration (minutes)",
+  "lockdownScope": "Applies to",
+  "lockdownScopeAll": "Whole phone",
+  "lockdownScopeApps": "Chosen apps",
+  "lockdownScopeGroups": "Chosen groups",
+  "lockdownChooseApps": "Choose apps",
+  "lockdownChooseGroups": "Choose groups",
+  "lockdownNoApps": "No apps chosen",
+  "lockdownNoGroups": "No groups chosen",
+  "lockdownTier1": "Level 1 — Suspend everything",
+  "lockdownTier1Sub": "Suspends the chosen apps and locks the phone now. The home screen stays, with greyed-out icons.",
+  "lockdownTier2": "Level 2 — Strict kiosk",
+  "lockdownTier2Sub": "Hides everything — only Azm's countdown is visible. No Home or Recents. Emergency calls still work.",
+  "lockdownTier1Badge": "Suspend",
+  "lockdownStrictBadge": "Strict",
+  "lockdownLimitsNote": "Powering the phone off cannot be prevented — the lockdown re-applies after reboot. The emergency dialer stays reachable.",
+  "lockdownLabel": "Label (optional)",
+  "lockdownStart": "Start lockdown",
+  "lockdownWindowsTitle": "Recurring windows",
+  "lockdownWindowsEmpty": "No recurring windows yet.",
+  "lockdownWindowAdd": "Add window",
+  "lockdownWindowEdit": "Edit window",
+  "lockdownWindowStart": "Starts",
+  "lockdownWindowEnd": "Ends",
+  "lockdownExactAlarmOff": "Exact alarms are off — windows may start late.",
+  "delete": "Delete",
   "appsToSuspendWhileFocusing": "Apps to suspend while focusing",
   "groupsToSuspendWhileFocusing": "Groups to suspend while focusing",
   "noGroupsYet": "No groups yet",
@@ -1287,6 +1445,8 @@
   "activeBadge": "Active",
   "searchApps": "Search apps",
   "includeSystemApps": "Include system apps",
+  "selectAllApps": "Select all",
+  "deselectAllApps": "Deselect all",
   "appGroups": "App groups",
   "appGroupsSub": "Shared limits and windows for a set of apps",
   "loadingInstalledApps": "Loading installed apps…",

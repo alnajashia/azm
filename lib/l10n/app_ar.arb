@@ -383,7 +383,6 @@
   },
   "readingFinish": "إنهاء",
   "readingNextPassage": "المقطع التالي",
-  "tetrisSkippedNote": "ملاحظة: تحدي Tetris غير متاح في هذا الإصدار (v1.1) وتم تخطيه — لم يُحاكَ.",
   "passageOnWaiting": "عن الانتظار",
   "passageOnFutureSelf": "عن ذاتك في المستقبل",
   "passageOnAttention": "عن الانتباه",
@@ -393,6 +392,41 @@
   "challengeMath": "مسائل رياضية",
   "challengeWords": "كتابة كلمات",
   "challengeTetris": "Tetris",
+  "tetrisDuration": "مدة اللعب",
+  "tetrisMinutes": "{n} دقيقة",
+  "@tetrisMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "tetrisNext": "التالي",
+  "tetrisLines": "الأسطر: {n}",
+  "@tetrisLines": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "tetrisLevel": "المستوى {n}",
+  "@tetrisLevel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "tetrisPaused": "متوقف — المس اللوحة أو زرًا للعب. الوقت يُحتسب فقط أثناء اللعب.",
+  "tetrisSoundOn": "كتم الصوت",
+  "tetrisSoundOff": "تشغيل الصوت",
+  "tetrisContinue": "متابعة",
+  "tetrisMoveLeft": "تحريك لليسار",
+  "tetrisMoveRight": "تحريك لليمين",
+  "tetrisRotate": "تدوير",
+  "tetrisSoftDrop": "تحريك للأسفل",
+  "tetrisHardDrop": "إسقاط",
   "challengeReading": "قراءة تأملية",
   "checkingSetupState": "جارٍ التحقق من حالة الإعداد…",
   "iUnderstand": "فهمت",
@@ -561,6 +595,43 @@
   "browserRestrictionsSub": "قوائم حظر URL وبحث آمن في المتصفحات الداعمة",
   "blockedWords": "الكلمات المحظورة",
   "blockedWordsSub": "حظر كلمات نشط وعلى الشاشة لكل تطبيق",
+  "blockedWordsByApp": "حسب التطبيق",
+  "blockedWordsByWord": "حسب الكلمة",
+  "blockedWordsIntro": "كل كلمة تستهدف تطبيقات أو مجموعات أو كليهما، بوضعين: عند الكتابة يحظر عند كتابة الكلمة في هدف، وعلى الشاشة يحظر عند ظهورها على الشاشة.",
+  "wordModeActive": "عند الكتابة",
+  "wordModePassive": "على الشاشة",
+  "blockedWordsAddWord": "إضافة كلمة",
+  "blockedWordsAddApp": "إضافة تطبيق",
+  "blockedWordsNoApps": "لا توجد تطبيقات لديها قوائم كلمات بعد.",
+  "blockedWordsNoWords": "لا توجد كلمات بعد.",
+  "blockedWordsTargetsForWord": "الأهداف — {word}",
+  "@blockedWordsTargetsForWord": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedWordsAppsTitle": "التطبيقات",
+  "blockedWordsGroupsTitle": "المجموعات",
+  "blockedWordsAddGroup": "إضافة مجموعة",
+  "blockedWordsViaGroup": "عبر {groups}",
+  "@blockedWordsViaGroup": {
+    "placeholders": {
+      "groups": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedWordsAlsoTargets": "أيضًا: {targets}",
+  "@blockedWordsAlsoTargets": {
+    "placeholders": {
+      "targets": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedWordsNoMoreApps": "كل التطبيقات المثبتة مدرجة بالفعل",
   "impulseLock": "قفل النزوات",
   "impulseLockSub": "قفل الذعر والتحديات وخيارات لوحة مفاتيح الاسترداد",
   "focusMode": "وضع التركيز",
@@ -583,6 +654,21 @@
   "dnsProviderNextdnsNote": "قائمتك الخاصة (تُدار من لوحة تحكم NextDNS)",
   "dnsProviderCleanbrowsing": "CleanBrowsing (فلتر العائلة)",
   "dnsProviderCleanbrowsingNote": "محتوى البالغين والبروكسيات، بلا حساب",
+  "dnsProviderCloudflare": "Cloudflare (فلتر العائلة)",
+  "dnsProviderCloudflareNote": "يحجب البرمجيات الخبيثة ومحتوى البالغين، بلا حساب",
+  "dnsProviderAdguard": "AdGuard DNS (فلتر العائلة)",
+  "dnsProviderAdguardNote": "محتوى البالغين، بلا حساب",
+  "dnsProviderCustomNote": "اسم مضيف DNS خاص بك",
+  "dnsRetryApply": "إعادة المحاولة",
+  "dnsRetrying": "تعذّر الوصول إلى المضيف — إعادة المحاولة تلقائيًا…",
+  "dnsApplyFailedCode": "فشل تطبيق مضيف DNS الخاص (رمز الخطأ {code}).",
+  "@dnsApplyFailedCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
   "dnsConfigIdLabel": "رمز إعداد NextDNS",
   "dnsConfigIdHint": "مثال: abc123",
   "dnsConfigIdHostname": "اسم المضيف: {id}.dns.nextdns.io",
@@ -690,6 +776,14 @@
   },
   "colourModesStatusIdle": "مفعّلة — لا يوجد وضع نشط الآن.",
   "colourModesStatusOff": "مغلقة.",
+  "colourModesStatusVerifyFailed": "النظام لم يطبّق: {modes} — رُفض الإعداد أو تم تجاهله.",
+  "@colourModesStatusVerifyFailed": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
   "colourModesEnableTitle": "أوضاع الألوان",
   "colourModesEnable": "تفعيل أوضاع الألوان",
   "colourModesSummaryActive": "نشطة: {modes}",
@@ -745,6 +839,8 @@
     }
   },
   "extraDimLevel": "مستوى التعتيم: {value}",
+  "extraDimUseOverlayTitle": "استخدام تعتيم عزم نفسه",
+  "extraDimUseOverlaySub": "للأجهزة التي لا يعمل فيها التعتيم الإضافي للنظام — يقوم عزم بتعتيم الشاشة بنفسه.",
   "@extraDimLevel": {
     "placeholders": {
       "value": {
@@ -965,10 +1061,13 @@
   "sealTriggerAppBlocked": "تطبيق مختار محظور بواسطة عزم",
   "sealTriggerAppSuspended": "تطبيق مختار معلّق بواسطة عزم",
   "sealTriggerFocusRunning": "جلسة تركيز جارية",
+  "sealTriggerLockdownRunning": "إغلاق كامل للهاتف جارٍ",
   "sealTriggerVisual": "اكتشاف محتوى غير لائق في تطبيق مختار",
   "sealTriggerWord": "اكتشاف كلمة محظورة في تطبيق مختار",
-  "sealApp": "التطبيق",
   "sealChooseApp": "اختر تطبيقًا",
+  "sealGroup": "المجموعة",
+  "sealApps": "التطبيقات",
+  "sealNoGroup": "بدون مجموعة",
   "sealDuration": "يستمر الختم",
   "sealDuration30m": "30 دقيقة",
   "sealDuration1h": "ساعة واحدة",
@@ -1012,23 +1111,11 @@
   "residueTitle": "تم اكتشاف قيود متبقية",
   "residueBody": "لا تزال بعض القيود التي وضعها عزم سارية على هذا الجهاز، ولم يعد لدى عزم الصلاحية لإزالتها. للتنظيف، أعد تجهيز عزم كمالك للجهاز من تبويب الحالة، ثم شغّل إزالة مالك الجهاز مرة أخرى.",
   "removalStepClearOwner": "إزالة مالك الجهاز",
-  "dnsSettingsTitle": "إعدادات DNS الخاص",
   "dnsCustom": "مخصص",
   "dnsHostnameLabel": "اسم مضيف DNS",
   "dnsHostnameHint": "dns.example.com",
   "dnsInvalidHostname": "اسم مضيف DNS غير صالح",
   "apply": "تطبيق",
-  "dnsTimeoutError": "انتهت مهلة تطبيق مضيف DNS. تحقق من حالة DNS الحالية قبل إعادة المحاولة.",
-  "dnsNotServingError": "مضيف DNS المختار لا يخدم. اختر مضيفاً آخر.",
-  "dnsApplyFailedError": "فشل تطبيق مضيف DNS الخاص.",
-  "dnsAppliedVerified": "فُرض DNS الخاص إلى {host} (تم التحقق).",
-  "@dnsAppliedVerified": {
-    "placeholders": {
-      "host": {
-        "type": "String"
-      }
-    }
-  },
   "newBlocklist": "قائمة حظر جديدة",
   "editBlocklist": "تحرير قائمة الحظر",
   "titleLabel": "العنوان",
@@ -1055,9 +1142,6 @@
   },
   "applyBlocklists": "تطبيق قوائم الحظر على المتصفحات",
   "loadingBlocklists": "جارٍ تحميل قوائم الحظر…",
-  "activeBlockingWords": "كلمات الحظر النشطة",
-  "oneWordPerLine": "كلمة أو عبارة في كل سطر",
-  "appsWhereWordsBlock": "التطبيقات التي تحظر فيها الكلمات النشطة",
   "onScreenWordsFor": "كلمات الشاشة لتطبيق {app}",
   "@onScreenWordsFor": {
     "placeholders": {
@@ -1067,8 +1151,6 @@
     }
   },
   "loadingBlockedWords": "جارٍ تحميل الكلمات المحظورة…",
-  "activeBlockingSection": "الحظر النشط (F14)",
-  "activeBlockingBody": "عندما توجد كلمة في حقل نص تطبيق مختار وتنتهي الكتابة، يخرج التطبيق منه وتظهر شاشة حظر.",
   "wordsCount": "{count} كلمة",
   "@wordsCount": {
     "placeholders": {
@@ -1085,13 +1167,16 @@
       }
     }
   },
-  "passiveBlockingSection": "الحظر السلبي (F15)",
-  "passiveBlockingBody": "كلمات تظهر في أي مكان على الشاشة في تطبيق محدد.",
-  "noPerAppLists": "لا توجد قوائم لكل تطبيق بعد.",
+  "targetGroupsCount": "{count} مجموعة مستهدفة",
+  "@targetGroupsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "addTargetAppsFirst": "أضف التطبيقات المستهدفة أعلاه أولاً — القوائم السلبية ترتبط بها في v1.",
-  "addPerAppList": "إضافة قائمة لكل تطبيق",
   "wordHint": "e.g., pussy",
-  "noMoreAppsForPassive": "كل التطبيقات المثبتة لديها قائمة سلبية بالفعل",
   "loadingWarningStages": "جارٍ تحميل مراحل التحذير…",
   "stagedWarningsTitle": "تحذيرات متدرجة قبل انتهاء الحد",
   "warningsBody": "تحذّر كل مرحلة مرة واحدة، قبل نفاد حد التطبيق اليومي بعدد الدقائق المضبوط. تُحفظ المراحل لتشغّلها خدمة إمكانية الوصول؛ توصيل الإشعارات يعتمد على المنبّه الأصلي.",
@@ -1260,7 +1345,80 @@
     }
   },
   "focusSchedulesTitle": "جداول التركيز والتذكيرات",
-  "focusSchedulesNote": "الجلسات ذات البدء التلقائي المجدول ليست في هذا الإصدار.",
+  "focusSchedulesEmpty": "لا توجد جداول بعد — أضف واحدًا لبدء التركيز في موعده.",
+  "focusScheduleAdd": "إضافة جدول",
+  "focusScheduleEdit": "تعديل الجدول",
+  "focusScheduleTime": "الوقت",
+  "focusScheduleDays": "الأيام",
+  "focusScheduleWeekdays": "أيام العمل",
+  "focusScheduleAllDays": "كل يوم",
+  "focusScheduleLabel": "التسمية (اختياري)",
+  "focusScheduleAutoStart": "يبدأ تلقائيًا",
+  "focusScheduleAutoStartSub": "يبدأ الجلسة في الموعد. عند الإيقاف: يظهر تذكير بدلًا من ذلك.",
+  "focusScheduleAutoStartBadge": "بدء تلقائي",
+  "focusScheduleRemindBadge": "تذكير",
+  "focusScheduleRemindBefore": "تذكير قبل",
+  "focusScheduleRemindNone": "بلا تذكير",
+  "focusScheduleRemindMinutes": "قبل {n} د",
+  "@focusScheduleRemindMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "focusScheduleDaysEveryDay": "كل يوم",
+  "focusScheduleDaysWeekdays": "أيام العمل",
+  "focusScheduleDaysWeekend": "عطلة نهاية الأسبوع",
+  "focusScheduleExactAlarmOff": "التنبيهات الدقيقة متوقفة — قد تبدأ الجداول متأخرة.",
+  "focusScheduleOpenSettings": "فتح الإعدادات",
+  "lockdownTitle": "إغلاق الهاتف كليًا",
+  "lockdownEntrySub": "مدد لمرة واحدة، ونوافذ متكررة، ومستويان",
+  "lockdownActive": "الإغلاق مفعّل",
+  "lockdownEndsAt": "ينتهي في {time}",
+  "@lockdownEndsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "lockdownClaimed": "{n} تطبيقًا موقوفًا",
+  "@lockdownClaimed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lockdownEndEarly": "إنهاء الإغلاق مبكرًا",
+  "lockdownStartTitle": "بدء إغلاق",
+  "lockdownDuration": "المدة (بالدقائق)",
+  "lockdownScope": "ينطبق على",
+  "lockdownScopeAll": "الهاتف كله",
+  "lockdownScopeApps": "تطبيقات مختارة",
+  "lockdownScopeGroups": "مجموعات مختارة",
+  "lockdownChooseApps": "اختيار التطبيقات",
+  "lockdownChooseGroups": "اختيار المجموعات",
+  "lockdownNoApps": "لم تُختر تطبيقات",
+  "lockdownNoGroups": "لم تُختر مجموعات",
+  "lockdownTier1": "المستوى 1 — إيقاف كل شيء",
+  "lockdownTier1Sub": "يوقف التطبيقات المختارة ويقفل الهاتف فورًا. تبقى الشاشة الرئيسية بأيقونات باهتة.",
+  "lockdownTier2": "المستوى 2 — حصرية صارمة",
+  "lockdownTier2Sub": "يخفي كل شيء — لا يظهر إلا عدّاد عزم التنازلي. بلا زر رئيسية ولا تطبيقات حديثة. مكالمات الطوارئ ما زالت ممكنة.",
+  "lockdownTier1Badge": "إيقاف",
+  "lockdownStrictBadge": "صارم",
+  "lockdownLimitsNote": "لا يمكن منع إطفاء الهاتف — يعيد الإغلاق تطبيقه بعد إعادة التشغيل. ويبقى الاتصال بالطوارئ ممكنًا.",
+  "lockdownLabel": "اسم (اختياري)",
+  "lockdownStart": "بدء الإغلاق",
+  "lockdownWindowsTitle": "نوافذ متكررة",
+  "lockdownWindowsEmpty": "لا توجد نوافذ متكررة بعد.",
+  "lockdownWindowAdd": "إضافة نافذة",
+  "lockdownWindowEdit": "تعديل النافذة",
+  "lockdownWindowStart": "يبدأ",
+  "lockdownWindowEnd": "ينتهي",
+  "lockdownExactAlarmOff": "المنبهات الدقيقة متوقفة — قد تبدأ النوافذ متأخرة.",
+  "delete": "حذف",
   "appsToSuspendWhileFocusing": "التطبيقات المُعلّقة أثناء التركيز",
   "groupsToSuspendWhileFocusing": "المجموعات المعلّقة أثناء التركيز",
   "noGroupsYet": "لا توجد مجموعات بعد",
@@ -1287,6 +1445,8 @@
   "activeBadge": "نشط",
   "searchApps": "بحث في التطبيقات",
   "includeSystemApps": "تضمين تطبيقات النظام",
+  "selectAllApps": "تحديد الكل",
+  "deselectAllApps": "إلغاء تحديد الكل",
   "appGroups": "مجموعات التطبيقات",
   "appGroupsSub": "حدود ونوافذ مشتركة لمجموعة تطبيقات",
   "loadingInstalledApps": "جارٍ تحميل التطبيقات المثبّتة…",
