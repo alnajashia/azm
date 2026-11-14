@@ -1,12 +1,13 @@
 /// Dechainer-parity tests for the 8 screenshots the user sent
 /// 2026-11-13 15:18 (item 3 passive blocked-words + item 7 groups):
 ///
-///  Item 3 — the Forbidden words screen works exactly like Dechainer's:
-///  the active list is shown as a read-only field; a passive list can
-///  be created for ANY installed app (not only the active targets —
-///  Dechainer's Passive section works with "No apps selected" in
-///  Active); each passive row has an edit pencil AND a delete trash
-///  icon; the per-app edit dialog is titled with the app name alone.
+///  Item 3 — the Forbidden words screen works exactly like Dechainer's,
+///  after the Batch H merge (one assignment table, two views): a word
+///  list can be created for ANY installed app (not only the active
+///  targets — Dechainer's Passive section works with "No apps
+///  selected" in Active); each word carries its Typed / On-screen
+///  mode chips; the per-app edit dialog is titled with the app name
+///  alone.
 ///  Item 7 — the group-edit menu has a time-windows editor (Dechainer's
 ///  EditGroupDialog has "Group time windows"); the group subtitle
 ///  shows the window count; the per-app sheet has a "Group" entry
@@ -68,11 +69,44 @@ void main() {
         'dailyWindows': dailyWindows,
       };
 
-  Map<String, dynamic> blockedWordsPayload() => {
-        'words': fakeWords,
-        'targetPackages': fakeTargets,
-        'passiveWords': fakePassive,
-      };
+  /// Batch J, item 10: the payload carries the merged assignment
+  /// table — one row per word (apps and/or groups + modes) — derived
+  /// from the fake legacy state exactly the way the native migration
+  /// does (active = words x targets; passive = per-app lists).
+  Map<String, dynamic> blockedWordsPayload() {
+    final byWord = <String, Map<String, dynamic>>{};
+    void add(String w, List<String> pkgs, String mode) {
+      if (pkgs.isEmpty) return;
+      final row = byWord.putIfAbsent(w, () => {
+            'word': w,
+            'packageNames': <String>[],
+            'groupIds': <String>[],
+            'modes': <String>[],
+          });
+      for (final p in pkgs) {
+        if (!(row['packageNames'] as List<String>).contains(p)) {
+          (row['packageNames'] as List<String>).add(p);
+        }
+      }
+      if (!(row['modes'] as List<String>).contains(mode)) {
+        (row['modes'] as List<String>).add(mode);
+      }
+    }
+    for (final w in fakeWords) {
+      add(w, fakeTargets, 'active');
+    }
+    fakePassive.forEach((pkg, words) {
+      for (final w in words) {
+        add(w, [pkg], 'passive');
+      }
+    });
+    return {
+      'words': fakeWords,
+      'targetPackages': fakeTargets,
+      'passiveWords': fakePassive,
+      'assignments': byWord.values.toList(),
+    };
+  }
 
   setUp(() {
     // Tall viewport (the Batch F pattern): the Blocked Words screen
@@ -117,6 +151,46 @@ void main() {
             fakePassive.remove(pkg);
           } else {
             fakePassive[pkg] = words;
+          }
+          return blockedWordsPayload();
+        case 'setWordAssignments':
+          final list = (call.arguments['assignments'] as List)
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
+          // Expand group targets through the fake groups, the way
+          // the native store does, then derive the fake legacy state.
+          Set<String> expanded(Map<String, dynamic> a) {
+            final out = <String>{
+              ...(a['packageNames'] as List).cast<String>(),
+            };
+            for (final id
+                in (a['groupIds'] as List? ?? const []).cast<String>()) {
+              final g = fakeGroups.firstWhere(
+                (g) => g['id'] == id,
+                orElse: () =>
+                    <String, dynamic>{'packages': <String>[]},
+              );
+              out.addAll((g['packages'] as List).cast<String>());
+            }
+            return out;
+          }
+          fakeWords = list
+              .where((a) => (a['modes'] as List).contains('active'))
+              .map((a) => a['word'] as String)
+              .toSet()
+              .toList();
+          fakeTargets = list
+              .where((a) => (a['modes'] as List).contains('active'))
+              .expand((a) => expanded(a))
+              .toSet()
+              .toList();
+          fakePassive = {};
+          for (final a in list.where(
+            (a) => (a['modes'] as List).contains('passive'),
+          )) {
+            for (final pkg in expanded(a)) {
+              (fakePassive[pkg] ??= []).add(a['word'] as String);
+            }
           }
           return blockedWordsPayload();
         case 'listInstalledApps':
@@ -223,30 +297,44 @@ void main() {
 
   // ---------------------------------------------------------- Item 3
 
-  group('Item 3 — passive blocked-words like Dechainer', () {
-    testWidgets('active list shows as a read-only field; passive rows '
-        'have edit and delete', (tester) async {
+  group('Item 3 — merged blocked-words like Dechainer, one table', () {
+    testWidgets('by-app view lists the app with its words and modes; '
+        'the app dialog is titled with the app name', (tester) async {
       final controller = makeController();
       await tester.pumpWidget(
         buildTestApp(child: BlockedWordsScreen(controller: controller)),
       );
       await tester.pumpAndSettle();
 
-      // The active list itself, not only its count.
-      final field = tester.widget<TextField>(find.byType(TextField).first);
-      expect(field.readOnly, isTrue);
-      expect(field.controller?.text, contains('bad'));
-      expect(field.controller?.text, contains('worse'));
-      expect(find.text('e.g., pussy'), findsOneWidget);
-
-      // One passive row: name + count + edit pencil + delete trash.
+      // By-app is the default view: one row, word count + mode.
       expect(find.text('Example Game'), findsOneWidget);
-      expect(find.text('1 word(s)'), findsOneWidget);
-      expect(find.byIcon(Icons.edit_outlined), findsWidgets);
-      expect(find.byIcon(Icons.delete_outlined), findsOneWidget);
+      expect(find.text('1 word(s) · On screen'), findsOneWidget);
+
+      // The per-app dialog is titled with the app name alone and
+      // shows the word with its Typed / On-screen mode chips.
+      await tester.tap(find.text('Example Game'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Example Game'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('pussy'), findsOneWidget);
+      expect(find.text('Typed'), findsOneWidget);
+      expect(find.text('On screen'), findsOneWidget);
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      // By-word view: the word with its app count.
+      await tester.tap(find.text('By word'));
+      await tester.pumpAndSettle();
+      expect(find.text('pussy'), findsOneWidget);
+      expect(find.text('1 target app(s)'), findsOneWidget);
     });
 
-    testWidgets('a passive list can be created for an app that is NOT '
+    testWidgets('a word list can be created for an app that is NOT '
         'an active target', (tester) async {
       final controller = makeController();
       await tester.pumpWidget(
@@ -255,8 +343,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Active has NO targets at all — the old code refused here.
-      expect(find.text('0 target app(s)'), findsOneWidget);
-      await tester.tap(find.text('Add per-app list'));
+      await tester.tap(find.text('Add app'));
       await tester.pumpAndSettle();
 
       // The picker offers every installed app, not only targets.
@@ -265,13 +352,32 @@ void main() {
       await tester.pumpAndSettle();
 
       // The per-app dialog is titled with the app name alone.
-      expect(find.text('Social App'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Social App'),
+        ),
+        findsOneWidget,
+      );
       final wordsField = find.descendant(
         of: find.byType(AlertDialog),
         matching: find.byType(TextField),
       );
       await tester.enterText(wordsField.first, 'secret');
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byIcon(Icons.add_outlined),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('secret'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(FilledButton, 'Save'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Creating a list activates blocking: the code gate appears.
@@ -279,33 +385,51 @@ void main() {
       expect(
         calls.any(
           (c) =>
-              c.method == 'setPassiveWords' &&
-              c.arguments['packageName'] == 'com.example.social' &&
-              (c.arguments['words'] as List).contains('secret'),
+              c.method == 'setWordAssignments' &&
+              (c.arguments['assignments'] as List).any(
+                (a) =>
+                    a['word'] == 'secret' &&
+                    (a['packageNames'] as List)
+                        .contains('com.example.social'),
+              ),
         ),
         isTrue,
       );
       expect(find.text('Social App'), findsOneWidget);
-      expect(find.text('1 word(s)'), findsNWidgets(2));
+      expect(find.text('1 word(s) · Typed + On screen'), findsOneWidget);
       controller.session.end();
     });
 
-    testWidgets('deleting a passive row goes through the gate and '
-        'removes the entry', (tester) async {
+    testWidgets('deleting a word goes through the gate and '
+        'removes the assignment', (tester) async {
       final controller = makeController();
       await tester.pumpWidget(
         buildTestApp(child: BlockedWordsScreen(controller: controller)),
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.delete_outlined));
+      await tester.tap(find.text('Example Game'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byIcon(Icons.delete_outlined),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(FilledButton, 'Save'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Removing blocking is a loosening: the code gate appears and
       // nothing is cleared yet.
       expect(find.text('Enter recovery code'), findsOneWidget);
       expect(
-        calls.any((c) => c.method == 'setPassiveWords'),
+        calls.any((c) => c.method == 'setWordAssignments'),
         isFalse,
       );
 
@@ -313,14 +437,16 @@ void main() {
       expect(
         calls.any(
           (c) =>
-              c.method == 'setPassiveWords' &&
-              c.arguments['packageName'] == 'com.example.game' &&
-              (c.arguments['words'] as List).isEmpty,
+              c.method == 'setWordAssignments' &&
+              !(c.arguments['assignments'] as List).any(
+                (a) => (a['packageNames'] as List)
+                    .contains('com.example.game'),
+              ),
         ),
         isTrue,
       );
       expect(find.text('Example Game'), findsNothing);
-      expect(find.text('No per-app lists yet.'), findsOneWidget);
+      expect(find.text('No apps have word lists yet.'), findsOneWidget);
       controller.session.end();
     });
   });
