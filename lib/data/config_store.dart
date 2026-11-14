@@ -234,6 +234,39 @@ class ConfigStore {
   Future<void> setChallengeSelection(List<ChallengeType> types) => _channel.setSetting(
       security, 'access_challenges', types.map((t) => t.name.toUpperCase()).toList());
 
+  /// Tetris (Batch I-C, item 2): the original's `SecurityManager`
+  /// keys `tetris_minutes` (1–15, default 3) and `tetris_sound`
+  /// (default on), stored as a plain int / bool in `security_prefs`
+  /// via the generic channel settings.
+  static const tetrisMinMinutes = 1;
+  static const tetrisMaxMinutes = 15;
+  static const tetrisDefaultMinutes = 3;
+
+  Future<int> getTetrisMinutes() async {
+    final raw = await _channel.getSetting(security, 'tetris_minutes');
+    final minutes = raw is int
+        ? raw
+        : (raw is String ? int.tryParse(raw) : null);
+    return (minutes ?? tetrisDefaultMinutes)
+        .clamp(tetrisMinMinutes, tetrisMaxMinutes);
+  }
+
+  Future<void> setTetrisMinutes(int minutes) => _channel.setSetting(
+        security,
+        'tetris_minutes',
+        minutes.clamp(tetrisMinMinutes, tetrisMaxMinutes),
+      );
+
+  Future<bool> isTetrisSoundEnabled() async {
+    final raw = await _channel.getSetting(security, 'tetris_sound');
+    if (raw is bool) return raw;
+    if (raw is String) return raw.toLowerCase() != 'false';
+    return true;
+  }
+
+  Future<void> setTetrisSoundEnabled(bool enabled) =>
+      _channel.setSetting(security, 'tetris_sound', enabled);
+
   /// Custom reading passages in the original's `{text, source}` object
   /// shape. Entries written by the previous Dart schema (plain strings
   /// in the same JSON array) are read as passages with an empty source
