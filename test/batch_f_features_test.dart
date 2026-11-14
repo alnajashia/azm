@@ -5,6 +5,9 @@
 ///  clients; enabling suspends them with reason TORRENT_APP, sets the
 ///  native flag and saves the blocked list; disabling goes through
 ///  the recovery gate, clears the flag and unsuspends the saved list.
+///  Batch G, item 6: the card moved OUT of the browser-restrictions
+///  screen into the Config tab (Settings) — these tests pump
+///  ConfigTab now, not BrowserRestrictionsScreen.
 ///  Uninstall block (items 5/8) — the screen lists blocked apps and
 ///  the empty state; adding via the picker blocks; removing goes
 ///  through the recovery gate.
@@ -29,7 +32,6 @@ import 'package:azm/data/privileged_channel.dart';
 import 'package:azm/l10n/app_localizations.dart';
 import 'package:azm/theme.dart';
 import 'package:azm/ui/apps_tab.dart';
-import 'package:azm/ui/config_screens.dart';
 import 'package:azm/ui/config_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -261,7 +263,7 @@ void main() {
       final controller = makeController();
       await tester.pumpWidget(
         buildTestApp(
-          child: BrowserRestrictionsScreen(controller: controller),
+          child: ConfigTab(controller: controller),
         ),
       );
       await tester.pumpAndSettle();
@@ -278,7 +280,7 @@ void main() {
       final controller = makeController();
       await tester.pumpWidget(
         buildTestApp(
-          child: BrowserRestrictionsScreen(controller: controller),
+          child: ConfigTab(controller: controller),
         ),
       );
       await tester.pumpAndSettle();
@@ -317,7 +319,7 @@ void main() {
       final controller = makeController();
       await tester.pumpWidget(
         buildTestApp(
-          child: BrowserRestrictionsScreen(controller: controller),
+          child: ConfigTab(controller: controller),
         ),
       );
       await tester.pumpAndSettle();

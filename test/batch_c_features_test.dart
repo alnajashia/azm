@@ -322,9 +322,10 @@ void main() {
       expect(find.text('Example Browser'), findsOneWidget);
       expect(find.text('com.android.chrome'), findsOneWidget);
       // Batch DNS added a third switch (the DNS card's toggle) after
-      // the two browser allow-switches; Batch F added a fourth (the
-      // torrent card's toggle, disabled here — its mock has no data).
-      expect(find.byType(Switch), findsNWidgets(4));
+      // the two browser allow-switches. Batch G moved the torrent
+      // card's toggle out of this screen into Settings (ConfigTab),
+      // so there are three switches here again.
+      expect(find.byType(Switch), findsNWidgets(3));
       // Chrome is allowed (not suspended); Example is allowed too.
       expect(tester.widget<Switch>(find.byType(Switch).first).value, isTrue);
     });
