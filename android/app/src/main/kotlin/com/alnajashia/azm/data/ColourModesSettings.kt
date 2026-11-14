@@ -38,6 +38,7 @@ object ColourModesSettings {
     const val KEY_NIGHT_LIGHT_INTENSITY = "night_light_overlay_intensity"
     const val KEY_NIGHT_LIGHT_TEMPERATURE = "night_light_temperature"
     const val KEY_EXTRA_DIM_LEVEL = "extra_dim_level"
+    const val KEY_EXTRA_DIM_USE_OVERLAY = "extra_dim_use_overlay"
     const val KEY_APPLY_DURING_FOCUS = "apply_during_focus"
 
     val DEFAULT_MODES = setOf(ColourMode.GRAYSCALE)
@@ -63,6 +64,11 @@ object ColourModesSettings {
         val nightLightTemperature: Int = DEFAULT_NIGHT_LIGHT_TEMPERATURE,
         val nightLightIntensity: Int = DEFAULT_NIGHT_LIGHT_INTENSITY,
         val extraDimLevel: Int = DEFAULT_EXTRA_DIM_LEVEL,
+        // Batch G, item 4: when true, Azm dims with its own overlay
+        // instead of the platform reduce_bright_colors keys — for
+        // devices whose framework ignores those keys (the user's
+        // Android 12 Transsion phone). Default false.
+        val extraDimUseOverlay: Boolean = false,
         val applyDuringFocus: Boolean = false,
     ) {
         fun windowsFor(mode: ColourMode): List<TimeWindow> = windows[mode] ?: emptyList()
@@ -113,6 +119,7 @@ object ColourModesSettings {
             nightLightTemperature = p.getInt(KEY_NIGHT_LIGHT_TEMPERATURE, DEFAULT_NIGHT_LIGHT_TEMPERATURE),
             nightLightIntensity = p.getInt(KEY_NIGHT_LIGHT_INTENSITY, DEFAULT_NIGHT_LIGHT_INTENSITY),
             extraDimLevel = p.getInt(KEY_EXTRA_DIM_LEVEL, DEFAULT_EXTRA_DIM_LEVEL),
+            extraDimUseOverlay = p.getBoolean(KEY_EXTRA_DIM_USE_OVERLAY, false),
             applyDuringFocus = p.getBoolean(KEY_APPLY_DURING_FOCUS, false),
         )
     }
@@ -136,6 +143,7 @@ object ColourModesSettings {
         edit.putInt(KEY_NIGHT_LIGHT_TEMPERATURE, config.nightLightTemperature)
         edit.putInt(KEY_NIGHT_LIGHT_INTENSITY, config.nightLightIntensity)
         edit.putInt(KEY_EXTRA_DIM_LEVEL, config.extraDimLevel)
+        edit.putBoolean(KEY_EXTRA_DIM_USE_OVERLAY, config.extraDimUseOverlay)
         edit.putBoolean(KEY_APPLY_DURING_FOCUS, config.applyDuringFocus)
         edit.apply()
     }
@@ -209,6 +217,7 @@ object ColourModesSettings {
             nightLightTemperature = temperature,
             nightLightIntensity = intensity,
             extraDimLevel = dimLevel,
+            extraDimUseOverlay = raw["extraDimUseOverlay"] as? Boolean ?: false,
             applyDuringFocus = raw["applyDuringFocus"] as? Boolean ?: false,
         )
     }
@@ -232,6 +241,7 @@ object ColourModesSettings {
         "nightLightTemperature" to config.nightLightTemperature,
         "nightLightIntensity" to config.nightLightIntensity,
         "extraDimLevel" to config.extraDimLevel,
+        "extraDimUseOverlay" to config.extraDimUseOverlay,
         "applyDuringFocus" to config.applyDuringFocus,
     )
 

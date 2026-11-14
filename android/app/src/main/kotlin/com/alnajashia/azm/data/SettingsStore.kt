@@ -18,7 +18,10 @@ import java.time.DayOfWeek
  *  - `app_groups` (`groups` JSON array)
  *  - `internal_usage_stats` / `group_usage_stats` (Long ms per key, written by the service)
  *  - `reopen_times` (Int seconds/pkg)
- *  - `blocked_words_prefs` (`blocked_words`, `target_packages`, `passive_words_<pkg>`)
+ *  - `blocked_words_prefs` (`word_assignments_json`: one assignment
+ *    table `[{w, p, m}]`, mode `active`|`passive`; legacy keys
+ *    `blocked_words` / `target_packages` / `passive_words_<pkg>`
+ *    migrated once on first read, then cleared)
  *  - `activity_blocker_prefs` (`blocked_activities`)
  *  - `hidden_apps_prefs` (`hidden_packages`)
  *  - `suspension_logs_prefs` (`logs` JSON array, capped)
@@ -352,20 +355,273 @@ object SettingsStore {
 
     // ------------------------------------------------------------------ words / activities
 
-    fun blockedWords(): Set<String> =
-        prefs(PREFS_BLOCKED_WORDS).getStringSet("blocked_words", emptySet()) ?: emptySet()
+    // ------------------------------------------- blocked words (Batch H, item 10)
+    //
+    // ONE canonical store: assignments (word, targets, modes). One row
+    // per word: the word, its targets — direct apps (packageNames)
+    // and/or groups (groupIds) — and its modes, "active" (typed-word
+    // blocking, F14) or "passive" (on-screen scan, F15). The modes
+    // apply to ALL of the word's targets. A group target covers every
+    // app in the group at enforcement time (expandedPackages). Before
+    // Batch H there were two parallel stores — one global active word
+    // list + targets, and per-app passive lists. Batch H merged them
+    // as one row per (word, app, mode); Batch J merges further to one
+    // row per word so one word can cover many apps and many groups
+    // at once. The two ENFORCEMENT modes stay separate (they trigger
+    // differently); both views (words-per-app and apps-per-word)
+    // read the same truth.
+    //
+    // Enforcement is per assignment, not per global list: typing word
+    // W in app A blocks only when some assignment covers A (directly
+    // or through a group) with mode active. The old global-list
+    // semantics would have over-blocked (W typed in ANY target app
+    // blocks, even one where W was never assigned). Migration
+    // (one-way, on first read): the legacy keys (blocked_words x
+    // target_packages -> active; passive_words_<pkg> -> passive) and
+    // old Batch H rows ({w, p: single pkg, m: single mode}) are
+    // merged by word, and the legacy keys are cleared.
 
-    fun wordTargetPackages(): Set<String> =
-        prefs(PREFS_BLOCKED_WORDS).getStringSet("target_packages", emptySet()) ?: emptySet()
+    data class WordAssignment(
+        val word: String,
+        val packageNames: List<String>,
+        val groupIds: List<String>,
+        val modes: Set<String>, // subset of {"active", "passive"}
+    ) {
+        fun toJson(): JSONObject = JSONObject()
+            .put("w", word)
+            .put("p", JSONArray(packageNames))
+            .put("g", JSONArray(groupIds))
+            .put("m", JSONArray(modes.sorted()))
 
-    fun passiveWordsFor(packageName: String): Set<String> =
-        prefs(PREFS_BLOCKED_WORDS).getStringSet("passive_words_$packageName", emptySet()) ?: emptySet()
+        /** Packages this entry covers: direct apps plus every member of its groups. */
+        fun expandedPackages(groups: List<AppGroup>): Set<String> {
+            val out = packageNames.toMutableSet()
+            val byId = groups.associateBy { it.id }
+            for (id in groupIds) {
+                byId[id]?.packageNames?.let { out += it }
+            }
+            return out
+        }
 
-    fun passiveWordPackages(): Set<String> =
-        prefs(PREFS_BLOCKED_WORDS).all.keys
+        companion object {
+            private fun stringList(value: Any?): List<String> = when (value) {
+                is JSONArray -> (0 until value.length())
+                    .mapNotNull { value.optString(it).trim().takeIf { s -> s.isNotEmpty() } }
+                is String -> listOf(value.trim()).filter { it.isNotEmpty() }
+                else -> emptyList()
+            }
+
+            private fun modeSet(value: Any?): Set<String> = when (value) {
+                is JSONArray -> (0 until value.length())
+                    .mapNotNull { value.optString(it).takeIf { s -> s == "active" || s == "passive" } }
+                    .toSet()
+                is String -> setOf(value).filter { it == "active" || it == "passive" }.toSet()
+                else -> emptySet()
+            }
+
+            // Accepts the Batch J shape ({w, p: [...], g: [...],
+            // m: [...]}) and the old Batch H shape ({w, p: single
+            // pkg, m: single mode}); the caller merges rows by word.
+            fun fromJson(json: JSONObject): WordAssignment? {
+                val word = json.optString("w", "").trim()
+                if (word.isEmpty()) return null
+                val pkgs = stringList(json.opt("p")).distinct().sorted()
+                val groups = stringList(json.opt("g")).distinct().sorted()
+                val modes = modeSet(json.opt("m"))
+                if (pkgs.isEmpty() && groups.isEmpty()) return null
+                if (modes.isEmpty()) return null
+                return WordAssignment(word, pkgs, groups, modes)
+            }
+
+            /** Merge rows that share a word into one row (union of targets and modes). */
+            fun merged(rows: List<WordAssignment>): List<WordAssignment> =
+                rows.groupBy { it.word }.map { (word, same) ->
+                    WordAssignment(
+                        word,
+                        same.flatMap { it.packageNames }.distinct().sorted(),
+                        same.flatMap { it.groupIds }.distinct().sorted(),
+                        same.flatMap { it.modes }.toSet(),
+                    )
+                }.sortedBy { it.word }
+        }
+    }
+
+    private const val KEY_WORD_ASSIGNMENTS = "word_assignments_json"
+
+    fun wordAssignments(): List<WordAssignment> {
+        val prefs = prefs(PREFS_BLOCKED_WORDS)
+        val raw = prefs.getString(KEY_WORD_ASSIGNMENTS, null)
+        if (raw != null) {
+            return try {
+                val array = JSONArray(raw)
+                val parsed = (0 until array.length()).mapNotNull {
+                    array.optJSONObject(it)?.let { WordAssignment.fromJson(it) }
+                }
+                val merged = WordAssignment.merged(parsed)
+                // One-time convergence: old Batch H rows (one per
+                // app/mode) become one row per word. Writes back only
+                // when the stored form actually differs.
+                val stored =
+                    JSONArray().apply { merged.forEach { put(it.toJson()) } }.toString()
+                if (stored != raw) {
+                    prefs.edit().putString(KEY_WORD_ASSIGNMENTS, stored).apply()
+                }
+                merged
+            } catch (e: Exception) {
+                Log.w("SettingsStore", "Corrupt word assignments discarded: ${e.message}")
+                emptyList()
+            }
+        }
+        // First read after the Batch H merge: migrate the legacy keys.
+        // NOTE: read the raw keys here, NOT the derived readers below
+        // (they call back into wordAssignments — that would recurse).
+        val migrated = mutableListOf<WordAssignment>()
+        val legacyWords =
+            prefs.getStringSet("blocked_words", emptySet()) ?: emptySet()
+        val legacyTargets =
+            prefs.getStringSet("target_packages", emptySet()) ?: emptySet()
+        val legacyPassivePkgs = prefs.all.keys
             .filter { it.startsWith("passive_words_") }
             .map { it.removePrefix("passive_words_") }
             .toSet()
+        for (word in legacyWords) {
+            for (pkg in legacyTargets) {
+                migrated += WordAssignment(word, listOf(pkg), emptyList(), setOf("active"))
+            }
+        }
+        for (pkg in legacyPassivePkgs) {
+            val words = prefs.getStringSet("passive_words_$pkg", emptySet())
+                ?: emptySet()
+            for (word in words) {
+                migrated += WordAssignment(word, listOf(pkg), emptyList(), setOf("passive"))
+            }
+        }
+        val merged = WordAssignment.merged(migrated)
+        val edit = prefs.edit().putString(
+            KEY_WORD_ASSIGNMENTS,
+            JSONArray().apply { merged.forEach { put(it.toJson()) } }.toString(),
+        )
+        edit.remove("blocked_words").remove("target_packages")
+        for (pkg in legacyPassivePkgs) edit.remove("passive_words_$pkg")
+        edit.apply()
+        return merged
+    }
+
+    fun setWordAssignments(assignments: List<WordAssignment>) {
+        val clean = WordAssignment.merged(
+            assignments.map {
+                WordAssignment(
+                    it.word.trim(),
+                    it.packageNames.map { p -> p.trim() }.filter { p -> p.isNotEmpty() },
+                    it.groupIds.map { g -> g.trim() }.filter { g -> g.isNotEmpty() },
+                    it.modes.filter { m -> m == "active" || m == "passive" }.toSet(),
+                )
+            }.filter {
+                it.word.isNotEmpty() &&
+                    (it.packageNames.isNotEmpty() || it.groupIds.isNotEmpty()) &&
+                    it.modes.isNotEmpty()
+            },
+        )
+        val array = JSONArray()
+        clean.forEach { array.put(it.toJson()) }
+        prefs(PREFS_BLOCKED_WORDS).edit()
+            .putString(KEY_WORD_ASSIGNMENTS, array.toString())
+            .apply()
+    }
+
+    // Legacy readers, now DERIVED from the assignment table so the
+    // payload and any older reader keep seeing the same values.
+    // Group targets are expanded to their member packages here, so a
+    // word assigned to a group reads exactly like a word assigned to
+    // each of the group's apps.
+    fun blockedWords(): Set<String> =
+        wordAssignments().filter { "active" in it.modes }.map { it.word }.toSet()
+
+    fun wordTargetPackages(): Set<String> {
+        val groups = groups()
+        return wordAssignments().filter { "active" in it.modes }
+            .flatMap { it.expandedPackages(groups) }.toSet()
+    }
+
+    fun passiveWordsFor(packageName: String): Set<String> {
+        val groups = groups()
+        return wordAssignments()
+            .filter { "passive" in it.modes && packageName in it.expandedPackages(groups) }
+            .map { it.word }.toSet()
+    }
+
+    fun passiveWordPackages(): Set<String> {
+        val groups = groups()
+        return wordAssignments().filter { "passive" in it.modes }
+            .flatMap { it.expandedPackages(groups) }.toSet()
+    }
+
+    // Legacy writers, now ADAPTERS over the assignment table: the old
+    // channel methods keep working, and the two stores can never
+    // drift apart again.
+    fun setBlockedWords(words: Set<String>, targetPackages: Set<String>) {
+        // Keep the passive side untouched; replace the active side:
+        // every listed word gains mode active over the targets, and
+        // active is dropped from words no longer listed. A listed
+        // word keeps its groups (they are not part of this old call).
+        val current = wordAssignments()
+        val next = current.mapNotNull { entry ->
+            val modes = entry.modes - "active"
+            if (entry.word in words) {
+                entry.copy(
+                    packageNames = targetPackages.sorted(),
+                    modes = modes + "active",
+                )
+            } else if (modes.isEmpty()) {
+                null
+            } else {
+                entry.copy(modes = modes)
+            }
+        }.toMutableList()
+        val have = next.map { it.word }.toSet()
+        for (word in words) {
+            if (word !in have) {
+                next += WordAssignment(word, targetPackages.sorted(), emptyList(), setOf("active"))
+            }
+        }
+        setWordAssignments(next)
+    }
+
+    fun setPassiveWords(packageName: String, words: Set<String>) {
+        val groups = groups()
+        val current = wordAssignments()
+        val next = current.mapNotNull { entry ->
+            if ("passive" !in entry.modes) return@mapNotNull entry
+            // Words no longer listed lose their DIRECT coverage of
+            // this app. Group coverage is left alone: removing a group
+            // here would change other apps too, and the old store
+            // could not express it.
+            if (entry.word !in words && packageName in entry.packageNames) {
+                val pkgs = entry.packageNames - packageName
+                val modes =
+                    if (pkgs.isEmpty() && entry.groupIds.isEmpty()) entry.modes - "passive"
+                    else entry.modes
+                if (modes.isEmpty()) null else entry.copy(packageNames = pkgs, modes = modes)
+            } else {
+                entry
+            }
+        }.toMutableList()
+        for (word in words) {
+            val existing = next.firstOrNull { it.word == word }
+            val covered = existing?.let { packageName in it.expandedPackages(groups) } == true
+            if (existing == null) {
+                next += WordAssignment(word, listOf(packageName), emptyList(), setOf("passive"))
+            } else if (!covered) {
+                val idx = next.indexOf(existing)
+                next[idx] = existing.copy(
+                    packageNames = (existing.packageNames + packageName).distinct().sorted(),
+                    modes = existing.modes + "passive",
+                )
+            }
+            // Else already covered (directly or via a group): nothing to add.
+        }
+        setWordAssignments(next)
+    }
 
     fun blockedActivities(): Set<String> =
         prefs(PREFS_ACTIVITY_BLOCKER).getStringSet("blocked_activities", emptySet()) ?: emptySet()
@@ -432,20 +688,6 @@ object SettingsStore {
         if (packageName == ctx().packageName) return true
         if (packageName == defaultLauncherPackage()) return true
         return false
-    }
-
-    fun setBlockedWords(words: Set<String>, targetPackages: Set<String>) {
-        prefs(PREFS_BLOCKED_WORDS).edit()
-            .putStringSet("blocked_words", words)
-            .putStringSet("target_packages", targetPackages)
-            .apply()
-    }
-
-    fun setPassiveWords(packageName: String, words: Set<String>) {
-        val edit = prefs(PREFS_BLOCKED_WORDS).edit()
-        val key = "passive_words_$packageName"
-        if (words.isEmpty()) edit.remove(key) else edit.putStringSet(key, words)
-        edit.apply()
     }
 
     // ------------------------------------------------------------------ hidden set (DPM-written)
