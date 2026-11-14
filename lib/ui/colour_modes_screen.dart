@@ -432,6 +432,16 @@ class _ColourModesScreenState extends State<ColourModesScreen> {
           row(Icons.schedule_outlined, l10n.colourModesStatusIdle)
         else
           row(Icons.circle_outlined, l10n.colourModesStatusOff),
+        // Batch G, item 4: a rejected write must be visible, not
+        // hidden behind a toggle that shows ON.
+        if (status.failedKeys.isNotEmpty)
+          row(
+            Icons.warning_amber_outlined,
+            l10n.colourModesStatusVerifyFailed(
+              status.failedModes.map((m) => _modeName(m, l10n)).join(', '),
+            ),
+            warn: true,
+          ),
       ],
     );
   }
@@ -578,6 +588,20 @@ class _ColourModesScreenState extends State<ColourModesScreen> {
                   _save(config.copyWith(extraDimLevel: level));
                 },
               ),
+            ),
+            // Batch G, item 4: the overlay fallback. Shown only when
+            // the mode itself is on — it replaces the platform keys
+            // with Azm's own dimming on devices whose framework
+            // ignores them. Switching it on is a config save like the
+            // level slider; the service picks the overlay up on sync.
+            SwitchListTile(
+              title: Text(l10n.extraDimUseOverlayTitle),
+              subtitle: Text(l10n.extraDimUseOverlaySub),
+              value: config.extraDimUseOverlay,
+              onChanged: _busy
+                  ? null
+                  : (v) =>
+                      _save(config.copyWith(extraDimUseOverlay: v)),
             ),
           ],
           Padding(

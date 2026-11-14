@@ -17,6 +17,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
+import '../data/privileged_channel.dart';
 import '../domain/seal_rules.dart';
 import '../l10n/l10n.dart';
 import 'common.dart';
@@ -33,6 +34,8 @@ class SealRulesScreen extends StatefulWidget {
 class _SealRulesScreenState extends State<SealRulesScreen> {
   List<SealRule>? _rules;
   List<ActiveSeal> _activeSeals = const [];
+  List<AppGroupModel>? _groups;
+  List<InstalledApp>? _apps;
   bool _isOwner = false;
   Object? _error;
   bool _saving = false;
@@ -48,6 +51,8 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
   Future<void> _load() async {
     try {
       final m = await _c.channel.getSealRules();
+      final groups = await _c.channel.getGroups();
+      final apps = await _c.channel.listInstalledApps();
       if (mounted) {
         setState(() {
           _rules = [
@@ -63,12 +68,17 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
                 s,
           ];
           _isOwner = m['isDeviceOwner'] as bool? ?? false;
+          _groups = groups;
+          _apps = apps;
         });
       }
     } catch (e) {
       if (mounted) setState(() => _error = e);
     }
   }
+
+  String _labelFor(String pkg) =>
+      _apps?.where((a) => a.packageName == pkg).firstOrNull?.label ?? pkg;
 
   Future<void> _save(List<SealRule> next, {required bool loosens}) async {
     Future<void> persist() async {
@@ -114,6 +124,7 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
         SealTrigger.appBlocked => l10n.sealTriggerAppBlocked,
         SealTrigger.appSuspended => l10n.sealTriggerAppSuspended,
         SealTrigger.focusRunning => l10n.sealTriggerFocusRunning,
+        SealTrigger.lockdownRunning => l10n.sealTriggerLockdownRunning,
         SealTrigger.visualDetection => l10n.sealTriggerVisual,
         SealTrigger.bannedWord => l10n.sealTriggerWord,
       };
@@ -128,32 +139,57 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
         _ => '$minutes',
       };
 
-  String _ruleSummary(AppLocalizations l10n, SealRule rule) {
-    final base = _triggerLabel(l10n, rule.trigger);
-    final app = rule.packageName;
-    final withApp = app == null ? base : '$base — $app';
-    if (rule.trigger.isEvent && rule.durationMinutes != null) {
-      return '$withApp · ${_durationLabel(l10n, rule.durationMinutes!)}';
+  /// The rule's targets: its group (by name) and its apps — one app
+  /// by label, several as a count. A rule watches its apps AND the
+  /// group's members (Batch H, item 12).
+  String _targetsSummary(AppLocalizations l10n, SealRule rule) {
+    final parts = <String>[];
+    final groupId = rule.groupId;
+    final group = groupId == null
+        ? null
+        : _groups?.where((g) => g.id == groupId).firstOrNull;
+    if (group != null) parts.add('${l10n.sealGroup}: ${group.name}');
+    if (rule.packageNames.isNotEmpty) {
+      parts.add(
+        rule.packageNames.length == 1
+            ? _labelFor(rule.packageNames.first)
+            : l10n.targetAppsCount(rule.packageNames.length),
+      );
     }
-    return withApp;
+    return parts.join(' + ');
   }
 
-  Future<String?> _pickApp() async {
+  String _ruleSummary(AppLocalizations l10n, SealRule rule) {
+    final base = _triggerLabel(l10n, rule.trigger);
+    final targets = rule.trigger.needsApp
+        ? _targetsSummary(l10n, rule)
+        : '';
+    final withTargets = targets.isEmpty ? base : '$base — $targets';
+    if (rule.trigger.isEvent && rule.durationMinutes != null) {
+      return '$withTargets · ${_durationLabel(l10n, rule.durationMinutes!)}';
+    }
+    return withTargets;
+  }
+
+  Future<Set<String>?> _pickApps(Set<String> initial) async {
     final result = await showAppPicker(
       context: context,
       channel: _c.channel,
       title: context.l10n.sealChooseApp,
-      singleSelect: true,
+      initialSelected: initial,
+      preloadedApps: _apps,
     );
-    return result?.firstOrNull;
+    return result;
   }
 
   Future<void> _editRule(SealRule? existing) async {
     final l10n = context.l10n;
     var trigger = existing?.trigger ?? SealTrigger.appBlocked;
-    var packageName = existing?.packageName;
+    var packageNames = {...?existing?.packageNames};
+    var groupId = existing?.groupId;
     var duration = existing?.durationMinutes ?? 60;
     var enabled = existing?.enabled ?? true;
+    final groups = _groups ?? const <AppGroupModel>[];
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -186,15 +222,40 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
                   const SizedBox(height: 12),
                   ListTile(
                     leading: const Icon(Icons.apps_outlined),
-                    title: Text(l10n.sealApp),
-                    subtitle: Text(packageName ?? l10n.sealChooseApp),
+                    title: Text(l10n.sealApps),
+                    subtitle: Text(
+                      packageNames.isEmpty
+                          ? l10n.sealChooseApp
+                          : packageNames.length == 1
+                          ? _labelFor(packageNames.first)
+                          : l10n.targetAppsCount(packageNames.length),
+                    ),
                     trailing: const Icon(Icons.navigate_next_outlined),
                     onTap: () async {
-                      final picked = await _pickApp();
+                      final picked = await _pickApps(packageNames);
                       if (picked != null) {
-                        setDialogState(() => packageName = picked);
+                        setDialogState(() => packageNames = picked);
                       }
                     },
+                  ),
+                  const SizedBox(height: 12),
+                  Text(l10n.sealGroup),
+                  const SizedBox(height: 8),
+                  DropdownButton<String?>(
+                    value: groupId,
+                    isExpanded: true,
+                    items: [
+                      DropdownMenuItem<String?>(
+                        child: Text(l10n.sealNoGroup),
+                      ),
+                      for (final g in groups)
+                        DropdownMenuItem<String?>(
+                          value: g.id,
+                          child: Text(g.name),
+                        ),
+                    ],
+                    onChanged: (v) =>
+                        setDialogState(() => groupId = v),
                   ),
                 ],
                 if (trigger.isEvent) ...[
@@ -228,7 +289,10 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
               child: Text(l10n.cancel),
             ),
             FilledButton(
-              onPressed: trigger.needsApp && packageName == null
+              onPressed:
+                  trigger.needsApp &&
+                      packageNames.isEmpty &&
+                      groupId == null
                   ? null
                   : () => Navigator.pop(dialogContext, true),
               child: Text(l10n.save),
@@ -243,7 +307,8 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
       final rule = SealRule(
         id: 'seal-${DateTime.now().microsecondsSinceEpoch}',
         trigger: trigger,
-        packageName: trigger.needsApp ? packageName : null,
+        packageNames: trigger.needsApp ? packageNames.toList() : const [],
+        groupId: trigger.needsApp ? groupId : null,
         durationMinutes: trigger.isEvent ? duration : null,
         enabled: enabled,
       );
@@ -251,7 +316,9 @@ class _SealRulesScreenState extends State<SealRulesScreen> {
     } else {
       final next = existing.copyWith(
         trigger: trigger,
-        packageName: trigger.needsApp ? packageName : null,
+        packageNames: trigger.needsApp ? packageNames.toList() : const [],
+        groupId: trigger.needsApp ? groupId : null,
+        clearGroupId: !trigger.needsApp || groupId == null,
         durationMinutes: trigger.isEvent ? duration : null,
         enabled: enabled,
       );

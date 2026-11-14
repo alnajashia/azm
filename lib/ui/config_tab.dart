@@ -23,18 +23,6 @@ import 'recovery_ui.dart';
 import 'seal_rules_screen.dart';
 import 'visual_blocking_screen.dart';
 
-/// The original's preset hosts, verbatim (`ConfigTab.kt:522-524`).
-const dnsPresets = <String, String>{
-  'Cloudflare': 'family.cloudflare-dns.com',
-  'AdGuard DNS': 'family.adguard-dns.com',
-  'CleanBrowsing': 'adult-filter-dns.cleanbrowsing.org',
-};
-
-/// The original's custom-host validation (`ConfigTab.kt:538-540`):
-/// lowercase dot-separated labels and a TLD of at least two letters.
-bool isValidHostname(String host) =>
-    RegExp(r'^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$').hasMatch(host);
-
 class ConfigTab extends StatefulWidget {
   const ConfigTab({super.key, required this.controller});
   final AppController controller;
@@ -44,6 +32,7 @@ class ConfigTab extends StatefulWidget {
 
 class _ConfigTabState extends State<ConfigTab> {
   bool? _isOwner;
+  bool? _isAdmin;
   PrivateDnsState? _dns;
   Object? _error;
   Timer? _ticker;
@@ -63,6 +52,13 @@ class _ConfigTabState extends State<ConfigTab> {
 
   /// True while a toggle apply is in flight (the switch is disabled).
   bool _autoBlockBusy = false;
+
+  // Batch G, item 6: the torrent-block card moved here from the
+  // browser-restrictions screen — torrent clients have nothing to
+  // do with browsers. Same state, same native flag, same gates.
+  List<({String packageName, String label})>? _torrentApps;
+  bool? _blockTorrents;
+  bool _torrentBusy = false;
 
   AppController get _c => widget.controller;
 
@@ -120,6 +116,7 @@ class _ConfigTabState extends State<ConfigTab> {
       if (mounted) {
         setState(() {
           _isOwner = owner.isDeviceOwner;
+          _isAdmin = owner.isAdminActive;
           _dns = dns;
           _residue = residue;
         });
@@ -140,6 +137,16 @@ class _ConfigTabState extends State<ConfigTab> {
       } catch (_) {
         // Leave null; the switch stays disabled.
       }
+      // Batch G, item 6: detected torrent clients + the native flag.
+      // Best-effort, like the probes above.
+      try {
+        final torrentApps = await _c.channel.getTorrentApps();
+        if (mounted) setState(() => _torrentApps = torrentApps);
+      } catch (_) {}
+      try {
+        final blockTorrents = await _c.channel.isBlockTorrentsEnabled();
+        if (mounted) setState(() => _blockTorrents = blockTorrents);
+      } catch (_) {}
     } catch (e) {
       if (mounted) setState(() => _error = e);
     }
@@ -234,8 +241,13 @@ class _ConfigTabState extends State<ConfigTab> {
                     : l10n.dnsMode(_dns!.mode),
               ),
               trailing: const Icon(Icons.navigate_next_outlined),
+              // DNS batch: this tile used to open a SECOND, separate
+              // DNS dialog (presets + custom host, its own apply path
+              // that never persisted). The browser-restrictions
+              // screen's DNS card is now the ONE DNS place, so the
+              // tile navigates there instead.
               onTap: _isOwner == true
-                  ? _editDns
+                  ? () => _push(BrowserRestrictionsScreen(controller: _c))
                   : () => showInfoSnackBar(context, l10n.dnsNeedsOwnerMsg),
             ),
           ],
@@ -335,6 +347,43 @@ class _ConfigTabState extends State<ConfigTab> {
           ],
         ),
         const SizedBox(height: 12),
+        // Batch G, item 6: the torrent-block card is a separate card
+        // in Settings — torrent clients have nothing to do with
+        // browsers, so it no longer lives in the browser-restrictions
+        // screen. Same switch, same gates, same native flag.
+        SectionCard(
+          title: l10n.torrentTitle,
+          children: [
+            SwitchListTile(
+              title: Text(l10n.torrentTitle),
+              subtitle: Text(l10n.torrentSub),
+              value: _blockTorrents ?? false,
+              onChanged: _torrentBusy || _blockTorrents == null
+                  ? null
+                  : _toggleTorrents,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: _torrentApps == null
+                  ? Text(l10n.loadingShort)
+                  : _torrentApps!.isEmpty
+                      ? Text(l10n.torrentDetectedNone)
+                      : Text(
+                          l10n.torrentDetectedCount(
+                            _torrentApps!.length,
+                          ),
+                        ),
+            ),
+            if (_torrentApps != null)
+              for (final a in _torrentApps!)
+                ListTile(
+                  leading: const Icon(Icons.file_download_outlined),
+                  title: Text(a.label),
+                  subtitle: Text(a.packageName),
+                ),
+          ],
+        ),
+        const SizedBox(height: 12),
         SectionCard(
           title: l10n.preferencesSection,
           children: [
@@ -428,7 +477,7 @@ class _ConfigTabState extends State<ConfigTab> {
                 leading: const Icon(Icons.remove_moderator_outlined),
                 title: Text(l10n.removeOwnerNow),
                 subtitle: Text(l10n.removeOwnerNowSub),
-                onTap: (_isOwner == true && !_c.isRemovingDeviceOwner)
+                onTap: ((_isOwner == true || _isAdmin == true) && !_c.isRemovingDeviceOwner)
                     ? _onRemoveOwnerTapped
                     : null,
               ),
@@ -484,56 +533,6 @@ class _ConfigTabState extends State<ConfigTab> {
         ),
       ],
     );
-  }
-
-  /// DNS selection dialog, mirroring the original's `DnsSelectionDialog`
-  /// (`ConfigTab.kt:514-630`) and its apply path (`:443-475`): radio
-  /// presets + custom host with inline validation, Apply disabled until
-  /// the selection is valid, the apply wrapped in the recovery gate,
-  /// a 15-second timeout, and result-code error mapping
-  /// (`PRIVATE_DNS_SET_ERROR_HOST_NOT_SERVING` gets its own message).
-  Future<void> _editDns() async {
-    final applied = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => _DnsDialog(
-        currentHost: _dns?.isSpecifiedHost == true ? _dns!.hostname : null,
-        onApply: (host) async {
-          // Captured before the awaits below (the dialog outlives them).
-          final l10n = context.l10n;
-          // The original wraps the apply in `recoveryGate.run` — a full
-          // recovery session, not just the loosening path.
-          if (!await ensureRecoverySession(context, _c)) {
-            return (applied: false, error: null);
-          }
-          try {
-            final state = await _c.channel
-                .setPrivateDns(host)
-                .timeout(const Duration(seconds: 15));
-            if (mounted) setState(() => _dns = state);
-            return (applied: true, error: null);
-          } on TimeoutException {
-            return (applied: false, error: l10n.dnsApplyTimeout);
-          } on PrivilegedException catch (e) {
-            // Native surfaces the DPM result code as `verifiedState`
-            // (2 = PRIVATE_DNS_SET_ERROR_HOST_NOT_SERVING).
-            final notServing =
-                e.details['verifiedState'] == 2 ||
-                e.message.contains('result code 2');
-            return (
-              applied: false,
-              error: notServing ? l10n.dnsNotServing : l10n.dnsApplyFailed,
-            );
-          }
-        },
-      ),
-    );
-    if (applied == true && mounted && _dns != null) {
-      showInfoSnackBar(
-        context,
-        context.l10n.dnsAppliedMsg(_dns!.hostname ?? ''),
-      );
-    }
   }
 
   /// High-warning centred confirmation card before immediate owner removal
@@ -650,7 +649,12 @@ class _ConfigTabState extends State<ConfigTab> {
         context: context,
         controller: _c,
         onRemovalSuccess: () {
-          if (mounted) setState(() => _isOwner = false);
+          if (mounted) {
+            setState(() {
+              _isOwner = false;
+              _isAdmin = false;
+            });
+          }
         },
       );
     });
@@ -680,6 +684,68 @@ class _ConfigTabState extends State<ConfigTab> {
         }
       } finally {
         if (mounted) setState(() => _autoBlockBusy = false);
+      }
+    }
+
+    if (enabled) {
+      try {
+        await apply();
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
+    } else {
+      await runLoosening(context, _c, apply);
+    }
+  }
+
+  /// The torrent switch (Batch F, item 4; moved here in Batch G,
+  /// item 6 — same logic, new home). Enabling is a tightening
+  /// (direct): the native flag is set first, then every detected
+  /// torrent client is suspended with reason TORRENT_APP and the
+  /// suspended set is saved — so disabling later unsuspends exactly
+  /// the apps this toggle blocked. Disabling is a loosening
+  /// (recovery-gated). New installs while enabled are suspended by
+  /// the AzmApplication install hook, not here.
+  Future<void> _toggleTorrents(bool enabled) async {
+    Future<void> apply() async {
+      setState(() => _torrentBusy = true);
+      try {
+        // Channel first, prefs only after the verified native reply.
+        final verified = await _c.channel.setBlockTorrents(enabled);
+        final apps = _torrentApps ?? const [];
+        if (verified) {
+          final suspended = <String>{};
+          if (apps.isNotEmpty) {
+            final results = await _c.channel.setAppSuspended(
+              apps.map((a) => a.packageName).toList(),
+              true,
+              reason: 'TORRENT_APP',
+            );
+            suspended.addAll(
+              results.where((r) => r.isSuspended).map((r) => r.packageName),
+            );
+          }
+          await _c.config.setTorrentBlockedPackages(suspended);
+          if (mounted) {
+            setState(() => _blockTorrents = true);
+            showInfoSnackBar(
+              context,
+              context.l10n.torrentBlockedMsg(suspended.length),
+            );
+          }
+        } else {
+          final blocked = await _c.config.getTorrentBlockedPackages();
+          if (blocked.isNotEmpty) {
+            await _c.channel.setAppSuspended(blocked.toList(), false);
+          }
+          await _c.config.setTorrentBlockedPackages(const {});
+          if (mounted) {
+            setState(() => _blockTorrents = false);
+            showInfoSnackBar(context, context.l10n.torrentUnblockedMsg);
+          }
+        }
+      } finally {
+        if (mounted) setState(() => _torrentBusy = false);
       }
     }
 
@@ -820,7 +886,10 @@ class _ConfigTabState extends State<ConfigTab> {
         onRemovalSuccess: () async {
           await _cancelForcedRemoval();
           if (mounted) {
-            setState(() => _isOwner = false);
+            setState(() {
+              _isOwner = false;
+              _isAdmin = false;
+            });
           }
         },
       );
@@ -856,162 +925,6 @@ class _ConfigTabState extends State<ConfigTab> {
         showInfoSnackBar(context, context.l10n.languageSaved);
       }
     }
-  }
-}
-
-/// The original's `DnsSelectionDialog` (`ConfigTab.kt:514-630`): preset
-/// radios, a Custom radio revealing the host field with inline validation,
-/// an inline error line for apply failures, a spinner while applying, and
-/// Apply disabled until there is a valid selection. [onApply] performs
-/// the gated native call and reports `(applied, error)`: a null error
-/// with `applied == false` means the recovery gate was cancelled and the
-/// dialog simply stays open, as in the original.
-class _DnsDialog extends StatefulWidget {
-  const _DnsDialog({required this.currentHost, required this.onApply});
-
-  final String? currentHost;
-  final Future<({bool applied, String? error})> Function(String host) onApply;
-
-  @override
-  State<_DnsDialog> createState() => _DnsDialogState();
-}
-
-class _DnsDialogState extends State<_DnsDialog> {
-  /// Selected preset host, `'custom'`, or null (nothing selected yet).
-  String? _selected;
-  final _customController = TextEditingController();
-  bool _loading = false;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    final current = widget.currentHost;
-    if (current != null && dnsPresets.values.contains(current)) {
-      _selected = current;
-    } else if (current != null) {
-      _selected = 'custom';
-      _customController.text = current;
-    }
-  }
-
-  @override
-  void dispose() {
-    _customController.dispose();
-    super.dispose();
-  }
-
-  bool get _customValid => isValidHostname(_customController.text.trim());
-
-  bool get _canApply =>
-      !_loading && _selected != null && (_selected != 'custom' || _customValid);
-
-  Future<void> _apply() async {
-    final host = _selected == 'custom'
-        ? _customController.text.trim()
-        : _selected!;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final result = await widget.onApply(host);
-    if (!mounted) return;
-    if (result.applied) {
-      Navigator.pop(context, true);
-    } else {
-      setState(() {
-        _loading = false;
-        _error = result.error;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      canPop: !_loading,
-      child: AlertDialog(
-        title: Text(context.l10n.dnsSettingsTitle),
-        content: SizedBox(
-          width: 360,
-          child: SingleChildScrollView(
-            child: RadioGroup<String>(
-              groupValue: _selected,
-              onChanged: _loading
-                  ? (_) {}
-                  : (v) => setState(() => _selected = v),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final entry in dnsPresets.entries)
-                    RadioListTile<String>(
-                      value: entry.value,
-                      title: Text(
-                        entry.key,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(entry.value),
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  RadioListTile<String>(
-                    value: 'custom',
-                    title: Text(
-                      context.l10n.dnsCustom,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  if (_selected == 'custom')
-                    TextField(
-                      controller: _customController,
-                      enabled: !_loading,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.dnsHostnameLabel,
-                        hintText: 'dns.example.com',
-                        border: const OutlineInputBorder(),
-                        errorText:
-                            _customController.text.isNotEmpty && !_customValid
-                            ? context.l10n.dnsInvalidHostname
-                            : null,
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  if (_error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        _error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _loading ? null : () => Navigator.pop(context, false),
-            child: Text(context.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: _canApply ? _apply : null,
-            child: _loading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(context.l10n.apply),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -1150,6 +1063,13 @@ Future<void> executeDeviceOwnerRemovalFlow({
     return;
   }
 
+  if (lastVerification?.verified != true) {
+    try {
+      lastVerification = await controller.channel.verifyRemovalComplete();
+    } catch (_) {}
+    if (!context.mounted) return;
+  }
+
   final isVerified = lastVerification?.verified == true;
   if (isVerified) {
     onRemovalSuccess?.call();
@@ -1273,6 +1193,13 @@ Future<void> runRemovalRecheckFlow({
   controller.isRemovingDeviceOwner = false;
 
   if (!context.mounted) return;
+
+  if (lastVerification?.verified != true) {
+    try {
+      lastVerification = await controller.channel.verifyRemovalComplete();
+    } catch (_) {}
+    if (!context.mounted) return;
+  }
 
   if (lastVerification?.verified == true) {
     onRemovalSuccess?.call();

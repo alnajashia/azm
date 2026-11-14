@@ -52,4 +52,29 @@
     <string name="focus_action_end">إنهاء الجلسة</string>
     <string name="focus_action_resume">استئناف</string>
     <string name="focus_action_skip_break">تخطي الاستراحة</string>
+
+    <!-- جداول التركيز والتذكيرات (الدفعة I-A) -->
+    <string name="focus_schedule_channel">تذكيرات التركيز المجدولة</string>
+    <string name="focus_reminder_title">حان وقت التركيز!</string>
+    <string name="focus_reminder_title_label">حان وقت التركيز: %1$s</string>
+    <string name="focus_reminder_desc">وصل موعد فترة التركيز المجدولة. ابدأ وضع التركيز الآن لتبقى منتجًا.</string>
+    <string name="focus_reminder_start">ابدأ</string>
+    <string name="focus_reminder_snooze">ذكّرني بعد ٥ دقائق</string>
+    <string name="focus_reminder_dismiss">تجاهل</string>
+    <string name="focus_reminder_cannot_start">لا أستطيع البدء الآن</string>
+    <string name="focus_pre_reminder_title">التركيز سيبدأ قريبًا</string>
+    <string name="focus_pre_reminder_body">يبدأ التركيز بعد %1$d دقائق.</string>
+    <string name="focus_pre_reminder_body_label">«%1$s» يبدأ بعد %2$d دقائق.</string>
+
+    <!-- Full-phone lockdown (Batch I-B, item 14). -->
+    <string name="lockdown_channel_name">الإغلاق الكامل</string>
+    <string name="lockdown_notification_title">الإغلاق الكامل مفعّل</string>
+    <string name="lockdown_notification_body">ينتهي في %1$s.</string>
+    <string name="lockdown_notification_body_label">«%1$s» ينتهي في %2$s.</string>
+    <string name="lockdown_activity_title">إغلاق الهاتف كليًا</string>
+    <string name="lockdown_activity_note">لا يظهر إلا عزم. مكالمات الطوارئ ما زالت ممكنة.</string>
+    <string name="lockdown_end_early">إنهاء الإغلاق مبكرًا</string>
+    <string name="lockdown_code_hint">أدخل رمز الاسترداد المكوّن من 16 حرفًا</string>
+    <string name="lockdown_confirm_end">إنهاء الإغلاق</string>
+    <string name="lockdown_wrong_code">الرمز خطأ — حاول مرة أخرى.</string>
 </resources>

@@ -130,7 +130,11 @@ object ColourModesController {
             // No platform night light: the overlay handles the tint;
             // no secure key is written.
         }
-        if (ColourMode.EXTRA_DIM in modes) {
+        if (ColourMode.EXTRA_DIM in modes && !settings.extraDimUseOverlay) {
+            // Batch G, item 4: with the overlay flag on, the platform
+            // keys are skipped entirely — the overlay does the dimming
+            // and writing keys the device ignores would only make
+            // `appliedModes` lie about the platform path.
             targets[REDUCE_BRIGHT_COLORS_LEVEL] = settings.extraDimLevel.toString()
             targets[REDUCE_BRIGHT_COLORS_ACTIVATED] = "1"
         }
@@ -146,6 +150,16 @@ object ColourModesController {
      * writes, and reads back to verify. A failed write is logged and
      * recorded in [lastVerifyFailed], never thrown — enforcement must
      * never crash the accessibility service.
+     *
+     * Batch G, item 4 (honest verification): before this change a
+     * failed write was invisible — the outer catch logged it and
+     * [lastVerifyFailed] was never set, while the saved-keys set
+     * still recorded the key as enforced, so `appliedModes` and the
+     * UI toggle claimed the mode was on when nothing changed. Now
+     * each key is verified in its own try/catch, a key is only
+     * recorded as saved AFTER its write reads back correctly, and
+     * a failure rolls the saved mark back — so a rejected write is
+     * visible in the status instead of a silent lie.
      */
     fun enforce(context: Context, targets: Map<String, String>) {
         try {
@@ -159,37 +173,74 @@ object ColourModesController {
             var restoredAny = false
             for (key in allKeys) {
                 if (key !in targets && key in saved) {
-                    restoreKey(context, state, key)
-                    saved.remove(key)
-                    restoredAny = true
+                    if (restoreKey(context, state, key)) {
+                        saved.remove(key)
+                        restoredAny = true
+                    }
                 }
             }
             if (restoredAny) {
                 state.edit().putStringSet(KEY_SAVED_KEYS, saved).apply()
             }
-            // Save-once, then write each target key.
+            // Save-once, then write each target key, verifying the
+            // read-back. One key's failure must not abort the rest.
             val failed = mutableSetOf<String>()
             for ((key, value) in targets) {
-                if (key !in saved) {
-                    val current = Settings.Secure.getString(resolver, key)
-                    val edit = state.edit()
-                    if (current == null) edit.remove(previousKey(key))
-                    else edit.putString(previousKey(key), current)
-                    edit.putStringSet(KEY_SAVED_KEYS, saved + key)
-                    edit.commit()
-                    saved += key
-                }
-                if (Settings.Secure.getString(resolver, key) != value) {
-                    Settings.Secure.putString(resolver, key, value)
-                }
-                if (Settings.Secure.getString(resolver, key) != value) {
-                    Log.e(TAG, "Failed to apply $key=$value")
+                // Only a key saved for the first time in THIS call may
+                // have its saved mark rolled back on failure. A key
+                // already saved from an earlier enforce keeps its old
+                // (still live) value when a re-write fails, so its
+                // mark must stay — otherwise release would never
+                // restore it and appliedModes would lie the other way.
+                var newlySaved = false
+                try {
+                    if (key !in saved) {
+                        val current = Settings.Secure.getString(resolver, key)
+                        val edit = state.edit()
+                        if (current == null) edit.remove(previousKey(key))
+                        else edit.putString(previousKey(key), current)
+                        edit.putStringSet(KEY_SAVED_KEYS, saved + key)
+                        edit.commit()
+                        saved += key
+                        newlySaved = true
+                    }
+                    if (Settings.Secure.getString(resolver, key) != value) {
+                        Settings.Secure.putString(resolver, key, value)
+                    }
+                    if (Settings.Secure.getString(resolver, key) != value) {
+                        Log.e(TAG, "Failed to apply $key=$value")
+                        failed += key
+                        if (newlySaved) rollbackSavedMark(state, saved, key)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to apply $key=$value", e)
                     failed += key
+                    if (newlySaved) rollbackSavedMark(state, saved, key)
                 }
             }
             lastVerifyFailed = failed
         } catch (e: Exception) {
             Log.e(TAG, "enforce failed", e)
+            lastVerifyFailed = targets.keys.toSet()
+        }
+    }
+
+    /**
+     * Removes [key] from the saved set and drops its stored previous
+     * value: the key was never enforced, so there is nothing to
+     * restore on release and `appliedModes` must not claim it.
+     */
+    private fun rollbackSavedMark(
+        state: android.content.SharedPreferences,
+        saved: MutableSet<String>,
+        key: String,
+    ) {
+        if (key in saved) {
+            saved.remove(key)
+            state.edit()
+                .putStringSet(KEY_SAVED_KEYS, saved)
+                .remove(previousKey(key))
+                .apply()
         }
     }
 
@@ -200,29 +251,52 @@ object ColourModesController {
      */
     fun release(context: Context): Set<String> {
         val state = SettingsStore.prefs(SettingsStore.PREFS_COLOUR_MODES_STATE)
-        val saved = savedKeys(context)
+        val saved = savedKeys(context).toMutableSet()
         if (saved.isEmpty()) return emptySet()
+        val restored = mutableSetOf<String>()
         for (key in allKeys.reversed()) {
-            if (key in saved) restoreKey(context, state, key)
+            if (key in saved) {
+                if (restoreKey(context, state, key)) {
+                    saved.remove(key)
+                    restored += key
+                }
+            }
         }
-        state.edit().remove(KEY_SAVED_KEYS).apply()
+        if (saved.isEmpty()) {
+            state.edit().remove(KEY_SAVED_KEYS).apply()
+        } else {
+            state.edit().putStringSet(KEY_SAVED_KEYS, saved).apply()
+        }
         lastVerifyFailed = emptySet()
-        return saved
+        return restored
     }
 
     private fun savedKeys(context: Context): Set<String> =
         SettingsStore.prefs(SettingsStore.PREFS_COLOUR_MODES_STATE)
             .getStringSet(KEY_SAVED_KEYS, emptySet()) ?: emptySet()
 
-    private fun restoreKey(context: Context, state: android.content.SharedPreferences, key: String) {
-        try {
+    private fun restoreKey(
+        context: Context,
+        state: android.content.SharedPreferences,
+        key: String,
+    ): Boolean {
+        return try {
+            val resolver = context.contentResolver
             val previous = state.getString(previousKey(key), null)
-            Settings.Secure.putString(context.contentResolver, key, previous)
-            val edit = state.edit()
-            edit.remove(previousKey(key))
-            edit.apply()
+            val writeOk = Settings.Secure.putString(resolver, key, previous)
+            val current = Settings.Secure.getString(resolver, key)
+            if (current == previous || writeOk) {
+                val edit = state.edit()
+                edit.remove(previousKey(key))
+                edit.apply()
+                true
+            } else {
+                Log.e(TAG, "Failed to restore $key: current=$current, expected=$previous")
+                false
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to restore $key", e)
+            false
         }
     }
 

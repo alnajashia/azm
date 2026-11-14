@@ -7,6 +7,7 @@ import android.content.pm.ApplicationInfo
 import android.os.SystemClock
 import com.alnajashia.azm.deviceowner.AzmDeviceAdminReceiver
 import com.alnajashia.azm.focus.FocusSessionStore
+import com.alnajashia.azm.lockdown.LockdownStore
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -39,20 +40,25 @@ import org.json.JSONObject
 object SealRules {
 
     enum class Trigger {
-        APP_BLOCKED, APP_SUSPENDED, FOCUS_RUNNING, VISUAL_DETECTION, BANNED_WORD,
+        APP_BLOCKED, APP_SUSPENDED, FOCUS_RUNNING, LOCKDOWN_RUNNING, VISUAL_DETECTION, BANNED_WORD,
     }
 
     data class Rule(
         val id: String,
         val trigger: Trigger,
-        val packageName: String?,
+        // Batch H, item 12: a rule watches MANY apps (was one
+        // `packageName`) AND a group's members. A rule with neither
+        // an app nor a group never engages (the editor forbids it).
+        val packageNames: List<String> = emptyList(),
+        val groupId: String? = null,
         val durationMinutes: Int?,
         val enabled: Boolean,
     ) {
         fun toMap(): Map<String, Any?> = mapOf(
             "id" to id,
             "trigger" to trigger.name,
-            "packageName" to packageName,
+            "packageNames" to packageNames,
+            "groupId" to groupId,
             "durationMinutes" to durationMinutes,
             "enabled" to enabled,
         )
@@ -60,7 +66,8 @@ object SealRules {
         fun toJson(): JSONObject = JSONObject()
             .put("id", id)
             .put("trigger", trigger.name)
-            .put("packageName", packageName ?: JSONObject.NULL)
+            .put("packageNames", JSONArray(packageNames))
+            .put("groupId", groupId ?: JSONObject.NULL)
             .put("durationMinutes", durationMinutes ?: JSONObject.NULL)
             .put("enabled", enabled)
 
@@ -73,10 +80,18 @@ object SealRules {
                 }
                 val id = json.optString("id", "")
                 if (id.isEmpty()) return null
+                // Batch H migration: a legacy `packageName` becomes a
+                // one-element `packageNames`.
+                val names = json.optJSONArray("packageNames")?.let { arr ->
+                    (0 until arr.length())
+                        .mapNotNull { arr.optString(it).takeIf { s -> s.isNotEmpty() } }
+                }
+                val legacy = json.optString("packageName", "").ifEmpty { null }
                 return Rule(
                     id = id,
                     trigger = trigger,
-                    packageName = json.optString("packageName", "").ifEmpty { null },
+                    packageNames = names ?: (legacy?.let { listOf(it) } ?: emptyList()),
+                    groupId = json.optString("groupId", "").ifEmpty { null },
                     durationMinutes = if (json.isNull("durationMinutes")) {
                         null
                     } else {
@@ -94,15 +109,30 @@ object SealRules {
                 }
                 val id = m["id"] as? String ?: return null
                 if (id.isEmpty()) return null
+                val names = (m["packageNames"] as? List<*>)
+                    ?.filterIsInstance<String>()
+                    ?.filter { it.isNotEmpty() }
+                val legacy = (m["packageName"] as? String)?.ifEmpty { null }
                 return Rule(
                     id = id,
                     trigger = trigger,
-                    packageName = (m["packageName"] as? String)?.ifEmpty { null },
+                    packageNames = names ?: (legacy?.let { listOf(it) } ?: emptyList()),
+                    groupId = (m["groupId"] as? String)?.ifEmpty { null },
                     durationMinutes = (m["durationMinutes"] as? Number)?.toInt()
                         ?.takeIf { it > 0 },
                     enabled = m["enabled"] as? Boolean ?: true,
                 )
             }
+        }
+
+        /** Every package this rule watches: its own apps plus the group's members. */
+        fun effectivePackages(): Set<String> {
+            val pkgs = packageNames.toMutableSet()
+            groupId?.let { gid ->
+                SettingsStore.groups().firstOrNull { it.id == gid }
+                    ?.let { pkgs += it.packageNames }
+            }
+            return pkgs
         }
     }
 
@@ -153,12 +183,15 @@ object SealRules {
      * Records a detection event natively (called by the accessibility
      * service at detection time): every enabled rule matching
      * [trigger] + [packageName] gets a deadline of now + its duration;
-     * an existing later deadline is never shortened.
+     * an existing later deadline is never shortened. The triggering
+     * package is stored with the deadline so the active seal can name
+     * the app that actually caused it (Batch H: rules watch many apps).
      */
     fun recordEvent(trigger: Trigger, packageName: String) {
         val matching = loadRules().filter {
-            it.enabled && it.trigger == trigger && it.packageName == packageName &&
-                it.durationMinutes != null
+            it.enabled && it.trigger == trigger &&
+                it.durationMinutes != null &&
+                packageName in it.effectivePackages()
         }
         if (matching.isEmpty()) return
         val deadlines = readDeadlines()
@@ -179,7 +212,8 @@ object SealRules {
                     .put("setElapsed", nowElapsed)
                     .put("setWall", nowWall)
                     .put("deadlineElapsed", candidateElapsed)
-                    .put("deadlineWall", nowWall + durationMs),
+                    .put("deadlineWall", nowWall + durationMs)
+                    .put("packageName", packageName),
             )
         }
         writeDeadlines(deadlines)
@@ -205,13 +239,13 @@ object SealRules {
     }
 
     /**
-     * Remaining time for one event seal, or null when it has expired
-     * (and is pruned). Same-boot: pure elapsedRealtime math, immune
-     * to wall-clock changes. After a reboot (elapsedRealtime moved
-     * backwards past the set anchor): the stored wall deadline
-     * governs.
+     * The live event seal for one rule: (remaining ms, triggering
+     * package), or null when it has expired (and is pruned).
+     * Same-boot: pure elapsedRealtime math, immune to wall-clock
+     * changes. After a reboot (elapsedRealtime moved backwards past
+     * the set anchor): the stored wall deadline governs.
      */
-    private fun eventRemainingMs(ruleId: String): Long? {
+    private fun eventSeal(ruleId: String): Pair<Long, String?>? {
         val deadlines = readDeadlines()
         val entry = deadlines.optJSONObject(ruleId) ?: return null
         val nowElapsed = SystemClock.elapsedRealtime()
@@ -226,7 +260,7 @@ object SealRules {
             writeDeadlines(deadlines)
             return null
         }
-        return remaining
+        return remaining to entry.optString("packageName", "").ifEmpty { null }
     }
 
     // ------------------------------------------------------------ evaluation
@@ -246,34 +280,42 @@ object SealRules {
             if (!rule.enabled) continue
             when (rule.trigger) {
                 Trigger.APP_BLOCKED -> {
-                    val pkg = rule.packageName ?: continue
                     if (!adminActive || dpm == null) continue
-                    val blocked = runCatching {
-                        dpm.isUninstallBlocked(admin, pkg) ||
-                            dpm.isApplicationHidden(admin, pkg)
-                    }.getOrDefault(false)
-                    if (blocked) {
-                        result += ActiveSeal(rule.id, rule.trigger, pkg, null)
-                    }
+                    // Batch H: the seal engages when ANY watched app
+                    // (its own apps or the group's members) is blocked
+                    // or hidden, and names that app.
+                    val match = rule.effectivePackages().firstOrNull { pkg ->
+                        runCatching {
+                            dpm.isUninstallBlocked(admin, pkg) ||
+                                dpm.isApplicationHidden(admin, pkg)
+                        }.getOrDefault(false)
+                    } ?: continue
+                    result += ActiveSeal(rule.id, rule.trigger, match, null)
                 }
                 Trigger.APP_SUSPENDED -> {
-                    val pkg = rule.packageName ?: continue
-                    val suspended = runCatching {
-                        val info = context.packageManager.getApplicationInfo(pkg, 0)
-                        info.flags and ApplicationInfo.FLAG_SUSPENDED != 0
-                    }.getOrDefault(false)
-                    if (suspended) {
-                        result += ActiveSeal(rule.id, rule.trigger, pkg, null)
-                    }
+                    val match = rule.effectivePackages().firstOrNull { pkg ->
+                        runCatching {
+                            val info = context.packageManager.getApplicationInfo(pkg, 0)
+                            info.flags and ApplicationInfo.FLAG_SUSPENDED != 0
+                        }.getOrDefault(false)
+                    } ?: continue
+                    result += ActiveSeal(rule.id, rule.trigger, match, null)
                 }
                 Trigger.FOCUS_RUNNING -> {
                     if (FocusSessionStore.isActive()) {
                         result += ActiveSeal(rule.id, rule.trigger, null, null)
                     }
                 }
+                Trigger.LOCKDOWN_RUNNING -> {
+                    // Batch I-B, item 14: a lockdown running counts as a
+                    // seal condition, like a focus session.
+                    if (LockdownStore.isActive(context)) {
+                        result += ActiveSeal(rule.id, rule.trigger, null, null)
+                    }
+                }
                 Trigger.VISUAL_DETECTION, Trigger.BANNED_WORD -> {
-                    val remaining = eventRemainingMs(rule.id) ?: continue
-                    result += ActiveSeal(rule.id, rule.trigger, rule.packageName, remaining)
+                    val (remaining, pkg) = eventSeal(rule.id) ?: continue
+                    result += ActiveSeal(rule.id, rule.trigger, pkg, remaining)
                 }
             }
         }

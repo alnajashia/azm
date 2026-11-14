@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 
 import '../domain/colour_modes.dart';
 import '../domain/focus.dart';
+import '../domain/lockdown.dart';
 
 /// A failure from the privileged channel, in the §5.4 taxonomy shape.
 class PrivilegedException implements Exception {
@@ -622,15 +623,201 @@ class AppGroupModel {
   );
 }
 
+/// One blocked-word entry (Batch J, item 10 redesign): ONE row per
+/// word — the word, its targets (direct apps and/or groups), and its
+/// modes. `active` = typed-word blocking (F14, checked when typing
+/// ends), `passive` = on-screen scan (F15). The modes apply to ALL
+/// of the word's targets. A group target covers every app in the
+/// group at enforcement time.
+enum WordBlockMode {
+  active,
+  passive;
+
+  String get nativeName => name;
+
+  static WordBlockMode? fromName(String name) => switch (name) {
+    'active' => WordBlockMode.active,
+    'passive' => WordBlockMode.passive,
+    _ => null,
+  };
+}
+
+class WordAssignment {
+  const WordAssignment({
+    required this.word,
+    this.packageNames = const [],
+    this.groupIds = const [],
+    this.modes = const {},
+  });
+
+  final String word;
+  final List<String> packageNames;
+  final List<String> groupIds;
+  final Set<WordBlockMode> modes;
+
+  bool get hasTargets => packageNames.isNotEmpty || groupIds.isNotEmpty;
+
+  /// Packages this entry covers: direct apps plus every member of
+  /// its groups.
+  Set<String> expandedPackages(List<AppGroupModel> groups) {
+    final out = packageNames.toSet();
+    final byId = {for (final g in groups) g.id: g};
+    for (final id in groupIds) {
+      out.addAll(byId[id]?.packages ?? const []);
+    }
+    return out;
+  }
+
+  /// Names of the groups through which this entry covers
+  /// [packageName] (empty when the app is covered directly or not
+  /// at all).
+  List<String> coveringGroupNames(
+    String packageName,
+    List<AppGroupModel> groups,
+  ) => [
+    for (final g in groups)
+      if (groupIds.contains(g.id) && g.packages.contains(packageName))
+        g.name,
+  ];
+
+  Map<String, dynamic> toMap() => {
+    'word': word,
+    'packageNames': packageNames,
+    'groupIds': groupIds,
+    'modes': modes.map((m) => m.nativeName).toList(),
+  };
+
+  static WordAssignment? fromMap(Map<dynamic, dynamic> m) {
+    final word = (m['word'] as String?)?.trim() ?? '';
+    if (word.isEmpty) return null;
+    List<String> strings(Object? v) {
+      if (v is List) {
+        return v
+            .map((e) => e.toString().trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+      }
+      if (v is String) {
+        final t = v.trim();
+        return t.isEmpty ? const [] : [t];
+      }
+      return const [];
+    }
+    final pkgs = strings(m['packageNames'] ?? m['packageName']);
+    final groups = strings(m['groupIds'] ?? m['groupId']);
+    final modes = {
+      for (final s in strings(m['modes'] ?? m['mode']))
+        WordBlockMode.fromName(s),
+    }.nonNulls.toSet();
+    if (pkgs.isEmpty && groups.isEmpty) return null;
+    if (modes.isEmpty) return null;
+    return WordAssignment(
+      word: word,
+      packageNames: pkgs,
+      groupIds: groups,
+      modes: modes,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is WordAssignment &&
+      other.word == word &&
+      _sameListAsSet(other.packageNames, packageNames) &&
+      _sameListAsSet(other.groupIds, groupIds) &&
+      other.modes.length == modes.length &&
+      other.modes.containsAll(modes);
+
+  @override
+  int get hashCode => Object.hash(
+    word,
+    Object.hashAll(packageNames.toSet()),
+    Object.hashAll(groupIds.toSet()),
+    Object.hashAll(modes),
+  );
+}
+
+bool _sameListAsSet(List<String> a, List<String> b) =>
+    a.length == b.length && a.toSet().containsAll(b);
+
+/// Expanded per-app coverage: word -> modes covering [packageName]
+/// directly or through [groups].
+Map<String, Set<WordBlockMode>> appWordCoverage(
+  List<WordAssignment> assignments,
+  String packageName,
+  List<AppGroupModel> groups,
+) {
+  final out = <String, Set<WordBlockMode>>{};
+  for (final a in assignments) {
+    if (a.expandedPackages(groups).contains(packageName)) {
+      (out[a.word] ??= {}).addAll(a.modes);
+    }
+  }
+  return out;
+}
+
+/// Whether saving [next] coverage for ONE app loosens protection
+/// relative to [old]: any word removed or mode dropped loosens, and
+/// newly covering an app that had no coverage activates blocking
+/// there (code-gated by the standing v1.0.4 rule). Adding words or
+/// modes to an already-covered app tightens and is free.
+bool appCoverageChangeLoosens(
+  Map<String, Set<WordBlockMode>> old,
+  Map<String, Set<WordBlockMode>> next,
+) {
+  for (final entry in old.entries) {
+    final n = next[entry.key];
+    if (n == null || !n.containsAll(entry.value)) return true;
+  }
+  if (old.isEmpty && next.isNotEmpty) return true;
+  return false;
+}
+
+/// Whether saving a word's entry loosens: ANY change is gated —
+/// removing a target or a mode loosens, adding one activates
+/// blocking there (standing v1.0.4 rule, same as the old target
+/// picker). NOTE: Dart sets do not implement value equality —
+/// compare by length + containment, not `!=`.
+bool wordAssignmentsChangeLoosens(
+  List<WordAssignment> old,
+  List<WordAssignment> next,
+) {
+  final oldSet = old.toSet();
+  final nextSet = next.toSet();
+  return oldSet.length != nextSet.length || !oldSet.containsAll(nextSet);
+}
+
 class BlockedWordsState {
   const BlockedWordsState({
     this.words = const [],
     this.targetPackages = const [],
     this.passiveWords = const {},
+    this.assignments = const [],
   });
   final List<String> words;
   final List<String> targetPackages;
   final Map<String, List<String>> passiveWords;
+
+  /// The merged assignment table (Batch H, item 10) — the canonical
+  /// store; `words` / `targetPackages` / `passiveWords` above are
+  /// derived from it natively and kept for compatibility.
+  final List<WordAssignment> assignments;
+
+  /// Assignments covering one app, directly or through a group.
+  List<WordAssignment> forApp(
+    String packageName, {
+    List<AppGroupModel> groups = const [],
+  }) => assignments
+      .where((a) => a.expandedPackages(groups).contains(packageName))
+      .toList();
+
+  /// Assignments covering one app DIRECTLY (not through a group).
+  List<WordAssignment> forAppDirect(String packageName) =>
+      assignments.where((a) => a.packageNames.contains(packageName)).toList();
+
+  /// Assignments for one word (one row per word).
+  List<WordAssignment> forWord(String word) =>
+      assignments.where((a) => a.word == word).toList();
 
   factory BlockedWordsState.fromMap(
     Map<dynamic, dynamic> m,
@@ -643,6 +830,10 @@ class BlockedWordsState {
       (k, v) =>
           MapEntry(k.toString(), (v as List).map((e) => e.toString()).toList()),
     ),
+    assignments: (m['assignments'] as List? ?? const [])
+        .map((e) => WordAssignment.fromMap(e as Map<dynamic, dynamic>))
+        .nonNulls
+        .toList(),
   );
 }
 
@@ -890,6 +1081,25 @@ class PrivilegedChannel {
   Future<bool> requestShizukuPermission() async =>
       (await _invokeMap('requestShizukuPermission'))['requested'] as bool? ??
       false;
+
+  /// Tetris sounds (Batch I-C): loads the 8 challenge sounds into
+  /// the native SoundPool player.
+  Future<void> loadTetrisSounds() async {
+    await _invokeMap('loadTetrisSounds');
+  }
+
+  /// Tetris sounds (Batch I-C): plays one sound by name
+  /// (`move`, `rotate`, `lock`, `hard_drop`, `clear`, `clear_big`,
+  /// `level_up`, `top_out`). The native player checks the ringer
+  /// mode itself, like Dechainer.
+  Future<void> playTetrisSound(String name) async {
+    await _invokeMap('playTetrisSound', {'name': name});
+  }
+
+  /// Tetris sounds (Batch I-C): releases the native SoundPool player.
+  Future<void> releaseTetrisSounds() async {
+    await _invokeMap('releaseTetrisSounds');
+  }
 
   /// Opens Shizuku's Play Store page (market:// intent, https fallback —
   /// the original's `installShizuku`). Returns whether an intent launched.
@@ -1320,6 +1530,90 @@ class PrivilegedChannel {
     'getFocusSession',
   );
 
+  /// Focus schedules (Batch I-A, item 13): the whole list plus
+  /// whether the app may schedule exact alarms (false = schedules may
+  /// start late — the UI shows an honest banner in that case).
+  Future<FocusSchedulesState> getFocusSchedules() async {
+    final m = await _invokeMap('getFocusSchedules');
+    return _parseSchedules(m);
+  }
+
+  /// Saves the whole schedule list (the unit of write, like
+  /// setGroups). Saving re-arms the alarm natively.
+  Future<FocusSchedulesState> setFocusSchedules(
+    List<FocusSchedule> schedules,
+  ) async {
+    final m = await _invokeMap('setFocusSchedules', {
+      'schedules': schedules.map((s) => s.toMap()).toList(),
+    });
+    return _parseSchedules(m);
+  }
+
+  FocusSchedulesState _parseSchedules(Map<String, dynamic> m) {
+    final raw = (m['schedules'] as List?) ?? const [];
+    return FocusSchedulesState(
+      schedules: raw
+          .whereType<Map>()
+          .map((e) => FocusSchedule.fromMap(Map<String, dynamic>.from(e)))
+          .toList(),
+      canScheduleExactAlarms: m['canScheduleExactAlarms'] as bool? ?? true,
+    );
+  }
+
+  /// Opens the system exact-alarm permission screen for this app.
+  Future<void> openExactAlarmSettings() async {
+    await _invoke<dynamic>('openExactAlarmSettings');
+  }
+
+  /// Full-phone lockdown (Batch I-B, item 14): the recurring
+  /// windows plus the running lockdown, if any, and whether the app
+  /// may schedule exact alarms (false = windows may start late —
+  /// the UI shows an honest banner in that case).
+  Future<LockdownState> getLockdownState() async {
+    final m = await _invokeMap('getLockdownState');
+    return _parseLockdownState(m);
+  }
+
+  /// Saves the whole recurring-window list (the unit of write, like
+  /// setGroups). Saving re-arms the window alarms natively.
+  Future<LockdownState> setLockdowns(List<Lockdown> lockdowns) async {
+    final m = await _invokeMap('setLockdowns', {
+      'lockdowns': lockdowns.map((l) => l.toMap()).toList(),
+    });
+    return _parseLockdownState(m);
+  }
+
+  /// Starts a lockdown (one-shot or a recurring window, full map).
+  /// Starting is a tightening action: it needs no code.
+  Future<LockdownState> startLockdown(Lockdown lockdown) async {
+    final m = await _invokeMap('startLockdown', {
+      'lockdown': lockdown.toMap(),
+    });
+    return _parseLockdownState(m);
+  }
+
+  /// Ends the running lockdown (idempotent). The caller gates this
+  /// through the recovery code — ending early is a loosening action.
+  Future<LockdownState> endLockdown() async {
+    final m = await _invokeMap('endLockdown');
+    return _parseLockdownState(m);
+  }
+
+  LockdownState _parseLockdownState(Map<String, dynamic> m) {
+    final raw = (m['lockdowns'] as List?) ?? const [];
+    return LockdownState(
+      lockdowns: raw
+          .whereType<Map>()
+          .map((e) => Lockdown.fromMap(Map<String, dynamic>.from(e)))
+          .whereType<Lockdown>()
+          .toList(),
+      active: ActiveLockdown.fromMap(
+        (m['active'] as Map?)?.cast<String, dynamic>(),
+      ),
+      canScheduleExactAlarms: m['canScheduleExactAlarms'] as bool? ?? true,
+    );
+  }
+
   /// Pauses the native session. With [releaseApps] the suspended apps are
   /// released for the pause (a loosening — callers gate it behind the
   /// recovery session, as in the original); otherwise they stay suspended.
@@ -1479,6 +1773,17 @@ class PrivilegedChannel {
     await _invokeMap('setPassiveWords', {
       'packageName': packageName,
       'words': words,
+    }),
+  );
+
+  /// Batch H, item 10: the merged write — replaces the whole
+  /// assignment table at once. The two older writers above remain
+  /// as adapters (native side rewrites the table from them).
+  Future<BlockedWordsState> setWordAssignments(
+    List<WordAssignment> assignments,
+  ) async => BlockedWordsState.fromMap(
+    await _invokeMap('setWordAssignments', {
+      'assignments': assignments.map((a) => a.toMap()).toList(),
     }),
   );
 

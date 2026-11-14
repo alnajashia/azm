@@ -159,8 +159,8 @@ void main() {
       expect(challenge.next(), isFalse);
     });
 
-    test('Tetris is the only challenge unavailable in v1', () {
-      expect(ChallengeType.tetris.isAvailableInV1, isFalse);
+    test('Tetris is available now (Batch I-C, item 2 — was v1.1)', () {
+      expect(ChallengeType.tetris.isAvailableInV1, isTrue);
       expect(ChallengeType.math.isAvailableInV1, isTrue);
       expect(ChallengeType.words.isAvailableInV1, isTrue);
       expect(ChallengeType.reading.isAvailableInV1, isTrue);
@@ -273,6 +273,167 @@ void main() {
       expect(clamped.breakMinutes, 1);
       expect(clamped.longBreakMinutes, 5);
       expect(clamped.cyclesBeforeLongBreak, 8);
+    });
+  });
+
+  group('TetrisGame (Batch I-C, item 2 — port of Dechainer TetrisGame)', () {
+    test('rotation math: the I piece turns vertical', () {
+      expect(
+        Tetromino.i.rotatedCells(1),
+        [(2, 0), (2, 1), (2, 2), (2, 3)],
+      );
+      // The O piece is rotation-invariant as a SET (the order changes).
+      expect(Tetromino.o.rotatedCells(1).toSet(), Tetromino.o.cells.toSet());
+      expect(Tetromino.t.rotatedCells(4), Tetromino.t.cells);
+    });
+
+    test('7-bag: the first 7 spawned pieces cover all 7 types once', () {
+      final game = TetrisGame(random: Random(42));
+      final seen = <Tetromino>{game.current!.type};
+      for (var i = 0; i < 6; i++) {
+        game.hardDrop();
+        seen.add(game.current!.type);
+      }
+      expect(seen, Tetromino.values.toSet());
+    });
+
+    test('gravity: level 1 drops one row after 1000ms, not before', () {
+      final game = TetrisGame(random: Random(7));
+      expect(game.level, 1);
+      expect(game.gravityIntervalMs, 1000);
+      final y0 = game.current!.y;
+      game.update(999);
+      expect(game.current!.y, y0);
+      game.update(1);
+      expect(game.current!.y, y0 + 1);
+    });
+
+    test('gravity speeds up with the level', () {
+      final game = TetrisGame(random: Random(7));
+      game.lines = 10; // level 2
+      expect(game.level, 2);
+      expect(game.gravityIntervalMs, 950);
+      final y0 = game.current!.y;
+      game.update(949);
+      expect(game.current!.y, y0);
+      game.update(1);
+      expect(game.current!.y, y0 + 1);
+    });
+
+    test('lock delay: a piece on the floor locks after 500ms', () {
+      final game = TetrisGame(random: Random(11));
+      // Drop the piece to the floor with soft drops.
+      var lastY = game.current!.y;
+      while (true) {
+        game.softDrop();
+        if (game.current!.y == lastY) break;
+        lastY = game.current!.y;
+      }
+      final cells = game.current!.cells();
+      game.update(499);
+      expect(game.current!.cells(), cells);
+      game.update(1);
+      // Locked: the cells are on the board and a new piece spawned.
+      for (final (x, y) in cells) {
+        expect(game.board[y * TetrisGame.cols + x], isNot(TetrisGame.empty));
+      }
+      expect(game.current, isNotNull);
+    });
+
+    test('ghost lands on the floor of an empty board', () {
+      final game = TetrisGame(random: Random(3));
+      final ghost = game.ghost()!;
+      expect(
+        ghost.cells().map((c) => c.$2).reduce(max),
+        TetrisGame.rows - 1,
+      );
+    });
+
+    test('line clear: a completed row clears after the animation', () {
+      final game = TetrisGame(random: Random(5));
+      // Fill the bottom row except where the current piece lands.
+      final landing = game.ghost()!.cells();
+      final landingCols =
+          landing.where((c) => c.$2 == TetrisGame.rows - 1).map((c) => c.$1).toSet();
+      for (var col = 0; col < TetrisGame.cols; col++) {
+        if (!landingCols.contains(col)) {
+          game.board[(TetrisGame.rows - 1) * TetrisGame.cols + col] =
+              Tetromino.i.index;
+        }
+      }
+      game.hardDrop();
+      expect(game.clearingRows, [TetrisGame.rows - 1]);
+      game.update(TetrisGame.clearAnimationMs - 1);
+      expect(game.lines, 0);
+      game.update(1);
+      expect(game.lines, 1);
+      expect(game.clearingRows, isEmpty);
+      expect(
+        game.board[(TetrisGame.rows - 1) * TetrisGame.cols],
+        TetrisGame.empty,
+      );
+    });
+
+    test('level up: the 10th line raises the level and fires the event', () {
+      final events = <(TetrisGameEvent, int)>[];
+      final game = TetrisGame(
+        random: Random(5),
+        onEvent: (e, n) => events.add((e, n)),
+      );
+      game.lines = 9;
+      final landing = game.ghost()!.cells();
+      final landingCols =
+          landing.where((c) => c.$2 == TetrisGame.rows - 1).map((c) => c.$1).toSet();
+      for (var col = 0; col < TetrisGame.cols; col++) {
+        if (!landingCols.contains(col)) {
+          game.board[(TetrisGame.rows - 1) * TetrisGame.cols + col] =
+              Tetromino.i.index;
+        }
+      }
+      game.hardDrop();
+      game.update(TetrisGame.clearAnimationMs);
+      expect(game.lines, 10);
+      expect(game.level, 2);
+      expect(events, contains((TetrisGameEvent.levelUp, 2)));
+    });
+
+    test('top-out: a blocked spawn clears the board, no game over', () {
+      final events = <TetrisGameEvent>[];
+      final game = TetrisGame(
+        random: Random(9),
+        onEvent: (e, _) => events.add(e),
+      );
+      // Block every spawn WITHOUT completing a row: fill columns 2–5
+      // of rows 0–1 (every piece spawns at x=2 or 3, rows 0–1), leaving
+      // columns 0, 1, 6, 7 empty so no row is full — otherwise the
+      // next lock would start a line clear instead of a top-out.
+      for (var row = 0; row < 2; row++) {
+        for (var col = 2; col <= 5; col++) {
+          game.board[row * TetrisGame.cols + col] = Tetromino.o.index;
+        }
+      }
+      game.hardDrop(); // locks the current piece, spawns into a blocked top
+      expect(game.topOutStartedAt, isNotNull);
+      expect(events, contains(TetrisGameEvent.topOut));
+      game.update(TetrisGame.topOutAnimationMs);
+      expect(game.topOutStartedAt, isNull);
+      expect(game.board.every((v) => v == TetrisGame.empty), isTrue);
+      expect(game.current, isNotNull);
+    });
+
+    test('rotate near the left wall kicks the piece inside the board', () {
+      final game = TetrisGame(random: Random(13));
+      while (game.current!.x > 0) {
+        game.moveLeft();
+      }
+      game.rotate();
+      expect(game.current!.rotation, 1);
+      expect(
+        game.current!.cells().every(
+          (c) => c.$1 >= 0 && c.$1 < TetrisGame.cols,
+        ),
+        isTrue,
+      );
     });
   });
 }

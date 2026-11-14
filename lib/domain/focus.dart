@@ -156,6 +156,143 @@ class FocusConfig {
       );
 }
 
+/// A weekly recurring focus start (Batch I-A, item 13): a port of
+/// Dechainer's `models/FocusSchedule.kt`, plus the Azm extensions
+/// ([autoStart], [remindMinutesBefore], [label]) that default to
+/// Dechainer behaviour. A schedule is a START time only — the session
+/// length comes from the Pomodoro config, exactly as in the original.
+/// The trigger math lives natively (`FocusSchedule.nextTriggerMillis`);
+/// this model is the editor/list view over the same JSON shape.
+class FocusSchedule {
+  const FocusSchedule({
+    required this.id,
+    required this.daysOfWeek, // 1 = Monday .. 7 = Sunday
+    required this.hour, // 0..23
+    required this.minute, // 0..59
+    this.enabled = true,
+    this.autoStart = false,
+    this.remindMinutesBefore = 0, // 0 = none; else 5/10
+    this.label = '',
+  });
+
+  final String id;
+  final Set<int> daysOfWeek;
+  final int hour;
+  final int minute;
+  final bool enabled;
+  final bool autoStart;
+  final int remindMinutesBefore;
+  final String label;
+
+  String get formattedTime =>
+      '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+
+  /// Short day summary for the list: "Every day", "Weekdays",
+  /// "Weekend", or the day names in order. [dayNames] is indexed
+  /// 0 = Monday, supplied by the caller (localized).
+  String daysSummary({
+    required String everyDay,
+    required String weekdays,
+    required String weekend,
+    required List<String> dayNames,
+  }) {
+    if (daysOfWeek.length == 7) return everyDay;
+    if (daysOfWeek.length == 5 && daysOfWeek.containsAll({1, 2, 3, 4, 5})) {
+      return weekdays;
+    }
+    if (daysOfWeek.length == 2 && daysOfWeek.containsAll({6, 7})) return weekend;
+    final sorted = daysOfWeek.toList()..sort();
+    return sorted.map((d) => dayNames[d - 1]).join(', ');
+  }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'days': daysOfWeek.toList()..sort(),
+        'hour': hour,
+        'minute': minute,
+        'enabled': enabled,
+        'autoStart': autoStart,
+        'remindMinutesBefore': remindMinutesBefore,
+        'label': label,
+      };
+
+  factory FocusSchedule.fromMap(Map<String, dynamic> m) {
+    final days = (m['days'] as List?)
+            ?.map((e) => (e as num).toInt())
+            .where((d) => d >= 1 && d <= 7)
+            .toSet() ??
+        const <int>{};
+    return FocusSchedule(
+      id: m['id'] as String? ?? '',
+      daysOfWeek: days,
+      hour: ((m['hour'] as num?)?.toInt() ?? 0).clamp(0, 23),
+      minute: ((m['minute'] as num?)?.toInt() ?? 0).clamp(0, 59),
+      enabled: m['enabled'] as bool? ?? true,
+      autoStart: m['autoStart'] as bool? ?? false,
+      remindMinutesBefore: ((m['remindMinutesBefore'] as num?)?.toInt() ?? 0).clamp(0, 60),
+      label: m['label'] as String? ?? '',
+    );
+  }
+
+  FocusSchedule copyWith({
+    String? id,
+    Set<int>? daysOfWeek,
+    int? hour,
+    int? minute,
+    bool? enabled,
+    bool? autoStart,
+    int? remindMinutesBefore,
+    String? label,
+  }) =>
+      FocusSchedule(
+        id: id ?? this.id,
+        daysOfWeek: daysOfWeek ?? this.daysOfWeek,
+        hour: hour ?? this.hour,
+        minute: minute ?? this.minute,
+        enabled: enabled ?? this.enabled,
+        autoStart: autoStart ?? this.autoStart,
+        remindMinutesBefore: remindMinutesBefore ?? this.remindMinutesBefore,
+        label: label ?? this.label,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is FocusSchedule &&
+      id == other.id &&
+      daysOfWeek.length == other.daysOfWeek.length &&
+      daysOfWeek.containsAll(other.daysOfWeek) &&
+      hour == other.hour &&
+      minute == other.minute &&
+      enabled == other.enabled &&
+      autoStart == other.autoStart &&
+      remindMinutesBefore == other.remindMinutesBefore &&
+      label == other.label;
+
+  @override
+  int get hashCode => Object.hash(
+        id,
+        Object.hashAll(daysOfWeek.toList()..sort()),
+        hour,
+        minute,
+        enabled,
+        autoStart,
+        remindMinutesBefore,
+        label,
+      );
+}
+
+/// The native schedule state: the list plus whether the app may
+/// schedule exact alarms (false = schedules may start late).
+class FocusSchedulesState {
+  const FocusSchedulesState({
+    required this.schedules,
+    required this.canScheduleExactAlarms,
+  });
+
+  final List<FocusSchedule> schedules;
+  final bool canScheduleExactAlarms;
+}
+
 /// A running (or paused) focus session. Immutable; transitions return new
 /// values. Time is always derived from stored anchors, never accumulated
 /// by a timer, so process backgrounding cannot drift it.

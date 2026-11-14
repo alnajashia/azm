@@ -388,6 +388,7 @@ String describeSealFromDetails(
     SealTrigger.appBlocked => l10n.sealTriggerAppBlocked,
     SealTrigger.appSuspended => l10n.sealTriggerAppSuspended,
     SealTrigger.focusRunning => l10n.sealTriggerFocusRunning,
+    SealTrigger.lockdownRunning => l10n.sealTriggerLockdownRunning,
     SealTrigger.visualDetection => l10n.sealTriggerVisual,
     SealTrigger.bannedWord => l10n.sealTriggerWord,
     null => l10n.errSealed,
@@ -557,6 +558,21 @@ Future<bool> showDestructiveConfirmDialog(
   );
   return result ?? false;
 }
+
+/// Select-all / Deselect-all action button for a checkbox-list
+/// dialog (Batch J). Place it in the dialog actions, next to Cancel
+/// and Save, like the shared app picker does: it flips to Deselect
+/// all when every item is already selected, and it is disabled when
+/// the list is empty.
+Widget selectAllAction({
+  required AppLocalizations l10n,
+  required bool allSelected,
+  required bool enabled,
+  required VoidCallback onPressed,
+}) => TextButton(
+  onPressed: enabled ? onPressed : null,
+  child: Text(allSelected ? l10n.deselectAllApps : l10n.selectAllApps),
+);
 
 /// Shared app picker with search + system-apps toggle (Batch B / Audit Item 10).
 /// Reuses the Apps-tab pattern verbatim (apps_tab.dart ~85-100):
@@ -814,6 +830,41 @@ class _AppPickerDialogState extends State<_AppPickerDialog> {
           onPressed: () => Navigator.of(context).pop(null),
           child: Text(l10n.cancel),
         ),
+        // Batch G, item 9: select-all for the multi-select picker
+        // (content check, blocked words, ...). It acts on the
+        // currently visible list — search and the system-apps toggle
+        // included — so a filtered view selects only its matches.
+        // When everything visible is already selected it becomes
+        // "Deselect all" and clears just the visible set.
+        if (!widget.singleSelect)
+          TextButton(
+            onPressed: filtered.isEmpty
+                ? null
+                : () {
+                    final allSelected = filtered.every(
+                      (a) => _selected.contains(a.packageName),
+                    );
+                    setState(() {
+                      if (allSelected) {
+                        for (final a in filtered) {
+                          _selected.remove(a.packageName);
+                        }
+                      } else {
+                        for (final a in filtered) {
+                          _selected.add(a.packageName);
+                        }
+                      }
+                    });
+                  },
+            child: Text(
+              filtered.isNotEmpty &&
+                      filtered.every(
+                        (a) => _selected.contains(a.packageName),
+                      )
+                  ? l10n.deselectAllApps
+                  : l10n.selectAllApps,
+            ),
+          ),
         if (!widget.singleSelect)
           FilledButton(
             onPressed: () => Navigator.of(context).pop(_selected),

@@ -140,6 +140,19 @@ class AzmApplication : Application() {
         super.onCreate()
         SettingsStore.init(this)
 
+        // Batch I-B, item 14: a lockdown that outlives a reboot or a
+        // force-stop re-applies here (LockdownStore.sync is
+        // idempotent and returns early during a removal teardown).
+        // Runs off the main thread like the colour-filter orphan
+        // release below; a no-op when no lockdown is active.
+        Thread({
+            try {
+                com.alnajashia.azm.lockdown.LockdownStore.sync(this)
+            } catch (e: Throwable) {
+                Log.w(TAG, "Cold-start lockdown sync failed", e)
+            }
+        }, "azm-cold-start-lockdown").start()
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
                 HiddenApiBypass.addHiddenApiExemptions("")

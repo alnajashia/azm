@@ -17,6 +17,9 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- Focus-schedule reminders use a full-screen intent (Batch I-A);
+         Android 14 requires the permission to be declared. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
@@ -137,6 +140,28 @@
         <receiver
             android:name=".notifications.UsageWarningDismissReceiver"
             android:exported="false" />
+
+        <!-- Focus schedules (Batch I-A): alarm target + reminder screen. -->
+        <receiver
+            android:name=".notifications.FocusScheduleReceiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".focus.FocusReminderActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+        <!-- Full-phone lockdown (Batch I-B): alarm target + kiosk screen. -->
+        <receiver
+            android:name=".notifications.LockdownReceiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".lockdown.LockdownActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
 
         <!-- Shizuku provider — exact declaration prescribed by the Shizuku API (13.1.5).
              Without it no binder is ever delivered to this process. -->

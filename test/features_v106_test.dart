@@ -95,7 +95,7 @@ void main() {
         final rule = SealRule(
           id: 'r1',
           trigger: t,
-          packageName: t.needsApp ? 'com.example.app' : null,
+          packageNames: t.needsApp ? const ['com.example.app'] : const [],
           durationMinutes: t.isEvent ? 360 : null,
         );
         expect(SealRule.fromMap(rule.toMap()), rule);
@@ -122,7 +122,7 @@ void main() {
       const rule = SealRule(
         id: 'r',
         trigger: SealTrigger.visualDetection,
-        packageName: 'com.a',
+        packageNames: ['com.a'],
         durationMinutes: 360,
       );
       expect(sealChangeLoosens(rule, rule.copyWith(enabled: false)), isTrue);

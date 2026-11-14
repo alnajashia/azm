@@ -91,10 +91,21 @@ object DeviceOwnerManager {
      */
     fun verifyRemovalComplete(context: Context): Map<String, Any?> {
         val isOwner = isDeviceOwner(context)
-        val isAdmin = isAdminActive(context)
-        val residue = getUserRestrictionResidue(context)
+        var isAdmin = isAdminActive(context)
         val admin = adminComponent(context)
         val dpm = dpm(context)
+        if (!isOwner && isAdmin) {
+            try {
+                dpm.removeActiveAdmin(adminComponent(context))
+                var retries = 10
+                while (retries > 0 && isAdminActive(context)) {
+                    Thread.sleep(100)
+                    retries--
+                }
+                isAdmin = isAdminActive(context)
+            } catch (_: Exception) {}
+        }
+        val residue = getUserRestrictionResidue(context)
         val captureStillDisabled = runCatching {
             dpm.getScreenCaptureDisabled(null)
         }.getOrNull() ?: runCatching {
@@ -223,7 +234,9 @@ object DeviceOwnerManager {
     // (idempotent) teardown.
     @Synchronized
     fun removeDeviceOwner(context: Context): RemovalReport {
-        requireOwner(context)
+        if (!isDeviceOwner(context) && !isAdminActive(context)) {
+            requireOwner(context)
+        }
         val dpm = dpm(context)
         val admin = adminComponent(context)
         val steps = mutableListOf<TeardownStep>()
@@ -263,41 +276,46 @@ object DeviceOwnerManager {
         // no longer be changed from inside the app at all.
         step("policies") {
             val failed = mutableListOf<String>()
+            val isOwner = isDeviceOwner(context)
             runCatching { dpm.setScreenCaptureDisabled(admin, false) }
             if (runCatching { dpm.getScreenCaptureDisabled(admin) }.getOrDefault(true)) {
                 failed += "screenCapture"
             }
-            runCatching { dpm.setCameraDisabled(admin, false) }
-            if (runCatching { dpm.getCameraDisabled(admin) }.getOrDefault(true)) {
-                failed += "camera"
-            }
-            runCatching { dpm.setStatusBarDisabled(admin, false) }
-            if (runCatching { dpm.isStatusBarDisabled() }.getOrDefault(true)) {
-                failed += "statusBar"
-            }
-            runCatching {
-                dpm.setKeyguardDisabledFeatures(
-                    admin,
-                    DevicePolicyManager.KEYGUARD_DISABLE_FEATURES_NONE,
-                )
-            }
-            if (runCatching {
-                    dpm.getKeyguardDisabledFeatures(admin)
-                }.getOrDefault(-1) != DevicePolicyManager.KEYGUARD_DISABLE_FEATURES_NONE
-            ) {
-                failed += "keyguardFeatures"
-            }
-            // The focus engine's POST_NOTIFICATIONS grant ends in the
-            // DEFAULT grant state by construction; set it explicitly so
-            // no policy grant state outlives the removal.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (isOwner) {
+                runCatching { dpm.setCameraDisabled(admin, false) }
+                if (runCatching { dpm.getCameraDisabled(admin) }.getOrDefault(true)) {
+                    failed += "camera"
+                }
+                runCatching { dpm.setStatusBarDisabled(admin, false) }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    if (runCatching { dpm.isStatusBarDisabled() }.getOrDefault(false)) {
+                        failed += "statusBar"
+                    }
+                }
                 runCatching {
-                    dpm.setPermissionGrantState(
+                    dpm.setKeyguardDisabledFeatures(
                         admin,
-                        context.packageName,
-                        Manifest.permission.POST_NOTIFICATIONS,
-                        DevicePolicyManager.PERMISSION_GRANT_STATE_DEFAULT,
+                        DevicePolicyManager.KEYGUARD_DISABLE_FEATURES_NONE,
                     )
+                }
+                if (runCatching {
+                        dpm.getKeyguardDisabledFeatures(admin)
+                    }.getOrDefault(-1) != DevicePolicyManager.KEYGUARD_DISABLE_FEATURES_NONE
+                ) {
+                    failed += "keyguardFeatures"
+                }
+                // The focus engine's POST_NOTIFICATIONS grant ends in the
+                // DEFAULT grant state by construction; set it explicitly so
+                // no policy grant state outlives the removal.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    runCatching {
+                        dpm.setPermissionGrantState(
+                            admin,
+                            context.packageName,
+                            Manifest.permission.POST_NOTIFICATIONS,
+                            DevicePolicyManager.PERMISSION_GRANT_STATE_DEFAULT,
+                        )
+                    }
                 }
             }
             if (failed.isNotEmpty()) {
@@ -366,27 +384,42 @@ object DeviceOwnerManager {
         // no-op, and every actually-set key is then verified gone.
         var residueKeys = emptyList<String>()
         step("restrictions") {
-            val active = dpm.getUserRestrictions(admin).let { bundle ->
-                bundle.keySet().filter { bundle.getBoolean(it, false) }
+            val isOwner = isDeviceOwner(context)
+            val active = if (isOwner) {
+                try {
+                    dpm.getUserRestrictions(admin).let { bundle ->
+                        bundle.keySet().filter { bundle.getBoolean(it, false) }
+                    }
+                } catch (_: Exception) {
+                    emptyList()
+                }
+            } else {
+                emptyList()
             }
             residueKeys = active
-            val toClear = (allRestrictionKeys() + active).distinct()
+            val toClear = if (isOwner) (allRestrictionKeys() + active).distinct() else active
             for (key in toClear) {
                 try {
                     dpm.clearUserRestriction(admin, key)
                 } catch (_: Exception) { /* verification below records the truth */ }
             }
             val failed = mutableListOf<String>()
-            val afterBundle = try {
-                dpm.getUserRestrictions(admin)
-            } catch (_: Exception) {
+            val afterBundle = if (isOwner) {
+                try {
+                    dpm.getUserRestrictions(admin)
+                } catch (_: Exception) {
+                    null
+                }
+            } else {
                 null
             }
-            if (afterBundle == null) {
-                failed += "(could not re-read restrictions after clearing)"
-            } else {
-                for (key in afterBundle.keySet()) {
-                    if (afterBundle.getBoolean(key, false)) failed += key
+            if (isOwner) {
+                if (afterBundle == null) {
+                    failed += "(could not re-read restrictions after clearing)"
+                } else {
+                    for (key in afterBundle.keySet()) {
+                        if (afterBundle.getBoolean(key, false)) failed += key
+                    }
                 }
             }
             if (failed.isNotEmpty()) {
@@ -394,7 +427,11 @@ object DeviceOwnerManager {
                     "Restriction(s) could not be cleared: ${failed.joinToString(", ")}",
                 )
             }
-            "${active.size} user restriction(s) cleared (full key list swept)"
+            if (isOwner) {
+                "${active.size} user restriction(s) cleared (full key list swept)"
+            } else {
+                "user restrictions skipped (not owner)"
+            }
         }
 
         // (7) Unhide everything hidden (probes ∪ our persisted records).
@@ -507,18 +544,43 @@ object DeviceOwnerManager {
         // (11) Only now clear the owner itself — verified by re-read.
         var ownerAfter = true
         step("clearOwner") {
-            dpm.clearDeviceOwnerApp(context.packageName)
-            ownerAfter = isDeviceOwner(context)
-            if (ownerAfter) {
-                throw PrivException.dpmFailed("Still Device Owner after clearDeviceOwnerApp")
+            if (isDeviceOwner(context)) {
+                dpm.clearDeviceOwnerApp(context.packageName)
+                var retries = 20
+                while (retries > 0 && isDeviceOwner(context)) {
+                    Thread.sleep(100)
+                    retries--
+                }
+                ownerAfter = isDeviceOwner(context)
+                if (ownerAfter) {
+                    throw PrivException.dpmFailed("Still Device Owner after clearDeviceOwnerApp")
+                }
+                "device owner cleared and verified"
+            } else {
+                ownerAfter = false
+                "device owner already cleared"
             }
-            "device owner cleared and verified"
         }
 
         // (12) Drop Device Admin immediately after clearing owner (Batch D root cause 1).
         step("removeAdmin") {
             dpm.removeActiveAdmin(admin)
             android.util.Log.i("DeviceOwnerManager", "removeActiveAdmin ok")
+            var retries = 30
+            while (retries > 0 && isAdminActive(context)) {
+                Thread.sleep(100)
+                retries--
+            }
+            if (isAdminActive(context)) {
+                try {
+                    dpm.removeActiveAdmin(admin)
+                } catch (_: Exception) {}
+                retries = 20
+                while (retries > 0 && isAdminActive(context)) {
+                    Thread.sleep(100)
+                    retries--
+                }
+            }
             "active admin removed"
         }
 
@@ -563,6 +625,11 @@ object DeviceOwnerManager {
         step("verify") {
             val residue = mutableListOf<String>()
             if (isDeviceOwner(context)) residue += "deviceOwner still active"
+            var adminRetries = 20
+            while (adminRetries > 0 && isAdminActive(context)) {
+                Thread.sleep(100)
+                adminRetries--
+            }
             if (isAdminActive(context)) residue += "admin still active"
             // The calling user's EFFECTIVE restrictions (UserManager
             // needs no admin): none of the keys that were in force at
