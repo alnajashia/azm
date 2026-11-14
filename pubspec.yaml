@@ -59,6 +59,7 @@ flutter:
 
   assets:
     - assets/branding/
+    - assets/sounds/tetris/
 
   fonts:
     - family: Cairo
