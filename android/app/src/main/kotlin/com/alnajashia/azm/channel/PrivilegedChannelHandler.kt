@@ -30,6 +30,8 @@ import com.alnajashia.azm.focus.FocusScheduleManager
 import com.alnajashia.azm.focus.FocusScheduleStorage
 import com.alnajashia.azm.focus.FocusSessionStore
 import com.alnajashia.azm.lockdown.LockdownStore
+import com.alnajashia.azm.vpn.AzmVpnService
+import com.alnajashia.azm.vpn.VpnConfigStore
 import com.alnajashia.azm.security.RecoveryStore
 import com.alnajashia.azm.shizuku.ShizukuGateway
 import com.alnajashia.azm.shizuku.ShizukuProvisioning
@@ -406,6 +408,20 @@ class PrivilegedChannelHandler(
         "setPrivateDns" -> DeviceOwnerManager.setPrivateDns(appContext, call.reqString("hostname"))
         "resetPrivateDns" -> DeviceOwnerManager.resetPrivateDns(appContext)
         "getPrivateDns" -> DeviceOwnerManager.getPrivateDns(appContext)
+        "probeDnsPorts" -> DeviceOwnerManager.probeDnsPorts(
+            appContext,
+            call.argument<String>("hostname") ?: "",
+        )
+        // Internet blocking + VPN DNS filtering (2026-11-19).
+        "getInternetBlockConfig" -> VpnConfigStore.read(appContext).toMap()
+        "setInternetBlockConfig" -> {
+            val raw = call.arguments as? Map<*, *> ?: emptyMap<String, Any?>()
+            VpnConfigStore.apply(appContext, VpnConfigStore.Config.fromMap(raw)).toMap()
+        }
+        "getVpnStatus" -> mapOf(
+            "running" to AzmVpnService.isRunning,
+            "enabled" to VpnConfigStore.read(appContext).enabled,
+        )
         // Secure-settings grant & Accessibility (provisioning layer)
         "grantWriteSecureSettings" -> {
             val granted = ShizukuProvisioning.grantWriteSecureSettings(appContext)
