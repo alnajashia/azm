@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 
 import '../domain/colour_modes.dart';
 import '../domain/focus.dart';
+import '../domain/internet_block.dart';
 import '../domain/lockdown.dart';
 
 /// A failure from the privileged channel, in the §5.4 taxonomy shape.
@@ -1465,6 +1466,40 @@ class PrivilegedChannel {
   /// verifies the mode is no longer specified-host.
   Future<PrivateDnsState> resetPrivateDns() async =>
       PrivateDnsState.fromMap(await _invokeMap('resetPrivateDns'));
+
+  /// Diagnoses a HOST_NOT_SERVING failure: TCP reachability of the
+  /// host on 853 (DoT) and 443 (DoH), a reference host on 853, and
+  /// whether automatic date & time is on (a wrong clock breaks the
+  /// TLS validation inside Android's own check).
+  Future<({bool port853, bool port443, bool reference853, bool autoTime})>
+  probeDnsPorts(String hostname) async {
+    final m = await _invokeMap('probeDnsPorts', {'hostname': hostname});
+    return (
+      port853: m['port853'] as bool? ?? false,
+      port443: m['port443'] as bool? ?? false,
+      reference853: m['reference853'] as bool? ?? false,
+      autoTime: m['autoTime'] as bool? ?? true,
+    );
+  }
+
+  // ------------------------------------------- Internet block (VPN)
+
+  Future<InternetBlockConfig> getInternetBlockConfig() async =>
+      InternetBlockConfig.fromMap(await _invokeMap('getInternetBlockConfig'));
+
+  Future<InternetBlockConfig> setInternetBlockConfig(
+    InternetBlockConfig config,
+  ) async => InternetBlockConfig.fromMap(
+    await _invokeMap('setInternetBlockConfig', config.toMap()),
+  );
+
+  Future<({bool running, bool enabled})> getVpnStatus() async {
+    final m = await _invokeMap('getVpnStatus');
+    return (
+      running: m['running'] as bool? ?? false,
+      enabled: m['enabled'] as bool? ?? false,
+    );
+  }
 
   // ---------------------------------------------------------- Grant & Accessibility
 

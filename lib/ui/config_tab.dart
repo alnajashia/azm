@@ -20,6 +20,7 @@ import 'common.dart';
 import 'config_screens.dart';
 import 'entry_password_ui.dart';
 import 'impulse_focus_screens.dart';
+import 'internet_block_screen.dart';
 import 'recovery_ui.dart';
 import 'seal_rules_screen.dart';
 import 'visual_blocking_screen.dart';
@@ -255,6 +256,28 @@ class _ConfigTabState extends State<ConfigTab> {
       } on TimeoutException {
         return (applied: false, error: l10n.dnsApplyTimeout);
       } on PrivilegedException catch (e) {
+        // Diagnosis (user report 2026-11-19): a HOST_NOT_SERVING
+        // that survives every retry is usually the network
+        // blocking port 853 — Android never persists the host in
+        // that case, so retrying cannot fix it. Probe the ports
+        // and tell the user the real reason. Fail-soft: any probe
+        // error falls back to the plain not-serving message.
+        if (_isHostNotServing(e) && next.hostname != null) {
+          try {
+            final probe = await _c.channel.probeDnsPorts(next.hostname!);
+            var message = !probe.port853 && probe.port443
+                ? l10n.dnsPort853Blocked
+                : (!probe.port853 && !probe.port443
+                      ? l10n.dnsHostUnreachable
+                      : _dnsFailureMessage(e, l10n));
+            if (!probe.autoTime) {
+              message = '$message ${l10n.dnsAutoTimeOff}';
+            }
+            return (applied: false, error: message);
+          } catch (_) {
+            // Fall through to the plain message below.
+          }
+        }
         return (applied: false, error: _dnsFailureMessage(e, l10n));
       } catch (_) {
         return (applied: false, error: l10n.dnsApplyFailed);
@@ -429,6 +452,13 @@ class _ConfigTabState extends State<ConfigTab> {
               onTap: _isOwner == true
                   ? _editDns
                   : () => showInfoSnackBar(context, l10n.dnsNeedsOwnerMsg),
+            ),
+            ListTile(
+              leading: const Icon(Icons.vpn_lock_outlined),
+              title: Text(l10n.internetBlockTitle),
+              subtitle: Text(l10n.internetBlockSub),
+              trailing: const Icon(Icons.navigate_next_outlined),
+              onTap: () => _push(InternetBlockScreen(controller: _c)),
             ),
           ],
         ),
@@ -1912,6 +1942,7 @@ String removalStepLabel(AppLocalizations l10n, String id) => switch (id) {
   'flag' || 'flagClear' || 'tornDown' => l10n.removalStepDisarm,
   'focus' => l10n.removalStepFocus,
   'lockdown' => l10n.removalStepLockdown,
+  'vpn' => l10n.removalStepVpn,
   'policies' => l10n.removalStepPolicies,
   'privateDns' => l10n.removalStepPrivateDns,
   'unsuspend' => l10n.removalStepUnsuspend,

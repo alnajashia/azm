@@ -166,6 +166,23 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
+        <!-- Internet blocking + VPN DNS filtering (2026-11-19): local
+             no-configuration VPN; consent trampoline activity. -->
+        <service
+            android:name=".vpn.AzmVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name=".vpn.VpnConsentActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- Shizuku provider — exact declaration prescribed by the Shizuku API (13.1.5).
              Without it no binder is ever delivered to this process. -->
         <provider

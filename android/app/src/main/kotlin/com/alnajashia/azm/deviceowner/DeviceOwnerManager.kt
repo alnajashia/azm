@@ -15,6 +15,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.UserManager
+import android.provider.Settings
+import java.net.InetSocketAddress
+import java.net.Socket
 import com.alnajashia.azm.accessibility.AzmAccessibilityService
 import com.alnajashia.azm.channel.ErrorCodes
 import com.alnajashia.azm.channel.PrivException
@@ -25,6 +28,8 @@ import com.alnajashia.azm.data.SuspensionReason
 import com.alnajashia.azm.focus.FocusScheduleManager
 import com.alnajashia.azm.focus.FocusService
 import com.alnajashia.azm.focus.FocusSessionStore
+import com.alnajashia.azm.vpn.AzmVpnService
+import com.alnajashia.azm.vpn.VpnConfigStore
 import com.alnajashia.azm.focus.FocusStatusNotifier
 import com.alnajashia.azm.lockdown.LockdownManager
 import com.alnajashia.azm.lockdown.LockdownStore
@@ -338,6 +343,17 @@ object DeviceOwnerManager {
                 throw PrivException.dpmFailed("active lockdown could not be ended")
             }
             "active lockdown ended; lockdown and focus alarms cancelled"
+        }
+
+        // (1c) VPN internet block / DNS filter (2026-11-19): stop the
+        // service and clear the always-on pin while still owner, so
+        // the phone is never left with a locked-down VPN.
+        step("vpn") {
+            VpnConfigStore.stopAndClear(context)
+            if (AzmVpnService.isRunning) {
+                throw PrivException.dpmFailed("VPN service could not be stopped")
+            }
+            "VPN stopped and always-on pin cleared"
         }
 
         // (2) Focus service + session + alarm + notification + impulse + seals.
@@ -1674,5 +1690,38 @@ object DeviceOwnerManager {
             null
         }
         return mapOf("mode" to modeName, "hostname" to host)
+    }
+
+    /**
+     * Diagnoses a HOST_NOT_SERVING failure (user report 2026-11-19):
+     * plain TCP connects to the chosen host on 853 (DoT) and 443
+     * (DoH), plus a reference host on 853. 853 closed + 443 open
+     * means the network blocks encrypted DNS; both closed means the
+     * host is unreachable at all. Runs on the channel's background
+     * executor, never the main thread. Also reports whether
+     * automatic date & time is on — a wrong clock breaks the TLS
+     * validation inside Android's own check.
+     */
+    fun probeDnsPorts(context: Context, hostname: String): Map<String, Any?> {
+        requireOwner(context)
+        fun tcp(host: String, port: Int): Boolean = try {
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress(host, port), 5000)
+                true
+            }
+        } catch (e: Exception) {
+            false
+        }
+        val autoTime = Settings.Global.getInt(
+            context.contentResolver,
+            Settings.Global.AUTO_TIME,
+            1,
+        ) == 1
+        return mapOf(
+            "port853" to tcp(hostname, 853),
+            "port443" to tcp(hostname, 443),
+            "reference853" to tcp("dns.google", 853),
+            "autoTime" to autoTime,
+        )
     }
 }

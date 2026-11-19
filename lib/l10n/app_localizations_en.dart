@@ -3143,6 +3143,101 @@ class AppLocalizationsEn extends AppLocalizations {
       'The chosen DNS host is not answering yet. Wait a bit, then retry.';
 
   @override
+  String get dnsPort853Blocked =>
+      'Your network blocks encrypted DNS (port 853), so Private DNS cannot activate. Try another network, or use VPN-based DNS.';
+
+  @override
+  String get dnsHostUnreachable =>
+      'The DNS host could not be reached at all. Check your connection, then retry.';
+
+  @override
+  String get dnsAutoTimeOff =>
+      'Automatic date & time is off — a wrong clock also breaks encrypted DNS.';
+
+  @override
+  String get removalStepVpn => 'VPN internet block';
+
+  @override
+  String get internetBlockTitle => 'Internet blocking';
+
+  @override
+  String get internetBlockSub =>
+      'Local VPN: DNS filtering and per-app internet blocking';
+
+  @override
+  String get internetBlockEnableTitle => 'Internet blocking (VPN)';
+
+  @override
+  String get internetBlockEnableSub =>
+      'Runs a local VPN on this phone. No account, no setup.';
+
+  @override
+  String get internetBlockStatusRunning => 'VPN is running';
+
+  @override
+  String get internetBlockStatusOff => 'VPN is off';
+
+  @override
+  String get internetBlockLevelTitle => 'Blocking level';
+
+  @override
+  String get internetBlockLevelDns => 'DNS filtering only';
+
+  @override
+  String get internetBlockLevelDnsSub =>
+      'Filters DNS for all apps over HTTPS (port 443). Nothing is blocked outright.';
+
+  @override
+  String get internetBlockLevelApps => 'Block chosen apps';
+
+  @override
+  String get internetBlockLevelAppsSub =>
+      'Chosen apps keep running, without internet.';
+
+  @override
+  String get internetBlockLevelGroups => 'Block chosen groups';
+
+  @override
+  String get internetBlockLevelGroupsSub =>
+      'Group members keep running, without internet.';
+
+  @override
+  String get internetBlockLevelPhone => 'Block the whole phone';
+
+  @override
+  String get internetBlockLevelPhoneSub =>
+      'No app gets internet. Azm itself stays connected.';
+
+  @override
+  String get internetBlockPickApps => 'Choose apps';
+
+  @override
+  String get internetBlockPickGroups => 'Choose groups';
+
+  @override
+  String internetBlockAppsCount(int count) {
+    return '$count apps blocked';
+  }
+
+  @override
+  String internetBlockGroupsCount(int count) {
+    return '$count groups blocked';
+  }
+
+  @override
+  String get internetBlockNoneSelected => 'Nothing selected yet';
+
+  @override
+  String get internetBlockProviderTitle => 'DNS filter provider';
+
+  @override
+  String get internetBlockCustomUrl => 'Custom DoH address (https://…)';
+
+  @override
+  String get internetBlockNote =>
+      'While a blocking level is active, DNS filtering pauses for other apps. The VPN uses the phone\'s single VPN slot and shows a key icon.';
+
+  @override
   String get dnsApplyFailed => 'Failed to apply the private DNS host.';
 
   @override
