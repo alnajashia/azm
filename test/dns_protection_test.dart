@@ -85,7 +85,8 @@ void main() {
     fakeDnsMode = 'PRIVATE_DNS_MODE_OPPORTUNISTIC';
     fakeDnsHostname = null;
     setPrivateDnsFailures = 0;
-    setPrivateDnsFailureCode = 2;
+    // Default injected failure code: 1 = DPM HOST_NOT_SERVING.
+    setPrivateDnsFailureCode = 1;
 
     messenger.setMockMethodCallHandler(methodChannel, (call) async {
       calls.add(call);
@@ -536,7 +537,7 @@ void main() {
     testWidgets('HOST_NOT_SERVING is retried and then applies',
         (tester) async {
       setPrivateDnsFailures = 2;
-      setPrivateDnsFailureCode = 2;
+      setPrivateDnsFailureCode = 1;
       await pumpConfigTab(tester);
       await openDnsDialog(tester);
       await selectProvider(tester, 'CleanBrowsing (Family filter)');
@@ -558,7 +559,7 @@ void main() {
     testWidgets('HOST_NOT_SERVING exhausted shows the real reason with Retry',
         (tester) async {
       setPrivateDnsFailures = 10;
-      setPrivateDnsFailureCode = 2;
+      setPrivateDnsFailureCode = 1;
       await pumpConfigTab(tester);
       await openDnsDialog(tester);
       await selectProvider(tester, 'CleanBrowsing (Family filter)');
@@ -566,7 +567,7 @@ void main() {
         tester,
         () =>
             find.text(
-              'The chosen DNS host is not serving. Pick another host.',
+              'The chosen DNS host is not answering yet. Wait a bit, then retry.',
             ).evaluate().isNotEmpty,
       );
 
@@ -585,7 +586,7 @@ void main() {
         () => calls.where((c) => c.method == 'setPrivateDns').length == 8,
       );
       expect(
-        find.text('The chosen DNS host is not serving. Pick another host.'),
+        find.text('The chosen DNS host is not answering yet. Wait a bit, then retry.'),
         findsOneWidget,
       );
     });
@@ -593,7 +594,8 @@ void main() {
     testWidgets('a non-retryable failure shows its code and tries once',
         (tester) async {
       setPrivateDnsFailures = 1;
-      setPrivateDnsFailureCode = 1;
+      // 2 = DPM FAILURE_SETTING: a hard failure, never retried.
+      setPrivateDnsFailureCode = 2;
       await pumpConfigTab(tester);
       await openDnsDialog(tester);
       await selectProvider(tester, 'CleanBrowsing (Family filter)');
@@ -601,7 +603,7 @@ void main() {
         tester,
         () =>
             find.text(
-              'Failed to apply the private DNS host (error code 1).',
+              'Failed to apply the private DNS host (error code 2).',
             ).evaluate().isNotEmpty,
       );
 

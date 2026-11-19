@@ -38,6 +38,8 @@ class FocusConfig {
     this.suspendApps = const [],
     this.suspendGroups = const [],
     this.restrictions = const [],
+    this.lockdownEnabled = false,
+    this.lockdownStrict = false,
   });
 
   // Bounds and defaults from the original `FocusMode.kt` (L31–45,
@@ -82,6 +84,15 @@ class FocusConfig {
   final List<String> suspendGroups;
   final List<String> restrictions;
 
+  /// Full-phone lockdown during focus periods (user request
+  /// 2026-11-19, item 4): when on, the native engine starts a
+  /// whole-phone lockdown for each focus phase and lifts it during
+  /// breaks. [lockdownStrict] picks the tier (false = Tier 1
+  /// suspend-all, true = Tier 2 strict kiosk), exactly like the
+  /// standalone lockdown.
+  final bool lockdownEnabled;
+  final bool lockdownStrict;
+
   /// A copy with every duration/cycle value forced into the original's
   /// bounds — applied on read and on write, like the original's
   /// `coerceIn` in every getter/setter.
@@ -96,6 +107,8 @@ class FocusConfig {
         suspendApps: suspendApps,
         suspendGroups: suspendGroups,
         restrictions: restrictions,
+        lockdownEnabled: lockdownEnabled,
+        lockdownStrict: lockdownStrict,
       );
 
   Map<String, dynamic> toJson() => {
@@ -109,6 +122,8 @@ class FocusConfig {
         'suspendApps': suspendApps,
         'suspendGroups': suspendGroups,
         'restrictions': restrictions,
+        'lockdownEnabled': lockdownEnabled,
+        'lockdownStrict': lockdownStrict,
       };
 
   factory FocusConfig.fromJson(Map<String, dynamic> j) => FocusConfig(
@@ -126,6 +141,9 @@ class FocusConfig {
             (j['suspendGroups'] as List?)?.map((e) => e.toString()).toList() ?? const [],
         restrictions:
             (j['restrictions'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+        // Old stored configs have no lockdown fields: off, Tier 1.
+        lockdownEnabled: j['lockdownEnabled'] as bool? ?? false,
+        lockdownStrict: j['lockdownStrict'] as bool? ?? false,
       );
 
   FocusConfig copyWith({
@@ -139,6 +157,8 @@ class FocusConfig {
     List<String>? suspendApps,
     List<String>? suspendGroups,
     List<String>? restrictions,
+    bool? lockdownEnabled,
+    bool? lockdownStrict,
   }) =>
       FocusConfig(
         focusMinutes: clampFocusMinutes(focusMinutes ?? this.focusMinutes),
@@ -153,6 +173,8 @@ class FocusConfig {
         suspendApps: suspendApps ?? this.suspendApps,
         suspendGroups: suspendGroups ?? this.suspendGroups,
         restrictions: restrictions ?? this.restrictions,
+        lockdownEnabled: lockdownEnabled ?? this.lockdownEnabled,
+        lockdownStrict: lockdownStrict ?? this.lockdownStrict,
       );
 }
 

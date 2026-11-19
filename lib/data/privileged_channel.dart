@@ -957,14 +957,14 @@ class NativeFocusSessionState {
   ///
   /// Anchoring: when [elapsedRealtimeOffsetMs] is known (the difference
   /// between the native elapsed-realtime clock and Dart's monotonic
-  /// clock, captured by [PrivilegedChannel] when this process started the
-  /// session), the remaining time is computed exactly from
-  /// [deadlineElapsedMs] and both of the session's clocks are re-anchored
-  /// consistently. Without an offset (a session restored after a process
-  /// restart) the phase is anchored at [now] with its full duration —
-  /// an approximation for display only: the native alarm still ends the
-  /// phase at the true deadline and the `focusPhaseChanged` event then
-  /// re-syncs the UI.
+  /// clock, captured by [PrivilegedChannel] when this process started
+  /// the session or first read it back), the remaining time is computed
+  /// exactly from [deadlineElapsedMs] and both of the session's clocks
+  /// are re-anchored consistently. Without an offset (the elapsed-
+  /// realtime sample failed) the phase is anchored at [now] with its
+  /// full duration — an approximation for display only: the native
+  /// alarm still ends the phase at the true deadline and the
+  /// `focusPhaseChanged` event then re-syncs the UI.
   FocusSession toFocusSession(
     FocusConfig config, {
     int? elapsedRealtimeOffsetMs,
@@ -1491,9 +1491,18 @@ class PrivilegedChannel {
   /// the UI offers this only after a clean teardown or when the app
   /// is not the owner. Returns whether the uninstaller intent
   /// started.
-  Future<bool> requestSelfUninstall() async =>
-      (await _invokeMap('requestSelfUninstall'))['started'] as bool? ??
-      false;
+  /// Asks Android to uninstall this app (the system confirmation is
+  /// mandatory). [reason] is 'stillOwner' when the pre-flight check
+  /// found the app still Device Owner / admin — Android refuses in
+  /// that state, so the UI tells the user to remove the owner first
+  /// instead of showing a generic failure.
+  Future<({bool started, String? reason})> requestSelfUninstall() async {
+    final m = await _invokeMap('requestSelfUninstall');
+    return (
+      started: m['started'] as bool? ?? false,
+      reason: m['reason'] as String?,
+    );
+  }
 
   Future<bool> setAccessibilityEnabled(bool enabled) async => _verifiedBool(
         await _invokeMap('setAccessibilityEnabled', {'enabled': enabled}),
@@ -1524,9 +1533,10 @@ class PrivilegedChannel {
   /// Difference between the native elapsed-realtime clock and Dart's
   /// monotonic clock, in milliseconds, captured when this process starts
   /// a focus session (the phase start in the reply is, to within channel
-  /// transit, "now" on the native clock). Used by
+  /// transit, "now" on the native clock) or first reads one back after
+  /// a process restart (sampled via `getElapsedRealtimeMs`). Used by
   /// [NativeFocusSessionState.toFocusSession] for exact remaining-time
-  /// reconstruction; null for sessions this process did not start.
+  /// reconstruction; null only when no session has been seen yet.
   int? get focusElapsedRealtimeOffsetMs => _focusElapsedRealtimeOffsetMs;
   int? _focusElapsedRealtimeOffsetMs;
 
@@ -1574,10 +1584,28 @@ class PrivilegedChannel {
 
   /// The persisted native session, or null when no session exists. The
   /// native side advances an expired phase before replying.
-  Future<NativeFocusSessionState?> getFocusSession() async => _parseFocusState(
-    await _invoke<dynamic>('getFocusSession'),
-    'getFocusSession',
-  );
+  Future<NativeFocusSessionState?> getFocusSession() async {
+    final state = _parseFocusState(
+      await _invoke<dynamic>('getFocusSession'),
+      'getFocusSession',
+    );
+    if (state != null && _focusElapsedRealtimeOffsetMs == null) {
+      // Capture the offset so a session restored after a process restart
+      // (the user left the app and the process was killed) shows its
+      // true remaining time instead of the full phase duration — the
+      // timer appeared to reset to 25:00 on returning to the app.
+      // Fail-soft: without the sample, the display falls back to the
+      // documented full-duration approximation.
+      try {
+        final nativeNowMs = (await getElapsedRealtimeMs()).inMilliseconds;
+        _focusElapsedRealtimeOffsetMs =
+            nativeNowMs - FocusSession.monotonicNow.inMilliseconds;
+      } catch (_) {
+        // Advisory: the next startFocusSession captures the offset.
+      }
+    }
+    return state;
+  }
 
   /// Focus schedules (Batch I-A, item 13): the whole list plus
   /// whether the app may schedule exact alarms (false = schedules may

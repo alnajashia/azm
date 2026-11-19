@@ -226,6 +226,75 @@ void main() {
         expect(listTile.onTap, isNotNull, reason: 'Tile should be tappable when admin is still active');
       });
 
+      testWidgets('removal tile reads as a tappable action (chevron)', (tester) async {
+        // User request 2026-11-19: the tile looked like a label.
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        const channelName = 'azm/privileged';
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        final methodChannel = const MethodChannel(channelName);
+
+        messenger.setMockMethodCallHandler(methodChannel, (call) async {
+          switch (call.method) {
+            case 'isDeviceOwner':
+              return {
+                'isDeviceOwner': true,
+                'isAdminActive': true,
+                'forcedRemovalDelayHours': 48,
+              };
+            case 'getPrivateDns':
+              return {'mode': 'OFF', 'hostname': null};
+            case 'getUserRestrictionResidue':
+              return {'keys': <String>[]};
+            case 'getColourModesStatus':
+              return {'supported': true, 'active': false};
+            case 'listUserRestrictions':
+              return {'restrictions': <String, bool>{}};
+            case 'listInstalledApps':
+              return <Map<String, dynamic>>[];
+            case 'getForcedRemovalState':
+              return {'active': false, 'dueTimestampMs': 0};
+            case 'getSetting':
+              return {'value': null};
+            case 'setSetting':
+              return {};
+            default:
+              return null;
+          }
+        });
+
+        final controller = AppController.test(
+          PrivilegedChannel(methodChannel: methodChannel),
+        );
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          buildTestApp(
+            controller: controller,
+            child: ConfigTab(controller: controller),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final tileFinder = find.widgetWithText(ListTile, 'Remove Device Owner now');
+        expect(tileFinder, findsOneWidget);
+        final listTile = tester.widget<ListTile>(tileFinder);
+        expect(listTile.trailing, isA<Icon>());
+        expect((listTile.trailing! as Icon).icon, Icons.navigate_next_outlined);
+      });
+
+      test('removal always asks for a fresh recovery code', () {
+        // User request 2026-11-19: the most destructive action never
+        // rides on an earlier code entry.
+        final src = File('lib/ui/config_tab.dart').readAsStringSync();
+        final at = src.indexOf('Future<void> _onRemoveOwnerTapped()');
+        final body = src.substring(at, at + 900);
+        expect(body, contains('forceFreshCode: true'));
+      });
+
       testWidgets('executeDeviceOwnerRemovalFlow performs final verification check before timeout', (tester) async {
         tester.view.physicalSize = const Size(1080, 2400);
         tester.view.devicePixelRatio = 1.0;
@@ -718,9 +787,21 @@ void main() {
         ).readAsStringSync();
         expect(handlerSrc.contains('"requestSelfUninstall"'), isTrue);
         expect(
-          handlerSrc.contains('Intent.ACTION_DELETE'),
+          handlerSrc.contains('Intent.ACTION_UNINSTALL_PACKAGE'),
           isTrue,
-          reason: 'Self-uninstall must use the system uninstall intent',
+          reason: 'Self-uninstall must use the modern system uninstall intent',
+        );
+        expect(
+          handlerSrc.contains('"stillOwner"'),
+          isTrue,
+          reason: 'The pre-flight owner check must report stillOwner',
+        );
+        final manifestSrc =
+            File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+        expect(
+          manifestSrc.contains('android.permission.REQUEST_DELETE_PACKAGES'),
+          isTrue,
+          reason: 'Android 9+ requires REQUEST_DELETE_PACKAGES for the uninstall intent',
         );
         expect(
           handlerSrc.contains(
@@ -736,7 +817,7 @@ void main() {
         final configSrc = File('lib/ui/config_tab.dart').readAsStringSync();
         expect(
           configSrc.contains(
-            'onUninstall: () => controller.channel.requestSelfUninstall()',
+            'onUninstall: () async { await controller.channel.requestSelfUninstall(); }',
           ),
           isTrue,
           reason: 'Every outcome-dialog call site must wire the uninstall action',
@@ -880,6 +961,64 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
         expect(uninstallCalls, 1);
+      });
+
+      testWidgets('T12 — still-owner refusal shows the remove-owner-first message', (tester) async {
+        // User request 2026-11-19: the native pre-flight reports
+        // stillOwner; the UI must say so plainly, not fail silently.
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        const channelName = 'azm/privileged';
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        final methodChannel = const MethodChannel(channelName);
+        messenger.setMockMethodCallHandler(methodChannel, (call) async {
+          switch (call.method) {
+            case 'isDeviceOwner':
+              return {
+                'isDeviceOwner': false,
+                'isAdminActive': false,
+                'forcedRemovalDelayHours': 24,
+              };
+            case 'getPrivateDns':
+              return {'mode': 'off', 'hostname': null};
+            case 'requestSelfUninstall':
+              return {'started': false, 'reason': 'stillOwner'};
+            default:
+              return null;
+          }
+        });
+        addTearDown(() {
+          messenger.setMockMethodCallHandler(methodChannel, null);
+        });
+
+        final controller = AppController.test(
+          PrivilegedChannel(methodChannel: methodChannel),
+        );
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          buildTestApp(
+            controller: controller,
+            child: ConfigTab(controller: controller),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(ListTile, 'Uninstall Azm'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.tap(find.widgetWithText(FilledButton, 'Uninstall Azm'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(
+          find.text('Remove Device Owner first — Android refuses to '
+              'uninstall an active device owner.'),
+          findsOneWidget,
+        );
       });
     });
   });

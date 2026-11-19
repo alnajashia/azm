@@ -573,5 +573,77 @@ void main() {
       expect(find.text('Enter recovery code'), findsNothing);
       expect(fakeLockdowns.first['label'], 'Evening');
     });
+
+    testWidgets('window editor offers both tiers and saves Tier 2',
+        (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.textContaining('Morning'));
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+      final dialog = find.byType(AlertDialog);
+      // Both tiers are offered explicitly (item 3, 2026-11-19): the
+      // editor used to show a single Tier 2 switch, hiding Tier 1.
+      expect(
+        find.descendant(
+          of: dialog,
+          matching: find.text('Level 1 — Suspend everything'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: dialog,
+          matching: find.text('Level 2 — Strict kiosk'),
+        ),
+        findsOneWidget,
+      );
+      // The existing window is Tier 1; choosing Tier 2 saves strict.
+      await tester.tap(
+        find.descendant(
+          of: dialog,
+          matching: find.text('Level 2 — Strict kiosk'),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+      expect(methodCalled('setLockdowns'), isTrue);
+      // A tier edit is free — no code gate.
+      expect(find.text('Enter recovery code'), findsNothing);
+      expect(fakeLockdowns.first['strict'], isTrue);
+    });
+
+    testWidgets('reopening a Tier 2 window shows it selected; Tier 1 saves',
+        (tester) async {
+      fakeLockdowns = [
+        window('w2', {1, 2, 3, 4, 5}, 22, 0, 6, 0,
+            strict: true, label: 'Night'),
+      ];
+      await pumpScreen(tester);
+      await tester.tap(find.textContaining('Night'));
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+      final dialog = find.byType(AlertDialog);
+      final group = tester.widget<RadioGroup<bool>>(
+        find.descendant(of: dialog, matching: find.byType(RadioGroup<bool>)),
+      );
+      expect(group.groupValue, isTrue);
+      await tester.tap(
+        find.descendant(
+          of: dialog,
+          matching: find.text('Level 1 — Suspend everything'),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+      expect(fakeLockdowns.first['strict'], isFalse);
+    });
   });
 }

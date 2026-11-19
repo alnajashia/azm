@@ -1194,6 +1194,48 @@ class _FocusModeScreenState extends State<FocusModeScreen>
             ],
           ),
           const SizedBox(height: 12),
+          // Full-phone lockdown during focus (user request 2026-11-19,
+          // item 4): the native engine starts a whole-phone lockdown
+          // for each focus phase and lifts it during breaks. Turning
+          // it off, or dropping from Tier 2 to Tier 1, is a loosening.
+          SectionCard(
+            title: l10n.focusLockdownTitle,
+            children: [
+              SwitchListTile(
+                title: Text(l10n.focusLockdownTitle),
+                subtitle: Text(l10n.focusLockdownSub),
+                value: config.lockdownEnabled,
+                onChanged: (v) => _changeConfig(
+                  config.copyWith(lockdownEnabled: v),
+                  loosening: !v,
+                ),
+              ),
+              if (config.lockdownEnabled)
+                RadioGroup<bool>(
+                  groupValue: config.lockdownStrict,
+                  onChanged: (v) => _changeConfig(
+                    config.copyWith(lockdownStrict: v ?? false),
+                    // Tier 2 -> Tier 1 loosens; the reverse tightens.
+                    loosening: (v ?? false) == false && config.lockdownStrict,
+                  ),
+                  child: Column(
+                    children: [
+                      RadioListTile<bool>(
+                        title: Text(l10n.lockdownTier1),
+                        subtitle: Text(l10n.lockdownTier1Sub),
+                        value: false,
+                      ),
+                      RadioListTile<bool>(
+                        title: Text(l10n.lockdownTier2),
+                        subtitle: Text(l10n.lockdownTier2Sub),
+                        value: true,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
           _schedulesCard(context, l10n),
           const SizedBox(height: 12),
           // Full-phone lockdown (Batch I-B, item 14): its own screen

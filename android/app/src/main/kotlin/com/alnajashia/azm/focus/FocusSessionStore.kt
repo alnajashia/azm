@@ -25,6 +25,7 @@ import com.alnajashia.azm.data.SettingsStore
 import com.alnajashia.azm.data.SuspensionClaims
 import com.alnajashia.azm.data.SuspensionReason
 import com.alnajashia.azm.deviceowner.AzmDeviceAdminReceiver
+import com.alnajashia.azm.lockdown.LockdownStore
 import com.alnajashia.azm.notifications.FocusReceiver
 import org.json.JSONObject
 
@@ -104,6 +105,15 @@ object FocusSessionStore {
     private const val KEY_APPS = "suspended_apps"
     private const val KEY_GROUPS = "suspended_groups"
     private const val KEY_RESTRICTIONS = "focus_restrictions"
+
+    // Full-phone lockdown during focus (user request 2026-11-19,
+    // item 4): snapshotted from the Dart config at startSession.
+    private const val KEY_LOCKDOWN_ENABLED = "focus_lockdown_enabled"
+    private const val KEY_LOCKDOWN_STRICT = "focus_lockdown_strict"
+
+    /** The focus-owned lockdown's fixed ID: it is only ever ended by
+     *  the focus engine, never confused with a manual lockdown. */
+    private const val FOCUS_LOCKDOWN_ID = "focus-lockdown"
 
     // Session keys — the original's names in focus_prefs.
     private const val KEY_PHASE = "phase"
@@ -188,6 +198,21 @@ object FocusSessionStore {
         }
     }
 
+    /** The focus-lockdown switches from the same Dart config JSON
+     *  (item 4): (enabled, strict). Old configs have neither key:
+     *  off, Tier 1. */
+    private fun dartConfigLockdown(): Pair<Boolean, Boolean> {
+        val raw = prefs().getString(KEY_DART_CONFIG, null) ?: return false to false
+        return try {
+            val json = JSONObject(raw)
+            json.optBoolean("lockdownEnabled", false) to
+                json.optBoolean("lockdownStrict", false)
+        } catch (e: Exception) {
+            Log.w(TAG, "Unparseable Dart focus config; focus lockdown off", e)
+            false to false
+        }
+    }
+
     // ------------------------------------------------------------ channel entry points
 
     /**
@@ -208,6 +233,7 @@ object FocusSessionStore {
         vibrationEnabled: Boolean,
     ) {
         val (apps, groups, restrictions) = dartConfigTargets()
+        val (lockdownEnabled, lockdownStrict) = dartConfigLockdown()
         edit {
             putInt(KEY_FOCUS_MINUTES, focusMinutes.coerceIn(FOCUS_MIN_MINUTES, FOCUS_MAX_MINUTES))
             putInt(KEY_SHORT_BREAK_MINUTES, breakMinutes.coerceIn(SHORT_BREAK_MIN_MINUTES, SHORT_BREAK_MAX_MINUTES))
@@ -219,6 +245,8 @@ object FocusSessionStore {
             putStringSet(KEY_APPS, apps)
             putStringSet(KEY_GROUPS, groups)
             putStringSet(KEY_RESTRICTIONS, restrictions)
+            putBoolean(KEY_LOCKDOWN_ENABLED, lockdownEnabled)
+            putBoolean(KEY_LOCKDOWN_STRICT, lockdownStrict)
         }
         grantNotificationPermission(context)
         startFocus(context)
@@ -276,6 +304,7 @@ object FocusSessionStore {
         }
         releaseSuspension(context)
         releaseRestrictions(context)
+        maybeEndFocusLockdown(context)
         cancelAlarm(context)
         FocusStatusNotifier.cancel(context)
         emitPhaseChanged("idle")
@@ -403,6 +432,11 @@ object FocusSessionStore {
     }
 
     private fun applyState(context: Context) {
+        // Item 4: the focus lockdown lives only while enforcing — a
+        // break, WAITING, or a released pause lifts it. Starting is
+        // phase-entry only (startPhase), so an early-ended lockdown
+        // (code-gated escape) is never restarted by a sync.
+        if (!isEnforcing()) maybeEndFocusLockdown(context)
         applySuspension(context, enforce = isEnforcing())
         applyRestrictions(context, enforce = isEnforcing())
         scheduleAlarm(context)
@@ -438,6 +472,53 @@ object FocusSessionStore {
             putInt(KEY_PHASE_BOOT_COUNT, bootCount(context))
         }
         emitPhaseChanged(wirePhase(phase))
+        // Item 4: the whole-phone lockdown follows the cycle — on for
+        // focus phases, off for everything else.
+        if (phase == Phase.FOCUS) {
+            maybeStartFocusLockdown(context)
+        } else {
+            maybeEndFocusLockdown(context)
+        }
+    }
+
+    // ------------------------------------------------------------ focus lockdown (item 4)
+
+    /**
+     * Starts the whole-phone lockdown for this focus phase, when the
+     * config asks for it. One active lockdown at a time: a manual
+     * lockdown (or an already-running focus one) is left untouched —
+     * the session then enforces by suspension alone, exactly as
+     * before this feature. The lockdown's own deadline is the phase
+     * end, so it lifts even if this engine dies first. Failures are
+     * logged, never fatal: the focus session itself must go on.
+     */
+    private fun maybeStartFocusLockdown(context: Context) {
+        if (!prefs().getBoolean(KEY_LOCKDOWN_ENABLED, false)) return
+        if (LockdownStore.activeLockdown(context) != null) return
+        val remainingSeconds =
+            (remainingMillis(context) / 1000L).toInt().coerceIn(60, 24 * 60 * 60)
+        runCatching {
+            LockdownStore.start(
+                context,
+                LockdownStore.Lockdown(
+                    id = FOCUS_LOCKDOWN_ID,
+                    kind = LockdownStore.LockdownKind.ONE_SHOT,
+                    durationSeconds = remainingSeconds,
+                    scope = LockdownStore.LockdownScope.ALL_APPS,
+                    strict = prefs().getBoolean(KEY_LOCKDOWN_STRICT, false),
+                    label = "Focus",
+                ),
+            )
+        }.onFailure { Log.w(TAG, "Focus mode: focus lockdown start failed", it) }
+    }
+
+    /** Ends the focus-owned lockdown, if it is the active one. A
+     *  manual lockdown is never touched. */
+    private fun maybeEndFocusLockdown(context: Context) {
+        val active = LockdownStore.activeLockdown(context) ?: return
+        if (active.lockdown.id != FOCUS_LOCKDOWN_ID) return
+        runCatching { LockdownStore.end(context) }
+            .onFailure { Log.w(TAG, "Focus mode: focus lockdown end failed", it) }
     }
 
     // After a reboot only the wall clock is left; re-anchoring on the new boot hands back to elapsed realtime.

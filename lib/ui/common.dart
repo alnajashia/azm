@@ -69,6 +69,8 @@ String friendlyError(PrivilegedException e, AppLocalizations l10n) {
       return l10n.authCouldNotStart;
     case 'UNINSTALL_NOT_STARTED':
       return l10n.uninstallNotStarted;
+    case 'UNINSTALL_STILL_OWNER':
+      return l10n.uninstallStillOwner;
     case 'UNSUPPORTED_ANDROID':
       return l10n.errUnsupportedAndroid;
     case 'TIMEOUT':

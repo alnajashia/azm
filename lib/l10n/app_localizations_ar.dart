@@ -1469,6 +1469,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get uninstallNotStarted => 'تعذّر فتح مثبت إلغاء التثبيت في النظام.';
 
   @override
+  String get uninstallStillOwner =>
+      'أزِل مالك الجهاز أولاً — أندرويد يرفض إلغاء تثبيت مالك جهاز نشط.';
+
+  @override
   String get forcedIdleSub =>
       'المخرج الوحيد بلا رمز: بعد 24 ساعة يمكن إزالة مالك الجهاز دون رمز الاسترداد.';
 
@@ -2587,6 +2591,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'يخفي كل شيء — لا يظهر إلا عدّاد عزم التنازلي. بلا زر رئيسية ولا تطبيقات حديثة. مكالمات الطوارئ ما زالت ممكنة.';
 
   @override
+  String get focusLockdownTitle => 'إغلاق الهاتف كليّاً أثناء التركيز';
+
+  @override
+  String get focusLockdownSub =>
+      'يُقفل الهاتف كله أثناء فترات التركيز ويُرفع أثناء الاستراحات.';
+
+  @override
   String get lockdownTier1Badge => 'إيقاف';
 
   @override
@@ -3108,7 +3119,8 @@ class AppLocalizationsAr extends AppLocalizations {
       'انتهت مهلة تطبيق مضيف DNS. تحقق من حالة DNS الحالية قبل إعادة المحاولة.';
 
   @override
-  String get dnsNotServing => 'مضيف DNS المختار لا يستجيب. اختر مضيفًا آخر.';
+  String get dnsNotServing =>
+      'مضيف DNS المختار لم يردّ بعد. انتظر قليلاً ثم أعد المحاولة.';
 
   @override
   String get dnsApplyFailed => 'فشل تطبيق مضيف DNS الخاص.';

@@ -277,7 +277,10 @@ class _ConfigTabState extends State<ConfigTab> {
     if (e is TimeoutException) return l10n.dnsApplyTimeout;
     if (e is PrivilegedException) {
       final code = e.details['verifiedState'];
-      if (code == 2 || e.message.contains('result code 2')) {
+      // Android's real DPM values (DevicePolicyManager): 1 =
+      // HOST_NOT_SERVING (transient — the host has not been verified
+      // as serving yet; retry), 2 = FAILURE_SETTING (hard failure).
+      if (code == 1 || e.message.contains('result code 1')) {
         return l10n.dnsNotServing;
       }
       if (code is num) return l10n.dnsApplyFailedCode(code.toInt());
@@ -291,8 +294,9 @@ class _ConfigTabState extends State<ConfigTab> {
   /// provisioning, then the same host applies fine).
   bool _isHostNotServing(Object e) {
     if (e is PrivilegedException) {
-      return e.details['verifiedState'] == 2 ||
-          e.message.contains('result code 2');
+      // DPM result code 1 = HOST_NOT_SERVING (see _dnsFailureMessage).
+      return e.details['verifiedState'] == 1 ||
+          e.message.contains('result code 1');
     }
     return false;
   }
@@ -651,8 +655,17 @@ class _ConfigTabState extends State<ConfigTab> {
               ),
               ListTile(
                 leading: const Icon(Icons.remove_moderator_outlined),
-                title: Text(l10n.removeOwnerNow),
+                title: Text(
+                  l10n.removeOwnerNow,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 subtitle: Text(l10n.removeOwnerNowSub),
+                // User request 2026-11-19: the tile must read as a
+                // tappable action, not a label.
+                trailing: const Icon(Icons.navigate_next_outlined),
                 onTap: ((_isOwner == true || _isAdmin == true) && !_c.isRemovingDeviceOwner)
                     ? _onRemoveOwnerTapped
                     : null,
@@ -668,6 +681,7 @@ class _ConfigTabState extends State<ConfigTab> {
                   leading: const Icon(Icons.delete_outline_outlined),
                   title: Text(l10n.uninstallAzm),
                   subtitle: Text(l10n.uninstallAzmSub),
+                  trailing: const Icon(Icons.navigate_next_outlined),
                   onTap: _c.isRemovingDeviceOwner ? null : _onUninstallTapped,
                 ),
               ListTile(
@@ -742,11 +756,16 @@ class _ConfigTabState extends State<ConfigTab> {
     );
     if (!proceed || !mounted) return;
     try {
-      final started = await _c.channel.requestSelfUninstall();
-      if (!started && mounted) {
+      final result = await _c.channel.requestSelfUninstall();
+      if (!result.started && mounted) {
         await showErrorCard(
           context,
-          PrivilegedException('UNINSTALL_NOT_STARTED', ''),
+          PrivilegedException(
+            result.reason == 'stillOwner'
+                ? 'UNINSTALL_STILL_OWNER'
+                : 'UNINSTALL_NOT_STARTED',
+            '',
+          ),
         );
       }
     } catch (e) {
@@ -863,6 +882,10 @@ class _ConfigTabState extends State<ConfigTab> {
   Future<void> _onRemoveOwnerTapped() async {
     final confirmed = await _confirmRemoveDeviceOwner();
     if (!confirmed || !mounted) return;
+    // User request 2026-11-19: removing the Device Owner always asks
+    // for a FRESH recovery-code entry, even inside an active
+    // recovery session — the most destructive action in the app
+    // never rides on an earlier code entry.
     await runLoosening(context, _c, () async {
       await executeDeviceOwnerRemovalFlow(
         context: context,
@@ -876,7 +899,7 @@ class _ConfigTabState extends State<ConfigTab> {
           }
         },
       );
-    });
+    }, forceFreshCode: true);
   }
 
   /// The item-6 Settings switch (Batch F). Turning it ON is tightening
@@ -1359,7 +1382,7 @@ Future<void> executeDeviceOwnerRemovalFlow({
       result: removalResult,
       verification: lastVerification,
       isTimeout: false,
-      onUninstall: () => controller.channel.requestSelfUninstall(),
+      onUninstall: () async { await controller.channel.requestSelfUninstall(); },
     );
   } else {
     showRemovalOutcomeDialog(
@@ -1367,7 +1390,7 @@ Future<void> executeDeviceOwnerRemovalFlow({
       result: removalResult,
       verification: lastVerification,
       isTimeout: true,
-      onUninstall: () => controller.channel.requestSelfUninstall(),
+      onUninstall: () async { await controller.channel.requestSelfUninstall(); },
       onRecheck: () => runRemovalRecheckFlow(
         context: context,
         controller: controller,
@@ -1497,7 +1520,7 @@ Future<void> runRemovalRecheckFlow({
       result: priorResult,
       verification: lastVerification,
       isTimeout: false,
-      onUninstall: () => controller.channel.requestSelfUninstall(),
+      onUninstall: () async { await controller.channel.requestSelfUninstall(); },
     );
   } else {
     showRemovalOutcomeDialog(
@@ -1505,7 +1528,7 @@ Future<void> runRemovalRecheckFlow({
       result: priorResult,
       verification: lastVerification,
       isTimeout: true,
-      onUninstall: () => controller.channel.requestSelfUninstall(),
+      onUninstall: () async { await controller.channel.requestSelfUninstall(); },
       onRecheck: () => runRemovalRecheckFlow(
         context: context,
         controller: controller,

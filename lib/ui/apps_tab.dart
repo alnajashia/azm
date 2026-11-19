@@ -32,6 +32,11 @@ class _AppsTabState extends State<AppsTab> {
   String _query = '';
   UsageToday? _usage;
 
+  // User request 2026-11-19: while searching, the browse card below
+  // the search field hides — with the keyboard up it covered half
+  // the screen and squeezed the results list.
+  final _searchFocus = FocusNode();
+
   // Batch F, items 7/9: groups appear in the app filters — one chip
   // per group; selecting it lists only that group's apps.
   List<AppGroupModel>? _groups;
@@ -42,7 +47,19 @@ class _AppsTabState extends State<AppsTab> {
   @override
   void initState() {
     super.initState();
+    _searchFocus.addListener(_onSearchFocusChanged);
     _load();
+  }
+
+  void _onSearchFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _searchFocus.removeListener(_onSearchFocusChanged);
+    _searchFocus.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -105,6 +122,7 @@ class _AppsTabState extends State<AppsTab> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: TextField(
+            focusNode: _searchFocus,
             // v1.0.6 (user item 10): the search field is a full PILL,
             // and the "include system apps" filter lives INSIDE it as
             // the trailing icon button. That toggle is the user's own
@@ -176,10 +194,13 @@ class _AppsTabState extends State<AppsTab> {
         // v1.0.5 audit C-M4 (fix-#3 completion): the header controls sit
         // in a titled card like every other tab's groups. The search
         // field above stays flat chrome (it is a filter, not a setting
-        // group), as does the app list below.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: SectionCard(
+        // group), as does the app list below. Hidden while searching
+        // (user request 2026-11-19): with the keyboard up the card
+        // covered half the screen.
+        if (!_searchFocus.hasFocus && _query.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: SectionCard(
             title: l10n.appsBrowseSection,
             children: [
               ListTile(
