@@ -195,12 +195,26 @@ class PrivilegedChannelHandler(
         // teardown first, which disarms that lockdown before
         // anything stops.
         "requestSelfUninstall" -> {
-            val intent = Intent(
-                Intent.ACTION_DELETE,
-                Uri.parse("package:${appContext.packageName}"),
-            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-            val started = runCatching { appContext.startActivity(intent) }.isSuccess
-            mapOf("started" to started)
+            // Professional self-uninstall (user request 2026-11-19):
+            // pre-flight first — Android refuses to uninstall an
+            // active Device Owner / admin, so say so plainly instead
+            // of launching a dialog the system will reject. The
+            // modern ACTION_UNINSTALL_PACKAGE flow (API 14+) with
+            // REQUEST_DELETE_PACKAGES (declared in the manifest,
+            // required on Android 9+). The system confirmation is
+            // mandatory and cannot be skipped.
+            if (DeviceOwnerManager.isDeviceOwner(appContext) ||
+                DeviceOwnerManager.isAdminActive(appContext)
+            ) {
+                mapOf("started" to false, "reason" to "stillOwner")
+            } else {
+                val intent = Intent(
+                    Intent.ACTION_UNINSTALL_PACKAGE,
+                    Uri.parse("package:${appContext.packageName}"),
+                ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                val started = runCatching { appContext.startActivity(intent) }.isSuccess
+                mapOf("started" to started, "reason" to null)
+            }
         }
         "setWindowSecure" -> {
             val enabled = call.argument<Boolean>("enabled") ?: false
