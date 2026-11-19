@@ -226,6 +226,75 @@ void main() {
         expect(listTile.onTap, isNotNull, reason: 'Tile should be tappable when admin is still active');
       });
 
+      testWidgets('removal tile reads as a tappable action (chevron)', (tester) async {
+        // User request 2026-11-19: the tile looked like a label.
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        const channelName = 'azm/privileged';
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        final methodChannel = const MethodChannel(channelName);
+
+        messenger.setMockMethodCallHandler(methodChannel, (call) async {
+          switch (call.method) {
+            case 'isDeviceOwner':
+              return {
+                'isDeviceOwner': true,
+                'isAdminActive': true,
+                'forcedRemovalDelayHours': 48,
+              };
+            case 'getPrivateDns':
+              return {'mode': 'OFF', 'hostname': null};
+            case 'getUserRestrictionResidue':
+              return {'keys': <String>[]};
+            case 'getColourModesStatus':
+              return {'supported': true, 'active': false};
+            case 'listUserRestrictions':
+              return {'restrictions': <String, bool>{}};
+            case 'listInstalledApps':
+              return <Map<String, dynamic>>[];
+            case 'getForcedRemovalState':
+              return {'active': false, 'dueTimestampMs': 0};
+            case 'getSetting':
+              return {'value': null};
+            case 'setSetting':
+              return {};
+            default:
+              return null;
+          }
+        });
+
+        final controller = AppController.test(
+          PrivilegedChannel(methodChannel: methodChannel),
+        );
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          buildTestApp(
+            controller: controller,
+            child: ConfigTab(controller: controller),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final tileFinder = find.widgetWithText(ListTile, 'Remove Device Owner now');
+        expect(tileFinder, findsOneWidget);
+        final listTile = tester.widget<ListTile>(tileFinder);
+        expect(listTile.trailing, isA<Icon>());
+        expect((listTile.trailing! as Icon).icon, Icons.navigate_next_outlined);
+      });
+
+      test('removal always asks for a fresh recovery code', () {
+        // User request 2026-11-19: the most destructive action never
+        // rides on an earlier code entry.
+        final src = File('lib/ui/config_tab.dart').readAsStringSync();
+        final at = src.indexOf('Future<void> _onRemoveOwnerTapped()');
+        final body = src.substring(at, at + 900);
+        expect(body, contains('forceFreshCode: true'));
+      });
+
       testWidgets('executeDeviceOwnerRemovalFlow performs final verification check before timeout', (tester) async {
         tester.view.physicalSize = const Size(1080, 2400);
         tester.view.devicePixelRatio = 1.0;
