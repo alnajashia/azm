@@ -25,6 +25,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:azm/app_controller.dart';
 import 'package:azm/data/dns_protection.dart';
@@ -57,6 +58,7 @@ void main() {
   /// PlatformException carrying the DPM result code in details.
   late int setPrivateDnsFailures;
   late int setPrivateDnsFailureCode;
+  late Map<String, dynamic> probeResult;
   final createdControllers = <AppController>[];
 
   setUp(() {
@@ -87,6 +89,13 @@ void main() {
     setPrivateDnsFailures = 0;
     // Default injected failure code: 1 = DPM HOST_NOT_SERVING.
     setPrivateDnsFailureCode = 1;
+    // Default probe: port 853 reachable (transient failure).
+    probeResult = {
+      'port853': true,
+      'port443': true,
+      'reference853': true,
+      'autoTime': true,
+    };
 
     messenger.setMockMethodCallHandler(methodChannel, (call) async {
       calls.add(call);
@@ -117,6 +126,8 @@ void main() {
           fakeDnsMode = 'PRIVATE_DNS_MODE_OPPORTUNISTIC';
           fakeDnsHostname = null;
           return {'mode': fakeDnsMode, 'hostname': null};
+        case 'probeDnsPorts':
+          return probeResult;
         case 'listInstalledBrowsers':
           return fakeBrowsers;
         case 'getSetting':
@@ -589,6 +600,73 @@ void main() {
         find.text('The chosen DNS host is not answering yet. Wait a bit, then retry.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('port 853 blocked shows the network diagnosis', (tester) async {
+      // User report 2026-11-19: all providers fail with code 1 —
+      // the network blocks port 853. The probe must name it.
+      setPrivateDnsFailures = 10;
+      setPrivateDnsFailureCode = 1;
+      probeResult = {
+        'port853': false,
+        'port443': true,
+        'reference853': false,
+        'autoTime': true,
+      };
+      await pumpConfigTab(tester);
+      await openDnsDialog(tester);
+      await selectProvider(tester, 'CleanBrowsing (Family filter)');
+      await tapApplyAndWait(
+        tester,
+        () => find
+            .textContaining('Your network blocks encrypted DNS')
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(
+        find.textContaining('Your network blocks encrypted DNS'),
+        findsOneWidget,
+      );
+      expect(calls.where((c) => c.method == 'probeDnsPorts'), hasLength(1));
+    });
+
+    testWidgets('host unreachable shows the connection diagnosis',
+        (tester) async {
+      setPrivateDnsFailures = 10;
+      setPrivateDnsFailureCode = 1;
+      probeResult = {
+        'port853': false,
+        'port443': false,
+        'reference853': false,
+        'autoTime': true,
+      };
+      await pumpConfigTab(tester);
+      await openDnsDialog(tester);
+      await selectProvider(tester, 'CleanBrowsing (Family filter)');
+      await tapApplyAndWait(
+        tester,
+        () => find
+            .textContaining('could not be reached at all')
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(
+        find.textContaining('could not be reached at all'),
+        findsOneWidget,
+      );
+    });
+
+    test('native port probe is wired', () {
+      final handlerSrc = File(
+        'android/app/src/main/kotlin/com/alnajashia/azm/channel/PrivilegedChannelHandler.kt',
+      ).readAsStringSync();
+      expect(handlerSrc.contains('"probeDnsPorts"'), isTrue);
+      final managerSrc = File(
+        'android/app/src/main/kotlin/com/alnajashia/azm/deviceowner/DeviceOwnerManager.kt',
+      ).readAsStringSync();
+      expect(managerSrc.contains('fun probeDnsPorts'), isTrue);
+      expect(managerSrc.contains('InetSocketAddress(host, port)'), isTrue);
+      expect(managerSrc.contains('Settings.Global.AUTO_TIME'), isTrue);
     });
 
     testWidgets('a non-retryable failure shows its code and tries once',
