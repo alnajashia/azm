@@ -1491,9 +1491,18 @@ class PrivilegedChannel {
   /// the UI offers this only after a clean teardown or when the app
   /// is not the owner. Returns whether the uninstaller intent
   /// started.
-  Future<bool> requestSelfUninstall() async =>
-      (await _invokeMap('requestSelfUninstall'))['started'] as bool? ??
-      false;
+  /// Asks Android to uninstall this app (the system confirmation is
+  /// mandatory). [reason] is 'stillOwner' when the pre-flight check
+  /// found the app still Device Owner / admin — Android refuses in
+  /// that state, so the UI tells the user to remove the owner first
+  /// instead of showing a generic failure.
+  Future<({bool started, String? reason})> requestSelfUninstall() async {
+    final m = await _invokeMap('requestSelfUninstall');
+    return (
+      started: m['started'] as bool? ?? false,
+      reason: m['reason'] as String?,
+    );
+  }
 
   Future<bool> setAccessibilityEnabled(bool enabled) async => _verifiedBool(
         await _invokeMap('setAccessibilityEnabled', {'enabled': enabled}),
