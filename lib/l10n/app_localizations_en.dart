@@ -1481,6 +1481,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The system uninstaller could not be opened.';
 
   @override
+  String get uninstallStillOwner =>
+      'Remove Device Owner first — Android refuses to uninstall an active device owner.';
+
+  @override
   String get forcedIdleSub =>
       'The only code-free escape: after 24 hours, Device Owner can be removed without the recovery code.';
 

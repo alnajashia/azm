@@ -2618,6 +2618,12 @@ abstract class AppLocalizations {
   /// **'The system uninstaller could not be opened.'**
   String get uninstallNotStarted;
 
+  /// No description provided for @uninstallStillOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Device Owner first — Android refuses to uninstall an active device owner.'**
+  String get uninstallStillOwner;
+
   /// No description provided for @forcedIdleSub.
   ///
   /// In en, this message translates to:

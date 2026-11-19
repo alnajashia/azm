@@ -882,6 +882,7 @@
   "uninstallAzmConfirmTitle": "Uninstall Azm?",
   "uninstallAzmConfirmBody": "This opens the system uninstaller for Azm. If you confirm there, the app is removed from this phone. Any restriction it enforces stops with it — make sure the Device Owner removal above is finished first.",
   "uninstallNotStarted": "The system uninstaller could not be opened.",
+  "uninstallStillOwner": "Remove Device Owner first — Android refuses to uninstall an active device owner.",
   "forcedIdleSub": "The only code-free escape: after 24 hours, Device Owner can be removed without the recovery code.",
   "forcedCompleteSub": "Complete — removal can now be finished without a code.",
   "forcedProgressSub": "In progress — {remaining} remaining (advances while the app is running)",

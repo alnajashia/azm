@@ -1469,6 +1469,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get uninstallNotStarted => 'تعذّر فتح مثبت إلغاء التثبيت في النظام.';
 
   @override
+  String get uninstallStillOwner =>
+      'أزِل مالك الجهاز أولاً — أندرويد يرفض إلغاء تثبيت مالك جهاز نشط.';
+
+  @override
   String get forcedIdleSub =>
       'المخرج الوحيد بلا رمز: بعد 24 ساعة يمكن إزالة مالك الجهاز دون رمز الاسترداد.';
 
