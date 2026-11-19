@@ -2603,6 +2603,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hides everything — only Azm\'s countdown is visible. No Home or Recents. Emergency calls still work.';
 
   @override
+  String get focusLockdownTitle => 'Full-phone lockdown during focus';
+
+  @override
+  String get focusLockdownSub =>
+      'Lock the whole phone during focus periods; it lifts during breaks.';
+
+  @override
   String get lockdownTier1Badge => 'Suspend';
 
   @override
@@ -3129,7 +3136,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dnsNotServing =>
-      'The chosen DNS host is not serving. Pick another host.';
+      'The chosen DNS host is not answering yet. Wait a bit, then retry.';
 
   @override
   String get dnsApplyFailed => 'Failed to apply the private DNS host.';

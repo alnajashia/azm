@@ -4526,6 +4526,18 @@ abstract class AppLocalizations {
   /// **'Hides everything — only Azm\'s countdown is visible. No Home or Recents. Emergency calls still work.'**
   String get lockdownTier2Sub;
 
+  /// No description provided for @focusLockdownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full-phone lockdown during focus'**
+  String get focusLockdownTitle;
+
+  /// No description provided for @focusLockdownSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock the whole phone during focus periods; it lifts during breaks.'**
+  String get focusLockdownSub;
+
   /// No description provided for @lockdownTier1Badge.
   ///
   /// In en, this message translates to:
@@ -5435,7 +5447,7 @@ abstract class AppLocalizations {
   /// No description provided for @dnsNotServing.
   ///
   /// In en, this message translates to:
-  /// **'The chosen DNS host is not serving. Pick another host.'**
+  /// **'The chosen DNS host is not answering yet. Wait a bit, then retry.'**
   String get dnsNotServing;
 
   /// No description provided for @dnsApplyFailed.

@@ -1398,6 +1398,8 @@
   "lockdownTier1Sub": "Suspends the chosen apps and locks the phone now. The home screen stays, with greyed-out icons.",
   "lockdownTier2": "Level 2 — Strict kiosk",
   "lockdownTier2Sub": "Hides everything — only Azm's countdown is visible. No Home or Recents. Emergency calls still work.",
+  "focusLockdownTitle": "Full-phone lockdown during focus",
+  "focusLockdownSub": "Lock the whole phone during focus periods; it lifts during breaks.",
   "lockdownTier1Badge": "Suspend",
   "lockdownStrictBadge": "Strict",
   "lockdownLimitsNote": "Powering the phone off cannot be prevented — the lockdown re-applies after reboot. The emergency dialer stays reachable.",
@@ -1762,7 +1764,7 @@
     }
   },
   "dnsApplyTimeout": "Applying the DNS host timed out. Check the current DNS state before retrying.",
-  "dnsNotServing": "The chosen DNS host is not serving. Pick another host.",
+  "dnsNotServing": "The chosen DNS host is not answering yet. Wait a bit, then retry.",
   "dnsApplyFailed": "Failed to apply the private DNS host.",
   "dnsAppliedMsg": "Private DNS forced to {host} (verified).",
   "@dnsAppliedMsg": {
