@@ -6,4 +6,4 @@
 /// cannot, because the app is always version 1.0.0 by the user's
 /// standing rule.
 const String buildGitHead = 'a4bb6d0+uncommitted';
-const String buildDate = '2026-11-19T09:35:37Z';
+const String buildDate = '2026-11-19T10:08:23Z';
