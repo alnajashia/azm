@@ -756,11 +756,16 @@ class _ConfigTabState extends State<ConfigTab> {
     );
     if (!proceed || !mounted) return;
     try {
-      final started = await _c.channel.requestSelfUninstall();
-      if (!started && mounted) {
+      final result = await _c.channel.requestSelfUninstall();
+      if (!result.started && mounted) {
         await showErrorCard(
           context,
-          PrivilegedException('UNINSTALL_NOT_STARTED', ''),
+          PrivilegedException(
+            result.reason == 'stillOwner'
+                ? 'UNINSTALL_STILL_OWNER'
+                : 'UNINSTALL_NOT_STARTED',
+            '',
+          ),
         );
       }
     } catch (e) {
@@ -1377,7 +1382,7 @@ Future<void> executeDeviceOwnerRemovalFlow({
       result: removalResult,
       verification: lastVerification,
       isTimeout: false,
-      onUninstall: () => controller.channel.requestSelfUninstall(),
+      onUninstall: () async { await controller.channel.requestSelfUninstall(); },
     );
   } else {
     showRemovalOutcomeDialog(
@@ -1385,7 +1390,7 @@ Future<void> executeDeviceOwnerRemovalFlow({
       result: removalResult,
       verification: lastVerification,
       isTimeout: true,
-      onUninstall: () => controller.channel.requestSelfUninstall(),
+      onUninstall: () async { await controller.channel.requestSelfUninstall(); },
       onRecheck: () => runRemovalRecheckFlow(
         context: context,
         controller: controller,
@@ -1515,7 +1520,7 @@ Future<void> runRemovalRecheckFlow({
       result: priorResult,
       verification: lastVerification,
       isTimeout: false,
-      onUninstall: () => controller.channel.requestSelfUninstall(),
+      onUninstall: () async { await controller.channel.requestSelfUninstall(); },
     );
   } else {
     showRemovalOutcomeDialog(
@@ -1523,7 +1528,7 @@ Future<void> runRemovalRecheckFlow({
       result: priorResult,
       verification: lastVerification,
       isTimeout: true,
-      onUninstall: () => controller.channel.requestSelfUninstall(),
+      onUninstall: () async { await controller.channel.requestSelfUninstall(); },
       onRecheck: () => runRemovalRecheckFlow(
         context: context,
         controller: controller,
