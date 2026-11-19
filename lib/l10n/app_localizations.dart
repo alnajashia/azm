@@ -5456,6 +5456,168 @@ abstract class AppLocalizations {
   /// **'The chosen DNS host is not answering yet. Wait a bit, then retry.'**
   String get dnsNotServing;
 
+  /// No description provided for @dnsPort853Blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Your network blocks encrypted DNS (port 853), so Private DNS cannot activate. Try another network, or use VPN-based DNS.'**
+  String get dnsPort853Blocked;
+
+  /// No description provided for @dnsHostUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The DNS host could not be reached at all. Check your connection, then retry.'**
+  String get dnsHostUnreachable;
+
+  /// No description provided for @dnsAutoTimeOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic date & time is off — a wrong clock also breaks encrypted DNS.'**
+  String get dnsAutoTimeOff;
+
+  /// No description provided for @removalStepVpn.
+  ///
+  /// In en, this message translates to:
+  /// **'VPN internet block'**
+  String get removalStepVpn;
+
+  /// No description provided for @internetBlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Internet blocking'**
+  String get internetBlockTitle;
+
+  /// No description provided for @internetBlockSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Local VPN: DNS filtering and per-app internet blocking'**
+  String get internetBlockSub;
+
+  /// No description provided for @internetBlockEnableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Internet blocking (VPN)'**
+  String get internetBlockEnableTitle;
+
+  /// No description provided for @internetBlockEnableSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs a local VPN on this phone. No account, no setup.'**
+  String get internetBlockEnableSub;
+
+  /// No description provided for @internetBlockStatusRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'VPN is running'**
+  String get internetBlockStatusRunning;
+
+  /// No description provided for @internetBlockStatusOff.
+  ///
+  /// In en, this message translates to:
+  /// **'VPN is off'**
+  String get internetBlockStatusOff;
+
+  /// No description provided for @internetBlockLevelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking level'**
+  String get internetBlockLevelTitle;
+
+  /// No description provided for @internetBlockLevelDns.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS filtering only'**
+  String get internetBlockLevelDns;
+
+  /// No description provided for @internetBlockLevelDnsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters DNS for all apps over HTTPS (port 443). Nothing is blocked outright.'**
+  String get internetBlockLevelDnsSub;
+
+  /// No description provided for @internetBlockLevelApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Block chosen apps'**
+  String get internetBlockLevelApps;
+
+  /// No description provided for @internetBlockLevelAppsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Chosen apps keep running, without internet.'**
+  String get internetBlockLevelAppsSub;
+
+  /// No description provided for @internetBlockLevelGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Block chosen groups'**
+  String get internetBlockLevelGroups;
+
+  /// No description provided for @internetBlockLevelGroupsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Group members keep running, without internet.'**
+  String get internetBlockLevelGroupsSub;
+
+  /// No description provided for @internetBlockLevelPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Block the whole phone'**
+  String get internetBlockLevelPhone;
+
+  /// No description provided for @internetBlockLevelPhoneSub.
+  ///
+  /// In en, this message translates to:
+  /// **'No app gets internet. Azm itself stays connected.'**
+  String get internetBlockLevelPhoneSub;
+
+  /// No description provided for @internetBlockPickApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose apps'**
+  String get internetBlockPickApps;
+
+  /// No description provided for @internetBlockPickGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose groups'**
+  String get internetBlockPickGroups;
+
+  /// No description provided for @internetBlockAppsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} apps blocked'**
+  String internetBlockAppsCount(int count);
+
+  /// No description provided for @internetBlockGroupsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} groups blocked'**
+  String internetBlockGroupsCount(int count);
+
+  /// No description provided for @internetBlockNoneSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing selected yet'**
+  String get internetBlockNoneSelected;
+
+  /// No description provided for @internetBlockProviderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS filter provider'**
+  String get internetBlockProviderTitle;
+
+  /// No description provided for @internetBlockCustomUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom DoH address (https://…)'**
+  String get internetBlockCustomUrl;
+
+  /// No description provided for @internetBlockNote.
+  ///
+  /// In en, this message translates to:
+  /// **'While a blocking level is active, DNS filtering pauses for other apps. The VPN uses the phone\'s single VPN slot and shows a key icon.'**
+  String get internetBlockNote;
+
   /// No description provided for @dnsApplyFailed.
   ///
   /// In en, this message translates to:

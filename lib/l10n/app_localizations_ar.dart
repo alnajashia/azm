@@ -3123,6 +3123,99 @@ class AppLocalizationsAr extends AppLocalizations {
       'مضيف DNS المختار لم يردّ بعد. انتظر قليلاً ثم أعد المحاولة.';
 
   @override
+  String get dnsPort853Blocked =>
+      'شبكتك تحجب DNS المشفّر (المنفذ 853)، فلا يمكن تفعيل DNS الخاص. جرّب شبكة أخرى أو استخدم DNS عبر VPN.';
+
+  @override
+  String get dnsHostUnreachable =>
+      'تعذّر الوصول إلى مضيف DNS نهائياً. تحقق من اتصالك ثم أعد المحاولة.';
+
+  @override
+  String get dnsAutoTimeOff =>
+      'التاريخ والوقت التلقائيان متوقفان — الساعة الخاطئة تعطّل DNS المشفّر أيضاً.';
+
+  @override
+  String get removalStepVpn => 'حظر الإنترنت عبر VPN';
+
+  @override
+  String get internetBlockTitle => 'حظر الإنترنت';
+
+  @override
+  String get internetBlockSub => 'VPN محلي: ترشيح DNS وحظر إنترنت التطبيقات';
+
+  @override
+  String get internetBlockEnableTitle => 'حظر الإنترنت (VPN)';
+
+  @override
+  String get internetBlockEnableSub =>
+      'يشغّل VPN محلياً على هذا الهاتف. بلا حساب وبلا إعداد.';
+
+  @override
+  String get internetBlockStatusRunning => 'الـVPN يعمل';
+
+  @override
+  String get internetBlockStatusOff => 'الـVPN متوقف';
+
+  @override
+  String get internetBlockLevelTitle => 'مستوى الحظر';
+
+  @override
+  String get internetBlockLevelDns => 'ترشيح DNS فقط';
+
+  @override
+  String get internetBlockLevelDnsSub =>
+      'يرشّح DNS لكل التطبيقات عبر HTTPS (المنفذ 443). لا يُحظر شيء كلياً.';
+
+  @override
+  String get internetBlockLevelApps => 'حظر تطبيقات مختارة';
+
+  @override
+  String get internetBlockLevelAppsSub => 'التطبيقات المختارة تعمل دون إنترنت.';
+
+  @override
+  String get internetBlockLevelGroups => 'حظر مجموعات مختارة';
+
+  @override
+  String get internetBlockLevelGroupsSub =>
+      'أعضاء المجموعات يعملون دون إنترنت.';
+
+  @override
+  String get internetBlockLevelPhone => 'حظر الهاتف كله';
+
+  @override
+  String get internetBlockLevelPhoneSub =>
+      'لا يحصل أي تطبيق على إنترنت. يبقى عزم نفسه متصلاً.';
+
+  @override
+  String get internetBlockPickApps => 'اختر التطبيقات';
+
+  @override
+  String get internetBlockPickGroups => 'اختر المجموعات';
+
+  @override
+  String internetBlockAppsCount(int count) {
+    return '$count تطبيق محظور';
+  }
+
+  @override
+  String internetBlockGroupsCount(int count) {
+    return '$count مجموعة محظورة';
+  }
+
+  @override
+  String get internetBlockNoneSelected => 'لم يُختر شيء بعد';
+
+  @override
+  String get internetBlockProviderTitle => 'مزود ترشيح DNS';
+
+  @override
+  String get internetBlockCustomUrl => 'عنوان DoH مخصص (https://…)';
+
+  @override
+  String get internetBlockNote =>
+      'أثناء تفعيل مستوى حظر، يتوقف ترشيح DNS لبقية التطبيقات. يستخدم الـVPN فتحة الـVPN الوحيدة في الهاتف ويظهر أيقونة مفتاح.';
+
+  @override
   String get dnsApplyFailed => 'فشل تطبيق مضيف DNS الخاص.';
 
   @override
