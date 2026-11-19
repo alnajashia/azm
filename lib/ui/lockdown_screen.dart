@@ -993,11 +993,24 @@ class _LockdownScreenState extends State<LockdownScreen>
                         }
                       },
                     ),
-                  SwitchListTile(
-                    title: Text(l10n.lockdownTier2),
-                    subtitle: Text(l10n.lockdownTier2Sub),
-                    value: strict,
-                    onChanged: (v) => setDialogState(() => strict = v),
+                  RadioGroup<bool>(
+                    groupValue: strict,
+                    onChanged: (v) =>
+                        setDialogState(() => strict = v ?? false),
+                    child: Column(
+                      children: [
+                        RadioListTile<bool>(
+                          title: Text(l10n.lockdownTier1),
+                          subtitle: Text(l10n.lockdownTier1Sub),
+                          value: false,
+                        ),
+                        RadioListTile<bool>(
+                          title: Text(l10n.lockdownTier2),
+                          subtitle: Text(l10n.lockdownTier2Sub),
+                          value: true,
+                        ),
+                      ],
+                    ),
                   ),
                   TextField(
                     controller: labelController,
