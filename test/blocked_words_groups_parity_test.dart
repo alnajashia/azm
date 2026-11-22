@@ -380,8 +380,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Creating a list activates blocking: the code gate appears.
-      await enterCodeAndConfirm(tester);
+      // Creating a word is an activation: it saves directly, no
+      // code gate (user rule 2026-11-22).
       expect(
         calls.any(
           (c) =>
@@ -492,8 +492,11 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
 
-      // Adding windows where none existed activates blocking: gated.
-      await enterCodeAndConfirm(tester);
+      // Adding windows where none existed is an activation: no code
+      // gate (user rule 2026-11-22). The tightening applies after
+      // the 5 s undo window lapses.
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
       expect(
         calls.any((c) => c.method == 'setGroups'),
         isTrue,

@@ -5,23 +5,20 @@
 ///  native rule, JSON round-trip and corrupt-input defaults.
 ///  Screen — the DNS dialog in general Settings (Config tab): the
 ///  browser screen has no DNS any more; the tile opens the dialog;
-///  the list is Off plus exactly one of CleanBrowsing / Cloudflare /
-///  AdGuard / Custom; picking Custom shows the hostname field at once
-///  (the old card's deadlock — the switch was refused so the field
-///  never appeared — is gone); an uppercase hostname is lowercased
-///  on apply; enabling with CleanBrowsing calls setPrivateDns with
-///  the Family hostname; turning off goes through the recovery gate
-///  and calls resetPrivateDns.
+///  since 2026-11-22 the dialog carries the "DNS via VPN" switch —
+///  the provider list (CleanBrowsing / Cloudflare / AdGuard /
+///  Custom) shows only while it is on; applying syncs the provider
+///  into the internet-block (VPN) config and never calls
+///  setPrivateDns; turning the switch off goes through the
+///  recovery gate and stops running VPN DNS filtering.
 ///
 ///  NextDNS was removed at the user's request 2026-11-14: a saved
 ///  NextDNS selection falls back to CleanBrowsing, and a live
 ///  NextDNS hostname is adopted as a Custom hostname.
 ///
 ///  Item 5 (2026-11-14, DNS moved back to Settings): the card is
-///  gone; the dialog is the ONE DNS place, with the real failure
-///  reason shown inline with a Retry button; HOST_NOT_SERVING is
-///  retried automatically; a live host the prefs do not know is
-///  adopted.
+///  gone; the dialog is the ONE DNS place; a live host the prefs
+///  do not know is adopted (unless a VPN-mode selection exists).
 library;
 
 import 'dart:convert';
@@ -30,6 +27,7 @@ import 'dart:io';
 import 'package:azm/app_controller.dart';
 import 'package:azm/data/dns_protection.dart';
 import 'package:azm/data/privileged_channel.dart';
+import 'package:azm/domain/internet_block.dart';
 import 'package:azm/l10n/app_localizations.dart';
 import 'package:azm/theme.dart';
 import 'package:azm/ui/config_screens.dart';
@@ -59,6 +57,10 @@ void main() {
   late int setPrivateDnsFailures;
   late int setPrivateDnsFailureCode;
   late Map<String, dynamic> probeResult;
+
+  /// The fake internet-block config (the VPN provider the DNS
+  /// dialog syncs into since 2026-11-22).
+  late Map<String, dynamic> fakeIbConfig;
   final createdControllers = <AppController>[];
 
   setUp(() {
@@ -96,6 +98,15 @@ void main() {
       'reference853': true,
       'autoTime': true,
     };
+    fakeIbConfig = {
+      'enabled': false,
+      'level': 'off',
+      'packages': <String>[],
+      'groupIds': <String>[],
+      'dohProvider': 'cleanBrowsing',
+      'customDohUrl': '',
+      'dnsAutoHost': '',
+    };
 
     messenger.setMockMethodCallHandler(methodChannel, (call) async {
       calls.add(call);
@@ -128,6 +139,13 @@ void main() {
           return {'mode': fakeDnsMode, 'hostname': null};
         case 'probeDnsPorts':
           return probeResult;
+        case 'getInternetBlockConfig':
+          return Map<String, dynamic>.from(fakeIbConfig);
+        case 'setInternetBlockConfig':
+          fakeIbConfig = Map<String, dynamic>.from(
+            (call.arguments as Map).cast<String, dynamic>(),
+          );
+          return Map<String, dynamic>.from(fakeIbConfig);
         case 'listInstalledBrowsers':
           return fakeBrowsers;
         case 'getSetting':
@@ -395,6 +413,42 @@ void main() {
       }
     });
 
+    test('VPN-mode fields round-trip; old saves default to off', () {
+      const dns = DnsProtection(
+        enabled: true,
+        provider: DnsProvider.custom,
+        customHostname: 'dns.example.com',
+        viaVpn: true,
+        customDohUrl: 'https://dns.example.com/dns-query',
+      );
+      final back = DnsProtection.fromJson(
+        (jsonDecode(jsonEncode(dns.toJson())) as Map).cast<String, dynamic>(),
+      );
+      expect(back.viaVpn, isTrue);
+      expect(back.customDohUrl, 'https://dns.example.com/dns-query');
+      expect(back.hostname, 'dns.example.com');
+
+      // A pre-2026-11-22 save has no viaVpn keys: switch reads off.
+      final old = DnsProtection.fromJson({
+        'enabled': true,
+        'provider': 'adguard',
+        'customHostname': '',
+      });
+      expect(old.viaVpn, isFalse);
+      expect(old.customDohUrl, isEmpty);
+    });
+
+    test('provider mapping between DNS and internet-block enums', () {
+      expect(dohProviderFor(DnsProvider.cleanBrowsing), DohProvider.cleanBrowsing);
+      expect(dohProviderFor(DnsProvider.cloudflare), DohProvider.cloudflare);
+      expect(dohProviderFor(DnsProvider.adguard), DohProvider.adguard);
+      expect(dohProviderFor(DnsProvider.custom), DohProvider.custom);
+      expect(dnsProviderFor(DohProvider.adguard), DnsProvider.adguard);
+      expect(dnsProviderFor(DohProvider.custom), DnsProvider.custom);
+      expect(dohUrlHost('https://DNS.Example.com/dns-query'), 'dns.example.com');
+      expect(dohUrlHost('not a url'), isEmpty);
+    });
+
     test('a stored NextDNS selection falls back to CleanBrowsing', () {
       final back = DnsProtection.fromJson({
         'enabled': true,
@@ -416,19 +470,37 @@ void main() {
 
       expect(find.text('DNS protection'), findsNothing);
       expect(find.text('Private DNS'), findsNothing);
+
       // The browser work itself is untouched.
       expect(find.text('Chrome'), findsOneWidget);
     });
+
+    /// Toggles the "DNS via VPN" switch inside the open dialog.
+    Future<void> toggleVpnSwitch(WidgetTester tester) async {
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(Switch),
+        ),
+      );
+      await tester.pump();
+    }
 
     testWidgets('Config-tab DNS tile opens the DNS dialog', (tester) async {
       final controller = await pumpConfigTab(tester);
 
       await openDnsDialog(tester);
 
-      // The dialog, not the browser screen, and not the retired dialog.
+      // The dialog carries the VPN switch; the provider list is
+      // hidden while it is off (user request 2026-11-22), and the
+      // old Off radio is gone — the switch is the off.
       expect(find.byType(BrowserRestrictionsScreen), findsNothing);
-      expect(find.text('Off'), findsOneWidget);
+      expect(find.text('DNS via VPN'), findsOneWidget);
+      expect(find.text('CleanBrowsing (Family filter)'), findsNothing);
+      expect(find.text('Off'), findsNothing);
       expect(find.text('NextDNS'), findsNothing);
+
+      await toggleVpnSwitch(tester);
       expect(find.text('CleanBrowsing (Family filter)'), findsOneWidget);
       expect(find.text('Cloudflare (Family filter)'), findsOneWidget);
       expect(find.text('AdGuard DNS (Family filter)'), findsOneWidget);
@@ -437,224 +509,158 @@ void main() {
     });
 
     testWidgets(
-      'the custom-DNS deadlock is fixed: picking Custom shows the '
-      'field at once',
+      'the switch shows the list; Custom shows the URL field at once',
       (tester) async {
-        // Protection ON with CleanBrowsing — the exact state where
-        // the old card refused the switch and the field never appeared.
-        fakeDnsJson = jsonEncode(const DnsProtection(enabled: true).toJson());
-        fakeDnsMode = 'PRIVATE_DNS_MODE_PROVIDER_HOSTNAME_SPECIFIED';
-        fakeDnsHostname = 'family-filter-dns.cleanbrowsing.org';
         await pumpConfigTab(tester);
         await openDnsDialog(tester);
-
+        await toggleVpnSwitch(tester);
         await selectProvider(tester, 'Custom');
 
         // The field is there immediately — no refusal, no snackbar.
         expect(find.byType(TextField), findsOneWidget);
-        expect(calls.where((c) => c.method == 'setPrivateDns'), isEmpty);
         expect(find.text('Invalid DNS hostname'), findsNothing);
-        // Apply is disabled until the hostname is valid.
+        // Apply is disabled until the URL is a valid https endpoint.
         expect(applyButton(tester).onPressed, isNull);
 
         await tester.enterText(find.byType(TextField), 'dns.example.com');
         await tester.pump();
+        expect(applyButton(tester).onPressed, isNull);
+
+        await tester.enterText(
+          find.byType(TextField),
+          'https://dns.example.com/dns-query',
+        );
+        await tester.pump();
         expect(applyButton(tester).onPressed, isNotNull);
         await tapApplyAndWait(
           tester,
-          () => snackbarShows('DNS protection applied'),
+          () => snackbarShows(
+            'DNS via VPN is set. It activates whenever a VPN is on.',
+          ),
         );
 
-        final applied = calls.where((c) => c.method == 'setPrivateDns');
-        expect(applied, hasLength(1));
-        expect(applied.first.arguments['hostname'], 'dns.example.com');
+        // The VPN config carries the provider, the URL, and the
+        // URL's host as the external-VPN auto host. System Private
+        // DNS is never touched by this dialog any more.
+        expect(calls.where((c) => c.method == 'setPrivateDns'), isEmpty);
+        expect(fakeIbConfig['dohProvider'], 'custom');
+        expect(
+          fakeIbConfig['customDohUrl'],
+          'https://dns.example.com/dns-query',
+        );
+        expect(fakeIbConfig['dnsAutoHost'], 'dns.example.com');
+        final saved = (jsonDecode(fakeDnsJson!) as Map).cast<String, dynamic>();
+        expect(saved['viaVpn'], isTrue);
+        expect(saved['provider'], 'custom');
+        // Let the dialog's exit animation finish before asserting
+        // it is gone (established lesson).
+        await tester.pump(const Duration(seconds: 1));
         expect(find.byType(AlertDialog), findsNothing);
       },
     );
 
-    testWidgets('an uppercase custom hostname is lowercased on apply',
+    testWidgets('applying with the switch on syncs the VPN provider',
         (tester) async {
       await pumpConfigTab(tester);
       await openDnsDialog(tester);
-      await selectProvider(tester, 'Custom');
-
-      // Uppercase is valid input here, not an error — it is
-      // normalised on apply (the model only accepts lowercase).
-      // (The normalised host also shows as the field's helper text,
-      // next to its identical hint — so no text assertion here.)
-      await tester.enterText(find.byType(TextField), 'DNS.Example.COM');
-      await tester.pump();
-      expect(find.text('Invalid DNS hostname'), findsNothing);
-      expect(applyButton(tester).onPressed, isNotNull);
+      await toggleVpnSwitch(tester);
+      await selectProvider(tester, 'AdGuard DNS (Family filter)');
       await tapApplyAndWait(
         tester,
-        () => snackbarShows('DNS protection applied'),
+        () => snackbarShows(
+          'DNS via VPN is set. It activates whenever a VPN is on.',
+        ),
       );
 
-      final applied = calls.where((c) => c.method == 'setPrivateDns');
-      expect(applied, hasLength(1));
-      expect(applied.first.arguments['hostname'], 'dns.example.com');
-    });
-
-    testWidgets('enabling with CleanBrowsing sets the Family hostname',
-        (tester) async {
-      await pumpConfigTab(tester);
-      await openDnsDialog(tester);
-      await selectProvider(tester, 'CleanBrowsing (Family filter)');
-      await tapApplyAndWait(
-        tester,
-        () => snackbarShows('DNS protection applied'),
-      );
-
-      final applied = calls.where((c) => c.method == 'setPrivateDns');
-      expect(applied, hasLength(1));
-      expect(
-        applied.first.arguments['hostname'],
-        'family-filter-dns.cleanbrowsing.org',
-      );
+      expect(calls.where((c) => c.method == 'setPrivateDns'), isEmpty);
+      expect(fakeIbConfig['dohProvider'], 'adguard');
+      expect(fakeIbConfig['dnsAutoHost'], 'family.adguard-dns.com');
+      // The VPN itself was not started by the dialog — filtering
+      // begins when the user turns the VPN on.
+      expect(fakeIbConfig['enabled'], isFalse);
       final saved = (jsonDecode(fakeDnsJson!) as Map).cast<String, dynamic>();
-      expect(saved['enabled'], isTrue);
-      expect(saved['provider'], 'cleanBrowsing');
+      expect(saved['viaVpn'], isTrue);
+      expect(saved['provider'], 'adguard');
     });
 
-    testWidgets('turning off goes through the recovery gate and resets',
-        (tester) async {
-      fakeDnsJson = jsonEncode(
-        const DnsProtection(enabled: true).toJson(),
-      );
-      fakeDnsMode = 'PRIVATE_DNS_MODE_PROVIDER_HOSTNAME_SPECIFIED';
-      fakeDnsHostname = 'family-filter-dns.cleanbrowsing.org';
-      final controller = await pumpConfigTab(tester);
-      await openDnsDialog(tester);
+    testWidgets(
+      'turning the switch off goes through the gate and stops filtering',
+      (tester) async {
+        fakeDnsJson = jsonEncode(
+          const DnsProtection(
+            enabled: true,
+            provider: DnsProvider.adguard,
+            viaVpn: true,
+          ).toJson(),
+        );
+        fakeIbConfig = {
+          'enabled': true,
+          'level': 'off',
+          'packages': <String>[],
+          'groupIds': <String>[],
+          'dohProvider': 'adguard',
+          'customDohUrl': '',
+          'dnsAutoHost': 'family.adguard-dns.com',
+        };
+        final controller = await pumpConfigTab(tester);
+        await openDnsDialog(tester);
 
-      await selectProvider(tester, 'Off');
-      await tester.tap(find.widgetWithText(FilledButton, 'Apply'));
-      await enterCodeAndConfirm(tester);
-      await pumpUntil(
-        tester,
-        () => snackbarShows('DNS protection turned off'),
-      );
+        // Switch is on, list visible.
+        expect(find.text('AdGuard DNS (Family filter)'), findsOneWidget);
+        await toggleVpnSwitch(tester);
+        expect(find.text('AdGuard DNS (Family filter)'), findsNothing);
 
-      expect(calls.where((c) => c.method == 'resetPrivateDns'), hasLength(1));
-      final saved = (jsonDecode(fakeDnsJson!) as Map).cast<String, dynamic>();
-      expect(saved['enabled'], isFalse);
-      // Let both dialogs' exit animations finish (explicit pump, not
-      // pumpAndSettle: the recovery session's ticker is now running).
-      await tester.pump(const Duration(seconds: 1));
-      expect(find.byType(AlertDialog), findsNothing);
-      controller.session.end();
-    });
+        await tester.tap(find.widgetWithText(FilledButton, 'Apply'));
+        await enterCodeAndConfirm(tester);
+        await pumpUntil(
+          tester,
+          () => snackbarShows('DNS protection turned off'),
+        );
 
-    testWidgets('HOST_NOT_SERVING is retried and then applies',
-        (tester) async {
-      setPrivateDnsFailures = 2;
-      setPrivateDnsFailureCode = 1;
-      await pumpConfigTab(tester);
-      await openDnsDialog(tester);
-      await selectProvider(tester, 'CleanBrowsing (Family filter)');
-      await tapApplyAndWait(
-        tester,
-        () => snackbarShows('DNS protection applied'),
-      );
+        // Filtering through Azm's VPN stopped immediately.
+        expect(fakeIbConfig['enabled'], isFalse);
+        expect(fakeIbConfig['dnsAutoHost'], '');
+        final saved = (jsonDecode(fakeDnsJson!) as Map).cast<String, dynamic>();
+        expect(saved['viaVpn'], isFalse);
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.byType(AlertDialog), findsNothing);
+        controller.session.end();
+      },
+    );
 
-      // Two failures, then success on the third attempt.
-      final applied = calls.where((c) => c.method == 'setPrivateDns');
-      expect(applied, hasLength(3));
-      expect(
-        applied.last.arguments['hostname'],
-        'family-filter-dns.cleanbrowsing.org',
-      );
-      expect(find.textContaining('not serving'), findsNothing);
-    });
+    testWidgets(
+      'turning the switch off at a block level keeps the VPN running',
+      (tester) async {
+        fakeDnsJson = jsonEncode(
+          const DnsProtection(enabled: true, viaVpn: true).toJson(),
+        );
+        fakeIbConfig = {
+          'enabled': true,
+          'level': 'apps',
+          'packages': <String>['com.example.app'],
+          'groupIds': <String>[],
+          'dohProvider': 'cleanBrowsing',
+          'customDohUrl': '',
+          'dnsAutoHost': 'family-filter-dns.cleanbrowsing.org',
+        };
+        final controller = await pumpConfigTab(tester);
+        await openDnsDialog(tester);
+        await toggleVpnSwitch(tester);
+        await tester.tap(find.widgetWithText(FilledButton, 'Apply'));
+        await enterCodeAndConfirm(tester);
+        await pumpUntil(
+          tester,
+          () => snackbarShows('DNS protection turned off'),
+        );
 
-    testWidgets('HOST_NOT_SERVING exhausted shows the real reason with Retry',
-        (tester) async {
-      setPrivateDnsFailures = 10;
-      setPrivateDnsFailureCode = 1;
-      await pumpConfigTab(tester);
-      await openDnsDialog(tester);
-      await selectProvider(tester, 'CleanBrowsing (Family filter)');
-      await tapApplyAndWait(
-        tester,
-        () =>
-            find.text(
-              'The chosen DNS host is not answering yet. Wait a bit, then retry.',
-            ).evaluate().isNotEmpty,
-      );
-
-      // Four attempts (initial + 3 retries), then the inline error.
-      expect(
-        calls.where((c) => c.method == 'setPrivateDns'),
-        hasLength(4),
-      );
-      expect(find.text('Retry'), findsOneWidget);
-
-      // Retry re-attempts the same selection.
-      await tester.tap(find.text('Retry'));
-      await tester.pump();
-      await pumpUntil(
-        tester,
-        () => calls.where((c) => c.method == 'setPrivateDns').length == 8,
-      );
-      expect(
-        find.text('The chosen DNS host is not answering yet. Wait a bit, then retry.'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('port 853 blocked shows the network diagnosis', (tester) async {
-      // User report 2026-11-19: all providers fail with code 1 —
-      // the network blocks port 853. The probe must name it.
-      setPrivateDnsFailures = 10;
-      setPrivateDnsFailureCode = 1;
-      probeResult = {
-        'port853': false,
-        'port443': true,
-        'reference853': false,
-        'autoTime': true,
-      };
-      await pumpConfigTab(tester);
-      await openDnsDialog(tester);
-      await selectProvider(tester, 'CleanBrowsing (Family filter)');
-      await tapApplyAndWait(
-        tester,
-        () => find
-            .textContaining('Your network blocks encrypted DNS')
-            .evaluate()
-            .isNotEmpty,
-      );
-      expect(
-        find.textContaining('Your network blocks encrypted DNS'),
-        findsOneWidget,
-      );
-      expect(calls.where((c) => c.method == 'probeDnsPorts'), hasLength(1));
-    });
-
-    testWidgets('host unreachable shows the connection diagnosis',
-        (tester) async {
-      setPrivateDnsFailures = 10;
-      setPrivateDnsFailureCode = 1;
-      probeResult = {
-        'port853': false,
-        'port443': false,
-        'reference853': false,
-        'autoTime': true,
-      };
-      await pumpConfigTab(tester);
-      await openDnsDialog(tester);
-      await selectProvider(tester, 'CleanBrowsing (Family filter)');
-      await tapApplyAndWait(
-        tester,
-        () => find
-            .textContaining('could not be reached at all')
-            .evaluate()
-            .isNotEmpty,
-      );
-      expect(
-        find.textContaining('could not be reached at all'),
-        findsOneWidget,
-      );
-    });
+        // Only the DNS part turned off; the block level stands.
+        expect(fakeIbConfig['enabled'], isTrue);
+        expect(fakeIbConfig['level'], 'apps');
+        expect(fakeIbConfig['dnsAutoHost'], '');
+        await tester.pump(const Duration(seconds: 1));
+        controller.session.end();
+      },
+    );
 
     test('native port probe is wired', () {
       final handlerSrc = File(
@@ -669,26 +675,25 @@ void main() {
       expect(managerSrc.contains('Settings.Global.AUTO_TIME'), isTrue);
     });
 
-    testWidgets('a non-retryable failure shows its code and tries once',
-        (tester) async {
-      setPrivateDnsFailures = 1;
-      // 2 = DPM FAILURE_SETTING: a hard failure, never retried.
-      setPrivateDnsFailureCode = 2;
-      await pumpConfigTab(tester);
-      await openDnsDialog(tester);
-      await selectProvider(tester, 'CleanBrowsing (Family filter)');
-      await tapApplyAndWait(
-        tester,
-        () =>
-            find.text(
-              'Failed to apply the private DNS host (error code 2).',
-            ).evaluate().isNotEmpty,
-      );
-
-      expect(
-        calls.where((c) => c.method == 'setPrivateDns'),
-        hasLength(1),
-      );
+    test('native external-VPN watcher is wired', () {
+      final watcherSrc = File(
+        'android/app/src/main/kotlin/com/alnajashia/azm/vpn/ExternalVpnWatcher.kt',
+      ).readAsStringSync();
+      expect(watcherSrc.contains('TRANSPORT_VPN'), isTrue);
+      expect(watcherSrc.contains('registerNetworkCallback'), isTrue);
+      expect(watcherSrc.contains('AzmVpnService.isRunning'), isTrue);
+      expect(watcherSrc.contains('setPrivateDns'), isTrue);
+      expect(watcherSrc.contains('resetPrivateDns'), isTrue);
+      final storeSrc = File(
+        'android/app/src/main/kotlin/com/alnajashia/azm/vpn/VpnConfigStore.kt',
+      ).readAsStringSync();
+      expect(storeSrc.contains('dnsAutoHost'), isTrue);
+      expect(storeSrc.contains('ExternalVpnWatcher.sync'), isTrue);
+      final a11ySrc = File(
+        'android/app/src/main/kotlin/com/alnajashia/azm/accessibility/AzmAccessibilityService.kt',
+      ).readAsStringSync();
+      expect(a11ySrc.contains('ExternalVpnWatcher.register'), isTrue);
+      expect(a11ySrc.contains('ExternalVpnWatcher.unregister'), isTrue);
     });
 
     testWidgets('a live host the prefs do not know is adopted',
@@ -702,16 +707,20 @@ void main() {
       final saved = (jsonDecode(fakeDnsJson!) as Map).cast<String, dynamic>();
       expect(saved['enabled'], isTrue);
       expect(saved['provider'], 'adguard');
+      expect(saved['viaVpn'], isFalse);
       expect(
         find.text('Forced host: family.adguard-dns.com'),
         findsOneWidget,
       );
 
+      // The adopted provider is the remembered choice once the
+      // switch is turned on.
       await openDnsDialog(tester);
+      await toggleVpnSwitch(tester);
       expect(
         tester
-            .widget<RadioGroup<DnsProvider?>>(
-              find.byType(RadioGroup<DnsProvider?>),
+            .widget<RadioGroup<DnsProvider>>(
+              find.byType(RadioGroup<DnsProvider>),
             )
             .groupValue,
         DnsProvider.adguard,

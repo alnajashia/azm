@@ -1,8 +1,10 @@
 /// Batch I-A, item 13 — focus schedules: the model round-trips and
-/// the card lists schedules; toggling/deleting/adding an auto-start
-/// schedule goes through the paper-code session, reminder-only ones
-/// save directly; the exact-alarm banner shows when the permission is
-/// off and its button opens settings.
+/// the card lists schedules; deactivating or deleting an
+/// auto-start schedule goes through the paper-code session, while
+/// adding (even auto-start), editing, and deleting a disabled
+/// schedule save directly (user rule clarified 2026-11-22); the
+/// exact-alarm banner shows when the permission is off and its
+/// button opens settings.
 ///
 /// NOTE: the focus screen runs a 1-second ticker, so these tests use
 /// explicit `tester.pump()` calls instead of `pumpAndSettle` (which
@@ -324,6 +326,45 @@ void main() {
       expect(added['minute'], 0);
       expect((added['days'] as List).length, 5);
       expect(added['autoStart'], isFalse);
+    });
+
+    testWidgets('adding an auto-start schedule saves directly', (
+      tester,
+    ) async {
+      // User rule clarified 2026-11-22: adding is free — even an
+      // auto-start (enforcing) schedule. Only deactivating or
+      // deleting an enforcing one asks for the code.
+      await pumpScreen(tester);
+      await tester.tap(find.text('Add schedule'));
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+      await tester.tap(find.text('Start automatically'));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+      expect(find.text('Enter recovery code'), findsNothing);
+      expect(setSchedulesCalled(), isTrue);
+      final added = fakeSchedules.singleWhere(
+        (s) => (s['id'] as String).startsWith('schedule-'),
+      );
+      expect(added['autoStart'], isTrue);
+    });
+
+    testWidgets('deleting a disabled schedule saves directly', (
+      tester,
+    ) async {
+      fakeSchedules = [schedule('s9', {1}, 9, 0, enabled: false)];
+      await pumpScreen(tester);
+      await tester.tap(find.byTooltip('Delete').last);
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+      expect(find.text('Enter recovery code'), findsNothing);
+      expect(setSchedulesCalled(), isTrue);
+      expect(fakeSchedules, isEmpty);
     });
   });
 }
