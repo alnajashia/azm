@@ -698,6 +698,9 @@
   },
   "dnsNotSet": "Private DNS is not set",
   "dnsOff": "Off",
+  "dnsViaVpnTitle": "DNS via VPN",
+  "dnsViaVpnSub": "The chosen DNS activates automatically whenever a VPN is on — Azm's or any other.",
+  "dnsViaVpnSavedMsg": "DNS via VPN is set. It activates whenever a VPN is on.",
   "dnsApplied": "DNS protection applied",
   "dnsTurnedOff": "DNS protection turned off",
   "dnsSettings": "Settings",
@@ -1302,6 +1305,10 @@
   "breakMinutesLabel": "Break minutes",
   "longBreakMinutesLabel": "Long break minutes",
   "cyclesLabel": "Cycles before long break",
+  "totalCyclesLabel": "Total cycles",
+  "preFocusSoundLabel": "Sound before focus",
+  "preFocusSound1": "Sound 1",
+  "preFocusSound2": "Sound 2",
   "autoStartTitle": "Auto-start next focus",
   "autoStartSub": "Start the next focus phase by itself when a break ends; otherwise the session waits. Turning it off is a loosening.",
   "soundTitle": "Sound",
@@ -1788,9 +1795,21 @@
   "internetBlockPickApps": "Choose apps",
   "internetBlockPickGroups": "Choose groups",
   "internetBlockAppsCount": "{count} apps blocked",
-  "@internetBlockAppsCount": {"placeholders": {"count": {"type": "int"}}},
+  "@internetBlockAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "internetBlockGroupsCount": "{count} groups blocked",
-  "@internetBlockGroupsCount": {"placeholders": {"count": {"type": "int"}}},
+  "@internetBlockGroupsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "internetBlockNoneSelected": "Nothing selected yet",
   "internetBlockProviderTitle": "DNS filter provider",
   "internetBlockCustomUrl": "Custom DoH address (https://…)",

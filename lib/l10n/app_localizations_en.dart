@@ -1153,6 +1153,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dnsOff => 'Off';
 
   @override
+  String get dnsViaVpnTitle => 'DNS via VPN';
+
+  @override
+  String get dnsViaVpnSub =>
+      'The chosen DNS activates automatically whenever a VPN is on — Azm\'s or any other.';
+
+  @override
+  String get dnsViaVpnSavedMsg =>
+      'DNS via VPN is set. It activates whenever a VPN is on.';
+
+  @override
   String get dnsApplied => 'DNS protection applied';
 
   @override
@@ -2421,6 +2432,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cyclesLabel => 'Cycles before long break';
+
+  @override
+  String get totalCyclesLabel => 'Total cycles';
+
+  @override
+  String get preFocusSoundLabel => 'Sound before focus';
+
+  @override
+  String get preFocusSound1 => 'Sound 1';
+
+  @override
+  String get preFocusSound2 => 'Sound 2';
 
   @override
   String get autoStartTitle => 'Auto-start next focus';

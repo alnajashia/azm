@@ -1145,6 +1145,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dnsOff => 'إيقاف';
 
   @override
+  String get dnsViaVpnTitle => 'تفعيل DNS عبر VPN';
+
+  @override
+  String get dnsViaVpnSub =>
+      'يعمل DNS المختار تلقائياً عند تشغيل أي VPN — VPN عزم أو غيره.';
+
+  @override
+  String get dnsViaVpnSavedMsg => 'تم ضبط DNS عبر VPN. يعمل عند تشغيل أي VPN.';
+
+  @override
   String get dnsApplied => 'تم تطبيق حماية DNS';
 
   @override
@@ -2406,6 +2416,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cyclesLabel => 'الدورات قبل الاستراحة الطويلة';
+
+  @override
+  String get totalCyclesLabel => 'عدد الدورات';
+
+  @override
+  String get preFocusSoundLabel => 'الصوت قبل التركيز';
+
+  @override
+  String get preFocusSound1 => 'الصوت الأول';
+
+  @override
+  String get preFocusSound2 => 'الصوت الثاني';
 
   @override
   String get autoStartTitle => 'بدء التركيز التالي تلقائياً';
