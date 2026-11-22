@@ -367,19 +367,20 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
       if (mounted) setState(() => onVerified(verified));
     }
 
-    // BOTH directions are recovery-gated. Turning a protection OFF is a
-    // loosening (F23). Turning one ON *activates* an advanced-block
-    // feature for this app, which the user's v1.0.4 security directive
-    // also puts behind the paper recovery code — overriding the
-    // original's "tightening is free" rule for activations (recorded in
-    // docs/CODE_AUDIT_v1.0.4.md as a user directive). The change applies
-    // immediately once the session is open, like every gated action;
-    // this sheet's state changes only inside doApply, after the native
-    // side verifies.
+    // Turning a protection ON is free; turning one OFF is a
+    // loosening and goes through the recovery gate (user rule
+    // 2026-11-22: activation never asks for the code, only
+    // deactivation does). The change applies immediately once the
+    // gate passes, like every gated action; this sheet's state
+    // changes only inside doApply, after the native side verifies.
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      await runLoosening(context, widget.controller, doApply);
+      if (newValue) {
+        await doApply();
+      } else {
+        await runLoosening(context, widget.controller, doApply);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -540,13 +541,9 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
           newWeekly: result.weekly,
         ) ||
         result.reopen < current.reopenSeconds;
-    // User directive (v1.0.4 audit): SETTING a limit where none existed
-    // ACTIVATES time-limit blocking for this app — code-gated like a
-    // loosening, overriding the original's free-tightening rule.
-    final resultHasLimit = result.weekly != null
-        ? result.weekly!.any((m) => m > 0)
-        : (result.daily ?? 0) > 0;
-    final activates = !current.hasLimit && resultHasLimit;
+    // Setting a limit where none existed is an activation —
+    // free (user rule 2026-11-22: only deactivation asks for the
+    // recovery code).
     Future<void> save() async {
       try {
         final updated = await _channel.setTimeLimit(
@@ -561,7 +558,7 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
       }
     }
 
-    if (loosening || activates) {
+    if (loosening) {
       await runLoosening(context, widget.controller, save);
     } else {
       // Tightening (or neutral): free, but deferred behind the 5 s undo
@@ -619,10 +616,9 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
       }
     }
 
-    // User directive (v1.0.4 audit): adding allowed windows where none
-    // existed ACTIVATES window blocking for this app — code-gated.
-    final activates = !current.hasWindows && result.isNotEmpty;
-    if (loosening || dropsWeekly || activates) {
+    // Adding allowed windows where none existed is an activation —
+    // free (user rule 2026-11-22).
+    if (loosening || dropsWeekly) {
       await runLoosening(context, widget.controller, save);
     } else {
       await runTighteningWithUndo(
@@ -671,11 +667,10 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
         ? null
         : fresh.where((g) => g.id == newGroupId).firstOrNull;
     // Gate (mirror GroupsScreen._editMembers): removing from a
-    // restricted group loosens; adding to a restricted group activates.
+    // restricted group loosens; adding to one is an activation —
+    // free (user rule 2026-11-22).
     final loosening = oldGroup != null &&
         _GroupsScreenState._groupHasRestrictions(oldGroup);
-    final activates = newGroup != null &&
-        _GroupsScreenState._groupHasRestrictions(newGroup);
     Future<void> save() async {
       final updated = <AppGroupModel>[];
       for (final g in fresh) {
@@ -712,7 +707,7 @@ class _AppManagementSheetState extends State<AppManagementSheet> {
       if (mounted) setState(() => _groups = saved);
     }
 
-    if (loosening || activates) {
+    if (loosening) {
       await runLoosening(context, widget.controller, save);
     } else {
       await runTighteningWithUndo(
@@ -1320,11 +1315,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
       g.dailyWindows.isNotEmpty ||
       (g.weeklyWindows?.any((d) => d.isNotEmpty) ?? false);
 
-  /// Whether the group has any allowed time windows at all.
-  static bool _groupHasWindows(AppGroupModel g) =>
-      g.dailyWindows.isNotEmpty ||
-      (g.weeklyWindows?.any((d) => d.isNotEmpty) ?? false);
-
   /// The group row subtitle — Dechainer's Manage groups dialog shows
   /// the same three facts: app count, limit, time windows (plus the
   /// blocked badge when the group is blocked as a whole).
@@ -1368,11 +1358,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
           newSet: result,
         ) &&
         _groupHasRestrictions(group);
-    // User directive (v1.0.4 audit): ADDING a member to a group that
-    // carries restrictions ACTIVATES that blocking for the added app —
-    // code-gated like the removal is.
-    final activates = result.any((p) => !group.packages.contains(p)) &&
-        _groupHasRestrictions(group);
+    // Adding a member to a restricted group is an activation —
+    // free (user rule 2026-11-22); only the removal is gated.
     Future<void> save() async {
       await _save([
         for (final g in _groups!)
@@ -1401,7 +1388,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         }
       }
     }
-    if (loosening || activates) {
+    if (loosening) {
       await runLoosening(context, widget.controller, save);
     } else {
       await runTighteningWithUndo(
@@ -1434,15 +1421,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
           newWeekly: result.weekly,
         ) ||
         result.reopen < group.reopenSeconds;
-    // User directive (v1.0.4 audit): setting a group limit where none
-    // existed ACTIVATES blocking for every member — code-gated.
-    final groupHasLimit = group.weeklyMinutes != null
-        ? group.weeklyMinutes!.any((m) => m > 0)
-        : group.dailyMinutes > 0;
-    final resultHasLimit = result.weekly != null
-        ? result.weekly!.any((m) => m > 0)
-        : (result.daily ?? 0) > 0;
-    final activates = !groupHasLimit && resultHasLimit;
+    // Setting a group limit where none existed is an activation —
+    // free (user rule 2026-11-22).
     Future<void> save() => _save([
           for (final g in _groups!)
             if (g.id == group.id)
@@ -1460,7 +1440,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
             else
               g,
         ]);
-    if (loosening || activates) {
+    if (loosening) {
       await runLoosening(context, widget.controller, save);
     } else {
       await runTighteningWithUndo(
@@ -1479,8 +1459,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
   /// group menu had members and limit only). Same gate formula as the
   /// per-app windows editor: a daily save replaces the whole window
   /// set, so dropping per-weekday windows that allowed a minute the
-  /// new set does not is a loosening, and adding windows where none
-  /// existed activates blocking for every member.
+  /// new set does not is a loosening; adding windows where none
+  /// existed is an activation and free (user rule 2026-11-22).
   Future<void> _editGroupWindows(AppGroupModel group) async {
     final result = await showDialog<List<TimeWindowModel>>(
       context: context,
@@ -1506,7 +1486,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
             newDaily,
           ),
         );
-    final activates = !_groupHasWindows(group) && result.isNotEmpty;
     Future<void> save() => _save([
           for (final g in _groups!)
             if (g.id == group.id)
@@ -1517,7 +1496,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
             else
               g,
         ]);
-    if (loosening || dropsWeekly || activates) {
+    if (loosening || dropsWeekly) {
       await runLoosening(context, widget.controller, save);
     } else {
       await runTighteningWithUndo(
@@ -2138,18 +2117,6 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
     }).toList();
   }
 
-  /// Whether a bundle value counts as an *active* restriction (a bool
-  /// set, a non-empty string/list/map, a non-zero number) — used to spot
-  /// activations in [_save].
-  static bool _valueIsActive(Object? v) => switch (v) {
-        bool b => b,
-        String s => s.isNotEmpty,
-        num n => n != 0,
-        List l => l.isNotEmpty,
-        Map m => m.values.any(_valueIsActive),
-        _ => v != null,
-      };
-
   Future<void> _save() async {
     if (_busy) return;
     final finalBundle = _buildFinalBundle();
@@ -2160,14 +2127,8 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
       oldRestrictions: _current ?? const {},
       newRestrictions: finalBundle,
     );
-    // User directive (v1.0.4 audit): turning a declared restriction ON
-    // where it was off/absent ACTIVATES app blocking — code-gated like
-    // a loosening. (Strengthening an already-active value, e.g. growing
-    // a blocklist, stays a free tightening, as in the original.)
-    final current = _current ?? const {};
-    final activates = finalBundle.entries.any(
-      (e) => _valueIsActive(e.value) && !_valueIsActive(current[e.key]),
-    );
+    // Turning a declared restriction ON where it was off is an
+    // activation — free (user rule 2026-11-22).
     Future<void> apply() async {
       setState(() => _busy = true);
       try {
@@ -2190,7 +2151,7 @@ class _AppRestrictionsScreenState extends State<AppRestrictionsScreen> {
       }
     }
 
-    if (loosening || activates) {
+    if (loosening) {
       final done = await runLoosening(context, widget.controller, apply);
       if (done && mounted) _pop();
     } else {

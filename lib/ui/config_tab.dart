@@ -12,6 +12,7 @@ import '../app_controller.dart';
 import '../data/dns_protection.dart';
 import '../data/privileged_channel.dart';
 import '../domain/colour_modes.dart';
+import '../domain/internet_block.dart';
 import '../l10n/l10n.dart';
 import '../theme.dart';
 import 'activity_blocker_screen.dart';
@@ -124,9 +125,13 @@ class _ConfigTabState extends State<ConfigTab> {
         }
         if (dns != null && dns.isSpecifiedHost) {
           final live = DnsProtection.fromLiveHost(dns.hostname);
+          // Never adopt over a VPN-mode selection: while an external
+          // VPN is up Azm itself may have applied that very host
+          // (ExternalVpnWatcher), and adopting would wipe viaVpn.
           if (dnsProtection == null ||
-              !dnsProtection.enabled ||
-              dnsProtection.hostname != live.hostname) {
+              (!dnsProtection.viaVpn &&
+                  (!dnsProtection.enabled ||
+                      dnsProtection.hostname != live.hostname))) {
             try {
               await _c.config.setDnsProtection(live);
               dnsProtection = live;
@@ -191,27 +196,31 @@ class _ConfigTabState extends State<ConfigTab> {
 
   /// DNS selection dialog (moved back to Settings, 2026-11-14 — the
   /// browser-restrictions card is gone; this dialog is the ONE DNS
-  /// place). Restores the previous version's ListTile + dialog shape
-  /// with the four-provider set (CleanBrowsing, Cloudflare, AdGuard,
-  /// Custom + hostname) and the unified card's apply behaviour: the
-  /// channel call runs first and the preference is saved only after
-  /// the verified native reply; enabling is a tightening (direct) and
-  /// disabling is a loosening (recovery-gated); HOST_NOT_SERVING is
-  /// retried automatically; the real failure reason is shown inline
-  /// in the dialog with a
-  /// Retry button.
-  ///
-  /// The custom-DNS deadlock is fixed here, not papered over: the
-  /// dialog shows the hostname field as soon as Custom is picked,
-  /// and Apply is disabled until the (lowercase-normalised) hostname
-  /// is valid — the choice is never refused, so the field can never
-  /// be unreachable (item 5).
+  /// place). Since 2026-11-22 it carries the "DNS via VPN" switch:
+  /// switch on shows the provider list (CleanBrowsing, Cloudflare,
+  /// AdGuard, Custom) and the chosen provider activates
+  /// automatically whenever a VPN is on — Azm's own VPN filters over
+  /// DoH with it, and while an external VPN is up Azm applies the
+  /// same provider as system Private DNS (native
+  /// `ExternalVpnWatcher`). Switch off hides the list and stops any
+  /// running VPN DNS filtering (recovery-gated, like every
+  /// deactivation). The dialog no longer applies system Private DNS
+  /// directly — on the user's network port 853 is blocked, so that
+  /// path could never activate; the VPN paths are the working ones.
   Future<void> _editDns() async {
+    InternetBlockConfig internetBlock;
+    try {
+      internetBlock = await _c.channel.getInternetBlockConfig();
+    } catch (_) {
+      internetBlock = const InternetBlockConfig();
+    }
+    if (!mounted) return;
     final applied = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) => _DnsDialog(
         current: _dnsProtection ?? const DnsProtection(),
+        internetBlock: internetBlock,
         liveHostname: _dns?.hostname,
         onApply: _applyDns,
       ),
@@ -220,71 +229,58 @@ class _ConfigTabState extends State<ConfigTab> {
       final dns = _dnsProtection;
       showInfoSnackBar(
         context,
-        dns != null && dns.enabled
-            ? context.l10n.dnsAppliedMsg(_dns?.hostname ?? '')
+        dns != null && dns.viaVpn
+            ? context.l10n.dnsViaVpnSavedMsg
             : context.l10n.dnsTurnedOff,
       );
     }
   }
 
-  /// Applies a DNS-protection selection from the dialog: returns
-  /// (applied, error). A null error with applied == false means the
-  /// recovery gate was cancelled and the dialog simply stays open.
+  /// Applies a DNS selection from the dialog: returns (applied,
+  /// error). A null error with applied == false means the recovery
+  /// gate was cancelled and the dialog simply stays open.
+  ///
+  /// The internet-block config is written FIRST (the VPN provider +
+  /// the external-VPN auto host), then the dialog's own selection —
+  /// if the channel write fails, nothing is saved and the dialog
+  /// shows the failure. Turning the VPN switch off is a loosening
+  /// (recovery-gated) and, when Azm's VPN is filtering DNS right
+  /// now, stops it immediately (user request 2026-11-22); a block
+  /// level keeps running — only the DNS part turns off.
   Future<({bool applied, String? error})> _applyDns(
     DnsProtection next,
   ) async {
     // Captured before the awaits below (the dialog outlives them).
     final l10n = context.l10n;
-    if (next.enabled && !next.isValid) {
-      // The dialog disables Apply while the input is invalid, so
-      // this is only a belt-and-braces path. (Only Custom can be
-      // invalid now — the fixed providers always have a hostname.)
-      return (applied: false, error: l10n.dnsInvalidHostname);
-    }
 
     Future<({bool applied, String? error})> doApply() async {
       try {
-        final state = await _applyDnsWithRetry(next);
+        final ib = await _c.channel.getInternetBlockConfig();
+        final turningOff = (_dnsProtection?.viaVpn ?? false) && !next.viaVpn;
+        var nextIb = ib.copyWith(
+          dohProvider: dohProviderFor(next.provider),
+          customDohUrl: next.customDohUrl,
+          dnsAutoHost: next.viaVpn ? (next.hostname ?? '') : '',
+        );
+        if (turningOff &&
+            ib.enabled &&
+            ib.level == InternetBlockLevel.off) {
+          // DNS filtering is running through Azm's VPN right now:
+          // the switch-off stops it immediately.
+          nextIb = nextIb.copyWith(enabled: false);
+        }
+        await _c.channel.setInternetBlockConfig(nextIb);
         await _c.config.setDnsProtection(next);
         if (mounted) {
-          setState(() {
-            _dns = state;
-            _dnsProtection = next;
-          });
+          setState(() => _dnsProtection = next);
         }
         return (applied: true, error: null);
-      } on TimeoutException {
-        return (applied: false, error: l10n.dnsApplyTimeout);
-      } on PrivilegedException catch (e) {
-        // Diagnosis (user report 2026-11-19): a HOST_NOT_SERVING
-        // that survives every retry is usually the network
-        // blocking port 853 — Android never persists the host in
-        // that case, so retrying cannot fix it. Probe the ports
-        // and tell the user the real reason. Fail-soft: any probe
-        // error falls back to the plain not-serving message.
-        if (_isHostNotServing(e) && next.hostname != null) {
-          try {
-            final probe = await _c.channel.probeDnsPorts(next.hostname!);
-            var message = !probe.port853 && probe.port443
-                ? l10n.dnsPort853Blocked
-                : (!probe.port853 && !probe.port443
-                      ? l10n.dnsHostUnreachable
-                      : _dnsFailureMessage(e, l10n));
-            if (!probe.autoTime) {
-              message = '$message ${l10n.dnsAutoTimeOff}';
-            }
-            return (applied: false, error: message);
-          } catch (_) {
-            // Fall through to the plain message below.
-          }
-        }
-        return (applied: false, error: _dnsFailureMessage(e, l10n));
       } catch (_) {
         return (applied: false, error: l10n.dnsApplyFailed);
       }
     }
 
-    if (!next.enabled && (_dnsProtection?.enabled ?? false)) {
+    if ((_dnsProtection?.viaVpn ?? false) && !next.viaVpn) {
       ({bool applied, String? error}) result = (applied: false, error: null);
       final ok = await runLoosening(context, _c, () async {
         result = await doApply();
@@ -293,70 +289,6 @@ class _ConfigTabState extends State<ConfigTab> {
     }
     return doApply();
   }
-
-  /// The mapped failure message of a DNS apply (moved from the
-  /// retired browser-restrictions card, unchanged).
-  String _dnsFailureMessage(Object e, AppLocalizations l10n) {
-    if (e is TimeoutException) return l10n.dnsApplyTimeout;
-    if (e is PrivilegedException) {
-      final code = e.details['verifiedState'];
-      // Android's real DPM values (DevicePolicyManager): 1 =
-      // HOST_NOT_SERVING (transient — the host has not been verified
-      // as serving yet; retry), 2 = FAILURE_SETTING (hard failure).
-      if (code == 1 || e.message.contains('result code 1')) {
-        return l10n.dnsNotServing;
-      }
-      if (code is num) return l10n.dnsApplyFailedCode(code.toInt());
-      return l10n.dnsApplyFailed;
-    }
-    return l10n.dnsApplyFailed;
-  }
-
-  /// True when the failure is the DPM "host not serving" result — the
-  /// retryable one (the system often reports it for a while after
-  /// provisioning, then the same host applies fine).
-  bool _isHostNotServing(Object e) {
-    if (e is PrivilegedException) {
-      // DPM result code 1 = HOST_NOT_SERVING (see _dnsFailureMessage).
-      return e.details['verifiedState'] == 1 ||
-          e.message.contains('result code 1');
-    }
-    return false;
-  }
-
-  /// One channel apply with automatic retry on HOST_NOT_SERVING: up to
-  /// 4 attempts (delays 2s/5s/8s, 20s timeout each) — the "fails at
-  /// first, works after a while" case from item 3. Disabling (reset
-  /// to opportunistic) never retries: it sets no host, so the code
-  /// cannot apply to it. Any other failure returns at once. Throws
-  /// the last failure.
-  Future<PrivateDnsState> _applyDnsWithRetry(DnsProtection next) async {
-    if (!next.enabled) {
-      return _c.channel
-          .resetPrivateDns()
-          .timeout(const Duration(seconds: 20));
-    }
-    const delays = [
-      Duration.zero,
-      Duration(seconds: 2),
-      Duration(seconds: 5),
-      Duration(seconds: 8),
-    ];
-    Object? lastError;
-    for (var i = 0; i < delays.length; i++) {
-      if (i > 0) await Future.delayed(delays[i]);
-      try {
-        return await _c.channel
-            .setPrivateDns(next.hostname!)
-            .timeout(const Duration(seconds: 20));
-      } catch (e) {
-        lastError = e;
-        if (!_isHostNotServing(e)) rethrow;
-      }
-    }
-    throw lastError!;
-  }
-
   /// Live subtitle for the colour-modes tile (Batch C): what is
   /// actually applied right now, or the static note while loading.
   String _colourModesSubtitle(AppLocalizations l10n) {
@@ -1709,27 +1641,32 @@ Future<void> showRemovalOutcomeDialog(
   );
 }
 
-/// DNS selection dialog, mirroring the previous version's `_DnsDialog`
-/// shape with the unified card's provider set: an Off choice
-/// plus exactly one of CleanBrowsing / Cloudflare / AdGuard /
-/// Custom. The custom hostname field is shown as soon as its radio
-/// is picked, and Apply stays disabled until the input is valid —
-/// the choice is never refused, so the field can never be
-/// unreachable (item 5: the custom-DNS deadlock).
-///
-/// The custom hostname is lowercase-normalised on apply (the model
-/// only accepts lowercase), so typing uppercase is valid input, not
-/// an error. [onApply] performs the gated native call and reports
-/// (applied, error): a null error with applied == false means the
-/// recovery gate was cancelled and the dialog simply stays open.
+/// DNS selection dialog (Settings). Since 2026-11-22 it carries
+/// the "DNS via VPN" switch: switch on shows the provider list
+/// (exactly one of CleanBrowsing / Cloudflare / AdGuard / Custom)
+/// and the chosen provider activates automatically whenever a VPN
+/// is on; switch off hides the list (user request). The custom
+/// field holds a DoH URL (https) — the endpoint Azm's VPN filters
+/// with; its host part becomes the Private DNS host applied while
+/// an external VPN is up. Apply stays disabled until the custom
+/// URL is valid — the choice is never refused, so the field can
+/// never be unreachable (item 5's deadlock lesson). [onApply]
+/// performs the gated write and reports (applied, error): a null
+/// error with applied == false means the recovery gate was
+/// cancelled and the dialog simply stays open.
 class _DnsDialog extends StatefulWidget {
   const _DnsDialog({
     required this.current,
+    required this.internetBlock,
     required this.liveHostname,
     required this.onApply,
   });
 
   final DnsProtection current;
+
+  /// The live internet-block config: while the switch is on, its
+  /// DoH provider is the source of truth for the selection.
+  final InternetBlockConfig internetBlock;
   final String? liveHostname;
   final Future<({bool applied, String? error})> Function(DnsProtection)
   onApply;
@@ -1739,8 +1676,8 @@ class _DnsDialog extends StatefulWidget {
 }
 
 class _DnsDialogState extends State<_DnsDialog> {
-  /// The selected provider, or null for Off.
-  DnsProvider? _selected;
+  bool _viaVpn = false;
+  DnsProvider _selected = DnsProvider.cleanBrowsing;
   final _customController = TextEditingController();
   bool _loading = false;
   String? _error;
@@ -1749,8 +1686,15 @@ class _DnsDialogState extends State<_DnsDialog> {
   void initState() {
     super.initState();
     final current = widget.current;
-    _selected = current.enabled ? current.provider : null;
-    _customController.text = current.customHostname;
+    _viaVpn = current.viaVpn;
+    if (current.viaVpn) {
+      // The internet-block config is what the VPN actually uses.
+      _selected = dnsProviderFor(widget.internetBlock.dohProvider);
+      _customController.text = widget.internetBlock.customDohUrl;
+    } else {
+      _selected = current.provider;
+      _customController.text = current.customDohUrl;
+    }
   }
 
   @override
@@ -1759,28 +1703,33 @@ class _DnsDialogState extends State<_DnsDialog> {
     super.dispose();
   }
 
-  /// The custom hostname as it will be applied: trimmed and
-  /// lowercase-normalised (the model only accepts lowercase).
-  String get _customHost => _customController.text.trim().toLowerCase();
+  /// The custom DoH URL as it will be applied (trimmed).
+  String get _customUrl => _customController.text.trim();
 
-  bool get _customValid =>
-      DnsProtection.isValidCustomHostname(_customHost);
+  bool get _customValid {
+    final uri = Uri.tryParse(_customUrl);
+    return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
+  }
 
   bool get _canApply {
     if (_loading) return false;
-    if (_selected == null) return true;
+    if (!_viaVpn) return true;
     if (_selected == DnsProvider.custom) return _customValid;
     return true;
   }
 
   Future<void> _apply() async {
-    final next = _selected == null
-        ? widget.current.copyWith(enabled: false)
-        : DnsProtection(
-            enabled: true,
-            provider: _selected!,
-            customHostname: _customHost,
-          );
+    final current = widget.current;
+    final isCustom = _selected == DnsProvider.custom;
+    final next = DnsProtection(
+      enabled: _viaVpn,
+      provider: _selected,
+      customHostname: isCustom
+          ? dohUrlHost(_customUrl)
+          : current.customHostname,
+      viaVpn: _viaVpn,
+      customDohUrl: isCustom ? _customUrl : current.customDohUrl,
+    );
     setState(() {
       _loading = true;
       _error = null;
@@ -1817,80 +1766,82 @@ class _DnsDialogState extends State<_DnsDialog> {
                       : l10n.dnsNotSet,
                 ),
                 const SizedBox(height: 8),
-                RadioGroup<DnsProvider?>(
-                  groupValue: _selected,
+                SwitchListTile(
+                  title: Text(l10n.dnsViaVpnTitle),
+                  subtitle: Text(l10n.dnsViaVpnSub),
+                  value: _viaVpn,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
                   onChanged: _loading
-                      ? (_) {}
-                      : (v) => setState(() => _selected = v),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      RadioListTile<DnsProvider?>(
-                        value: null,
-                        title: Text(l10n.dnsOff),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      RadioListTile<DnsProvider?>(
-                        title: Text(l10n.dnsProviderCleanbrowsing),
-                        subtitle: Text(l10n.dnsProviderCleanbrowsingNote),
-                        value: DnsProvider.cleanBrowsing,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      RadioListTile<DnsProvider?>(
-                        title: Text(l10n.dnsProviderCloudflare),
-                        subtitle: Text(l10n.dnsProviderCloudflareNote),
-                        value: DnsProvider.cloudflare,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      RadioListTile<DnsProvider?>(
-                        title: Text(l10n.dnsProviderAdguard),
-                        subtitle: Text(l10n.dnsProviderAdguardNote),
-                        value: DnsProvider.adguard,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      RadioListTile<DnsProvider?>(
-                        title: Text(l10n.dnsCustom),
-                        subtitle: Text(l10n.dnsProviderCustomNote),
-                        value: DnsProvider.custom,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      if (_selected == DnsProvider.custom)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                          child: TextField(
-                            controller: _customController,
-                            decoration: InputDecoration(
-                              labelText: l10n.dnsHostnameLabel,
-                              hintText: l10n.dnsHostnameHint,
-                              helperText: _customHost.isEmpty
-                                  ? null
-                                  : _customHost,
-                              errorText:
-                                  _customController.text.isNotEmpty &&
-                                      !_customValid
-                                  ? l10n.dnsInvalidHostname
-                                  : null,
-                            ),
-                            enabled: !_loading,
-                            onChanged: (_) => setState(() {}),
-                            onSubmitted: (_) => _apply(),
-                          ),
-                        ),
-                    ],
-                  ),
+                      ? null
+                      : (v) => setState(() => _viaVpn = v),
                 ),
+                // The provider list exists only while the switch is
+                // on (user request 2026-11-22).
+                if (_viaVpn)
+                  RadioGroup<DnsProvider>(
+                    groupValue: _selected,
+                    onChanged: _loading
+                        ? (_) {}
+                        : (v) =>
+                              setState(() => _selected = v ?? _selected),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RadioListTile<DnsProvider>(
+                          title: Text(l10n.dnsProviderCleanbrowsing),
+                          subtitle: Text(l10n.dnsProviderCleanbrowsingNote),
+                          value: DnsProvider.cleanBrowsing,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        RadioListTile<DnsProvider>(
+                          title: Text(l10n.dnsProviderCloudflare),
+                          subtitle: Text(l10n.dnsProviderCloudflareNote),
+                          value: DnsProvider.cloudflare,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        RadioListTile<DnsProvider>(
+                          title: Text(l10n.dnsProviderAdguard),
+                          subtitle: Text(l10n.dnsProviderAdguardNote),
+                          value: DnsProvider.adguard,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        RadioListTile<DnsProvider>(
+                          title: Text(l10n.dnsCustom),
+                          subtitle: Text(l10n.dnsProviderCustomNote),
+                          value: DnsProvider.custom,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        if (_selected == DnsProvider.custom)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                            child: TextField(
+                              controller: _customController,
+                              decoration: InputDecoration(
+                                labelText: l10n.internetBlockCustomUrl,
+                                errorText:
+                                    _customController.text.isNotEmpty &&
+                                        !_customValid
+                                    ? l10n.dnsInvalidHostname
+                                    : null,
+                              ),
+                              enabled: !_loading,
+                              keyboardType: TextInputType.url,
+                              onChanged: (_) => setState(() {}),
+                              onSubmitted: (_) => _apply(),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(l10n.dnsProtectionNote),
                 ),
-                // The last apply's real failure reason, with a
-                // Retry button (the one-shot error dialog's generic
-                // message is what hid the cause in item 3).
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),

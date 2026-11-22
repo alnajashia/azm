@@ -306,7 +306,10 @@ class _AppEntrySectionState extends State<AppEntrySection> {
   }
 
   Future<void> _setOrChange() async {
-    await runLoosening(context, _c, () async {
+    // Setting a password where none exists is an activation —
+    // free; changing an existing one replaces a protection, so it
+    // stays behind the recovery code (user rule 2026-11-22).
+    Future<void> doSet() async {
       if (!mounted) return;
       final password = await showDialog<String>(
         context: context,
@@ -318,7 +321,13 @@ class _AppEntrySectionState extends State<AppEntrySection> {
       if (mounted) {
         showInfoSnackBar(context, context.l10n.passwordSetDone);
       }
-    });
+    }
+
+    if (_isSet == true) {
+      await runLoosening(context, _c, doSet);
+    } else {
+      await doSet();
+    }
   }
 
   Future<void> _remove() async {
