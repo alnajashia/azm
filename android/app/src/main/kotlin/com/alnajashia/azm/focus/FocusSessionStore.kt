@@ -74,6 +74,9 @@ object FocusSessionStore {
     const val LONG_BREAK_MAX_MINUTES = 60
     const val CYCLES_MIN = 2
     const val CYCLES_MAX = 8
+    // Total focus repetitions per session (user request 2026-11-22).
+    const val TOTAL_CYCLES_MIN = 1
+    const val TOTAL_CYCLES_MAX = 12
 
     enum class Phase {
         FOCUS,
@@ -99,6 +102,8 @@ object FocusSessionStore {
     private const val KEY_SHORT_BREAK_MINUTES = "short_break_minutes"
     private const val KEY_LONG_BREAK_MINUTES = "long_break_minutes"
     private const val KEY_CYCLES = "cycles_before_long_break"
+    private const val KEY_TOTAL_CYCLES = "total_cycles"
+    private const val KEY_PRE_FOCUS_SOUND = "pre_focus_sound"
     private const val KEY_AUTO_START_FOCUS = "auto_start_focus"
     private const val KEY_SOUND_ENABLED = "sound_enabled"
     private const val KEY_VIBRATION_ENABLED = "vibration_enabled"
@@ -124,6 +129,7 @@ object FocusSessionStore {
     private const val KEY_PAUSED_REMAINING = "paused_remaining"
     private const val KEY_PAUSE_RELEASES = "pause_releases"
     private const val KEY_COMPLETED_FOCUS = "completed_focus"
+    private const val KEY_TOTAL_COMPLETED = "total_completed_focus"
     private const val KEY_ACTIVE_SUSPENSION = "active_suspension"
     private const val KEY_ACTIVE_RESTRICTIONS = "active_restrictions"
 
@@ -134,6 +140,42 @@ object FocusSessionStore {
 
     private fun edit(block: SharedPreferences.Editor.() -> Unit) {
         prefs().edit().apply(block).apply()
+    }
+
+    /** True while a phase-start sound (pre-focus or break) is
+     *  playing and the phase has not begun yet (user request
+     *  2026-11-22: the sound ends, then the timer starts). Guards
+     *  against double-advance when sync runs again during the
+     *  sound window. */
+    @Volatile
+    private var phaseStartPending = false
+
+    /** Bumped by [stop] so a sound still playing cannot resurrect a
+     *  session the user already ended. */
+    @Volatile
+    private var sessionGeneration = 0
+
+    /**
+     * Enters the focus phase, playing the chosen pre-focus sound
+     * first when sound is on: the phase begins only after the sound
+     * ends. With sound off (or playback failing) the phase begins at
+     * once — a sound must never block focus.
+     */
+    private fun beginFocusPhase(context: Context) {
+        val ctx = context.applicationContext
+        if (!isSoundEnabled()) {
+            enterPhase(ctx, Phase.FOCUS)
+            return
+        }
+        if (phaseStartPending) return
+        phaseStartPending = true
+        val generation = sessionGeneration
+        FocusSounds.playPreFocus(ctx, getPreFocusSound()) {
+            phaseStartPending = false
+            if (generation == sessionGeneration) {
+                enterPhase(ctx, Phase.FOCUS)
+            }
+        }
     }
 
     // ------------------------------------------------------------ config
@@ -151,6 +193,14 @@ object FocusSessionStore {
 
     fun getCyclesBeforeLongBreak(): Int =
         prefs().getInt(KEY_CYCLES, 4).coerceIn(CYCLES_MIN, CYCLES_MAX)
+
+    fun getTotalCycles(): Int =
+        prefs().getInt(KEY_TOTAL_CYCLES, 4)
+            .coerceIn(TOTAL_CYCLES_MIN, TOTAL_CYCLES_MAX)
+
+    /** Which pre-focus sound the user picked: 0 or 1. */
+    fun getPreFocusSound(): Int =
+        prefs().getInt(KEY_PRE_FOCUS_SOUND, 0).coerceIn(0, 1)
 
     fun isAutoStartFocus(): Boolean = prefs().getBoolean(KEY_AUTO_START_FOCUS, false)
 
@@ -213,6 +263,31 @@ object FocusSessionStore {
         }
     }
 
+    /** The total repetitions from the same Dart config JSON
+     *  (user request 2026-11-22). Old configs have no key: 4. */
+    private fun dartConfigTotalCycles(): Int {
+        val raw = prefs().getString(KEY_DART_CONFIG, null) ?: return 4
+        return try {
+            JSONObject(raw).optInt("totalCycles", 4)
+                .coerceIn(TOTAL_CYCLES_MIN, TOTAL_CYCLES_MAX)
+        } catch (e: Exception) {
+            Log.w(TAG, "Unparseable Dart focus config; total cycles 4", e)
+            4
+        }
+    }
+
+    /** The pre-focus sound choice from the same Dart config JSON
+     *  (user request 2026-11-22). Old configs have no key: 0. */
+    private fun dartConfigPreFocusSound(): Int {
+        val raw = prefs().getString(KEY_DART_CONFIG, null) ?: return 0
+        return try {
+            JSONObject(raw).optInt("preFocusSound", 0).coerceIn(0, 1)
+        } catch (e: Exception) {
+            Log.w(TAG, "Unparseable Dart focus config; pre-focus sound 0", e)
+            0
+        }
+    }
+
     // ------------------------------------------------------------ channel entry points
 
     /**
@@ -239,6 +314,8 @@ object FocusSessionStore {
             putInt(KEY_SHORT_BREAK_MINUTES, breakMinutes.coerceIn(SHORT_BREAK_MIN_MINUTES, SHORT_BREAK_MAX_MINUTES))
             putInt(KEY_LONG_BREAK_MINUTES, longBreakMinutes.coerceIn(LONG_BREAK_MIN_MINUTES, LONG_BREAK_MAX_MINUTES))
             putInt(KEY_CYCLES, cycles.coerceIn(CYCLES_MIN, CYCLES_MAX))
+            putInt(KEY_TOTAL_CYCLES, dartConfigTotalCycles())
+            putInt(KEY_PRE_FOCUS_SOUND, dartConfigPreFocusSound())
             putBoolean(KEY_AUTO_START_FOCUS, autoStartFocus)
             putBoolean(KEY_SOUND_ENABLED, soundEnabled)
             putBoolean(KEY_VIBRATION_ENABLED, vibrationEnabled)
@@ -253,15 +330,24 @@ object FocusSessionStore {
     }
 
     fun startFocus(context: Context) {
-        if (!isActive()) edit { putInt(KEY_COMPLETED_FOCUS, 0) }
-        enterPhase(context, Phase.FOCUS)
+        if (!isActive()) edit {
+            putInt(KEY_COMPLETED_FOCUS, 0)
+            putInt(KEY_TOTAL_COMPLETED, 0)
+        }
+        beginFocusPhase(context)
     }
 
     fun skipBreak(context: Context) {
         val phase = currentPhase() ?: return
         if (phase != Phase.SHORT_BREAK && phase != Phase.LONG_BREAK) return
+        // The session's repetitions are done: skipping the final
+        // break ends the session (user request 2026-11-22).
+        if (prefs().getInt(KEY_TOTAL_COMPLETED, 0) >= getTotalCycles()) {
+            stop(context)
+            return
+        }
         if (phase == Phase.LONG_BREAK) edit { putInt(KEY_COMPLETED_FOCUS, 0) }
-        enterPhase(context, Phase.FOCUS)
+        beginFocusPhase(context)
     }
 
     /** With [releaseApps] the apps come back too, so callers gate that one behind the recovery code. */
@@ -292,6 +378,9 @@ object FocusSessionStore {
 
     /** Outside [Phase.WAITING] this loosens the session, so callers gate it behind the recovery code. */
     fun stop(context: Context) {
+        // Invalidate any pre-focus sound still playing: its pending
+        // phase entry must not resurrect the ended session.
+        sessionGeneration++
         edit {
             remove(KEY_PHASE)
             remove(KEY_PHASE_START_RTC)
@@ -301,6 +390,7 @@ object FocusSessionStore {
             remove(KEY_PAUSED_REMAINING)
             remove(KEY_PAUSE_RELEASES)
             remove(KEY_COMPLETED_FOCUS)
+            remove(KEY_TOTAL_COMPLETED)
         }
         releaseSuspension(context)
         releaseRestrictions(context)
@@ -373,7 +463,25 @@ object FocusSessionStore {
      * is the nominal (pre-pause) deadline. Null when no session exists.
      */
     fun stateMap(context: Context): Map<String, Any?>? {
-        val phase = currentPhase() ?: return null
+        val phase = currentPhase() ?: run {
+            // A fresh session whose pre-focus sound is still playing:
+            // report the incoming focus phase so callers (the
+            // startFocusSession reply) never see a null state. The
+            // anchors are approximate until the phase really starts
+            // a few seconds later and the phase-changed event fires.
+            if (!phaseStartPending) return null
+            val nowElapsed = SystemClock.elapsedRealtime()
+            val duration = getFocusMinutes() * 60_000L
+            return mapOf(
+                "phase" to "focus",
+                "phaseStartedElapsedMs" to nowElapsed,
+                "phaseDurationMs" to duration,
+                "completedFocusInCycle" to 0,
+                "totalCompletedFocus" to 0,
+                "pausedFrom" to null,
+                "deadlineElapsedMs" to nowElapsed + duration,
+            )
+        }
         val p = prefs()
         val paused = isPaused()
         val startElapsed = p.getLong(KEY_PHASE_START_ELAPSED, 0L)
@@ -383,6 +491,7 @@ object FocusSessionStore {
             "phaseStartedElapsedMs" to startElapsed,
             "phaseDurationMs" to duration,
             "completedFocusInCycle" to p.getInt(KEY_COMPLETED_FOCUS, 0),
+            "totalCompletedFocus" to p.getInt(KEY_TOTAL_COMPLETED, 0),
             "pausedFrom" to if (paused) wirePhase(phase) else null,
             "deadlineElapsedMs" to startElapsed + duration,
         )
@@ -410,10 +519,63 @@ object FocusSessionStore {
             return
         }
 
+        // A phase-start sound is playing and the phase has not
+        // begun yet: do not advance again (the finished phase still
+        // reads as expired until the next one actually starts).
+        if (phaseStartPending) {
+            applyState(ctx)
+            return
+        }
+
         if (isTicking() && remainingMillis(ctx) <= 0L) {
             val finished = phase
+            // The session's repetitions are done (user request
+            // 2026-11-22): the break that follows the last focus
+            // phase ends the session instead of starting over.
+            if ((finished == Phase.SHORT_BREAK || finished == Phase.LONG_BREAK) &&
+                prefs().getInt(KEY_TOTAL_COMPLETED, 0) >= getTotalCycles()
+            ) {
+                Log.d(TAG, "Focus mode: total cycles reached, session ends")
+                stop(ctx)
+                alertPhaseEnded(ctx)
+                return
+            }
             phase = nextPhase(finished)
             Log.d(TAG, "Focus mode: $finished ran out, moving to $phase")
+            if (phase == Phase.FOCUS && isSoundEnabled()) {
+                // The chosen sound plays first; the focus phase (and
+                // its suspension) begins only after it ends.
+                phaseStartPending = true
+                val generation = sessionGeneration
+                FocusSounds.playPreFocus(ctx, getPreFocusSound()) {
+                    phaseStartPending = false
+                    if (generation == sessionGeneration) {
+                        startPhase(ctx, Phase.FOCUS)
+                        if (isVibrationEnabled()) vibrate(ctx)
+                        applyState(ctx)
+                    }
+                }
+                return
+            }
+            if ((phase == Phase.SHORT_BREAK || phase == Phase.LONG_BREAK) &&
+                isSoundEnabled()
+            ) {
+                // Same rule for breaks: the break sound (short or
+                // long) plays first; the break timer — and the
+                // release of the suspended apps — begins after it.
+                phaseStartPending = true
+                val generation = sessionGeneration
+                val next = phase
+                FocusSounds.playBreakStart(ctx, long = next == Phase.LONG_BREAK) {
+                    phaseStartPending = false
+                    if (generation == sessionGeneration) {
+                        startPhase(ctx, next)
+                        if (isVibrationEnabled()) vibrate(ctx)
+                        applyState(ctx)
+                    }
+                }
+                return
+            }
             startPhase(ctx, phase)
             alertPhaseEnded(ctx)
         }
@@ -451,7 +613,16 @@ object FocusSessionStore {
             cyclesBeforeLongBreak = getCyclesBeforeLongBreak(),
             autoStartFocus = isAutoStartFocus(),
         )
-        edit { putInt(KEY_COMPLETED_FOCUS, newCompleted) }
+        edit {
+            putInt(KEY_COMPLETED_FOCUS, newCompleted)
+            // The session total never resets at the long break.
+            if (finished == Phase.FOCUS) {
+                putInt(
+                    KEY_TOTAL_COMPLETED,
+                    prefs().getInt(KEY_TOTAL_COMPLETED, 0) + 1,
+                )
+            }
+        }
         return next
     }
 
