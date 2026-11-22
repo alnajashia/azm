@@ -33,6 +33,7 @@ import com.alnajashia.azm.focus.FocusSessionStore
 import com.alnajashia.azm.notifications.UsageAlertStage
 import com.alnajashia.azm.notifications.UsageWarningNotifier
 import com.alnajashia.azm.notifications.UsageWarningSettings
+import com.alnajashia.azm.vpn.ExternalVpnWatcher
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.ExecutorService
@@ -463,6 +464,10 @@ class AzmAccessibilityService : AccessibilityService() {
         instance = this
         AzmState.accessibilityServiceRunning = true
         SettingsStore.init(applicationContext)
+        // "DNS via VPN" (2026-11-22): watch for external VPNs so
+        // the chosen DNS provider can be applied as Private DNS
+        // while another app's VPN is up.
+        ExternalVpnWatcher.register(applicationContext)
         lastCheckDate = LocalDate.now().toString()
         SettingsStore.resetUsageIfNewDay(lastCheckDate)
 
@@ -663,6 +668,7 @@ class AzmAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        ExternalVpnWatcher.unregister(applicationContext)
         if (instance === this) instance = null
         super.onDestroy()
     }
