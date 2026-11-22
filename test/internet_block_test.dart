@@ -114,9 +114,15 @@ void main() {
         groupIds: {'g1'},
         dohProvider: DohProvider.adguard,
         customDohUrl: 'https://example.com/dns-query',
+        dnsAutoHost: 'family.adguard-dns.com',
       );
       final back = InternetBlockConfig.fromMap(config.toMap());
       expect(back, config);
+    });
+
+    test('a wire map without dnsAutoHost reads as feature off', () {
+      final config = InternetBlockConfig.fromMap({'enabled': true});
+      expect(config.dnsAutoHost, isEmpty);
     });
 
     test('corrupt input reads as the safe default', () {

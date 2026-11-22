@@ -1116,6 +1116,18 @@ class _FocusModeScreenState extends State<FocusModeScreen>
                   loosening: v < config.cyclesBeforeLongBreak,
                 ),
               ),
+              _durationRow(
+                l10n.totalCyclesLabel,
+                config.totalCycles,
+                min: FocusConfig.totalCyclesMin,
+                max: FocusConfig.totalCyclesMax,
+                onChanged: (v) => _changeConfig(
+                  config.copyWith(totalCycles: v),
+                  // Fewer total repetitions shortens the session:
+                  // a loosening. More is free.
+                  loosening: v < config.totalCycles,
+                ),
+              ),
               SwitchListTile(
                 title: Text(l10n.autoStartTitle),
                 subtitle: Text(l10n.autoStartSub),
@@ -1138,6 +1150,35 @@ class _FocusModeScreenState extends State<FocusModeScreen>
                 onChanged: (v) =>
                     _saveConfig(config.copyWith(vibrationEnabled: v)),
               ),
+              ListTile(
+                title: Text(l10n.preFocusSoundLabel),
+                subtitle: Text(
+                  config.preFocusSound == 1
+                      ? l10n.preFocusSound2
+                      : l10n.preFocusSound1,
+                ),
+              ),
+              RadioGroup<int>(
+                groupValue: config.preFocusSound,
+                onChanged: (v) {
+                  if (v == null) return;
+                  _saveConfig(config.copyWith(preFocusSound: v));
+                  // Alarm-picker behaviour: hear the choice at once.
+                  widget.controller.channel.previewFocusSound(v);
+                },
+                child: Column(
+                  children: [
+                    RadioListTile<int>(
+                      value: 0,
+                      title: Text(l10n.preFocusSound1),
+                    ),
+                    RadioListTile<int>(
+                      value: 1,
+                      title: Text(l10n.preFocusSound2),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -1157,18 +1198,14 @@ class _FocusModeScreenState extends State<FocusModeScreen>
                   if (result != null) {
                     await _changeConfig(
                       config.copyWith(suspendApps: result),
-                      // The `loosening` flag here means "session required":
-                      // removals loosen (F23), and ADDING a target ACTIVATES
-                      // focus blocking for it — code-gated by the user's
-                      // v1.0.4 directive (see docs/CODE_AUDIT_v1.0.4.md).
-                      // The same rule applies to the groups/restrictions
-                      // pickers below.
-                      loosening:
-                          Loosening.isLooserSet(
-                            oldSet: config.suspendApps.toSet(),
-                            newSet: result.toSet(),
-                          ) ||
-                          result.any((e) => !config.suspendApps.contains(e)),
+                      // Removals loosen; adding a target is an
+                      // activation — free (user rule 2026-11-22).
+                      // The same rule applies to the
+                      // groups/restrictions pickers below.
+                      loosening: Loosening.isLooserSet(
+                        oldSet: config.suspendApps.toSet(),
+                        newSet: result.toSet(),
+                      ),
                     );
                   }
                 },
@@ -1404,26 +1441,25 @@ class _FocusModeScreenState extends State<FocusModeScreen>
   /// deleting one, disabling one, switching its auto-start off, or
   /// adding/enabling a new auto-start one. Reminder-only schedules
   /// never enforce, so their changes are free.
+  /// The code is needed only when enforcement is REMOVED: an
+  /// enforcing (enabled + auto-start) schedule deleted, or one
+  /// deactivated (user rule, clarified 2026-11-22: adding —
+  /// even an auto-start schedule — enabling and editing are free;
+  /// deleting a disabled schedule is free too).
   bool _schedulesChangeNeedsCode(
     List<FocusSchedule> oldList,
     List<FocusSchedule> nextList,
   ) {
-    final oldById = {for (final s in oldList) s.id: s};
     final nextById = {for (final s in nextList) s.id: s};
-    for (final entry in oldById.entries) {
-      final next = nextById[entry.key];
-      final wasEnforcing = entry.value.enabled && entry.value.autoStart;
+    for (final old in oldList) {
+      final next = nextById[old.id];
+      final wasEnforcing = old.enabled && old.autoStart;
       if (next == null) {
-        if (wasEnforcing) return true;
+        if (wasEnforcing) return true; // deleted an enforcing schedule
         continue;
       }
-      if (wasEnforcing != (next.enabled && next.autoStart)) return true;
-    }
-    for (final entry in nextById.entries) {
-      if (!oldById.containsKey(entry.key) &&
-          entry.value.enabled &&
-          entry.value.autoStart) {
-        return true;
+      if (wasEnforcing && !(next.enabled && next.autoStart)) {
+        return true; // deactivated
       }
     }
     return false;
@@ -1790,12 +1826,10 @@ class _FocusModeScreenState extends State<FocusModeScreen>
     if (result == null) return;
     await _changeConfig(
       config.copyWith(suspendGroups: result),
-      loosening:
-          Loosening.isLooserSet(
-            oldSet: config.suspendGroups.toSet(),
-            newSet: result.toSet(),
-          ) ||
-          result.any((e) => !config.suspendGroups.contains(e)),
+      loosening: Loosening.isLooserSet(
+        oldSet: config.suspendGroups.toSet(),
+        newSet: result.toSet(),
+      ),
     );
   }
 
@@ -1882,12 +1916,10 @@ class _FocusModeScreenState extends State<FocusModeScreen>
     if (result == null) return;
     await _changeConfig(
       config.copyWith(restrictions: result),
-      loosening:
-          Loosening.isLooserSet(
-            oldSet: config.restrictions.toSet(),
-            newSet: result.toSet(),
-          ) ||
-          result.any((e) => !config.restrictions.contains(e)),
+      loosening: Loosening.isLooserSet(
+        oldSet: config.restrictions.toSet(),
+        newSet: result.toSet(),
+      ),
     );
   }
 }

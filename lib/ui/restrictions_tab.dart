@@ -104,12 +104,11 @@ class _RestrictionsTabState extends State<RestrictionsTab> {
     final toClear = list
         .where((r) => _draft[r.key] == false && r.active)
         .toList();
-    // Clearing a restriction is a loosening (F23). APPLYING one is an
-    // activation of system-level blocking, which the user's v1.0.4
-    // security directive also puts behind the paper recovery code —
-    // so any apply with pending changes in either direction opens the
-    // gate first; a refused gate applies nothing at all.
-    if ((toApply.isNotEmpty || toClear.isNotEmpty) &&
+    // Clearing a restriction is a loosening (F23) and opens the
+    // gate first; a refused gate applies nothing at all. APPLYING
+    // one is an activation — free (user rule 2026-11-22: only
+    // deactivation asks for the recovery code).
+    if (toClear.isNotEmpty &&
         !await ensureRecoverySession(context, widget.controller)) {
       return; // gate refused: nothing is applied at all
     }

@@ -32,6 +32,7 @@ class FocusConfig {
     this.breakMinutes = 5,
     this.longBreakMinutes = 15,
     this.cyclesBeforeLongBreak = 4,
+    this.totalCycles = 4,
     this.autoStartFocus = false,
     this.soundEnabled = true,
     this.vibrationEnabled = true,
@@ -40,6 +41,7 @@ class FocusConfig {
     this.restrictions = const [],
     this.lockdownEnabled = false,
     this.lockdownStrict = false,
+    this.preFocusSound = 0,
   });
 
   // Bounds and defaults from the original `FocusMode.kt` (L31–45,
@@ -54,6 +56,11 @@ class FocusConfig {
   static const int longBreakMaxMinutes = 60;
   static const int cyclesMin = 2;
   static const int cyclesMax = 8;
+  // Total focus repetitions per session (user request 2026-11-22):
+  // the session ends after this many focus phases instead of
+  // looping forever.
+  static const int totalCyclesMin = 1;
+  static const int totalCyclesMax = 12;
 
   static int clampFocusMinutes(int v) => v.clamp(focusMinMinutes, focusMaxMinutes);
   static int clampBreakMinutes(int v) =>
@@ -61,6 +68,8 @@ class FocusConfig {
   static int clampLongBreakMinutes(int v) =>
       v.clamp(longBreakMinMinutes, longBreakMaxMinutes);
   static int clampCycles(int v) => v.clamp(cyclesMin, cyclesMax);
+  static int clampTotalCycles(int v) =>
+      v.clamp(totalCyclesMin, totalCyclesMax);
 
   final int focusMinutes;
 
@@ -68,6 +77,11 @@ class FocusConfig {
   final int breakMinutes;
   final int longBreakMinutes;
   final int cyclesBeforeLongBreak;
+
+  /// Total focus repetitions in one session (user request
+  /// 2026-11-22): after the break that follows the last one, the
+  /// session ends instead of starting over.
+  final int totalCycles;
 
   /// Original `auto_start_focus` (default false): when a break runs out
   /// with this on, the next focus phase starts by itself; with it off
@@ -93,6 +107,13 @@ class FocusConfig {
   final bool lockdownEnabled;
   final bool lockdownStrict;
 
+  /// Which sound plays before every focus phase (user request
+  /// 2026-11-22): 0 = `before_focus_start`, 1 = `before_focus_start2`.
+  /// The phase starts only after the sound ends.
+  final int preFocusSound;
+
+  static int clampPreFocusSound(int v) => v.clamp(0, 1);
+
   /// A copy with every duration/cycle value forced into the original's
   /// bounds — applied on read and on write, like the original's
   /// `coerceIn` in every getter/setter.
@@ -101,6 +122,7 @@ class FocusConfig {
         breakMinutes: clampBreakMinutes(breakMinutes),
         longBreakMinutes: clampLongBreakMinutes(longBreakMinutes),
         cyclesBeforeLongBreak: clampCycles(cyclesBeforeLongBreak),
+        totalCycles: clampTotalCycles(totalCycles),
         autoStartFocus: autoStartFocus,
         soundEnabled: soundEnabled,
         vibrationEnabled: vibrationEnabled,
@@ -109,6 +131,7 @@ class FocusConfig {
         restrictions: restrictions,
         lockdownEnabled: lockdownEnabled,
         lockdownStrict: lockdownStrict,
+        preFocusSound: clampPreFocusSound(preFocusSound),
       );
 
   Map<String, dynamic> toJson() => {
@@ -116,6 +139,7 @@ class FocusConfig {
         'breakMinutes': breakMinutes,
         'longBreakMinutes': longBreakMinutes,
         'cyclesBeforeLongBreak': cyclesBeforeLongBreak,
+        'totalCycles': totalCycles,
         'autoStartFocus': autoStartFocus,
         'soundEnabled': soundEnabled,
         'vibrationEnabled': vibrationEnabled,
@@ -124,6 +148,7 @@ class FocusConfig {
         'restrictions': restrictions,
         'lockdownEnabled': lockdownEnabled,
         'lockdownStrict': lockdownStrict,
+        'preFocusSound': preFocusSound,
       };
 
   factory FocusConfig.fromJson(Map<String, dynamic> j) => FocusConfig(
@@ -133,6 +158,9 @@ class FocusConfig {
             clampLongBreakMinutes((j['longBreakMinutes'] as num?)?.toInt() ?? 15),
         cyclesBeforeLongBreak:
             clampCycles((j['cyclesBeforeLongBreak'] as num?)?.toInt() ?? 4),
+        // Old stored configs have no total: one classic set of 4.
+        totalCycles:
+            clampTotalCycles((j['totalCycles'] as num?)?.toInt() ?? 4),
         autoStartFocus: j['autoStartFocus'] as bool? ?? false,
         soundEnabled: j['soundEnabled'] as bool? ?? true,
         vibrationEnabled: j['vibrationEnabled'] as bool? ?? true,
@@ -144,6 +172,9 @@ class FocusConfig {
         // Old stored configs have no lockdown fields: off, Tier 1.
         lockdownEnabled: j['lockdownEnabled'] as bool? ?? false,
         lockdownStrict: j['lockdownStrict'] as bool? ?? false,
+        // Old stored configs have no sound choice: the first sound.
+        preFocusSound:
+            clampPreFocusSound((j['preFocusSound'] as num?)?.toInt() ?? 0),
       );
 
   FocusConfig copyWith({
@@ -151,6 +182,7 @@ class FocusConfig {
     int? breakMinutes,
     int? longBreakMinutes,
     int? cyclesBeforeLongBreak,
+    int? totalCycles,
     bool? autoStartFocus,
     bool? soundEnabled,
     bool? vibrationEnabled,
@@ -159,6 +191,7 @@ class FocusConfig {
     List<String>? restrictions,
     bool? lockdownEnabled,
     bool? lockdownStrict,
+    int? preFocusSound,
   }) =>
       FocusConfig(
         focusMinutes: clampFocusMinutes(focusMinutes ?? this.focusMinutes),
@@ -167,6 +200,7 @@ class FocusConfig {
             clampLongBreakMinutes(longBreakMinutes ?? this.longBreakMinutes),
         cyclesBeforeLongBreak:
             clampCycles(cyclesBeforeLongBreak ?? this.cyclesBeforeLongBreak),
+        totalCycles: clampTotalCycles(totalCycles ?? this.totalCycles),
         autoStartFocus: autoStartFocus ?? this.autoStartFocus,
         soundEnabled: soundEnabled ?? this.soundEnabled,
         vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
@@ -175,6 +209,8 @@ class FocusConfig {
         restrictions: restrictions ?? this.restrictions,
         lockdownEnabled: lockdownEnabled ?? this.lockdownEnabled,
         lockdownStrict: lockdownStrict ?? this.lockdownStrict,
+        preFocusSound:
+            clampPreFocusSound(preFocusSound ?? this.preFocusSound),
       );
 }
 
@@ -326,6 +362,7 @@ class FocusSession {
     this.phaseStartedElapsed,
     this.phaseDuration = Duration.zero,
     this.completedFocusPeriods = 0,
+    this.totalCompletedFocusPeriods = 0,
     this.pausedFrom,
     this.pausedRemaining,
   });
@@ -353,6 +390,12 @@ class FocusSession {
 
   final Duration phaseDuration;
   final int completedFocusPeriods;
+
+  /// Focus phases finished since the session started — never reset
+  /// by the long break, unlike [completedFocusPeriods] (which counts
+  /// within the current set). The session ends once this reaches
+  /// [FocusConfig.totalCycles] (user request 2026-11-22).
+  final int totalCompletedFocusPeriods;
 
   /// The phase [pause] was taken from, so [resume] can re-enter the
   /// *same* phase — mirroring the original, whose `resume()` re-anchors
@@ -411,13 +454,17 @@ class FocusSession {
         phaseStartedElapsed: monotonicNow,
         phaseDuration: durationFor(FocusPhase.focus),
         completedFocusPeriods: completedFocusPeriods,
+        totalCompletedFocusPeriods: totalCompletedFocusPeriods,
       );
 
   /// The phase that follows the current one, without applying it.
   /// Mirrors `FocusCycle.next`: a finished focus goes to the long break
   /// once the completed count reaches the cycle length, else to the
   /// short break; a finished break goes back to focus only when
-  /// auto-start is on, and parks in WAITING otherwise.
+  /// auto-start is on, and parks in WAITING otherwise. Once the
+  /// session's total repetitions are done
+  /// ([FocusConfig.totalCycles], user request 2026-11-22), a finished
+  /// break ends the session instead.
   FocusPhase get nextPhase {
     switch (phase) {
       case FocusPhase.focus:
@@ -427,6 +474,9 @@ class FocusSession {
             : FocusPhase.breakTime;
       case FocusPhase.breakTime:
       case FocusPhase.longBreak:
+        if (totalCompletedFocusPeriods >= config.totalCycles) {
+          return FocusPhase.done;
+        }
         return config.autoStartFocus ? FocusPhase.focus : FocusPhase.waiting;
       case FocusPhase.waiting:
         return FocusPhase.waiting;
@@ -451,14 +501,28 @@ class FocusSession {
         FocusPhase.longBreak => 0,
         _ => completedFocusPeriods,
       },
+      totalCompletedFocusPeriods: phase == FocusPhase.focus
+          ? totalCompletedFocusPeriods + 1
+          : totalCompletedFocusPeriods,
     );
   }
 
   /// Skips the current break and starts focusing again — the original's
   /// `skipBreak`: only valid from a break phase, and skipping the long
-  /// break also resets the completed-focus count.
+  /// break also resets the completed-focus count. When the session's
+  /// total repetitions are already done, skipping ends the session.
   FocusSession skipBreak(DateTime now) {
     if (phase != FocusPhase.breakTime && phase != FocusPhase.longBreak) return this;
+    if (totalCompletedFocusPeriods >= config.totalCycles) {
+      return FocusSession(
+        config: config,
+        phase: FocusPhase.done,
+        phaseStartedAt: now,
+        phaseStartedElapsed: monotonicNow,
+        completedFocusPeriods: completedFocusPeriods,
+        totalCompletedFocusPeriods: totalCompletedFocusPeriods,
+      );
+    }
     return FocusSession(
       config: config,
       phase: FocusPhase.focus,
@@ -466,6 +530,7 @@ class FocusSession {
       phaseStartedElapsed: monotonicNow,
       phaseDuration: durationFor(FocusPhase.focus),
       completedFocusPeriods: phase == FocusPhase.longBreak ? 0 : completedFocusPeriods,
+      totalCompletedFocusPeriods: totalCompletedFocusPeriods,
     );
   }
 
@@ -478,6 +543,7 @@ class FocusSession {
       phaseStartedElapsed: phaseStartedElapsed,
       phaseDuration: phaseDuration,
       completedFocusPeriods: completedFocusPeriods,
+      totalCompletedFocusPeriods: totalCompletedFocusPeriods,
       pausedFrom: phase,
       pausedRemaining: remainingAt(now),
     );
@@ -499,6 +565,7 @@ class FocusSession {
       phaseStartedElapsed: monotonicNow - elapsedSoFar,
       phaseDuration: phaseDuration,
       completedFocusPeriods: completedFocusPeriods,
+      totalCompletedFocusPeriods: totalCompletedFocusPeriods,
     );
   }
 

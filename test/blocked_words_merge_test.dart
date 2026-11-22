@@ -1,10 +1,9 @@
 /// Batch J, item 10 redesign — one blocked-word entry is a word +
 /// its targets (apps and/or groups) + its modes, behind the same two
 /// views (words-per-app, apps-per-word), with the standing gates
-/// (removing coverage or activating blocking in a new place goes
-/// through the paper-code session; adding words or modes to an
-/// already-covered app is free). Group targets expand to their
-/// member apps at enforcement time.
+/// (removing coverage goes through the paper-code session; adding
+/// words, targets or modes is free — user rule 2026-11-22). Group
+/// targets expand to their member apps at enforcement time.
 library;
 
 import 'package:azm/app_controller.dart';
@@ -305,10 +304,11 @@ void main() {
         }),
         isFalse,
       );
-      // New coverage (empty -> some) activates: gated.
+      // New coverage (empty -> some) is an activation: free
+      // (user rule 2026-11-22).
       expect(
         appCoverageChangeLoosens({}, {'bad': {WordBlockMode.active}}),
-        isTrue,
+        isFalse,
       );
       // Adding words/modes to an already-covered app is free.
       expect(
@@ -326,20 +326,23 @@ void main() {
       expect(appCoverageChangeLoosens(social, social), isFalse);
     });
 
-    test('wordAssignmentsChangeLoosens: any change is gated', () {
+    test('wordAssignmentsChangeLoosens: only removals/weakening gated', () {
       expect(
         wordAssignmentsChangeLoosens([badGameActive], [badGameActive]),
         isFalse,
       );
+      // Adding a mode tightens: free.
       expect(
         wordAssignmentsChangeLoosens([badGameActive], [badGame]),
-        isTrue,
+        isFalse,
       );
+      // Dropping a mode loosens: gated.
       expect(
         wordAssignmentsChangeLoosens([badGame], [badGameActive]),
         isTrue,
       );
       expect(wordAssignmentsChangeLoosens([badGame], []), isTrue);
+      // Adding a target tightens: free.
       expect(
         wordAssignmentsChangeLoosens(
           [badGameActive],
@@ -351,7 +354,7 @@ void main() {
             ),
           ],
         ),
-        isTrue,
+        isFalse,
       );
     });
   });
@@ -444,7 +447,7 @@ void main() {
     });
 
     testWidgets('word dialog: select-all apps adds every app, '
-        'through the gate', (tester) async {
+        'without a gate', (tester) async {
       // bad -> [game] both modes.
       fakeAssignments = [
         assignment('bad', ['com.example.game'], ['active', 'passive']),
@@ -473,7 +476,8 @@ void main() {
       expect(find.text('Social App'), findsOneWidget);
       expect(find.text('Notes'), findsOneWidget);
 
-      // Saving adds two newly covered apps: gated.
+      // Saving adds two newly covered apps: an activation, free —
+      // no code gate (user rule 2026-11-22).
       await tester.tap(
         find.descendant(
           of: find.byType(AlertDialog),
@@ -481,8 +485,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Enter recovery code'), findsOneWidget);
-      await enterCodeAndConfirm(tester);
+      expect(find.text('Enter recovery code'), findsNothing);
       final saved = calls
           .lastWhere((c) => c.method == 'setWordAssignments')
           .arguments['assignments'] as List;
@@ -500,7 +503,7 @@ void main() {
     });
 
     testWidgets('word dialog: select-all groups adds the group, '
-        'through the gate', (tester) async {
+        'without a gate', (tester) async {
       // secret -> [social] passive only.
       fakeAssignments = [
         assignment('secret', ['com.example.social'], ['passive']),
@@ -535,8 +538,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Enter recovery code'), findsOneWidget);
-      await enterCodeAndConfirm(tester);
+      // Adding a group target is an activation: free, no gate.
+      expect(find.text('Enter recovery code'), findsNothing);
       final saved = calls
           .lastWhere((c) => c.method == 'setWordAssignments')
           .arguments['assignments'] as List;

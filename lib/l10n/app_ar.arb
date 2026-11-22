@@ -698,6 +698,9 @@
   },
   "dnsNotSet": "DNS الخاص غير مضبوط",
   "dnsOff": "إيقاف",
+  "dnsViaVpnTitle": "تفعيل DNS عبر VPN",
+  "dnsViaVpnSub": "يعمل DNS المختار تلقائياً عند تشغيل أي VPN — VPN عزم أو غيره.",
+  "dnsViaVpnSavedMsg": "تم ضبط DNS عبر VPN. يعمل عند تشغيل أي VPN.",
   "dnsApplied": "تم تطبيق حماية DNS",
   "dnsTurnedOff": "تم إيقاف حماية DNS",
   "dnsSettings": "الإعدادات",
@@ -1302,6 +1305,10 @@
   "breakMinutesLabel": "دقائق الاستراحة",
   "longBreakMinutesLabel": "دقائق الاستراحة الطويلة",
   "cyclesLabel": "الدورات قبل الاستراحة الطويلة",
+  "totalCyclesLabel": "عدد الدورات",
+  "preFocusSoundLabel": "الصوت قبل التركيز",
+  "preFocusSound1": "الصوت الأول",
+  "preFocusSound2": "الصوت الثاني",
   "autoStartTitle": "بدء التركيز التالي تلقائياً",
   "autoStartSub": "بدء مرحلة التركيز التالية من تلقاء نفسها عند انتهاء الاستراحة؛ وإلا تنتظر الجلسة. إيقافه تخفيف.",
   "soundTitle": "الصوت",
@@ -1788,9 +1795,21 @@
   "internetBlockPickApps": "اختر التطبيقات",
   "internetBlockPickGroups": "اختر المجموعات",
   "internetBlockAppsCount": "{count} تطبيق محظور",
-  "@internetBlockAppsCount": {"placeholders": {"count": {"type": "int"}}},
+  "@internetBlockAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "internetBlockGroupsCount": "{count} مجموعة محظورة",
-  "@internetBlockGroupsCount": {"placeholders": {"count": {"type": "int"}}},
+  "@internetBlockGroupsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "internetBlockNoneSelected": "لم يُختر شيء بعد",
   "internetBlockProviderTitle": "مزود ترشيح DNS",
   "internetBlockCustomUrl": "عنوان DoH مخصص (https://…)",

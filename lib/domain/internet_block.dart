@@ -61,6 +61,7 @@ class InternetBlockConfig {
     this.groupIds = const {},
     this.dohProvider = DohProvider.cleanBrowsing,
     this.customDohUrl = '',
+    this.dnsAutoHost = '',
   });
 
   final bool enabled;
@@ -69,6 +70,13 @@ class InternetBlockConfig {
   final Set<String> groupIds;
   final DohProvider dohProvider;
   final String customDohUrl;
+
+  /// The "DNS via VPN" auto host (user request 2026-11-22): the
+  /// Private DNS hostname Azm applies automatically while an
+  /// EXTERNAL VPN is up, so the chosen DNS provider also covers
+  /// other VPN apps. Empty means the feature is off. Azm's own VPN
+  /// filters over DoH instead and does not use this host.
+  final String dnsAutoHost;
 
   bool get blocking => level != InternetBlockLevel.off;
 
@@ -79,6 +87,7 @@ class InternetBlockConfig {
     Set<String>? groupIds,
     DohProvider? dohProvider,
     String? customDohUrl,
+    String? dnsAutoHost,
   }) => InternetBlockConfig(
     enabled: enabled ?? this.enabled,
     level: level ?? this.level,
@@ -86,6 +95,7 @@ class InternetBlockConfig {
     groupIds: groupIds ?? this.groupIds,
     dohProvider: dohProvider ?? this.dohProvider,
     customDohUrl: customDohUrl ?? this.customDohUrl,
+    dnsAutoHost: dnsAutoHost ?? this.dnsAutoHost,
   );
 
   Map<String, dynamic> toMap() => {
@@ -95,6 +105,7 @@ class InternetBlockConfig {
     'groupIds': groupIds.toList(),
     'dohProvider': dohProvider.wireName,
     'customDohUrl': customDohUrl,
+    'dnsAutoHost': dnsAutoHost,
   };
 
   factory InternetBlockConfig.fromMap(Map<dynamic, dynamic> m) =>
@@ -109,6 +120,7 @@ class InternetBlockConfig {
             const {},
         dohProvider: DohProvider.fromWire(m['dohProvider'] as String?),
         customDohUrl: m['customDohUrl'] as String? ?? '',
+        dnsAutoHost: m['dnsAutoHost'] as String? ?? '',
       );
 
   /// True when moving from [other] to this config weakens the
@@ -140,7 +152,8 @@ class InternetBlockConfig {
       other.groupIds.length == groupIds.length &&
       other.groupIds.containsAll(groupIds) &&
       other.dohProvider == dohProvider &&
-      other.customDohUrl == customDohUrl;
+      other.customDohUrl == customDohUrl &&
+      other.dnsAutoHost == dnsAutoHost;
 
   @override
   int get hashCode => Object.hash(
@@ -150,5 +163,6 @@ class InternetBlockConfig {
     Object.hashAllUnordered(groupIds),
     dohProvider,
     customDohUrl,
+    dnsAutoHost,
   );
 }

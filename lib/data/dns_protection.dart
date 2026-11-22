@@ -31,7 +31,19 @@
 /// * [DnsProvider.adguard] — the free AdGuard Family filter, no
 ///   account: blocks adult content.
 /// * [DnsProvider.custom] — the user's own DNS hostname.
+///
+/// VPN mode (user request 2026-11-22): [DnsProtection.viaVpn] is the
+/// "DNS via VPN" switch in the Settings dialog. When it is on, the
+/// provider list is shown and the chosen provider activates
+/// automatically whenever a VPN is on — Azm's own VPN (DoH filtering
+/// over port 443, via the internet-block config) or any external VPN
+/// (Azm applies the same provider as system Private DNS while the
+/// external VPN is up; see the native `ExternalVpnWatcher`). When it
+/// is off, the list is hidden and any running VPN DNS filtering
+/// stops (recovery-gated, like every deactivation).
 library;
+
+import '../domain/internet_block.dart';
 
 /// The filtering DNS provider behind DNS protection.
 enum DnsProvider {
@@ -58,14 +70,28 @@ class DnsProtection {
     this.enabled = false,
     this.provider = DnsProvider.cleanBrowsing,
     this.customHostname = '',
+    this.viaVpn = false,
+    this.customDohUrl = '',
   });
 
   final bool enabled;
   final DnsProvider provider;
 
   /// The user-entered hostname for [DnsProvider.custom]. Ignored
-  /// unless [provider] is [DnsProvider.custom].
+  /// unless [provider] is [DnsProvider.custom]. In VPN mode this is
+  /// the host part of [customDohUrl] — the Private DNS host Azm
+  /// applies while an external VPN is up.
   final String customHostname;
+
+  /// The "DNS via VPN" switch (user request 2026-11-22): the chosen
+  /// provider activates automatically whenever a VPN is on. The
+  /// Settings dialog shows the provider list only while this is on.
+  final bool viaVpn;
+
+  /// The user-entered DoH endpoint for [DnsProvider.custom] in VPN
+  /// mode (https URL). Ignored unless [provider] is
+  /// [DnsProvider.custom].
+  final String customDohUrl;
 
   /// The CleanBrowsing Family filter DoT hostname (free, no account).
   /// Verified against cleanbrowsing.org 2026-11-13.
@@ -140,17 +166,23 @@ class DnsProtection {
     bool? enabled,
     DnsProvider? provider,
     String? customHostname,
+    bool? viaVpn,
+    String? customDohUrl,
   }) =>
       DnsProtection(
         enabled: enabled ?? this.enabled,
         provider: provider ?? this.provider,
         customHostname: customHostname ?? this.customHostname,
+        viaVpn: viaVpn ?? this.viaVpn,
+        customDohUrl: customDohUrl ?? this.customDohUrl,
       );
 
   Map<String, dynamic> toJson() => {
         'enabled': enabled,
         'provider': provider.name,
         'customHostname': customHostname,
+        'viaVpn': viaVpn,
+        'customDohUrl': customDohUrl,
       };
 
   factory DnsProtection.fromJson(Map<String, dynamic> json) =>
@@ -158,5 +190,32 @@ class DnsProtection {
         enabled: json['enabled'] as bool? ?? false,
         provider: DnsProvider.fromName(json['provider'] as String?),
         customHostname: json['customHostname'] as String? ?? '',
+        // Absent in pre-2026-11-22 saves: the switch reads as off.
+        viaVpn: json['viaVpn'] as bool? ?? false,
+        customDohUrl: json['customDohUrl'] as String? ?? '',
       );
 }
+
+/// The internet-block DoH provider matching a [DnsProvider] (the two
+/// enums name the same four providers; the DNS dialog and the
+/// internet-block screen edit one shared choice).
+DohProvider dohProviderFor(DnsProvider provider) => switch (provider) {
+      DnsProvider.cleanBrowsing => DohProvider.cleanBrowsing,
+      DnsProvider.cloudflare => DohProvider.cloudflare,
+      DnsProvider.adguard => DohProvider.adguard,
+      DnsProvider.custom => DohProvider.custom,
+    };
+
+/// The [DnsProvider] matching an internet-block DoH provider.
+DnsProvider dnsProviderFor(DohProvider provider) => switch (provider) {
+      DohProvider.cleanBrowsing => DnsProvider.cleanBrowsing,
+      DohProvider.cloudflare => DnsProvider.cloudflare,
+      DohProvider.adguard => DnsProvider.adguard,
+      DohProvider.custom => DnsProvider.custom,
+    };
+
+/// The host part of a DoH URL, lowercased — the Private DNS host
+/// Azm applies for a custom provider while an external VPN is up.
+/// Empty when [url] does not parse to a host.
+String dohUrlHost(String url) =>
+    Uri.tryParse(url.trim())?.host.toLowerCase() ?? '';

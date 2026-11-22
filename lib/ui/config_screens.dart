@@ -81,12 +81,25 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
       await _applyRestrictions(kept, silent: true);
     }
 
-    // EVERY save is recovery-gated: a save re-applies the lists to the
-    // browsers immediately (above), so it is never a purely local edit —
-    // it either ACTIVATES URL blocking (user directive, v1.0.4 audit:
-    // activations are code-gated) or loosens it (F23). An already-active
-    // session passes through without a prompt.
-    await runLoosening(context, widget.controller, save);
+    // Only a loosening save is recovery-gated (user rule
+    // 2026-11-22: activation never asks for the code): a list
+    // deleted, or one of its sites dropped. Adding lists or sites
+    // tightens and is free.
+    final oldLists = _lists ?? const <BlockedList>[];
+    final nextById = {for (final l in kept) l.id: l};
+    final loosens = oldLists.any((old) {
+      final next = nextById[old.id];
+      return next == null || !next.sites.toSet().containsAll(old.sites);
+    });
+    if (loosens) {
+      await runLoosening(context, widget.controller, save);
+    } else {
+      try {
+        await save();
+      } catch (e) {
+        if (mounted) await showErrorCard(context, e);
+      }
+    }
   }
 
   /// Pushes the union of all lists' sites to every SUPPORTING browser,
@@ -258,10 +271,9 @@ class _BrowserRestrictionsScreenState extends State<BrowserRestrictionsScreen> {
     }
 
     if (!mounted) return;
-    // Pushing the blocklists ACTIVATES (or loosens) URL blocking in the
-    // browsers — recovery-gated in both directions (user directive,
-    // v1.0.4 audit; see _saveLists).
-    await runLoosening(context, widget.controller, apply);
+    // Pushing the already-saved blocklists to the browsers is free:
+    // the save itself is the gate point (user rule 2026-11-22).
+    await apply();
   }
 
   @override

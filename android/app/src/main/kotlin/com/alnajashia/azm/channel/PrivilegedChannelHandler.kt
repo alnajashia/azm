@@ -29,6 +29,7 @@ import com.alnajashia.azm.focus.FocusSchedule
 import com.alnajashia.azm.focus.FocusScheduleManager
 import com.alnajashia.azm.focus.FocusScheduleStorage
 import com.alnajashia.azm.focus.FocusSessionStore
+import com.alnajashia.azm.focus.FocusSounds
 import com.alnajashia.azm.lockdown.LockdownStore
 import com.alnajashia.azm.vpn.AzmVpnService
 import com.alnajashia.azm.vpn.VpnConfigStore
@@ -464,6 +465,10 @@ class PrivilegedChannelHandler(
         "getFocusSession" -> {
             FocusSessionStore.syncIfDue(appContext)
             FocusSessionStore.stateMap(appContext)
+        }
+        "previewFocusSound" -> {
+            FocusSounds.preview(appContext, call.reqInt("choice"))
+            mapOf("played" to true)
         }
         "pauseFocusSession" -> {
             FocusSessionStore.pause(appContext, call.argument<Boolean>("releaseApps") ?: false)

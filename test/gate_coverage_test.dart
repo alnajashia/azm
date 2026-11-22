@@ -1,8 +1,7 @@
-// Gate-coverage tests for the v1.0.4 security directive (see
-// docs/CODE_AUDIT_v1.0.4.md): ACTIVATING a restriction is recovery-gated
-// exactly like loosening one — the paper code must be entered before any
-// activation is applied. Before the audit fix, applying a restriction
-// (a pure activation) went through with no gate at all.
+// Gate-coverage tests for the user rule of 2026-11-22: ACTIVATING a
+// restriction is free (no recovery code); only DEACTIVATING one
+// (clearing it) opens the recovery gate. (This supersedes the old
+// v1.0.4 directive that gated activations too.)
 //
 // v1.0.5 (user directive): the code ALONE opens the session — the gate
 // has no challenges stage any more. The third test below is the
@@ -26,14 +25,17 @@ void main() {
     messenger.setMockMethodCallHandler(methodChannel, null);
   });
 
-  /// One recommended, currently-inactive restriction. Records every
-  /// applyUserRestriction call so the tests can prove nothing was
-  /// applied before the gate. [codeMatches] controls what the native
-  /// code check answers.
-  ({PrivilegedChannel client, List<String> applied}) harness({
+  /// One recommended restriction, inactive or active per
+  /// [activeInitially]. Records every apply/clear call so the tests
+  /// can prove nothing was applied before the gate. [codeMatches]
+  /// controls what the native code check answers.
+  ({PrivilegedChannel client, List<String> applied, List<String> cleared})
+      harness({
     bool codeMatches = false,
+    bool activeInitially = false,
   }) {
     final applied = <String>[];
+    final cleared = <String>[];
     messenger.setMockMethodCallHandler(methodChannel, (call) async {
       switch (call.method) {
         case 'listUserRestrictions':
@@ -41,7 +43,7 @@ void main() {
             'restrictions': [
               {
                 'key': 'disallow_factory_reset',
-                'active': false,
+                'active': activeInitially,
                 'recommended': true,
               },
             ],
@@ -50,6 +52,7 @@ void main() {
           applied.add((call.arguments as Map)['key'] as String);
           return {'active': true};
         case 'clearUserRestriction':
+          cleared.add((call.arguments as Map)['key'] as String);
           return {'active': false};
         case 'isRecoveryCodeSet':
           return {'isSet': true};
@@ -64,10 +67,11 @@ void main() {
     return (
       client: PrivilegedChannel(methodChannel: methodChannel),
       applied: applied,
+      cleared: cleared,
     );
   }
 
-  Future<void> toggleOnAndTapApply(WidgetTester tester) async {
+  Future<void> toggleAndTapApply(WidgetTester tester) async {
     await tester.tap(find.byType(Switch));
     await tester.pump();
     expect(find.text('Apply changes'), findsOneWidget);
@@ -77,7 +81,7 @@ void main() {
   }
 
   testWidgets(
-    'Activating a restriction opens the recovery gate and applies nothing yet',
+    'Activating a restriction applies directly — no gate (2026-11-22)',
     (tester) async {
       final h = harness();
       final controller = AppController.test(h.client);
@@ -92,31 +96,23 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.byType(Switch), findsOneWidget);
 
-      await toggleOnAndTapApply(tester);
+      await toggleAndTapApply(tester);
 
-      // The code-first gate is showing (the code field with its label),
-      // and the activation has NOT been applied behind it.
-      expect(find.text('Recovery code'), findsOneWidget);
-      expect(h.applied, isEmpty);
+      // No gate dialog, no session needed: the activation went through.
+      expect(find.text('Recovery code'), findsNothing);
+      expect(h.applied, ['disallow_factory_reset']);
       expect(controller.session.isActive, isFalse);
-
-      // Cancelling the gate applies nothing either.
-      await tester.tap(find.text('Cancel'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(h.applied, isEmpty);
 
       await tester.pumpWidget(const SizedBox());
     },
   );
 
   testWidgets(
-    'With a session already open, the same activation applies directly',
+    'Clearing a restriction opens the gate and clears nothing yet',
     (tester) async {
-      final h = harness();
+      final h = harness(activeInitially: true);
       final controller = AppController.test(h.client);
       addTearDown(controller.dispose);
-      controller.session.start(); // a code-first session is already active
 
       await tester.pumpWidget(
         MaterialApp(
@@ -125,17 +121,21 @@ void main() {
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byType(Switch), findsOneWidget);
 
-      await toggleOnAndTapApply(tester);
+      await toggleAndTapApply(tester);
 
-      // No gate dialog: the active session passes through and the
-      // restriction is applied.
-      expect(find.text('Recovery code'), findsNothing);
-      expect(h.applied, ['disallow_factory_reset']);
+      // The code-first gate is showing, and nothing was cleared yet.
+      expect(find.text('Recovery code'), findsOneWidget);
+      expect(h.cleared, isEmpty);
+      expect(controller.session.isActive, isFalse);
 
-      // End the session so its 1-second ticker stops before the test
-      // framework's pending-timer check.
-      controller.session.end();
+      // Cancelling the gate clears nothing either.
+      await tester.tap(find.text('Cancel'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(h.cleared, isEmpty);
+
       await tester.pumpWidget(const SizedBox());
     },
   );
@@ -146,9 +146,9 @@ void main() {
   // a correct code advanced the dialog to a challenges stage ("solve 5
   // math problems") and the session started only after them.
   testWidgets(
-    'Correct code opens the session and applies — no challenges anywhere',
+    'Correct code opens the session and clears — no challenges anywhere',
     (tester) async {
-      final h = harness(codeMatches: true);
+      final h = harness(codeMatches: true, activeInitially: true);
       final controller = AppController.test(h.client);
       addTearDown(controller.dispose);
 
@@ -161,11 +161,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.byType(Switch), findsOneWidget);
 
-      await toggleOnAndTapApply(tester);
+      await toggleAndTapApply(tester);
 
-      // The gate is at its code stage; nothing applied yet.
+      // The gate is at its code stage; nothing cleared yet.
       expect(find.text('Recovery code'), findsOneWidget);
-      expect(h.applied, isEmpty);
+      expect(h.cleared, isEmpty);
       expect(controller.session.isActive, isFalse);
 
       // Type the 16-letter code and confirm.
@@ -175,11 +175,11 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // The session opened from the code alone and the activation was
+      // The session opened from the code alone and the clear was
       // applied. The dialog is gone and no challenge UI ever appeared:
       // no challenges title, no extra text field, no dialog at all.
       expect(controller.session.isActive, isTrue);
-      expect(h.applied, ['disallow_factory_reset']);
+      expect(h.cleared, ['disallow_factory_reset']);
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.text('Access challenges'), findsNothing);
 

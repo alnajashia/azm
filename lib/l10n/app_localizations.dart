@@ -2060,6 +2060,24 @@ abstract class AppLocalizations {
   /// **'Off'**
   String get dnsOff;
 
+  /// No description provided for @dnsViaVpnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS via VPN'**
+  String get dnsViaVpnTitle;
+
+  /// No description provided for @dnsViaVpnSub.
+  ///
+  /// In en, this message translates to:
+  /// **'The chosen DNS activates automatically whenever a VPN is on — Azm\'s or any other.'**
+  String get dnsViaVpnSub;
+
+  /// No description provided for @dnsViaVpnSavedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS via VPN is set. It activates whenever a VPN is on.'**
+  String get dnsViaVpnSavedMsg;
+
   /// No description provided for @dnsApplied.
   ///
   /// In en, this message translates to:
@@ -4201,6 +4219,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cycles before long break'**
   String get cyclesLabel;
+
+  /// No description provided for @totalCyclesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total cycles'**
+  String get totalCyclesLabel;
+
+  /// No description provided for @preFocusSoundLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound before focus'**
+  String get preFocusSoundLabel;
+
+  /// No description provided for @preFocusSound1.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound 1'**
+  String get preFocusSound1;
+
+  /// No description provided for @preFocusSound2.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound 2'**
+  String get preFocusSound2;
 
   /// No description provided for @autoStartTitle.
   ///
