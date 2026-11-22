@@ -78,6 +78,7 @@ void main() {
       phaseStartedElapsedMs: phaseStartedMs,
       phaseDurationMs: phaseDurationMs,
       completedFocusInCycle: 1,
+      totalCompletedFocus: 1,
       pausedFrom: null,
       deadlineElapsedMs: deadlineMs,
     );

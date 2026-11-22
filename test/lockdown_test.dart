@@ -530,8 +530,10 @@ void main() {
       },
     );
 
-    testWidgets('adding a window goes through the code gate',
+    testWidgets('adding a window saves directly (no code gate)',
         (tester) async {
+      // User rule clarified 2026-11-22: adding is free; only
+      // deactivating or deleting an ENABLED window asks for the code.
       await pumpScreen(tester);
       await tester.tap(find.text('Add window'));
       for (var i = 0; i < 4; i++) {
@@ -539,7 +541,10 @@ void main() {
       }
       expect(find.text('Add window'), findsWidgets);
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-      await enterCodeAndConfirm(tester);
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+      expect(find.text('Enter recovery code'), findsNothing);
       expect(methodCalled('setLockdowns'), isTrue);
       expect(fakeLockdowns.length, 2);
     });
