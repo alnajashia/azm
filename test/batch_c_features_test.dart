@@ -434,7 +434,8 @@ void main() {
       // FilledButton.icon builds a private _FilledButtonWithIcon,
       // not a FilledButton widget — match by its unique label text.
       await tester.tap(find.text('Apply blocklists to browsers'));
-      await enterCodeAndConfirm(tester);
+      // Pushing saved blocklists is free — no code gate (2026-11-22).
+      await tester.pumpAndSettle();
 
       final applyCalls = calls.where(
         (c) => c.method == 'setApplicationRestrictions',
