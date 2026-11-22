@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
+import '../data/dns_protection.dart';
 import '../data/privileged_channel.dart';
 import '../domain/internet_block.dart';
 import '../l10n/l10n.dart';
@@ -64,9 +65,41 @@ class _InternetBlockScreenState extends State<InternetBlockScreen> {
   Future<void> _apply(InternetBlockConfig next) async {
     final current = _config;
     if (current == null) return;
+    // Arming DNS filtering here also arms the Settings "DNS via
+    // VPN" switch (one shared choice, user request 2026-11-22):
+    // the external-VPN auto host is filled in so the same provider
+    // covers other VPN apps too.
+    if (next.enabled &&
+        next.level == InternetBlockLevel.off &&
+        next.dnsAutoHost.isEmpty) {
+      final host = DnsProtection(
+        enabled: true,
+        provider: dnsProviderFor(next.dohProvider),
+        customHostname: dohUrlHost(next.customDohUrl),
+      ).hostname;
+      next = next.copyWith(dnsAutoHost: host ?? '');
+    }
     Future<void> doApply() async {
       try {
         final saved = await _c.channel.setInternetBlockConfig(next);
+        if (saved.enabled && saved.level == InternetBlockLevel.off) {
+          // Keep the Settings switch truthful: filtering armed here
+          // means the switch is on, with this provider.
+          try {
+            final dns = await _c.config.getDnsProtection();
+            await _c.config.setDnsProtection(
+              dns.copyWith(
+                enabled: true,
+                viaVpn: true,
+                provider: dnsProviderFor(saved.dohProvider),
+                customDohUrl: saved.customDohUrl,
+                customHostname: dohUrlHost(saved.customDohUrl),
+              ),
+            );
+          } catch (_) {
+            // Best-effort mirror; the VPN config above is the truth.
+          }
+        }
         final status = await _c.channel.getVpnStatus();
         if (!mounted) return;
         setState(() {

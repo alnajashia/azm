@@ -745,21 +745,22 @@ class _LockdownScreenState extends State<LockdownScreen>
   /// when it fires, so its membership and enabled flag are gated;
   /// edits to an existing window's time, days, scope or tier are
   /// free — they change when it fires, not whether it enforces.
+  /// The code is needed only when protection is REMOVED: an
+  /// enabled window deleted, or a window deactivated (user rule,
+  /// clarified 2026-11-22: adding, enabling and editing are free;
+  /// deleting a disabled window is free too).
   bool _lockdownsChangeNeedsCode(
     List<Lockdown> oldList,
     List<Lockdown> nextList,
   ) {
-    final oldById = {for (final l in oldList) l.id: l};
     final nextById = {for (final l in nextList) l.id: l};
-    for (final id in oldById.keys) {
-      final old = oldById[id]!;
-      final next = nextById[id];
-      if (next == null) return true; // deleted
-      if (old.enabled && !next.enabled) return true; // disabled
-      if (!old.enabled && next.enabled) return true; // enabled
-    }
-    for (final id in nextById.keys) {
-      if (!oldById.containsKey(id)) return true; // added
+    for (final old in oldList) {
+      final next = nextById[old.id];
+      if (next == null) {
+        if (old.enabled) return true; // deleted an active window
+        continue;
+      }
+      if (old.enabled && !next.enabled) return true; // deactivated
     }
     return false;
   }
