@@ -36,6 +36,7 @@ object VpnConfigStore {
     private const val KEY_GROUP_IDS = "group_ids"
     private const val KEY_DOH_PROVIDER = "doh_provider"
     private const val KEY_CUSTOM_DOH_URL = "custom_doh_url"
+    private const val KEY_DNS_AUTO_HOST = "dns_auto_host"
 
     const val LEVEL_OFF = "off"
     const val LEVEL_APPS = "apps"
@@ -49,6 +50,13 @@ object VpnConfigStore {
         val groupIds: Set<String> = emptySet(),
         val dohProvider: String = DohClient.PROVIDER_CLEANBROWSING,
         val customDohUrl: String = "",
+        /**
+         * "DNS via VPN" auto host (user request 2026-11-22): the
+         * Private DNS hostname [ExternalVpnWatcher] applies while
+         * an EXTERNAL VPN is up, so the chosen provider also covers
+         * other VPN apps. Empty = feature off.
+         */
+        val dnsAutoHost: String = "",
     ) {
         /** True when the VPN should run at all. */
         val active: Boolean get() = enabled
@@ -63,6 +71,7 @@ object VpnConfigStore {
             "groupIds" to groupIds.toList(),
             "dohProvider" to dohProvider,
             "customDohUrl" to customDohUrl,
+            "dnsAutoHost" to dnsAutoHost,
         )
 
         companion object {
@@ -80,6 +89,7 @@ object VpnConfigStore {
                     ?.takeIf { DohClient.isKnownProvider(it) }
                     ?: DohClient.PROVIDER_CLEANBROWSING,
                 customDohUrl = m["customDohUrl"] as? String ?: "",
+                dnsAutoHost = m["dnsAutoHost"] as? String ?: "",
             )
         }
     }
@@ -96,6 +106,7 @@ object VpnConfigStore {
                 DohClient.PROVIDER_CLEANBROWSING,
             ) ?: DohClient.PROVIDER_CLEANBROWSING,
             customDohUrl = prefs.getString(KEY_CUSTOM_DOH_URL, "") ?: "",
+            dnsAutoHost = prefs.getString(KEY_DNS_AUTO_HOST, "") ?: "",
         )
     }
 
@@ -107,6 +118,7 @@ object VpnConfigStore {
             .putStringSet(KEY_GROUP_IDS, config.groupIds)
             .putString(KEY_DOH_PROVIDER, config.dohProvider)
             .putString(KEY_CUSTOM_DOH_URL, config.customDohUrl)
+            .putString(KEY_DNS_AUTO_HOST, config.dnsAutoHost)
             .apply()
     }
 
@@ -134,6 +146,9 @@ object VpnConfigStore {
             stopService(context)
             unpinAlwaysOn(context)
         }
+        // The "DNS via VPN" auto host may have changed: reconcile
+        // the external-VPN Private DNS state with the new config.
+        ExternalVpnWatcher.sync(context)
         return config
     }
 
@@ -147,7 +162,11 @@ object VpnConfigStore {
             .onFailure { Log.w(TAG, "stopService failed: ${it.message}") }
         runCatching { unpinAlwaysOn(context) }
             .onFailure { Log.w(TAG, "unpinAlwaysOn failed: ${it.message}") }
-        write(context, read(context).copy(enabled = false))
+        write(context, read(context).copy(enabled = false, dnsAutoHost = ""))
+        // Reset any Private DNS the watcher applied for an external
+        // VPN (the teardown's own privateDns step also resets it;
+        // this keeps the watcher's bookkeeping truthful).
+        ExternalVpnWatcher.sync(context)
     }
 
     private fun pinAlwaysOn(context: Context) {
