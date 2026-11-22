@@ -774,10 +774,11 @@ Map<String, Set<WordBlockMode>> appWordCoverage(
 }
 
 /// Whether saving [next] coverage for ONE app loosens protection
-/// relative to [old]: any word removed or mode dropped loosens, and
-/// newly covering an app that had no coverage activates blocking
-/// there (code-gated by the standing v1.0.4 rule). Adding words or
-/// modes to an already-covered app tightens and is free.
+/// relative to [old]: any word removed or mode dropped loosens.
+/// Adding words or modes — including newly covering an app that
+/// had no coverage — tightens and is free (user rule 2026-11-22:
+/// activation never asks for the recovery code, only deactivation
+/// does).
 bool appCoverageChangeLoosens(
   Map<String, Set<WordBlockMode>> old,
   Map<String, Set<WordBlockMode>> next,
@@ -786,22 +787,27 @@ bool appCoverageChangeLoosens(
     final n = next[entry.key];
     if (n == null || !n.containsAll(entry.value)) return true;
   }
-  if (old.isEmpty && next.isNotEmpty) return true;
   return false;
 }
 
-/// Whether saving a word's entry loosens: ANY change is gated —
-/// removing a target or a mode loosens, adding one activates
-/// blocking there (standing v1.0.4 rule, same as the old target
-/// picker). NOTE: Dart sets do not implement value equality —
-/// compare by length + containment, not `!=`.
+/// Whether saving a word's entry loosens: a word removed, or one
+/// of its targets/modes dropped, loosens; adding words, targets or
+/// modes tightens and is free (user rule 2026-11-22). Compared
+/// per word by containment (Dart sets do not implement value
+/// equality, so `!=` on sets is never used here).
 bool wordAssignmentsChangeLoosens(
   List<WordAssignment> old,
   List<WordAssignment> next,
 ) {
-  final oldSet = old.toSet();
-  final nextSet = next.toSet();
-  return oldSet.length != nextSet.length || !oldSet.containsAll(nextSet);
+  final nextByWord = {for (final a in next) a.word: a};
+  for (final o in old) {
+    final n = nextByWord[o.word];
+    if (n == null) return true;
+    if (!n.packageNames.toSet().containsAll(o.packageNames)) return true;
+    if (!n.groupIds.toSet().containsAll(o.groupIds)) return true;
+    if (!n.modes.containsAll(o.modes)) return true;
+  }
+  return false;
 }
 
 class BlockedWordsState {
@@ -911,6 +917,7 @@ class NativeFocusSessionState {
     required this.phaseStartedElapsedMs,
     required this.phaseDurationMs,
     required this.completedFocusInCycle,
+    required this.totalCompletedFocus,
     required this.pausedFrom,
     required this.deadlineElapsedMs,
   });
@@ -922,6 +929,10 @@ class NativeFocusSessionState {
   final int phaseStartedElapsedMs;
   final int phaseDurationMs;
   final int completedFocusInCycle;
+
+  /// Focus phases finished since the session started (never reset
+  /// by the long break); the session ends at the configured total.
+  final int totalCompletedFocus;
 
   /// Underlying phase when [phase] is `paused`; otherwise null.
   final String? pausedFrom;
@@ -940,6 +951,7 @@ class NativeFocusSessionState {
     phaseStartedElapsedMs: (m['phaseStartedElapsedMs'] as num?)?.toInt() ?? 0,
     phaseDurationMs: (m['phaseDurationMs'] as num?)?.toInt() ?? 0,
     completedFocusInCycle: (m['completedFocusInCycle'] as num?)?.toInt() ?? 0,
+    totalCompletedFocus: (m['totalCompletedFocus'] as num?)?.toInt() ?? 0,
     pausedFrom: m['pausedFrom'] as String?,
     deadlineElapsedMs: (m['deadlineElapsedMs'] as num?)?.toInt() ?? 0,
   );
@@ -980,6 +992,7 @@ class NativeFocusSessionState {
         phase: FocusPhase.paused,
         phaseDuration: duration,
         completedFocusPeriods: completedFocusInCycle,
+        totalCompletedFocusPeriods: totalCompletedFocus,
         pausedFrom: pausedFrom != null ? _phaseFor(pausedFrom!) : null,
         // Not carried by the wire shape; see the class doc.
         pausedRemaining: duration,
@@ -1004,6 +1017,7 @@ class NativeFocusSessionState {
       phaseStartedElapsed: FocusSession.monotonicNow - elapsedWithinPhase,
       phaseDuration: duration,
       completedFocusPeriods: completedFocusInCycle,
+      totalCompletedFocusPeriods: totalCompletedFocus,
     );
   }
 }
@@ -1615,6 +1629,12 @@ class PrivilegedChannel {
     _focusElapsedRealtimeOffsetMs =
         state.phaseStartedElapsedMs - FocusSession.monotonicNow.inMilliseconds;
     return state;
+  }
+
+  /// Plays one of the pre-focus sounds for the settings picker
+  /// (0 = first, 1 = second). Fire-and-forget.
+  Future<void> previewFocusSound(int choice) async {
+    await _invoke<dynamic>('previewFocusSound', {'choice': choice});
   }
 
   /// The persisted native session, or null when no session exists. The
