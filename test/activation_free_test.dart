@@ -84,5 +84,17 @@ void main() {
         isTrue,
       );
     });
+
+    test('setup a11y toggle: enabling free, disabling gated', () {
+      // User report 2026-11-28: the toggle had it backwards (the
+      // old v1.0.4 directive gated enabling). It must gate only
+      // the OFF direction, like every other protection toggle.
+      final s = src('lib/ui/setup_screen.dart');
+      final start = s.indexOf('SwitchListTile(');
+      final body = s.substring(start, start + 1600);
+      expect(body.contains('setAccessibilityEnabled(v)'), isTrue);
+      expect(body.contains('if (!v &&'), isTrue);
+      expect(body.contains('ENABLING the service grants a privilege'), isFalse);
+    });
   });
 }
