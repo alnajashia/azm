@@ -658,12 +658,13 @@ class _SetupScreenState extends State<SetupScreen> {
                   onChanged: _busy
                       ? null
                       : (v) => _run(() async {
-                          // ENABLING the service grants a privilege —
-                          // recovery-gated (user security directive,
-                          // v1.0.4 audit). DISABLING stays ungated: it
-                          // triggers the F28 lockdown, the protective
-                          // direction.
-                          if (v &&
+                          // User rule (2026-11-22, confirmed
+                          // 2026-11-28): ENABLING the service is
+                          // free; DISABLING it asks for the recovery
+                          // code — disabling removes a protection.
+                          // (This reverses the old v1.0.4 directive
+                          // that gated enabling.)
+                          if (!v &&
                               !await ensureRecoverySession(
                                   context, widget.controller)) {
                             return;
