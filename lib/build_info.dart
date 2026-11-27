@@ -5,5 +5,5 @@
 /// screenshot can prove which build is installed — the "1.0.0" footer
 /// cannot, because the app is always version 1.0.0 by the user's
 /// standing rule.
-const String buildGitHead = 'fe40fcc+uncommitted';
-const String buildDate = '2026-11-22T10:07:57Z';
+const String buildGitHead = '5a06672+uncommitted';
+const String buildDate = '2026-11-27T21:11:32Z';
